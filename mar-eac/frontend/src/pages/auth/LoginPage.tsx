@@ -25,7 +25,13 @@ export const LoginPage: React.FC = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || t('common.error'));
+      const status = err.response?.status;
+      const msg = err.response?.data?.message;
+      if (status) {
+        setError(msg || `Server error (${status})`);
+      } else {
+        setError('Cannot reach server. Check your connection.');
+      }
     } finally {
       setLoading(false);
     }
@@ -40,7 +46,13 @@ export const LoginPage: React.FC = () => {
       await login(demoEmail, demoPassword);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || t('common.error'));
+      const status = err.response?.status;
+      const msg = err.response?.data?.message;
+      if (status) {
+        setError(msg || `Server error (${status})`);
+      } else {
+        setError('Cannot reach server. Check your connection.');
+      }
     } finally {
       setLoading(false);
     }
