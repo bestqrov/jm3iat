@@ -1,40 +1,26 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: mareac-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: mareac
-      POSTGRES_PASSWORD: mareac_password
-      POSTGRES_DB: mareac
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: mareac-backend
     restart: unless-stopped
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     environment:
-      DATABASE_URL: postgresql://mareac:mareac_password@postgres:5432/mareac
-      JWT_SECRET: change-this-in-production-very-secret-key
-      JWT_EXPIRES_IN: 7d
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: 5000
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: ${FRONTEND_URL}
       UPLOAD_DIR: /app/uploads
-      SUPER_ADMIN_EMAIL: superadmin@mareac.ma
-      SUPER_ADMIN_PASSWORD: SuperAdmin@123
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
+      NODE_ENV: production
     volumes:
       - uploads_data:/app/uploads
-    depends_on:
-      - postgres
 
   frontend:
     build:
@@ -48,5 +34,4 @@ services:
       - backend
 
 volumes:
-  postgres_data:
   uploads_data:
