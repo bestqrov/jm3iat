@@ -1,0 +1,232 @@
+const bcrypt = require('bcryptjs');
+const prisma = require('../../config/database');
+const { generateToken } = require('../../config/jwt');
+
+const register = async (req, res) => {
+  try {
+    const {
+      orgName, orgEmail, orgPhone, orgCity, orgRegion,
+      adminName, adminEmail, password,
+    } = req.body;
+
+    if (!orgName || !orgEmail || !adminName || !adminEmail || !password) {
+      return res.status(400).json({ message: 'Required fields missing' });
+    }
+
+    // Check if org email already used
+    const existingOrg = await prisma.organization.findUnique({ where: { email: orgEmail } });
+    if (existingOrg) return res.status(409).json({ message: 'Organization email already registered' });
+
+    const existingUser = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (existingUser) return res.status(409).json({ message: 'Admin email already registered' });
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 3);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const org = await tx.organization.create({
+        data: {
+          name: orgName,
+          email: orgEmail,
+          phone: orgPhone,
+          city: orgCity,
+          region: orgRegion,
+          trialEndsAt,
+        },
+      });
+
+      const user = await tx.user.create({
+        data: {
+          organizationId: org.id,
+          name: adminName,
+          email: adminEmail,
+          password: hashedPassword,
+          role: 'ADMIN',
+        },
+      });
+
+      const subscription = await tx.subscription.create({
+        data: {
+          organizationId: org.id,
+          plan: 'PREMIUM', // full access during trial
+          status: 'TRIAL',
+          expiresAt: trialEndsAt,
+        },
+      });
+
+      return { org, user, subscription };
+    });
+
+    const token = generateToken({ id: result.user.id, role: result.user.role });
+
+    res.status(201).json({
+      message: 'Organization registered successfully',
+      token,
+      user: {
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        role: result.user.role,
+      },
+      organization: {
+        id: result.org.id,
+        name: result.org.name,
+        trialEndsAt: result.org.trialEndsAt,
+      },
+      subscription: result.subscription,
+    });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ message: 'Server error during registration' });
+  }
+};
+
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password required' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        organization: {
+          include: { subscription: true },
+        },
+      },
+    });
+
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!user.isActive) return res.status(403).json({ message: 'Account disabled' });
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const token = generateToken({ id: user.id, role: user.role });
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        organizationId: user.organizationId,
+      },
+      organization: user.organization,
+      subscription: user.organization?.subscription,
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error during login' });
+  }
+};
+
+const getMe = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        organizationId: true,
+        createdAt: true,
+        organization: {
+          include: { subscription: true },
+        },
+      },
+    });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { name, currentPassword, newPassword } = req.body;
+    const updateData = {};
+
+    if (name) updateData.name = name;
+
+    if (newPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ message: 'Current password required' });
+      }
+      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+      const valid = await bcrypt.compare(currentPassword, user.password);
+      if (!valid) return res.status(400).json({ message: 'Current password incorrect' });
+      updateData.password = await bcrypt.hash(newPassword, 12);
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+      select: { id: true, name: true, email: true, role: true },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const updateOrganization = async (req, res) => {
+  try {
+    const { name, email, phone, address, city, region, description, foundingDate, activities, adminHistory, bankName, bankAccount, bankRib } = req.body;
+    const orgId = req.user.organizationId;
+
+    // Check email uniqueness if changing
+    if (email) {
+      const conflict = await prisma.organization.findFirst({ where: { email, id: { not: orgId } } });
+      if (conflict) return res.status(409).json({ message: 'Email already used by another organization' });
+    }
+
+    const updated = await prisma.organization.update({
+      where: { id: orgId },
+      data: {
+        name, phone, address, city, region, description,
+        activities, adminHistory, bankName, bankAccount, bankRib,
+        ...(email ? { email } : {}),
+        foundingDate: foundingDate ? new Date(foundingDate) : undefined,
+      },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const upgradeSubscription = async (req, res) => {
+  try {
+    const { plan } = req.body;
+    const VALID_PLANS = ['BASIC', 'STANDARD', 'PREMIUM'];
+    if (!VALID_PLANS.includes(plan)) {
+      return res.status(400).json({ message: 'Invalid plan' });
+    }
+    const orgId = req.user.organizationId;
+
+    // Set expiry 1 year from now for paid activations
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+    const sub = await prisma.subscription.upsert({
+      where: { organizationId: orgId },
+      update: { plan, status: 'ACTIVE', expiresAt },
+      create: { organizationId: orgId, plan, status: 'ACTIVE', expiresAt },
+    });
+
+    res.json(sub);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { register, login, getMe, updateProfile, updateOrganization, upgradeSubscription };

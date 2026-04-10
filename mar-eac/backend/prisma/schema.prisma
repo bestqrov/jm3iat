@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String    @unique
+  phone       String?
+  address     String?
+  city        String?
+  region      String?
+  logo         String?
+  description  String?
+  foundingDate DateTime?
+  activities   String?
+  adminHistory String?
+  bankName     String?
+  bankAccount  String?
+  bankRib      String?
+  trialEndsAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  subscription       Subscription?
+  users              User[]
+  members            Member[]
+  meetings           Meeting[]
+  transactions       Transaction[]
+  documents          Document[]
+  projects           Project[]
+  requests           Request[]
+  waterInstallations WaterInstallation[]
+  waterRepairs       WaterRepair[]
+  reminders          Reminder[]
+}
+
+model Subscription {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @unique @db.ObjectId
+  plan           String   @default("BASIC")
+  status         String   @default("TRIAL")
+  startsAt       DateTime @default(now())
+  expiresAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String?  @db.ObjectId
+  email          String   @unique
+  password       String
+  name           String
+  role           String   @default("ADMIN")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Member {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  name           String
+  phone          String?
+  email          String?
+  role           String   @default("MEMBER")
+  joinDate       DateTime @default(now())
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  meetingAttendances MeetingAttendance[]
+  votes              Vote[]
+}
+
+model Meeting {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  title          String
+  date           DateTime
+  location       String?
+  agenda         String?
+  status         String   @default("SCHEDULED")
+  pvUrl          String?
+  pvContent      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  attendances  MeetingAttendance[]
+  decisions    Decision[]
+  sessions     VotingSession[]
+  documents    Document[]
+}
+
+model MeetingAttendance {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  meetingId String  @db.ObjectId
+  memberId  String  @db.ObjectId
+  present   Boolean @default(false)
+  role      String?
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([meetingId, memberId])
+}
+
+model Decision {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  meetingId   String    @db.ObjectId
+  description String
+  assignedTo  String?
+  dueDate     DateTime?
+  status      String    @default("PENDING")
+  createdAt   DateTime  @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model VotingSession {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  meetingId   String    @db.ObjectId
+  title       String
+  description String?
+  isOpen      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  closedAt    DateTime?
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  votes   Vote[]
+}
+
+model Vote {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  votingSessionId String   @db.ObjectId
+  memberId        String   @db.ObjectId
+  choice          String
+  createdAt       DateTime @default(now())
+
+  votingSession VotingSession @relation(fields: [votingSessionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  member        Member        @relation(fields: [memberId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([votingSessionId, memberId])
+}
+
+model Transaction {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  type           String
+  amount         Float
+  category       String
+  description    String?
+  date           DateTime @default(now())
+  reference      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Document {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  title          String
+  type           String   @default("OTHER")
+  url            String
+  filename       String?
+  size           Int?
+  meetingId      String?  @db.ObjectId
+  projectId      String?  @db.ObjectId
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  meeting      Meeting?     @relation(fields: [meetingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Project {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String    @db.ObjectId
+  title          String
+  type           String    @default("OTHER")
+  description    String?
+  location       String?
+  status         String    @default("PLANNED")
+  startDate      DateTime?
+  endDate        DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  funding      Funding?
+  requests     Request[]
+  documents    Document[]
+}
+
+model Funding {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId    String   @unique @db.ObjectId
+  totalBudget  Float    @default(0)
+  fundedAmount Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project        @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  entries FundingEntry[]
+}
+
+model FundingEntry {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  fundingId String   @db.ObjectId
+  source    String
+  amount    Float
+  donor     String?
+  date      DateTime @default(now())
+  notes     String?
+
+  funding Funding @relation(fields: [fundingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Request {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String    @db.ObjectId
+  projectId      String?   @db.ObjectId
+  title          String
+  type           String    @default("COMMUNE")
+  description    String?
+  status         String    @default("PENDING")
+  recipient      String?
+  amount         Float?
+  submittedAt    DateTime  @default(now())
+  respondedAt    DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model WaterInstallation {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  householdName  String
+  phone          String?
+  address        String?
+  meterNumber    String
+  installDate    DateTime @default(now())
+  pricePerUnit   Float    @default(5.0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  readings     MeterReading[]
+  invoices     WaterInvoice[]
+  repairs      WaterRepair[]
+
+  @@unique([organizationId, meterNumber])
+}
+
+model MeterReading {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  installationId  String   @db.ObjectId
+  readingDate     DateTime
+  previousReading Float    @default(0)
+  currentReading  Float
+  consumption     Float
+  month           Int
+  year            Int
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  installation WaterInstallation @relation(fields: [installationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  invoice      WaterInvoice?
+
+  @@unique([installationId, month, year])
+}
+
+model WaterInvoice {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  readingId      String    @unique @db.ObjectId
+  installationId String    @db.ObjectId
+  amount         Float
+  isPaid         Boolean   @default(false)
+  paidAt         DateTime?
+  dueDate        DateTime
+  createdAt      DateTime  @default(now())
+
+  reading      MeterReading      @relation(fields: [readingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  installation WaterInstallation @relation(fields: [installationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payment      WaterPayment?
+}
+
+model WaterPayment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceId String   @unique @db.ObjectId
+  amount    Float
+  method    String   @default("CASH")
+  notes     String?
+  paidAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  invoice WaterInvoice @relation(fields: [invoiceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model WaterRepair {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String    @db.ObjectId
+  installationId String?   @db.ObjectId
+  title          String
+  description    String?
+  location       String?
+  status         String    @default("PENDING")
+  cost           Float?
+  reportedDate   DateTime  @default(now())
+  resolvedDate   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  installation WaterInstallation? @relation(fields: [installationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Reminder {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  type           String
+  title          String
+  message        String?
+  isRead         Boolean  @default(false)
+  scheduledFor   DateTime
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
