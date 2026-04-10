@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci --omit=dev
 
 COPY . .
 RUN npx prisma generate
@@ -12,4 +12,4 @@ RUN mkdir -p uploads
 
 EXPOSE 5000
 
-CMD ["npm", "start"]
+CMD ["node", "src/server.js"]
