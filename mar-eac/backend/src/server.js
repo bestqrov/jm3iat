@@ -53,10 +53,18 @@ app.use('/api/water', require('./modules/water/water.routes'));
 app.use('/api/reminders', require('./modules/reminders/reminders.routes'));
 app.use('/api/superadmin', require('./modules/superadmin/superadmin.routes'));
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ message: `Route ${req.method} ${req.path} not found` });
-});
+// Serve frontend static files (single-service deployment)
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+} else {
+  app.use((req, res) => {
+    res.status(404).json({ message: `Route ${req.method} ${req.path} not found` });
+  });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {

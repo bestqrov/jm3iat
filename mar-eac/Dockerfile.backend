@@ -1,15 +1,21 @@
-FROM node:20-alpine
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN VITE_API_URL=/api npm run build
 
+FROM node:20-alpine
+RUN apk add --no-cache openssl
 WORKDIR /app
 
-COPY backend/package*.json ./
-RUN npm ci --omit=dev
+COPY backend/package*.json ./backend/
+COPY backend/ ./backend/
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-COPY backend/ .
-RUN npx prisma generate
-
+WORKDIR /app/backend
+RUN npm ci --omit=dev && npx prisma generate
 RUN mkdir -p uploads
 
 EXPOSE 5000
-
-CMD ["node", "src/server.js"]
+CMD ["sh", "-c", "node prisma/seed.js && node --max-http-header-size=32768 src/server.js"]
