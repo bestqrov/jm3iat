@@ -1,0 +1,9 @@
+{
+  "name": "mar-eac",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm ci && npm run build && cp -r dist ../backend/frontend-dist",
+    "start": "cd backend && node prisma/seed.js; node --max-http-header-size=32768 src/server.js",
+    "install": "cd frontend && npm ci && cd ../backend && npm ci --omit=dev"
+  }
+}
