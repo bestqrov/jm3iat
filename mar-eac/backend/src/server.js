@@ -67,11 +67,18 @@ app.use('/api/reminders', require('./modules/reminders/reminders.routes'));
 app.use('/api/superadmin', require('./modules/superadmin/superadmin.routes'));
 
 // Serve frontend static files (single-service deployment)
-const frontendDist = fs.existsSync(path.join(__dirname, '../frontend-dist'))
-  ? path.join(__dirname, '../frontend-dist')
-  : path.join(__dirname, '../../frontend/dist');
+const possibleDists = [
+  path.join(__dirname, '../frontend-dist'),        // /app/backend/frontend-dist
+  path.join(__dirname, '../../frontend/dist'),     // /app/frontend/dist
+  path.join(process.cwd(), 'frontend-dist'),       // cwd/frontend-dist
+  path.join(process.cwd(), '../frontend/dist'),    // cwd/../frontend/dist
+];
 
-if (fs.existsSync(frontendDist)) {
+console.log('Looking for frontend dist in:', possibleDists);
+const frontendDist = possibleDists.find(p => fs.existsSync(p));
+console.log('Frontend dist found at:', frontendDist || 'NOT FOUND');
+
+if (frontendDist) {
   app.use(express.static(frontendDist));
   app.get('*', (req, res) => {
     res.sendFile(path.join(frontendDist, 'index.html'));
