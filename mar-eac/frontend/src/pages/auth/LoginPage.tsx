@@ -31,6 +31,21 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const handleDemoLogin = async (demoEmail: string, demoPassword: string) => {
+    setError('');
+    setLoading(true);
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    try {
+      await login(demoEmail, demoPassword);
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('common.error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       {/* Top controls */}
@@ -118,9 +133,23 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Demo credentials hint */}
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-400">
-          <strong>Demo:</strong> admin@example.ma / Admin@123
+        {/* Demo quick login */}
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 space-y-2">
+          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-1">Demo — دخول سريع:</p>
+          <button
+            onClick={() => handleDemoLogin('admin@example.ma', 'Admin@123')}
+            disabled={loading}
+            className="w-full text-xs px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+          >
+            Admin — admin@example.ma
+          </button>
+          <button
+            onClick={() => handleDemoLogin('superadmin@mareac.ma', 'SuperAdmin@123')}
+            disabled={loading}
+            className="w-full text-xs px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50"
+          >
+            Super Admin — superadmin@mareac.ma
+          </button>
         </div>
       </div>
     </div>
