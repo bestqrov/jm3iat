@@ -4,6 +4,5 @@ cmds = ["npm ci"]
 [phases.build]
 cmds = ["npm run build"]
 
-
 [start]
 cmd = "npx http-server dist -p 3000 --proxy http://localhost:3000? -c-1"
