@@ -1,20 +1,18 @@
 [phases.setup]
-nixPkgs = ["openssl"]
+nixPkgs = ["openssl", "nodejs_20"]
 
 [phases.install]
 cmds = [
-  "cd backend && npm ci --omit=dev",
-  "cd frontend && npm ci"
+  "cd frontend && npm ci",
+  "cd backend && npm ci --omit=dev"
 ]
 
 [phases.build]
 cmds = [
+  "cd frontend && npm run build",
   "cd backend && npx prisma generate",
-  "cd frontend && npm run build"
+  "cp -r frontend/dist backend/frontend-dist"
 ]
 
-[variables]
-VITE_API_URL = "/api"
-
 [start]
-cmd = "cd backend && node prisma/seed.js && node --max-http-header-size=32768 src/server.js"
+cmd = "cd backend && node prisma/seed.js; node --max-http-header-size=32768 src/server.js"

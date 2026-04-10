@@ -67,7 +67,10 @@ app.use('/api/reminders', require('./modules/reminders/reminders.routes'));
 app.use('/api/superadmin', require('./modules/superadmin/superadmin.routes'));
 
 // Serve frontend static files (single-service deployment)
-const frontendDist = path.join(__dirname, '../../frontend/dist');
+const frontendDist = fs.existsSync(path.join(__dirname, '../frontend-dist'))
+  ? path.join(__dirname, '../frontend-dist')
+  : path.join(__dirname, '../../frontend/dist');
+
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
   app.get('*', (req, res) => {
