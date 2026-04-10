@@ -14,4 +14,4 @@ RUN mkdir -p uploads
 
 EXPOSE 5000
 
-CMD ["node", "src/server.js"]
+CMD ["node", "--max-http-header-size=32768", "src/server.js"]
