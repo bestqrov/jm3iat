@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Users, Calendar, DollarSign, Briefcase, TrendingUp, TrendingDown, Bell } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,8 +11,10 @@ import { formatCurrency, formatDate, getTrialDaysRemaining } from '../../lib/uti
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444'];
 
 export const DashboardPage: React.FC = () => {
-  const { user, organization } = useAuth();
+  const { user, organization, isSuperAdmin } = useAuth();
   const { t, lang } = useLanguage();
+
+  if (isSuperAdmin) return <Navigate to="/superadmin" replace />;
 
   const [memberStats, setMemberStats] = useState<any>(null);
   const [meetingStats, setMeetingStats] = useState<any>(null);
