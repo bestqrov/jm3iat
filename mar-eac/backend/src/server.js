@@ -13,9 +13,17 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Middleware
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
-  .split(',')
-  .map(o => o.trim());
+const allowedOrigins = [
+  'https://mareac.digima.cloud',
+  'http://localhost:3000',
+  'http://localhost:5173',
+];
+if (process.env.FRONTEND_URL) {
+  process.env.FRONTEND_URL.split(',').forEach(o => {
+    const trimmed = o.trim();
+    if (!allowedOrigins.includes(trimmed)) allowedOrigins.push(trimmed);
+  });
+}
 
 app.use(cors({
   origin: (origin, callback) => {
