@@ -8,4 +8,4 @@ cmds = ["npm run build"]
 VITE_API_URL = "http://localhost:5000/api"
 
 [start]
-cmd = "npx serve -s dist -l 3000"
+cmd = "npx http-server dist -p 3000 --proxy http://localhost:3000? -c-1"
