@@ -1,8 +1,5 @@
-[phases.setup]
-nixPkgs = ["nodejs_20"]
-
 [phases.install]
-cmds = ["npm ci --prefer-offline=false"]
+cmds = ["npm ci"]
 
 [phases.build]
 cmds = ["npm run build"]
