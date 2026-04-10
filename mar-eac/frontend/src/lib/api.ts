@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: 'https://mareac-backend.digima.cloud/api/' });
+const api = axios.create({ baseURL: 'https://mareac-backend.digima.cloud' });
 
 api.interceptors.request.use((config) => {
+  config.url = `/api${config.url}`;
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;

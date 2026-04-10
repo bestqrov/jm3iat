@@ -8,4 +8,4 @@ cmds = ["npm ci --omit=dev"]
 cmds = ["npx prisma generate"]
 
 [start]
-cmd = "node prisma/seed.js && node --max-http-header-size=32768 src/server.js"
+cmd = "node prisma/seed.js; node --max-http-header-size=32768 src/server.js"
