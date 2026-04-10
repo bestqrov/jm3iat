@@ -4,8 +4,6 @@ cmds = ["npm ci"]
 [phases.build]
 cmds = ["npm run build"]
 
-[variables]
-VITE_API_URL = "https://mareac-backend.digima.cloud/api"
 
 [start]
 cmd = "npx http-server dist -p 3000 --proxy http://localhost:3000? -c-1"

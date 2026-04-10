@@ -1,10 +1,6 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.PROD
-  ? 'https://mareac-backend.digima.cloud/api'
-  : 'http://localhost:5000/api';
-
-const api = axios.create({ baseURL });
+const api = axios.create({ baseURL: 'https://mareac-backend.digima.cloud/api' });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
