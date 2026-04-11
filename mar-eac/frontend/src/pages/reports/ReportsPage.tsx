@@ -11,6 +11,7 @@ export const ReportsPage: React.FC = () => {
   const [literary, setLiterary] = useState<any>(null);
   const [financial, setFinancial] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [exportYear, setExportYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     Promise.allSettled([reportsApi.getLiterary(), reportsApi.getFinancial()]).then(([lit, fin]) => {
@@ -29,8 +30,8 @@ export const ReportsPage: React.FC = () => {
 
   const exportFinancial = async () => {
     try {
-      const res = await reportsApi.exportFinancial();
-      downloadBlob(new Blob([res.data], { type: 'application/pdf' }), 'rapport_financier.pdf');
+      const res = await reportsApi.exportFinancial(exportYear);
+      downloadBlob(new Blob([res.data], { type: 'application/pdf' }), `rapport_financier_${exportYear}.pdf`);
     } catch {}
   };
 
@@ -103,9 +104,20 @@ export const ReportsPage: React.FC = () => {
                 <p className="text-xs text-gray-500">{t('reports.financialDesc')}</p>
               </div>
             </div>
-            <button onClick={exportFinancial} className="btn-secondary text-xs py-1.5 px-3">
-              <Download size={14} />{t('reports.exportPDF')}
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={exportYear}
+                onChange={(e) => setExportYear(Number(e.target.value))}
+                className="input py-1 text-xs w-20"
+              >
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <button onClick={exportFinancial} className="btn-secondary text-xs py-1.5 px-3">
+                <Download size={14} />{t('reports.exportPDF')}
+              </button>
+            </div>
           </div>
 
           {financial ? (

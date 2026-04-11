@@ -175,65 +175,7 @@ const exportLiteraryPDF = async (req, res) => {
   }
 };
 
-const exportFinancialPDF = async (req, res) => {
-  try {
-    const orgId = req.organization.id;
-    const org = req.organization;
-
-    const [income, expenses, transactions] = await Promise.all([
-      prisma.transaction.aggregate({
-        where: { organizationId: orgId, type: 'INCOME' },
-        _sum: { amount: true },
-      }),
-      prisma.transaction.aggregate({
-        where: { organizationId: orgId, type: 'EXPENSE' },
-        _sum: { amount: true },
-      }),
-      prisma.transaction.findMany({
-        where: { organizationId: orgId },
-        orderBy: { date: 'desc' },
-        take: 30,
-      }),
-    ]);
-
-    const totalIncome = income._sum.amount || 0;
-    const totalExpenses = expenses._sum.amount || 0;
-
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="rapport_financier.pdf"');
-    doc.pipe(res);
-
-    doc.fontSize(20).text(org.name, { align: 'center' });
-    doc.fontSize(16).text('التقرير المالي / Rapport Financier', { align: 'center' });
-    doc.fontSize(11).text(`Date: ${new Date().toLocaleDateString('fr-MA')}`, { align: 'center' });
-    doc.moveDown(1.5);
-
-    doc.fontSize(14).text('الملخص المالي / Résumé Financier', { underline: true });
-    doc.fontSize(12)
-      .fillColor('green').text(`Recettes / الإيرادات: +${totalIncome.toFixed(2)} MAD`)
-      .fillColor('red').text(`Dépenses / المصاريف: -${totalExpenses.toFixed(2)} MAD`)
-      .fillColor(totalIncome - totalExpenses >= 0 ? 'blue' : 'red')
-      .text(`Solde / الرصيد: ${(totalIncome - totalExpenses).toFixed(2)} MAD`)
-      .fillColor('black');
-
-    doc.moveDown();
-    doc.fontSize(14).text('قائمة العمليات / Liste des Opérations', { underline: true });
-    doc.moveDown(0.3);
-
-    transactions.forEach((tx) => {
-      const sign = tx.type === 'INCOME' ? '+' : '-';
-      const color = tx.type === 'INCOME' ? 'green' : 'red';
-      doc.fontSize(10)
-        .fillColor('black').text(`${new Date(tx.date).toLocaleDateString('fr-MA')} | ${tx.category}`, { continued: true })
-        .fillColor(color).text(` | ${sign}${tx.amount.toFixed(2)} MAD`);
-      if (tx.description) doc.fillColor('gray').fontSize(9).text(`   ${tx.description}`);
-    });
-
-    doc.end();
-  } catch (err) {
-    res.status(500).json({ message: 'Error generating PDF' });
-  }
-};
+// Delegate to the detailed finance PDF generator
+const { exportPDF: exportFinancialPDF } = require('../finance/finance.controller');
 
 module.exports = { getLiteraryReport, getFinancialReport, exportLiteraryPDF, exportFinancialPDF };

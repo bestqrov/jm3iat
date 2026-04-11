@@ -104,7 +104,7 @@ export const reportsApi = {
   getLiterary: () => api.get('/reports/literary'),
   getFinancial: () => api.get('/reports/financial'),
   exportLiterary: () => api.get('/reports/literary/export', { responseType: 'blob' }),
-  exportFinancial: () => api.get('/reports/financial/export', { responseType: 'blob' }),
+  exportFinancial: (year?: number) => api.get('/reports/financial/export', { responseType: 'blob', params: year ? { year } : {} }),
 };
 
 // ---- Projects ----
