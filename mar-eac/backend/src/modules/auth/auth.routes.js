@@ -5,6 +5,7 @@ const { tenant } = require('../../middleware/tenant');
 
 router.post('/register', ctrl.register);
 router.post('/login', ctrl.login);
+router.post('/forgot-password', ctrl.forgotPassword);
 router.get('/me', auth, ctrl.getMe);
 router.put('/profile', auth, ctrl.updateProfile);
 router.put('/organization', auth, tenant, ctrl.updateOrganization);

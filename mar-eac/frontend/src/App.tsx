@@ -6,6 +6,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { Layout } from './components/layout/Layout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { MembersPage } from './pages/members/MembersPage';
 import { AdministratifsPage } from './pages/members/AdministratifsPage';
@@ -37,6 +38,7 @@ const App: React.FC = () => {
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
               {/* Protected routes */}
               <Route element={<Layout />}>

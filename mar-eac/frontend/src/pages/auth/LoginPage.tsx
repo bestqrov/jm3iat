@@ -116,12 +116,17 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
-            {t('auth.noAccount')}{' '}
-            <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
-              {t('auth.registerBtn')}
+          <div className="flex items-center justify-between mt-4 text-sm">
+            <p className="text-gray-600 dark:text-gray-400">
+              {t('auth.noAccount')}{' '}
+              <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+                {t('auth.registerBtn')}
+              </Link>
+            </p>
+            <Link to="/forgot-password" className="text-gray-500 hover:text-primary-600 dark:text-gray-400">
+              {lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Mot de passe oublié ?'}
             </Link>
-          </p>
+          </div>
         </div>
 
       </div>

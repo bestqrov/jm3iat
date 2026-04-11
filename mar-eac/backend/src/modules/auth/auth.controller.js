@@ -229,4 +229,27 @@ const upgradeSubscription = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, updateOrganization, upgradeSubscription };
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email requis' });
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ message: 'Aucun compte associé à cet email' });
+    if (!user.isActive) return res.status(403).json({ message: 'Compte désactivé' });
+
+    // Generate 8-char temp password
+    const tempPassword = Math.random().toString(36).slice(-4).toUpperCase() +
+      Math.random().toString(36).slice(-4).toUpperCase();
+    const hashed = await bcrypt.hash(tempPassword, 12);
+
+    await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
+
+    res.json({ tempPassword, name: user.name });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { register, login, getMe, updateProfile, updateOrganization, upgradeSubscription, forgotPassword };

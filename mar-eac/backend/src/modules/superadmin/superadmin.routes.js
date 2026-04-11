@@ -12,5 +12,6 @@ router.put('/organizations/:id/subscription', ctrl.updateSubscription);
 router.delete('/organizations/:id', ctrl.deleteOrganization);
 router.get('/users', ctrl.getUsers);
 router.put('/users/:userId/toggle', ctrl.toggleUser);
+router.post('/users/:userId/reset-password', ctrl.resetUserPassword);
 
 module.exports = router;

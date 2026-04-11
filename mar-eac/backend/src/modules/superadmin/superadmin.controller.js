@@ -1,4 +1,5 @@
 const prisma = require('../../config/database');
+const bcrypt = require('bcryptjs');
 
 const getStats = async (req, res) => {
   try {
@@ -167,4 +168,20 @@ const deleteOrganization = async (req, res) => {
   }
 };
 
-module.exports = { getStats, getOrganizations, getOrganization, updateSubscription, getUsers, toggleUser, deleteOrganization };
+const resetUserPassword = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
+    if (!user || user.role === 'SUPER_ADMIN') return res.status(404).json({ message: 'User not found' });
+
+    const tempPassword = Math.random().toString(36).slice(-4).toUpperCase() +
+      Math.random().toString(36).slice(-4).toUpperCase();
+    const hashed = await bcrypt.hash(tempPassword, 12);
+
+    await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
+    res.json({ tempPassword, name: user.name, email: user.email });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getStats, getOrganizations, getOrganization, updateSubscription, getUsers, toggleUser, deleteOrganization, resetUserPassword };

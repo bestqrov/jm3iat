@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, Building2, Users, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Shield, Building2, Users, Pencil, Trash2, ToggleLeft, ToggleRight, KeyRound, Copy, Check } from 'lucide-react';
 import { superadminApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { Toast } from '../../components/ui/Toast';
 import { StatCard } from '../../components/ui/StatCard';
 import { formatDate } from '../../lib/utils';
 
@@ -21,6 +22,8 @@ export const SuperAdminPage: React.FC = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [subForm, setSubForm] = useState({ plan: 'BASIC', status: 'ACTIVE', expiresAt: '' });
+  const [resetResult, setResetResult] = useState<{ tempPassword: string; name: string; email: string } | null>(null);
+  const [resetCopied, setResetCopied] = useState(false);
 
   const load = async () => {
     try {
@@ -75,6 +78,21 @@ export const SuperAdminPage: React.FC = () => {
       await superadminApi.toggleUser(userId);
       load();
     } catch {}
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    try {
+      const res = await superadminApi.resetUserPassword(userId);
+      setResetResult(res.data);
+    } catch {}
+  };
+
+  const copyResetPassword = () => {
+    if (resetResult) {
+      navigator.clipboard.writeText(resetResult.tempPassword);
+      setResetCopied(true);
+      setTimeout(() => setResetCopied(false), 2000);
+    }
   };
 
   const planBadge: Record<string, string> = { BASIC: 'badge-gray', STANDARD: 'badge-blue', PREMIUM: 'badge-purple' };
@@ -182,9 +200,14 @@ export const SuperAdminPage: React.FC = () => {
                     <td><span className={user.isActive ? 'badge-green' : 'badge-red'}>{user.isActive ? t('members.active') : t('members.inactive')}</span></td>
                     <td>{formatDate(user.createdAt, lang)}</td>
                     <td>
-                      <button onClick={() => handleToggleUser(user.id)} className={`p-1.5 rounded-lg transition-colors ${user.isActive ? 'text-emerald-500 hover:text-red-600' : 'text-red-500 hover:text-emerald-600'}`}>
-                        {user.isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleToggleUser(user.id)} className={`p-1.5 rounded-lg transition-colors ${user.isActive ? 'text-emerald-500 hover:text-red-600' : 'text-red-500 hover:text-emerald-600'}`} title={user.isActive ? 'Désactiver' : 'Activer'}>
+                          {user.isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                        </button>
+                        <button onClick={() => handleResetPassword(user.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors" title={lang === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Réinitialiser le mot de passe'}>
+                          <KeyRound size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -222,6 +245,48 @@ export const SuperAdminPage: React.FC = () => {
 
       <ConfirmDialog isOpen={!!deleteOrgId} onClose={() => setDeleteOrgId(null)} onConfirm={handleDeleteOrg}
         title={t('superadmin.deleteOrg')} message={t('common.confirmDelete')} loading={deleting} />
+
+      {/* Reset password result modal */}
+      <Modal
+        isOpen={!!resetResult}
+        onClose={() => { setResetResult(null); setResetCopied(false); }}
+        title={lang === 'ar' ? 'كلمة المرور الجديدة' : 'Nouveau mot de passe'}
+        footer={
+          <button onClick={() => { setResetResult(null); setResetCopied(false); }} className="btn-primary">
+            {lang === 'ar' ? 'تم' : 'Fermer'}
+          </button>
+        }
+      >
+        {resetResult && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {lang === 'ar'
+                ? `تم إعادة تعيين كلمة مرور ${resetResult.name} (${resetResult.email})`
+                : `Mot de passe de ${resetResult.name} (${resetResult.email}) réinitialisé`}
+            </p>
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
+              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mb-2">
+                {lang === 'ar' ? 'كلمة المرور المؤقتة' : 'Mot de passe temporaire'}
+              </p>
+              <div className="flex items-center gap-3">
+                <span className="flex-1 font-mono text-xl font-bold tracking-widest text-gray-900 dark:text-white">
+                  {resetResult.tempPassword}
+                </span>
+                <button
+                  onClick={copyResetPassword}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50"
+                >
+                  {resetCopied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                  {resetCopied ? (lang === 'ar' ? 'تم' : 'Copié') : (lang === 'ar' ? 'نسخ' : 'Copier')}
+                </button>
+              </div>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                {lang === 'ar' ? '⚠️ شارك هذه الكلمة مع المستخدم وأخبره بتغييرها' : '⚠️ Communiquez ce mot de passe à l\'utilisateur et demandez-lui de le changer'}
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -29,6 +29,7 @@ export const authApi = {
   updateProfile: (data: any) => api.put('/auth/profile', data),
   updateOrganization: (data: any) => api.put('/auth/organization', data),
   upgradeSubscription: (plan: string) => api.post('/auth/subscription/upgrade', { plan }),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
 };
 
 // ---- Members ----
@@ -178,4 +179,5 @@ export const superadminApi = {
   deleteOrganization: (id: string) => api.delete(`/superadmin/organizations/${id}`),
   getUsers: (params?: any) => api.get('/superadmin/users', { params }),
   toggleUser: (userId: string) => api.put(`/superadmin/users/${userId}/toggle`),
+  resetUserPassword: (userId: string) => api.post(`/superadmin/users/${userId}/reset-password`),
 };
