@@ -7,6 +7,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Toast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
 
 const CATEGORIES = ['اشتراكات/Cotisations', 'تبرعات/Dons', 'منح/Subventions', 'لوازم/Fournitures', 'نقل/Transport', 'أخرى/Autre'];
@@ -23,8 +24,11 @@ export const FinancePage: React.FC = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({ type: 'INCOME', amount: '', category: '', description: '', date: '', reference: '' });
+
+  const emptyForm = { type: 'INCOME', amount: '', category: '', description: '', date: new Date().toISOString().split('T')[0], reference: '' };
 
   const load = async () => {
     try {
@@ -43,12 +47,14 @@ export const FinancePage: React.FC = () => {
 
   const openAdd = () => {
     setEditTx(null);
-    setForm({ type: 'INCOME', amount: '', category: '', description: '', date: new Date().toISOString().split('T')[0], reference: '' });
+    setSaveError(null);
+    setForm(emptyForm);
     setShowModal(true);
   };
 
   const openEdit = (tx: any) => {
     setEditTx(tx);
+    setSaveError(null);
     setForm({ type: tx.type, amount: tx.amount.toString(), category: tx.category, description: tx.description || '', date: tx.date?.split('T')[0] || '', reference: tx.reference || '' });
     setShowModal(true);
   };
@@ -64,7 +70,10 @@ export const FinancePage: React.FC = () => {
         await financeApi.create(form);
       }
       setShowModal(false);
+      setForm(emptyForm);
+      setEditTx(null);
       load();
+      setToast({ message: lang === 'ar' ? 'تم الحفظ بنجاح ✓' : 'Enregistré avec succès ✓', type: 'success' });
     } catch (err: any) {
       setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
@@ -233,6 +242,8 @@ export const FinancePage: React.FC = () => {
       </Modal>
 
       <ConfirmDialog isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete} title={lang === 'ar' ? 'حذف المعاملة' : 'Supprimer'} message={t('common.confirmDelete')} loading={deleting} />
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 };
