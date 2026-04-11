@@ -21,6 +21,7 @@ export const MeetingsPage: React.FC = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', date: '', location: '', agenda: '' });
   const [allMembers, setAllMembers] = useState<any[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
@@ -54,6 +55,7 @@ export const MeetingsPage: React.FC = () => {
   const handleCreate = async () => {
     if (!form.title || !form.date) return;
     setSaving(true);
+    setSaveError(null);
     try {
       const created = await meetingsApi.create(form);
       if (selectedMemberIds.length > 0) {
@@ -63,6 +65,8 @@ export const MeetingsPage: React.FC = () => {
       setForm({ title: '', date: '', location: '', agenda: '' });
       setSelectedMemberIds([]);
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
@@ -159,16 +163,21 @@ export const MeetingsPage: React.FC = () => {
       {/* Create modal */}
       <Modal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => { setShowModal(false); setSaveError(null); }}
         title={t('meetings.createMeeting')}
         footer={
           <>
-            <button onClick={() => setShowModal(false)} className="btn-secondary">{t('common.cancel')}</button>
+            <button onClick={() => { setShowModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button>
             <button onClick={handleCreate} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button>
           </>
         }
       >
         <div className="space-y-4">
+          {saveError && (
+            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
+              {saveError}
+            </div>
+          )}
           <div>
             <label className="label">{t('meetings.meetingTitle')} *</label>
             <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
