@@ -1,5 +1,6 @@
 const prisma = require('../../config/database');
 const PDFDocument = require('pdfkit');
+const { generateFinancialPDF } = require('../../utils/financePdf');
 
 const getLiteraryReport = async (req, res) => {
   try {
@@ -175,7 +176,9 @@ const exportLiteraryPDF = async (req, res) => {
   }
 };
 
-// Delegate to the detailed finance PDF generator
-const { exportPDF: exportFinancialPDF } = require('../finance/finance.controller');
+const exportFinancialPDF = (req, res) => generateFinancialPDF(req, res).catch((err) => {
+  console.error('PDF export error:', err);
+  if (!res.headersSent) res.status(500).json({ message: 'Error generating PDF' });
+});
 
 module.exports = { getLiteraryReport, getFinancialReport, exportLiteraryPDF, exportFinancialPDF };
