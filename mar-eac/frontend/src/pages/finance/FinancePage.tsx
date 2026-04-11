@@ -22,6 +22,7 @@ export const FinancePage: React.FC = () => {
   const [editTx, setEditTx] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({ type: 'INCOME', amount: '', category: '', description: '', date: '', reference: '' });
 
@@ -55,6 +56,7 @@ export const FinancePage: React.FC = () => {
   const handleSave = async () => {
     if (!form.amount || !form.category) return;
     setSaving(true);
+    setSaveError(null);
     try {
       if (editTx) {
         await financeApi.update(editTx.id, form);
@@ -63,6 +65,8 @@ export const FinancePage: React.FC = () => {
       }
       setShowModal(false);
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
@@ -178,10 +182,15 @@ export const FinancePage: React.FC = () => {
       </div>
 
       {/* Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editTx ? lang === 'ar' ? 'تعديل المعاملة' : 'Modifier' : t('finance.addTransaction')}
-        footer={<><button onClick={() => setShowModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleSave} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      <Modal isOpen={showModal} onClose={() => { setShowModal(false); setSaveError(null); }} title={editTx ? lang === 'ar' ? 'تعديل المعاملة' : 'Modifier' : t('finance.addTransaction')}
+        footer={<><button onClick={() => { setShowModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleSave} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
         <div className="space-y-4">
+          {saveError && (
+            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
+              {saveError}
+            </div>
+          )}
           <div>
             <label className="label">{lang === 'ar' ? 'النوع' : 'Type'} *</label>
             <div className="flex gap-3">
