@@ -26,6 +26,7 @@ export const FinancePage: React.FC = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [exportYear, setExportYear] = useState(new Date().getFullYear());
   const [form, setForm] = useState({ type: 'INCOME', amount: '', category: '', description: '', date: '', reference: '' });
 
   const emptyForm = { type: 'INCOME', amount: '', category: '', description: '', date: new Date().toISOString().split('T')[0], reference: '' };
@@ -91,8 +92,8 @@ export const FinancePage: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      const res = await financeApi.exportPDF();
-      downloadBlob(new Blob([res.data], { type: 'application/pdf' }), 'rapport_financier.pdf');
+      const res = await financeApi.exportPDF(exportYear);
+      downloadBlob(new Blob([res.data], { type: 'application/pdf' }), `rapport_financier_${exportYear}.pdf`);
     } catch {}
   };
 
@@ -108,6 +109,15 @@ export const FinancePage: React.FC = () => {
       <div className="page-header">
         <h2 className="page-title">{t('finance.title')}</h2>
         <div className="flex gap-2">
+          <select
+            value={exportYear}
+            onChange={(e) => setExportYear(Number(e.target.value))}
+            className="input py-1.5 text-sm w-24"
+          >
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
           <button onClick={handleExport} className="btn-secondary"><Download size={16} />{t('finance.export')}</button>
           <button onClick={openAdd} className="btn-primary"><Plus size={16} />{t('finance.addTransaction')}</button>
         </div>

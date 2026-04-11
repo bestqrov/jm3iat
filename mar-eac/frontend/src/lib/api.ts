@@ -82,7 +82,7 @@ export const financeApi = {
   getSummary: () => api.get('/finance/summary'),
   getMonthly: (year?: number) => api.get('/finance/monthly', { params: { year } }),
   getCategories: () => api.get('/finance/categories'),
-  exportPDF: () => api.get('/finance/export/pdf', { responseType: 'blob' }),
+  exportPDF: (year?: number) => api.get('/finance/export/pdf', { responseType: 'blob', params: year ? { year } : {} }),
 };
 
 // ---- Documents ----
