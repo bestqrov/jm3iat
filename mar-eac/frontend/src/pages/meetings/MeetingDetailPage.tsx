@@ -23,6 +23,7 @@ export const MeetingDetailPage: React.FC = () => {
   const [voteSessionForm, setVoteSessionForm] = useState({ title: '', description: '' });
   const [voteForm, setVoteForm] = useState({ memberId: '', choice: 'YES' });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
@@ -49,22 +50,28 @@ export const MeetingDetailPage: React.FC = () => {
   const handleAddDecision = async () => {
     if (!id || !decisionForm.description) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await meetingsApi.addDecision(id, decisionForm);
       setShowDecisionModal(false);
       setDecisionForm({ description: '', assignedTo: '', dueDate: '' });
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
   const handleCreateVoteSession = async () => {
     if (!id || !voteSessionForm.title) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await votingApi.createSession(id, voteSessionForm);
       setShowVoteModal(false);
       setVoteSessionForm({ title: '', description: '' });
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
@@ -86,11 +93,14 @@ export const MeetingDetailPage: React.FC = () => {
   const handleAddAttendees = async () => {
     if (!id || !selectedMemberIds.length) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await meetingsApi.addAttendees(id, selectedMemberIds);
       setShowAddAttendeesModal(false);
       setSelectedMemberIds([]);
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
@@ -346,10 +356,11 @@ export const MeetingDetailPage: React.FC = () => {
       )}
 
       {/* Add Decision Modal */}
-      <Modal isOpen={showDecisionModal} onClose={() => setShowDecisionModal(false)} title={t('meetings.addDecision')}
-        footer={<><button onClick={() => setShowDecisionModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleAddDecision} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      <Modal isOpen={showDecisionModal} onClose={() => { setShowDecisionModal(false); setSaveError(null); }} title={t('meetings.addDecision')}
+        footer={<><button onClick={() => { setShowDecisionModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleAddDecision} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
         <div className="space-y-4">
+          {saveError && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
           <div>
             <label className="label">{t('common.description')} *</label>
             <textarea className="input" rows={3} value={decisionForm.description} onChange={(e) => setDecisionForm({ ...decisionForm, description: e.target.value })} />
@@ -368,10 +379,11 @@ export const MeetingDetailPage: React.FC = () => {
       </Modal>
 
       {/* Create Vote Session Modal */}
-      <Modal isOpen={showVoteModal} onClose={() => setShowVoteModal(false)} title={t('voting.createSession')}
-        footer={<><button onClick={() => setShowVoteModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleCreateVoteSession} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      <Modal isOpen={showVoteModal} onClose={() => { setShowVoteModal(false); setSaveError(null); }} title={t('voting.createSession')}
+        footer={<><button onClick={() => { setShowVoteModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleCreateVoteSession} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
         <div className="space-y-4">
+          {saveError && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
           <div>
             <label className="label">{t('voting.sessionTitle')} *</label>
             <input className="input" value={voteSessionForm.title} onChange={(e) => setVoteSessionForm({ ...voteSessionForm, title: e.target.value })} />
@@ -384,9 +396,10 @@ export const MeetingDetailPage: React.FC = () => {
       </Modal>
 
       {/* Add Attendees Modal */}
-      <Modal isOpen={showAddAttendeesModal} onClose={() => setShowAddAttendeesModal(false)} title={t('meetings.addAttendees')}
-        footer={<><button onClick={() => setShowAddAttendeesModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleAddAttendees} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.add')}</button></>}
+      <Modal isOpen={showAddAttendeesModal} onClose={() => { setShowAddAttendeesModal(false); setSaveError(null); }} title={t('meetings.addAttendees')}
+        footer={<><button onClick={() => { setShowAddAttendeesModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleAddAttendees} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.add')}</button></>}
       >
+        {saveError && <div className="p-3 mb-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
         {(() => {
           const available = allMembers.filter((m) => !meeting.attendances.some((a: any) => a.memberId === m.id));
           const boardAvail = available.filter((m) => BOARD_ROLES.includes(m.role));

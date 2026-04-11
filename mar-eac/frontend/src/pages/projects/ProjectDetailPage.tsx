@@ -20,6 +20,7 @@ export const ProjectDetailPage: React.FC = () => {
   const [showFundingModal, setShowFundingModal] = useState(false);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [fundingForm, setFundingForm] = useState({ source: 'COMMUNE', amount: '', donor: '', notes: '' });
   const [budgetForm, setBudgetForm] = useState({ totalBudget: '' });
 
@@ -44,21 +45,27 @@ export const ProjectDetailPage: React.FC = () => {
   const handleAddFunding = async () => {
     if (!id || !fundingForm.amount) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await fundingApi.addEntry(id, fundingForm);
       setShowFundingModal(false);
       setFundingForm({ source: 'COMMUNE', amount: '', donor: '', notes: '' });
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
   const handleUpdateBudget = async () => {
     if (!id || !budgetForm.totalBudget) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await fundingApi.updateBudget(id, parseFloat(budgetForm.totalBudget));
       setShowBudgetModal(false);
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
@@ -236,10 +243,11 @@ export const ProjectDetailPage: React.FC = () => {
       )}
 
       {/* Add Funding Modal */}
-      <Modal isOpen={showFundingModal} onClose={() => setShowFundingModal(false)} title={t('funding.addEntry')}
-        footer={<><button onClick={() => setShowFundingModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleAddFunding} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      <Modal isOpen={showFundingModal} onClose={() => { setShowFundingModal(false); setSaveError(null); }} title={t('funding.addEntry')}
+        footer={<><button onClick={() => { setShowFundingModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleAddFunding} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
         <div className="space-y-4">
+          {saveError && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">{t('funding.source')} *</label>
@@ -264,10 +272,11 @@ export const ProjectDetailPage: React.FC = () => {
       </Modal>
 
       {/* Update Budget Modal */}
-      <Modal isOpen={showBudgetModal} onClose={() => setShowBudgetModal(false)} title={t('funding.updateBudget')}
-        footer={<><button onClick={() => setShowBudgetModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleUpdateBudget} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      <Modal isOpen={showBudgetModal} onClose={() => { setShowBudgetModal(false); setSaveError(null); }} title={t('funding.updateBudget')}
+        footer={<><button onClick={() => { setShowBudgetModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleUpdateBudget} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
         <div>
+          {saveError && <div className="p-3 mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
           <label className="label">{t('projects.totalBudget')} (MAD) *</label>
           <input className="input" type="number" step="0.01" value={budgetForm.totalBudget} onChange={(e) => setBudgetForm({ totalBudget: e.target.value })} />
         </div>

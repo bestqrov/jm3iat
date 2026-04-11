@@ -23,6 +23,7 @@ export const RequestsPage: React.FC = () => {
   const [editReq, setEditReq] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({ title: '', type: 'COMMUNE', description: '', recipient: '', amount: '' });
   const [statusForm, setStatusForm] = useState({ status: 'PENDING', notes: '' });
@@ -43,11 +44,14 @@ export const RequestsPage: React.FC = () => {
   const handleCreate = async () => {
     if (!form.title) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await requestsApi.create(form);
       setShowModal(false);
       setForm({ title: '', type: 'COMMUNE', description: '', recipient: '', amount: '' });
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
@@ -60,10 +64,13 @@ export const RequestsPage: React.FC = () => {
   const handleStatusUpdate = async () => {
     if (!editReq) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await requestsApi.update(editReq.id, statusForm);
       setShowStatusModal(false);
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
@@ -144,10 +151,11 @@ export const RequestsPage: React.FC = () => {
       )}
 
       {/* Create Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={t('requests.createRequest')}
-        footer={<><button onClick={() => setShowModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleCreate} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      <Modal isOpen={showModal} onClose={() => { setShowModal(false); setSaveError(null); }} title={t('requests.createRequest')}
+        footer={<><button onClick={() => { setShowModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleCreate} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
         <div className="space-y-4">
+          {saveError && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
           <div>
             <label className="label">{t('requests.requestTitle')} *</label>
             <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
@@ -176,10 +184,11 @@ export const RequestsPage: React.FC = () => {
       </Modal>
 
       {/* Status Update Modal */}
-      <Modal isOpen={showStatusModal} onClose={() => setShowStatusModal(false)} title={t('requests.updateStatus')}
-        footer={<><button onClick={() => setShowStatusModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleStatusUpdate} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      <Modal isOpen={showStatusModal} onClose={() => { setShowStatusModal(false); setSaveError(null); }} title={t('requests.updateStatus')}
+        footer={<><button onClick={() => { setShowStatusModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleStatusUpdate} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
         <div className="space-y-4">
+          {saveError && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
           <div>
             <label className="label">{t('common.status')}</label>
             <select className="input" value={statusForm.status} onChange={(e) => setStatusForm({ ...statusForm, status: e.target.value })}>

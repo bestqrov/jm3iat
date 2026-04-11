@@ -18,6 +18,7 @@ export const SuperAdminPage: React.FC = () => {
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [deleteOrgId, setDeleteOrgId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [subForm, setSubForm] = useState({ plan: 'BASIC', status: 'ACTIVE', expiresAt: '' });
 
@@ -49,10 +50,13 @@ export const SuperAdminPage: React.FC = () => {
   const handleSubUpdate = async () => {
     if (!selectedOrg) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await superadminApi.updateSubscription(selectedOrg.id, subForm);
       setShowSubModal(false);
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
@@ -191,10 +195,11 @@ export const SuperAdminPage: React.FC = () => {
       )}
 
       {/* Subscription Modal */}
-      <Modal isOpen={showSubModal} onClose={() => setShowSubModal(false)} title={t('superadmin.manageSub')}
-        footer={<><button onClick={() => setShowSubModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleSubUpdate} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      <Modal isOpen={showSubModal} onClose={() => { setShowSubModal(false); setSaveError(null); }} title={t('superadmin.manageSub')}
+        footer={<><button onClick={() => { setShowSubModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleSubUpdate} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
         <div className="space-y-4">
+          {saveError && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
           {selectedOrg && <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{selectedOrg.name}</div>}
           <div>
             <label className="label">{lang === 'ar' ? 'الخطة' : 'Plan'}</label>

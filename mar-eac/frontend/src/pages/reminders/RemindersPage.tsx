@@ -18,6 +18,7 @@ export const RemindersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', message: '', type: 'CUSTOM' });
 
   const load = async () => {
@@ -47,11 +48,14 @@ export const RemindersPage: React.FC = () => {
   const handleCreate = async () => {
     if (!form.title) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await remindersApi.create({ ...form, scheduledFor: new Date().toISOString() });
       setShowModal(false);
       setForm({ title: '', message: '', type: 'CUSTOM' });
       load();
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally { setSaving(false); }
   };
 
@@ -117,10 +121,11 @@ export const RemindersPage: React.FC = () => {
         </div>
       )}
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={t('reminders.createReminder')}
-        footer={<><button onClick={() => setShowModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleCreate} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      <Modal isOpen={showModal} onClose={() => { setShowModal(false); setSaveError(null); }} title={t('reminders.createReminder')}
+        footer={<><button onClick={() => { setShowModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleCreate} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
         <div className="space-y-4">
+          {saveError && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
           <div>
             <label className="label">{lang === 'ar' ? 'العنوان' : 'Titre'} *</label>
             <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
