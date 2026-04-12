@@ -193,13 +193,13 @@ function drawTableHeader(doc, cols, y, isAr, fontBold, fontReg) {
     cols.forEach(({ label, w, align }) => {
       x -= w;
       doc.font(fontBold).fontSize(8.5).fillColor(COLORS.white)
-        .text(label, x + 3, y + 7, { width: w - 6, align: align || 'right', lineBreak: false });
+        .text(fitText(doc, label, w - 8), x + 3, y + 7, { width: w - 6, align: align || 'right', lineBreak: false });
     });
   } else {
     let x = MARGIN;
     cols.forEach(({ label, w, align }) => {
       doc.font(fontBold).fontSize(8.5).fillColor(COLORS.white)
-        .text(label, x + 3, y + 7, { width: w - 6, align: align || 'left', lineBreak: false });
+        .text(fitText(doc, label, w - 8), x + 3, y + 7, { width: w - 6, align: align || 'left', lineBreak: false });
       x += w;
     });
   }
@@ -215,18 +215,20 @@ function drawTableRow(doc, cols, values, y, stripe, isAr, fontReg) {
     cols.forEach(({ w, align }, i) => {
       x -= w;
       const raw = String(values[i] ?? '');
-      const val = fitText(doc, raw, w - 6);
       const color = values[`_color${i}`] || '#1e293b';
-      doc.font(fontReg).fontSize(8.5).fillColor(color)
+      doc.font(fontReg).fontSize(8.5); // set font BEFORE fitText so widthOfString is accurate
+      const val = fitText(doc, raw, w - 8);
+      doc.fillColor(color)
         .text(val, x + 3, y + 5, { width: w - 6, align: align || 'right', lineBreak: false });
     });
   } else {
     let x = MARGIN;
     cols.forEach(({ w, align }, i) => {
       const raw = String(values[i] ?? '');
-      const val = fitText(doc, raw, w - 6);
       const color = values[`_color${i}`] || '#1e293b';
-      doc.font(fontReg).fontSize(8.5).fillColor(color)
+      doc.font(fontReg).fontSize(8.5); // set font BEFORE fitText so widthOfString is accurate
+      const val = fitText(doc, raw, w - 8);
+      doc.fillColor(color)
         .text(val, x + 3, y + 5, { width: w - 6, align: align || 'left', lineBreak: false });
       x += w;
     });
@@ -258,7 +260,7 @@ function drawTotalRow(doc, cols, values, y, isAr, fontBold) {
 function sectionBar(doc, text, y, fontBold) {
   drawRect(doc, MARGIN, y, CONTENT_W, 26, BLUE_LIGHT, BLUE, 1);
   doc.font(fontBold).fontSize(10).fillColor(BLUE)
-    .text(text, MARGIN + 8, y + 8, { width: CONTENT_W - 16, align: 'center', lineBreak: false });
+    .text(fitText(doc, text, CONTENT_W - 24), MARGIN + 8, y + 8, { width: CONTENT_W - 16, align: 'center', lineBreak: false });
   return y + 32;
 }
 
@@ -316,6 +318,8 @@ async function generateFinancialPDF(req, res) {
 
   const fontReg = isAr ? 'AR' : 'Helvetica';
   const fontBold = isAr ? 'AR-Bold' : 'Helvetica-Bold';
+  const fontAlt = isAr ? 'Helvetica' : 'AR';       // opposite-language font for bilingual content
+  const fontAltBold = isAr ? 'Helvetica-Bold' : 'AR-Bold';
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="rapport_financier_${year}.pdf"`);
@@ -327,9 +331,9 @@ async function generateFinancialPDF(req, res) {
 
   // Association name box
   drawRect(doc, nameBoxX, 40, 240, 80, null, BLUE, 2);
-  const nameSize = (org.name || '').length > 25 ? 11 : (org.name || '').length > 15 ? 14 : 17;
+  const nameSize = (org.name || '').length > 25 ? 10 : (org.name || '').length > 15 ? 13 : 16;
   doc.font(fontBold).fontSize(nameSize).fillColor(BLUE)
-    .text(org.name || 'Association', nameBoxX + 5, 62, { width: 230, align: 'center', lineBreak: false });
+    .text(fitText(doc, org.name || 'Association', 222), nameBoxX + 5, 62, { width: 230, align: 'center', lineBreak: false });
 
   // Logo box
   drawRect(doc, logoBoxX, 40, 110, 80, null, BLUE, 1);
@@ -338,21 +342,22 @@ async function generateFinancialPDF(req, res) {
     .text(t.logo, logoBoxX + 5, 68, { width: 100, align: 'center', lineBreak: false });
 
   // Center rounded title box
-  doc.roundedRect(65, 168, PAGE_W - 130, 165, 10).strokeColor(BLUE).lineWidth(1.5).stroke();
+  const titleBoxW = PAGE_W - 130;
+  doc.roundedRect(65, 168, titleBoxW, 165, 10).strokeColor(BLUE).lineWidth(1.5).stroke();
   doc.font(fontBold).fontSize(22).fillColor(BLUE)
-    .text(t.cover_title, 65, 192, { width: PAGE_W - 130, align: 'center', lineBreak: false });
-  doc.font(isAr ? 'Helvetica' : 'AR').fontSize(14).fillColor('#374151')
-    .text(t.cover_sub, 65, 228, { width: PAGE_W - 130, align: 'center', lineBreak: false });
+    .text(fitText(doc, t.cover_title, titleBoxW - 20), 65, 192, { width: titleBoxW, align: 'center', lineBreak: false });
+  doc.font(fontAlt).fontSize(14).fillColor('#374151')
+    .text(fitText(doc, t.cover_sub, titleBoxW - 20), 65, 228, { width: titleBoxW, align: 'center', lineBreak: false });
   doc.font(fontBold).fontSize(13).fillColor(BLUE)
-    .text(`${t.exercise} ${year}`, 65, 264, { width: PAGE_W - 130, align: 'center', lineBreak: false });
+    .text(fitText(doc, `${t.exercise} ${year}`, titleBoxW - 20), 65, 264, { width: titleBoxW, align: 'center', lineBreak: false });
   doc.font(fontReg).fontSize(10).fillColor('#6b7280')
-    .text(`01/01/${year}  —  31/12/${year}`, 65, 296, { width: PAGE_W - 130, align: 'center', lineBreak: false });
+    .text(`01/01/${year}  —  31/12/${year}`, 65, 296, { width: titleBoxW, align: 'center', lineBreak: false });
 
   doc.font(fontBold).fontSize(13).fillColor('#374151')
-    .text(org.name || '', MARGIN, 380, { width: CONTENT_W, align: 'center', lineBreak: false });
+    .text(fitText(doc, org.name || '', CONTENT_W - 20), MARGIN, 380, { width: CONTENT_W, align: 'center', lineBreak: false });
   if (org.city) {
     doc.font(fontReg).fontSize(11).fillColor('#6b7280')
-      .text(org.city, MARGIN, 400, { width: CONTENT_W, align: 'center', lineBreak: false });
+      .text(fitText(doc, org.city, CONTENT_W - 20), MARGIN, 400, { width: CONTENT_W, align: 'center', lineBreak: false });
   }
 
   // ── PAGE 2: INFO TABLE + SUMMARY CARDS ────────────────────────────────────────
@@ -398,9 +403,12 @@ async function generateFinancialPDF(req, res) {
     const cx = MARGIN + i * (cardW + 8);
     drawRect(doc, cx, cy, cardW, 68, bg, border);
     const align = isAr ? 'right' : 'left';
-    doc.font(fontBold).fontSize(9).fillColor(COLORS.neutral).text(label, cx + 8, cy + 10, { width: cardW - 16, align, lineBreak: false });
-    doc.font(fontReg).fontSize(8).fillColor(COLORS.neutral).text(sub, cx + 8, cy + 22, { width: cardW - 16, align, lineBreak: false });
-    doc.font(fontBold).fontSize(13).fillColor(color).text(value, cx + 8, cy + 38, { width: cardW - 16, align, lineBreak: false });
+    doc.font(fontBold).fontSize(9).fillColor(COLORS.neutral)
+      .text(fitText(doc, label, cardW - 20), cx + 8, cy + 10, { width: cardW - 16, align, lineBreak: false });
+    doc.font(fontAlt).fontSize(8).fillColor(COLORS.neutral)  // fontAlt: sub is always the other language
+      .text(fitText(doc, sub, cardW - 20), cx + 8, cy + 22, { width: cardW - 16, align, lineBreak: false });
+    doc.font(fontBold).fontSize(13).fillColor(color)
+      .text(fitText(doc, value, cardW - 20), cx + 8, cy + 38, { width: cardW - 16, align, lineBreak: false });
   });
   cy += 80;
 
@@ -409,7 +417,7 @@ async function generateFinancialPDF(req, res) {
   cy += 5;
   drawRect(doc, MARGIN, cy, CONTENT_W, 28, '#d1fae5', COLORS.income, 1);
   doc.font(fontBold).fontSize(10).fillColor(COLORS.income)
-    .text(`${t.income_table}  (${incomeList.length} ${t.operations})`, MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
+    .text(fitText(doc, `${t.income_table}  (${incomeList.length} ${t.operations})`, CONTENT_W - 24), MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
   cy += 28;
 
   const w1 = 60, w2 = 80, w3 = 95, w4 = 90, w5 = 75;
@@ -483,7 +491,7 @@ async function generateFinancialPDF(req, res) {
 
     drawRect(doc, MARGIN, cy, CONTENT_W, 28, BLUE_LIGHT, BLUE, 1);
     doc.font(fontBold).fontSize(9.5).fillColor(BLUE)
-      .text(`${t.expense_detail} — ${cat}`, MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
+      .text(fitText(doc, `${t.expense_detail} — ${cat}`, CONTENT_W - 24), MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
     cy += 28;
 
     cy = drawTableHeader(doc, detCols, cy, isAr, fontBold, fontReg);
@@ -556,7 +564,7 @@ async function generateFinancialPDF(req, res) {
 
   drawRect(doc, MARGIN, cy, CONTENT_W, 28, BLUE);
   doc.font(fontBold).fontSize(12).fillColor(COLORS.white)
-    .text(t.register, MARGIN + 6, cy + 8, { width: CONTENT_W - 12, align: 'center', lineBreak: false });
+    .text(fitText(doc, t.register, CONTENT_W - 20), MARGIN + 6, cy + 8, { width: CONTENT_W - 12, align: 'center', lineBreak: false });
   cy += 28;
 
   // Meta row
@@ -568,14 +576,14 @@ async function generateFinancialPDF(req, res) {
     doc.font(fontBold).fontSize(9).fillColor('#1e293b')
       .text(`${t.init_balance} : ${fmt(totalIncome)} MAD`, MARGIN + 6, cy + 17, { width: mw - 12, align: 'left', lineBreak: false });
     doc.font(fontBold).fontSize(8).fillColor(BLUE)
-      .text(t.assoc_name + ' :', MARGIN + mw + 6, cy + 6, { width: mw - 12, align: 'right', lineBreak: false });
+      .text(fitText(doc, t.assoc_name + ' :', mw - 18), MARGIN + mw + 6, cy + 6, { width: mw - 12, align: 'right', lineBreak: false });
     doc.font(fontBold).fontSize(9).fillColor('#1e293b')
-      .text(org.name || '-', MARGIN + mw + 6, cy + 17, { width: mw - 12, align: 'right', lineBreak: false });
+      .text(fitText(doc, org.name || '-', mw - 18), MARGIN + mw + 6, cy + 17, { width: mw - 12, align: 'right', lineBreak: false });
   } else {
     doc.font(fontBold).fontSize(8).fillColor(BLUE)
       .text(`${t.assoc_name} :`, MARGIN + 6, cy + 6, { width: mw - 12, lineBreak: false });
     doc.font(fontBold).fontSize(9).fillColor('#1e293b')
-      .text(org.name || '-', MARGIN + 6, cy + 17, { width: mw - 12, lineBreak: false });
+      .text(fitText(doc, org.name || '-', mw - 18), MARGIN + 6, cy + 17, { width: mw - 12, lineBreak: false });
     doc.font(fontBold).fontSize(8).fillColor(BLUE)
       .text(`${t.period} : ${year}`, MARGIN + mw + 6, cy + 6, { width: mw - 12, align: 'right', lineBreak: false });
     doc.font(fontBold).fontSize(9).fillColor('#1e293b')
@@ -659,14 +667,14 @@ async function generateFinancialPDF(req, res) {
     const sx = MARGIN + i * (sigW + 8);
     drawRect(doc, sx, cy, sigW, 100, BLUE_LIGHT, BLUE);
     doc.font(fontBold).fontSize(8.5).fillColor(BLUE)
-      .text(title, sx + 5, cy + 10, { width: sigW - 10, align: 'center', lineBreak: false });
+      .text(fitText(doc, title, sigW - 16), sx + 5, cy + 10, { width: sigW - 10, align: 'center', lineBreak: false });
     if (role) {
       doc.font(fontReg).fontSize(8).fillColor('#6b7280')
-        .text(role, sx + 5, cy + 26, { width: sigW - 10, align: 'center', lineBreak: false });
+        .text(fitText(doc, role, sigW - 16), sx + 5, cy + 26, { width: sigW - 10, align: 'center', lineBreak: false });
     }
     drawRect(doc, sx + 10, cy + 48, sigW - 20, 42, '#ffffff', '#94a3b8');
     doc.font(fontReg).fontSize(7.5).fillColor('#9ca3af')
-      .text(t.sign_cachet, sx + 10, cy + 78, { width: sigW - 20, align: 'center', lineBreak: false });
+      .text(fitText(doc, t.sign_cachet, sigW - 24), sx + 10, cy + 78, { width: sigW - 20, align: 'center', lineBreak: false });
   });
 
   // ── FOOTERS ───────────────────────────────────────────────────────────────────
