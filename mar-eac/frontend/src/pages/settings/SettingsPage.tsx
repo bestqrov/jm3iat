@@ -1,5 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera } from 'lucide-react';
+
+const MOROCCO_REGIONS = [
+  { fr: 'Tanger-Tétouan-Al Hoceïma',       ar: 'طنجة-تطوان-الحسيمة' },
+  { fr: 'Oriental',                          ar: 'الشرق' },
+  { fr: 'Fès-Meknès',                        ar: 'فاس-مكناس' },
+  { fr: 'Rabat-Salé-Kénitra',               ar: 'الرباط-سلا-القنيطرة' },
+  { fr: 'Béni Mellal-Khénifra',             ar: 'بني ملال-خنيفرة' },
+  { fr: 'Casablanca-Settat',                ar: 'الدار البيضاء-سطات' },
+  { fr: 'Marrakech-Safi',                   ar: 'مراكش-آسفي' },
+  { fr: 'Drâa-Tafilalet',                   ar: 'درعة-تافيلالت' },
+  { fr: 'Souss-Massa',                      ar: 'سوس-ماسة' },
+  { fr: 'Guelmim-Oued Noun',                ar: 'كلميم-واد نون' },
+  { fr: 'Laâyoune-Sakia El Hamra',          ar: 'العيون-الساقية الحمراء' },
+  { fr: 'Dakhla-Oued Ed-Dahab',             ar: 'الداخلة-وادي الذهب' },
+];
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -210,7 +225,19 @@ export const SettingsPage: React.FC = () => {
             </div>
             <div>
               <label className="label">{t('auth.orgRegion')}</label>
-              <input className="input" value={orgForm.region} onChange={(e) => setOrgForm({ ...orgForm, region: e.target.value })} />
+              <select
+                className="input"
+                value={orgForm.region}
+                onChange={(e) => setOrgForm({ ...orgForm, region: e.target.value })}
+                dir={lang === 'ar' ? 'rtl' : 'ltr'}
+              >
+                <option value="">{lang === 'ar' ? '— اختر الجهة —' : '— Choisir la région —'}</option>
+                {MOROCCO_REGIONS.map((r) => (
+                  <option key={r.fr} value={lang === 'ar' ? r.ar : r.fr}>
+                    {lang === 'ar' ? r.ar : r.fr}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div>
