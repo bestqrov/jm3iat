@@ -10,7 +10,10 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Toast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
 
-const CATEGORIES = ['اشتراكات/Cotisations', 'تبرعات/Dons', 'منح/Subventions', 'لوازم/Fournitures', 'نقل/Transport', 'أخرى/Autre'];
+const CATEGORIES = {
+  fr: ['Cotisations', 'Dons', 'Subventions', 'Fournitures de bureau', 'Transport', 'Salaires', 'Loyer', 'Communication', 'Formation', 'Autres'],
+  ar: ['اشتراكات', 'تبرعات', 'منح', 'لوازم مكتبية', 'نقل', 'رواتب', 'إيجار', 'تواصل', 'تكوين', 'أخرى'],
+};
 
 export const FinancePage: React.FC = () => {
   const { t, lang } = useLanguage();
@@ -231,7 +234,7 @@ export const FinancePage: React.FC = () => {
             <div>
               <label className="label">{t('finance.category')} *</label>
               <input className="input" list="categories" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-              <datalist id="categories">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
+              <datalist id="categories">{CATEGORIES[lang].map((c) => <option key={c} value={c} />)}</datalist>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

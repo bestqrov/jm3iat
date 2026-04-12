@@ -135,6 +135,36 @@ const T = {
   },
 };
 
+// ── Category bilingual mapping ─────────────────────────────────────────────────
+const CAT_MAP = [
+  { fr: 'Cotisations',        ar: 'اشتراكات' },
+  { fr: 'Dons',               ar: 'تبرعات' },
+  { fr: 'Subventions',        ar: 'منح' },
+  { fr: 'Fournitures de bureau', ar: 'لوازم مكتبية' },
+  { fr: 'Fournitures',        ar: 'لوازم مكتبية' },
+  { fr: 'Transport',          ar: 'نقل' },
+  { fr: 'Salaires',           ar: 'رواتب' },
+  { fr: 'Loyer',              ar: 'إيجار' },
+  { fr: 'Communication',      ar: 'تواصل' },
+  { fr: 'Formation',          ar: 'تكوين' },
+  { fr: 'Autres',             ar: 'أخرى' },
+  { fr: 'Autre',              ar: 'أخرى' },
+];
+
+function translateCategory(cat, isAr) {
+  if (!cat) return isAr ? 'أخرى' : 'Autres';
+  // Legacy combined format "اشتراكات/Cotisations"
+  if (cat.includes('/')) {
+    const parts = cat.split('/');
+    return isAr ? parts[0] : parts[1];
+  }
+  for (const m of CAT_MAP) {
+    if (cat === m.fr) return isAr ? m.ar : m.fr;
+    if (cat === m.ar) return isAr ? m.ar : m.fr;
+  }
+  return cat; // unknown category — return as stored
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 const fmt = (n) =>
@@ -440,7 +470,7 @@ async function generateFinancialPDF(req, res) {
   } else {
     incomeList.forEach((tx, i) => {
       cy = checkNewPage(doc, cy, 25);
-      const nature = tx.category || '-';
+      const nature = translateCategory(tx.category, isAr);
       const obs = tx.description || '-';
       const row = isAr
         ? [obs, tx.reference || '-', getPaymentMode(tx.reference, true),  fmt(tx.amount), fmtDate(tx.date), nature]
@@ -473,7 +503,7 @@ async function generateFinancialPDF(req, res) {
   } else {
     expenseList.forEach((tx, i) => {
       cy = checkNewPage(doc, cy, 25);
-      const nature = tx.category || '-';
+      const nature = translateCategory(tx.category, isAr);
       const obs = tx.description || '-';
       const row = isAr
         ? [obs, tx.reference || '-', getPaymentMode(tx.reference, true),  fmt(tx.amount), fmtDate(tx.date), nature]
