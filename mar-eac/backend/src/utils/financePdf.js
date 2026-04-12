@@ -49,9 +49,9 @@ const T = {
     balance_sub: 'الرصيد',
     income_detail: 'Tableau détaillé des Recettes',
     expense_detail: 'Tableau détaillé des Dépenses',
-    nature: 'Nature des dépenses',
-    date_inv: 'Date facture',
-    amount: 'Montant (MAD)',
+    nature: 'Nature',
+    date_inv: 'Date',
+    amount: 'Montant',
     pay_mode: 'Mode paiement',
     doc_ref: 'N° Document',
     obs: 'Observations',
@@ -101,9 +101,9 @@ const T = {
     balance_sub: 'Solde net',
     income_detail: 'الجدول التفصيلي للإيرادات',
     expense_detail: 'الجدول التفصيلي للمصاريف',
-    nature: 'طبيعة المصاريف',
-    date_inv: 'تاريخ الفاتورة',
-    amount: 'المصاريف بالدرهم',
+    nature: 'الطبيعة',
+    date_inv: 'التاريخ',
+    amount: 'المبلغ',
     pay_mode: 'طريقة الأداء',
     doc_ref: 'وثيقة الأداء',
     obs: 'ملاحظات',
@@ -237,30 +237,53 @@ function drawTableHeader(doc, cols, y, isAr, fontBold, fontReg) {
   return y + rowH;
 }
 
+// Compute actual row height — wrap:true columns drive the height
+function calcRowH(doc, cols, values, fontReg) {
+  const PAD = 5;
+  let rowH = 22;
+  doc.font(fontReg).fontSize(8.5);
+  cols.forEach(({ w, wrap }, i) => {
+    if (!wrap) return;
+    const text = String(values[i] ?? '');
+    if (!text || text === '-') return;
+    rowH = Math.max(rowH, doc.heightOfString(text, { width: w - 8 }) + PAD * 2);
+  });
+  return rowH;
+}
+
 function drawTableRow(doc, cols, values, y, stripe, isAr, fontReg) {
-  const rowH = 20;
+  const PAD = 5;
+  const rowH = calcRowH(doc, cols, values, fontReg);
+
   if (stripe) drawRect(doc, MARGIN, y, CONTENT_W, rowH, '#f0f4ff');
   drawRect(doc, MARGIN, y, CONTENT_W, rowH, null, COLORS.border);
+
   if (isAr) {
     let x = MARGIN + CONTENT_W;
-    cols.forEach(({ w, align }, i) => {
+    cols.forEach(({ w, align, wrap }, i) => {
       x -= w;
       const raw = String(values[i] ?? '');
       const color = values[`_color${i}`] || '#1e293b';
-      doc.font(fontReg).fontSize(8.5); // set font BEFORE fitText so widthOfString is accurate
-      const val = fitText(doc, raw, w - 8);
-      doc.fillColor(color)
-        .text(val, x + 3, y + 5, { width: w - 6, align: align || 'right', lineBreak: false });
+      doc.font(fontReg).fontSize(8.5).fillColor(color);
+      if (wrap) {
+        doc.text(raw || '-', x + 4, y + PAD, { width: w - 8, align: align || 'right', lineBreak: true });
+      } else {
+        const val = fitText(doc, raw, w - 8);
+        doc.text(val, x + 4, y + PAD, { width: w - 6, align: align || 'right', lineBreak: false });
+      }
     });
   } else {
     let x = MARGIN;
-    cols.forEach(({ w, align }, i) => {
+    cols.forEach(({ w, align, wrap }, i) => {
       const raw = String(values[i] ?? '');
       const color = values[`_color${i}`] || '#1e293b';
-      doc.font(fontReg).fontSize(8.5); // set font BEFORE fitText so widthOfString is accurate
-      const val = fitText(doc, raw, w - 8);
-      doc.fillColor(color)
-        .text(val, x + 3, y + 5, { width: w - 6, align: align || 'left', lineBreak: false });
+      doc.font(fontReg).fontSize(8.5).fillColor(color);
+      if (wrap) {
+        doc.text(raw || '-', x + 4, y + PAD, { width: w - 8, align: align || 'left', lineBreak: true });
+      } else {
+        const val = fitText(doc, raw, w - 8);
+        doc.text(val, x + 4, y + PAD, { width: w - 6, align: align || 'left', lineBreak: false });
+      }
       x += w;
     });
   }
@@ -432,11 +455,13 @@ async function generateFinancialPDF(req, res) {
   cy += infoRows.length * 28 + 28;
 
   // ── SHARED COLUMN LAYOUT ──────────────────────────────────────────────────────
-  const cW1 = 60, cW2 = 80, cW3 = 95, cW4 = 90, cW5 = 75;
-  const cW0 = CONTENT_W - cW1 - cW2 - cW3 - cW4 - cW5;
+  // cW0=Nature  cW1=Date  cW2=Montant  cW3=Mode  cW4=Réf  cW5=Observations(wrap)
+  const cW1 = 52, cW2 = 62, cW3 = 82, cW4 = 62;
+  const cW5 = 130; // observations — wide, wraps freely
+  const cW0 = CONTENT_W - cW1 - cW2 - cW3 - cW4 - cW5; // Nature gets the rest (~131)
   const txCols = isAr
     ? [
-        { label: t.obs,      w: cW5 },
+        { label: t.obs,      w: cW5, wrap: true },
         { label: t.doc_ref,  w: cW4 },
         { label: t.pay_mode, w: cW3, align: 'right' },
         { label: t.amount,   w: cW2, align: 'right' },
@@ -449,7 +474,7 @@ async function generateFinancialPDF(req, res) {
         { label: t.amount,   w: cW2, align: 'right' },
         { label: t.pay_mode, w: cW3 },
         { label: t.doc_ref,  w: cW4 },
-        { label: t.obs,      w: cW5 },
+        { label: t.obs,      w: cW5, wrap: true },
       ];
 
   // ── TABLEAU DÉTAILLÉ DES RECETTES ─────────────────────────────────────────────
@@ -469,13 +494,13 @@ async function generateFinancialPDF(req, res) {
     cy += 22;
   } else {
     incomeList.forEach((tx, i) => {
-      cy = checkNewPage(doc, cy, 25);
       const nature = translateCategory(tx.category, isAr);
       const obs = tx.description || '-';
       const row = isAr
         ? [obs, tx.reference || '-', getPaymentMode(tx.reference, true),  fmt(tx.amount), fmtDate(tx.date), nature]
         : [nature, fmtDate(tx.date), fmt(tx.amount), getPaymentMode(tx.reference, false), tx.reference || '-', obs];
       row[isAr ? '_color3' : '_color2'] = COLORS.income;
+      cy = checkNewPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
       cy = drawTableRow(doc, txCols, row, cy, i % 2 === 1, isAr, fontReg);
     });
   }
@@ -502,13 +527,13 @@ async function generateFinancialPDF(req, res) {
     cy += 22;
   } else {
     expenseList.forEach((tx, i) => {
-      cy = checkNewPage(doc, cy, 25);
       const nature = translateCategory(tx.category, isAr);
       const obs = tx.description || '-';
       const row = isAr
         ? [obs, tx.reference || '-', getPaymentMode(tx.reference, true),  fmt(tx.amount), fmtDate(tx.date), nature]
         : [nature, fmtDate(tx.date), fmt(tx.amount), getPaymentMode(tx.reference, false), tx.reference || '-', obs];
       row[isAr ? '_color3' : '_color2'] = COLORS.expense;
+      cy = checkNewPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
       cy = drawTableRow(doc, txCols, row, cy, i % 2 === 1, isAr, fontReg);
     });
   }
