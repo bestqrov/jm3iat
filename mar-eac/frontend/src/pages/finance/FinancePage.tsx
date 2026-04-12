@@ -12,8 +12,47 @@ import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
 
 const CATEGORIES = {
   fr: ['Cotisations', 'Dons', 'Subventions', 'Fournitures de bureau', 'Transport', 'Salaires', 'Loyer', 'Communication', 'Formation', 'Autres'],
-  ar: ['اشتراكات', 'تبرعات', 'منح', 'لوازم مكتبية', 'نقل', 'رواتب', 'إيجار', 'تواصل', 'تكوين', 'أخرى'],
+  ar: ['اشتراكات', 'تبرعات', 'منح', 'فواتير','لوازم مكتبية', 'نقل', 'رواتب', 'إيجار', 'تواصل', 'تكوين', 'أخرى'],
 };
+
+const PAYMENT_METHODS = {
+  fr: [
+    { value: 'especes', label: 'Espèces' },
+    { value: 'virement', label: 'Virement bancaire' },
+    { value: 'cheque', label: 'Chèque' },
+    { value: 'poste', label: 'Poste Maroc' },
+    { value: 'autre', label: 'Autre' },
+  ],
+  ar: [
+    { value: 'especes', label: 'نقداً' },
+    { value: 'virement', label: 'تحويل بنكي' },
+    { value: 'cheque', label: 'شيك' },
+    { value: 'poste', label: 'بريد المغرب' },
+    { value: 'autre', label: 'أخرى' },
+  ],
+};
+
+const BANKS = ['Chaabi', 'Attijariwafa', 'CIH', 'BMCE', 'Poste Maroc', 'Autre'];
+
+function buildReference(paymentMethod: string, bankName: string): string {
+  if (paymentMethod === 'virement') return bankName ? `Virement - ${bankName}` : 'Virement bancaire';
+  if (paymentMethod === 'cheque')   return bankName ? `Chèque - ${bankName}` : 'Chèque';
+  if (paymentMethod === 'poste')    return 'Poste Maroc';
+  if (paymentMethod === 'especes')  return 'Espèces';
+  return 'Autre';
+}
+
+function parsePaymentMethod(ref: string): { paymentMethod: string; bankName: string } {
+  if (!ref) return { paymentMethod: 'especes', bankName: '' };
+  const r = ref.toLowerCase();
+  const bankMatch = BANKS.find((b) => r.includes(b.toLowerCase()));
+  const bankName = bankMatch || '';
+  if (r.includes('virement') || r.includes('transfert') || r.includes('تحويل')) return { paymentMethod: 'virement', bankName };
+  if (r.includes('cheque') || r.includes('chèque') || r.includes('شيك'))         return { paymentMethod: 'cheque', bankName };
+  if (r.includes('poste'))  return { paymentMethod: 'poste', bankName: '' };
+  if (r.includes('espece') || r.includes('caisse') || r.includes('نقد'))         return { paymentMethod: 'especes', bankName: '' };
+  return { paymentMethod: 'autre', bankName: '' };
+}
 
 export const FinancePage: React.FC = () => {
   const { t, lang } = useLanguage();
@@ -30,9 +69,9 @@ export const FinancePage: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [exportYear, setExportYear] = useState(new Date().getFullYear());
-  const [form, setForm] = useState({ type: 'INCOME', amount: '', category: '', description: '', date: '', reference: '' });
+  const [form, setForm] = useState({ type: 'INCOME', amount: '', category: '', description: '', date: '', paymentMethod: 'especes', bankName: '' });
 
-  const emptyForm = { type: 'INCOME', amount: '', category: '', description: '', date: new Date().toISOString().split('T')[0], reference: '' };
+  const emptyForm = { type: 'INCOME', amount: '', category: '', description: '', date: new Date().toISOString().split('T')[0], paymentMethod: 'especes', bankName: '' };
 
   const load = async () => {
     try {
@@ -59,7 +98,8 @@ export const FinancePage: React.FC = () => {
   const openEdit = (tx: any) => {
     setEditTx(tx);
     setSaveError(null);
-    setForm({ type: tx.type, amount: tx.amount.toString(), category: tx.category, description: tx.description || '', date: tx.date?.split('T')[0] || '', reference: tx.reference || '' });
+    const { paymentMethod, bankName } = parsePaymentMethod(tx.reference || '');
+    setForm({ type: tx.type, amount: tx.amount.toString(), category: tx.category, description: tx.description || '', date: tx.date?.split('T')[0] || '', paymentMethod, bankName });
     setShowModal(true);
   };
 
@@ -68,10 +108,11 @@ export const FinancePage: React.FC = () => {
     setSaving(true);
     setSaveError(null);
     try {
+      const payload = { ...form, reference: buildReference(form.paymentMethod, form.bankName) };
       if (editTx) {
-        await financeApi.update(editTx.id, form);
+        await financeApi.update(editTx.id, payload);
       } else {
-        await financeApi.create(form);
+        await financeApi.create(payload);
       }
       setShowModal(false);
       setForm(emptyForm);
@@ -244,10 +285,41 @@ export const FinancePage: React.FC = () => {
               <input className="input" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
             </div>
             <div>
-              <label className="label">{t('finance.reference')}</label>
-              <input className="input" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+              <label className="label">{lang === 'ar' ? 'طريقة الأداء' : 'Mode de paiement'}</label>
+              <select
+                className="input"
+                value={form.paymentMethod}
+                onChange={(e) => setForm({ ...form, paymentMethod: e.target.value, bankName: '' })}
+                dir={lang === 'ar' ? 'rtl' : 'ltr'}
+              >
+                {PAYMENT_METHODS[lang].map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
             </div>
           </div>
+
+          {(form.paymentMethod === 'virement' || form.paymentMethod === 'cheque') && (
+            <div>
+              <label className="label">{lang === 'ar' ? 'اسم البنك' : 'Nom de la banque'}</label>
+              <div className="flex flex-wrap gap-2">
+                {BANKS.map((bank) => (
+                  <button
+                    key={bank}
+                    type="button"
+                    onClick={() => setForm({ ...form, bankName: bank })}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                      form.bankName === bank
+                        ? 'bg-primary-600 border-primary-600 text-white'
+                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
+                    }`}
+                  >
+                    {bank}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <label className="label">{t('finance.description')}</label>
             <textarea className="input" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
