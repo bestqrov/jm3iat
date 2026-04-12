@@ -88,6 +88,11 @@ export const financeApi = {
   getMonthly: (year?: number) => api.get('/finance/monthly', { params: { year } }),
   getCategories: () => api.get('/finance/categories'),
   exportPDF: (year?: number, lang?: string) => api.get('/finance/export/pdf', { responseType: 'blob', params: { ...(year ? { year } : {}), ...(lang ? { lang } : {}) } }),
+  uploadReceipt: (id: string, file: File) => {
+    const fd = new FormData();
+    fd.append('receipt', file);
+    return api.post(`/finance/${id}/receipt`, fd);
+  },
 };
 
 // ---- Documents ----

@@ -3,6 +3,7 @@ const ctrl = require('./finance.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
 const { requirePlan } = require('../../middleware/subscription');
+const upload = require('../../utils/multer');
 
 router.use(auth, tenant, requirePlan('STANDARD'));
 
@@ -15,5 +16,6 @@ router.get('/:id', ctrl.getById);
 router.post('/', ctrl.create);
 router.put('/:id', ctrl.update);
 router.delete('/:id', ctrl.remove);
+router.post('/:id/receipt', upload.single('receipt'), ctrl.uploadReceipt);
 
 module.exports = router;

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, TrendingUp, TrendingDown, Wallet, Download, Pencil, Trash2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Plus, TrendingUp, TrendingDown, Wallet, Download, Pencil, Trash2, Paperclip, ExternalLink } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { financeApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -11,7 +11,7 @@ import { Toast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
 
 const CATEGORIES = {
-  fr: ['Cotisations', 'Dons', 'Subventions', 'Fournitures de bureau', 'Transport', 'Salaires', 'Loyer', 'Communication', 'Formation', 'Autres'],
+  fr: ['Cotisations', 'Dons', 'Subventions', 'Factures','Fournitures de bureau', 'Transport', 'Salaires', 'Loyer', 'Communication', 'Formation', 'Autres'],
   ar: ['اشتراكات', 'تبرعات', 'منح', 'فواتير','لوازم مكتبية', 'نقل', 'رواتب', 'إيجار', 'تواصل', 'تكوين', 'أخرى'],
 };
 
@@ -69,9 +69,14 @@ export const FinancePage: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [exportYear, setExportYear] = useState(new Date().getFullYear());
-  const [form, setForm] = useState({ type: 'INCOME', amount: '', category: '', description: '', date: '', paymentMethod: 'especes', bankName: '' });
+  const [form, setForm] = useState({ type: 'INCOME', amount: '', category: '', description: '', date: '', paymentMethod: 'especes', bankName: '', docRef: '' });
+  const [savedTxId, setSavedTxId] = useState<string | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
 
-  const emptyForm = { type: 'INCOME', amount: '', category: '', description: '', date: new Date().toISOString().split('T')[0], paymentMethod: 'especes', bankName: '' };
+  const emptyForm = { type: 'INCOME', amount: '', category: '', description: '', date: new Date().toISOString().split('T')[0], paymentMethod: 'especes', bankName: '', docRef: '' };
 
   const load = async () => {
     try {
@@ -88,10 +93,17 @@ export const FinancePage: React.FC = () => {
 
   useEffect(() => { setLoading(true); load(); }, [typeFilter]);
 
+  const resetReceiptState = () => {
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    setSavedTxId(null);
+  };
+
   const openAdd = () => {
     setEditTx(null);
     setSaveError(null);
     setForm(emptyForm);
+    resetReceiptState();
     setShowModal(true);
   };
 
@@ -99,7 +111,10 @@ export const FinancePage: React.FC = () => {
     setEditTx(tx);
     setSaveError(null);
     const { paymentMethod, bankName } = parsePaymentMethod(tx.reference || '');
-    setForm({ type: tx.type, amount: tx.amount.toString(), category: tx.category, description: tx.description || '', date: tx.date?.split('T')[0] || '', paymentMethod, bankName });
+    setForm({ type: tx.type, amount: tx.amount.toString(), category: tx.category, description: tx.description || '', date: tx.date?.split('T')[0] || '', paymentMethod, bankName, docRef: tx.docRef || '' });
+    setReceiptFile(null);
+    setReceiptPreview(tx.receiptUrl || null);
+    setSavedTxId(tx.id);
     setShowModal(true);
   };
 
@@ -109,14 +124,24 @@ export const FinancePage: React.FC = () => {
     setSaveError(null);
     try {
       const payload = { ...form, reference: buildReference(form.paymentMethod, form.bankName) };
+      let txId: string;
       if (editTx) {
         await financeApi.update(editTx.id, payload);
+        txId = editTx.id;
       } else {
-        await financeApi.create(payload);
+        const res = await financeApi.create(payload);
+        txId = res.data.id;
+      }
+      // Upload receipt file if selected
+      if (receiptFile) {
+        setUploadingReceipt(true);
+        try { await financeApi.uploadReceipt(txId, receiptFile); } catch {}
+        setUploadingReceipt(false);
       }
       setShowModal(false);
       setForm(emptyForm);
       setEditTx(null);
+      resetReceiptState();
       load();
       setToast({ message: lang === 'ar' ? 'تم الحفظ بنجاح ✓' : 'Enregistré avec succès ✓', type: 'success' });
     } catch (err: any) {
@@ -232,7 +257,13 @@ export const FinancePage: React.FC = () => {
                       {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount, lang)}
                     </td>
                     <td>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
+                        {tx.receiptUrl && (
+                          <a href={tx.receiptUrl} target="_blank" rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" title={lang === 'ar' ? 'عرض الوثيقة' : 'Voir la pièce'}>
+                            <Paperclip size={14} />
+                          </a>
+                        )}
                         <button onClick={() => openEdit(tx)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20"><Pencil size={14} /></button>
                         <button onClick={() => setDeleteId(tx.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
                       </div>
@@ -320,9 +351,67 @@ export const FinancePage: React.FC = () => {
               </div>
             </div>
           )}
+          {/* N° référence + description */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">{lang === 'ar' ? 'رقم الوثيقة / الشيك' : 'N° Chèque / Reçu'}</label>
+              <input
+                className="input"
+                placeholder={lang === 'ar' ? 'مثال: CHQ-001' : 'Ex : CHQ-001'}
+                value={form.docRef}
+                onChange={(e) => setForm({ ...form, docRef: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">{t('finance.description')}</label>
+              <input className="input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+          </div>
+
+          {/* Receipt upload */}
           <div>
-            <label className="label">{t('finance.description')}</label>
-            <textarea className="input" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <label className="label">{lang === 'ar' ? 'صورة الوثيقة / الشيك / الوصل' : 'Pièce justificative (photo / scan)'}</label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => receiptInputRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 transition-colors"
+              >
+                <Paperclip size={15} />
+                {receiptPreview
+                  ? (lang === 'ar' ? 'تغيير الوثيقة' : 'Changer la pièce')
+                  : (lang === 'ar' ? 'إرفاق وثيقة' : 'Joindre une pièce')}
+              </button>
+              <input
+                ref={receiptInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setReceiptFile(file);
+                  setReceiptPreview(file.type.startsWith('image/') ? URL.createObjectURL(file) : 'pdf');
+                }}
+              />
+              {receiptPreview && receiptPreview !== 'pdf' && (
+                <img src={receiptPreview} alt="receipt" className="h-12 w-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700" />
+              )}
+              {receiptPreview === 'pdf' && (
+                <span className="text-xs bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-1 rounded-lg border border-red-200 dark:border-red-800">PDF</span>
+              )}
+              {receiptPreview && savedTxId && !receiptFile && (
+                <a
+                  href={receiptPreview}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-primary-600 hover:underline"
+                >
+                  <ExternalLink size={12} />{lang === 'ar' ? 'فتح' : 'Ouvrir'}
+                </a>
+              )}
+              {uploadingReceipt && <span className="text-xs text-gray-400 animate-pulse">{lang === 'ar' ? 'جاري الرفع...' : 'Envoi...'}</span>}
+            </div>
           </div>
         </div>
       </Modal>

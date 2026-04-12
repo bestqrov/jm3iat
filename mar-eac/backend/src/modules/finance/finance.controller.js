@@ -1,5 +1,9 @@
 const prisma = require('../../config/database');
+const path = require('path');
+const fs = require('fs');
 const { generateFinancialPDF } = require('../../utils/financePdf');
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
 
 const getTransactions = async (req, res) => {
   try {
@@ -39,7 +43,7 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { type, amount, category, description, date, reference } = req.body;
+    const { type, amount, category, description, date, reference, docRef } = req.body;
 
     if (!type || !amount || !category) {
       return res.status(400).json({ message: 'type, amount, and category are required' });
@@ -57,6 +61,7 @@ const create = async (req, res) => {
         description,
         date: date ? new Date(date) : new Date(),
         reference,
+        docRef,
       },
     });
 
@@ -68,7 +73,7 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const { type, amount, category, description, date, reference } = req.body;
+    const { type, amount, category, description, date, reference, docRef } = req.body;
     const existing = await prisma.transaction.findFirst({
       where: { id: req.params.id, organizationId: req.organization.id },
     });
@@ -83,10 +88,36 @@ const update = async (req, res) => {
         description: description ?? existing.description,
         date: date ? new Date(date) : existing.date,
         reference: reference ?? existing.reference,
+        docRef: docRef !== undefined ? docRef : existing.docRef,
       },
     });
 
     res.json(tx);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const uploadReceipt = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const existing = await prisma.transaction.findFirst({
+      where: { id: req.params.id, organizationId: req.organization.id },
+    });
+    if (!existing) return res.status(404).json({ message: 'Transaction not found' });
+
+    // Delete old receipt file if it exists
+    if (existing.receiptUrl) {
+      const oldPath = path.join(UPLOAD_DIR, path.basename(existing.receiptUrl));
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const receiptUrl = `/uploads/${req.file.filename}`;
+    const tx = await prisma.transaction.update({
+      where: { id: req.params.id },
+      data: { receiptUrl },
+    });
+    res.json({ receiptUrl: tx.receiptUrl });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -193,4 +224,5 @@ const exportPDF = (req, res) => generateFinancialPDF(req, res).catch((err) => {
 module.exports = {
   getTransactions, getById, create, update, remove,
   getSummary, getMonthlySummary, getCategories, exportPDF,
+  uploadReceipt,
 };
