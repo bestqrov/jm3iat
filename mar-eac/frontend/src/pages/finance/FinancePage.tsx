@@ -11,8 +11,14 @@ import { Toast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
 
 const CATEGORIES = {
-  fr: ['Cotisations', 'Dons', 'Subventions', 'Factures','Fournitures de bureau', 'Transport', 'Salaires', 'Loyer', 'Communication', 'Formation', 'Autres'],
-  ar: ['اشتراكات', 'تبرعات', 'منح', 'فواتير','لوازم مكتبية', 'نقل', 'رواتب', 'إيجار', 'تواصل', 'تكوين', 'أخرى'],
+  INCOME: {
+    fr: ['Subventions', 'Cotisations', 'Dons', 'Autres'],
+    ar: ['منح', 'اشتراكات', 'تبرعات', 'أخرى'],
+  },
+  EXPENSE: {
+    fr: ['Fournitures de bureau', 'Factures', 'Transport', 'Salaires', 'Loyer', 'Communication', 'Formation', 'Autres'],
+    ar: ['لوازم مكتبية', 'فواتير', 'نقل', 'رواتب', 'إيجار', 'تواصل', 'تكوين', 'أخرى'],
+  },
 };
 
 const PAYMENT_METHODS = {
@@ -296,7 +302,7 @@ export const FinancePage: React.FC = () => {
             <div className="flex gap-3">
               {['INCOME', 'EXPENSE'].map((tp) => (
                 <label key={tp} className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="type" value={tp} checked={form.type === tp} onChange={() => setForm({ ...form, type: tp })} />
+                  <input type="radio" name="type" value={tp} checked={form.type === tp} onChange={() => setForm({ ...form, type: tp, category: '' })} />
                   <span className={`text-sm font-medium ${tp === 'INCOME' ? 'text-emerald-600' : 'text-red-600'}`}>
                     {tp === 'INCOME' ? t('finance.income') : t('finance.expense')}
                   </span>
@@ -311,8 +317,10 @@ export const FinancePage: React.FC = () => {
             </div>
             <div>
               <label className="label">{t('finance.category')} *</label>
-              <input className="input" list="categories" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-              <datalist id="categories">{CATEGORIES[lang].map((c) => <option key={c} value={c} />)}</datalist>
+              <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                <option value="">{lang === 'ar' ? '— اختر —' : '— Choisir —'}</option>
+                {CATEGORIES[form.type as 'INCOME' | 'EXPENSE'][lang].map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
