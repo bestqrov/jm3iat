@@ -444,14 +444,18 @@ async function generateFinancialPDF(req, res) {
     const rh = 28;
     const ry = cy + i * rh;
     const labelBg = i % 2 === 0 ? BLUE : '#234580';
-    drawRect(doc, MARGIN, ry, col1W, rh, labelBg, BLUE);
-    drawRect(doc, MARGIN + col1W, ry, col2W, rh, i % 2 === 0 ? '#ffffff' : '#f8fafc', BLUE);
     if (isAr) {
-      doc.font(fontBold).fontSize(9).fillColor('#ffffff')
-        .text(label, MARGIN + 5, ry + 9, { width: col1W - 10, align: 'right', lineBreak: false });
+      // RTL: label column on the RIGHT, value column on the LEFT
+      drawRect(doc, MARGIN,          ry, col2W, rh, i % 2 === 0 ? '#ffffff' : '#f8fafc', BLUE);
+      drawRect(doc, MARGIN + col2W,  ry, col1W, rh, labelBg, BLUE);
       doc.font(fontBold).fontSize(9).fillColor('#1e293b')
-        .text(fitText(doc, value, col2W - 14), MARGIN + col1W + 7, ry + 9, { width: col2W - 14, align: 'right', lineBreak: false });
+        .text(fitText(doc, value, col2W - 14), MARGIN + 7, ry + 9, { width: col2W - 14, align: 'right', lineBreak: false });
+      doc.font(fontBold).fontSize(9).fillColor('#ffffff')
+        .text(label, MARGIN + col2W + 5, ry + 9, { width: col1W - 10, align: 'right', lineBreak: false });
     } else {
+      // LTR: label column on the LEFT, value column on the RIGHT
+      drawRect(doc, MARGIN,          ry, col1W, rh, labelBg, BLUE);
+      drawRect(doc, MARGIN + col1W,  ry, col2W, rh, i % 2 === 0 ? '#ffffff' : '#f8fafc', BLUE);
       doc.font(fontBold).fontSize(9).fillColor('#ffffff')
         .text(label, MARGIN + 7, ry + 9, { width: col1W - 14, lineBreak: false });
       doc.font(fontBold).fontSize(9).fillColor('#1e293b')
@@ -465,14 +469,15 @@ async function generateFinancialPDF(req, res) {
   const cW1 = 52, cW2 = 62, cW3 = 82, cW4 = 62;
   const cW5 = 130; // observations — wide, wraps freely
   const cW0 = CONTENT_W - cW1 - cW2 - cW3 - cW4 - cW5; // Nature gets the rest (~131)
+  // RTL order (right→left): date | nature | amount | pay_mode | doc_ref | obs
   const txCols = isAr
     ? [
-        { label: t.obs,      w: cW5, wrap: true },
-        { label: t.doc_ref,  w: cW4 },
-        { label: t.pay_mode, w: cW3, align: 'right' },
-        { label: t.amount,   w: cW2, align: 'right' },
         { label: t.date_inv, w: cW1, align: 'right' },
         { label: t.nature,   w: cW0, align: 'right' },
+        { label: t.amount,   w: cW2, align: 'right' },
+        { label: t.pay_mode, w: cW3, align: 'right' },
+        { label: t.doc_ref,  w: cW4, align: 'right' },
+        { label: t.obs,      w: cW5, wrap: true },
       ]
     : [
         { label: t.nature,   w: cW0 },
@@ -502,10 +507,11 @@ async function generateFinancialPDF(req, res) {
     incomeList.forEach((tx, i) => {
       const nature = translateCategory(tx.category, isAr);
       const obs = tx.description || '-';
+      // AR order matches columns: date | nature | amount | pay_mode | doc_ref | obs
       const row = isAr
-        ? [obs, tx.reference || '-', getPaymentMode(tx.reference, true),  fmt(tx.amount), fmtDate(tx.date), nature]
+        ? [fmtDate(tx.date), nature, fmt(tx.amount), getPaymentMode(tx.reference, true), tx.reference || '-', obs]
         : [nature, fmtDate(tx.date), fmt(tx.amount), getPaymentMode(tx.reference, false), tx.reference || '-', obs];
-      row[isAr ? '_color3' : '_color2'] = COLORS.income;
+      row['_color2'] = COLORS.income; // amount column is index 2 in both
       cy = checkNewPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
       cy = drawTableRow(doc, txCols, row, cy, i % 2 === 1, isAr, fontReg);
     });
@@ -535,10 +541,11 @@ async function generateFinancialPDF(req, res) {
     expenseList.forEach((tx, i) => {
       const nature = translateCategory(tx.category, isAr);
       const obs = tx.description || '-';
+      // AR order matches columns: date | nature | amount | pay_mode | doc_ref | obs
       const row = isAr
-        ? [obs, tx.reference || '-', getPaymentMode(tx.reference, true),  fmt(tx.amount), fmtDate(tx.date), nature]
+        ? [fmtDate(tx.date), nature, fmt(tx.amount), getPaymentMode(tx.reference, true), tx.reference || '-', obs]
         : [nature, fmtDate(tx.date), fmt(tx.amount), getPaymentMode(tx.reference, false), tx.reference || '-', obs];
-      row[isAr ? '_color3' : '_color2'] = COLORS.expense;
+      row['_color2'] = COLORS.expense; // amount column is index 2 in both
       cy = checkNewPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
       cy = drawTableRow(doc, txCols, row, cy, i % 2 === 1, isAr, fontReg);
     });
@@ -568,7 +575,7 @@ async function generateFinancialPDF(req, res) {
   for (let i = 0; i < pageCount; i++) {
     doc.switchToPage(i);
     drawRect(doc, 0, PAGE_H - 26, PAGE_W, 26, BLUE);
-    const footerOrg = fitText(doc, org.name || 'Association', CONTENT_W - 80);
+    const footerOrg = fitText(doc, orgName || 'Association', CONTENT_W - 80);
     if (isAr) {
       doc.font(fontReg).fontSize(8).fillColor('#bfdbfe')
         .text(`${t.page} ${i + 1} ${t.of} ${pageCount}`, MARGIN, PAGE_H - 17, { width: CONTENT_W, align: 'left', lineBreak: false });
