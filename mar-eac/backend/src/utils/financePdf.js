@@ -7,9 +7,9 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
 
 // ── Fonts ──────────────────────────────────────────────────────────────────────
 const FONT_DIR = path.join(__dirname, '../assets/fonts');
-const FONT_AR        = path.join(FONT_DIR, 'Jordan.ttf');     // body text
-const FONT_AR_BOLD   = path.join(FONT_DIR, 'Jordan.ttf');     // bold fallback (Jordan has no bold)
-const FONT_AR_TITLE  = path.join(FONT_DIR, 'Line.ttf');       // grand titles only
+const FONT_AR        = path.join(FONT_DIR, 'Amiri-Regular.ttf'); // body text — proper Arabic shaping
+const FONT_AR_BOLD   = path.join(FONT_DIR, 'Amiri-Bold.ttf');    // bold labels
+const FONT_AR_TITLE  = path.join(FONT_DIR, 'Line.ttf');           // grand titles only
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const PAGE_W = 595.28;
@@ -168,12 +168,6 @@ function translateCategory(cat, isAr) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-// PDFKit renders words LTR even in RTL mode; reverse word order so Arabic reads correctly right-to-left
-function ar(text) {
-  if (!text || typeof text !== 'string') return text;
-  const words = text.trim().split(/\s+/);
-  return words.length > 1 ? words.reverse().join(' ') : text;
-}
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -232,7 +226,7 @@ function drawTableHeader(doc, cols, y, isAr, fontBold, fontReg) {
     cols.forEach(({ label, w, align }) => {
       x -= w;
       doc.font(fontBold).fontSize(8.5).fillColor(COLORS.white)
-        .text(fitText(doc, ar(label), w - 8), x + 3, y + 7, { width: w - 6, align: align || 'right', lineBreak: false });
+        .text(fitText(doc, label, w - 8), x + 3, y + 7, { width: w - 6, align: align || 'right', lineBreak: false });
     });
   } else {
     let x = MARGIN;
@@ -422,11 +416,11 @@ async function generateFinancialPDF(req, res) {
   const titleBoxW = PAGE_W - 130;
   doc.roundedRect(65, 168, titleBoxW, 165, 10).strokeColor(BLUE).lineWidth(1.5).stroke();
   doc.font(fontTitle).fontSize(22).fillColor(BLUE)
-    .text(fitText(doc, isAr ? ar(t.cover_title) : t.cover_title, titleBoxW - 20), 65, 192, { width: titleBoxW, align: 'center', lineBreak: false });
+    .text(fitText(doc, t.cover_title, titleBoxW - 20), 65, 192, { width: titleBoxW, align: 'center', lineBreak: false });
   doc.font(fontAlt).fontSize(14).fillColor('#374151')
     .text(fitText(doc, t.cover_sub, titleBoxW - 20), 65, 228, { width: titleBoxW, align: 'center', lineBreak: false });
   doc.font(fontTitle).fontSize(13).fillColor(BLUE)
-    .text(fitText(doc, isAr ? `${year} ${ar(t.exercise)}` : `${t.exercise} ${year}`, titleBoxW - 20), 65, 264, { width: titleBoxW, align: 'center', lineBreak: false });
+    .text(fitText(doc, isAr ? `${t.exercise} ${year}` : `${t.exercise} ${year}`, titleBoxW - 20), 65, 264, { width: titleBoxW, align: 'center', lineBreak: false });
   doc.font(fontReg).fontSize(10).fillColor('#6b7280')
     .text(`01/01/${year}  —  31/12/${year}`, 65, 296, { width: titleBoxW, align: 'center', lineBreak: false });
 
@@ -459,9 +453,9 @@ async function generateFinancialPDF(req, res) {
       drawRect(doc, MARGIN,          ry, col2W, rh, i % 2 === 0 ? '#ffffff' : '#f8fafc', BLUE);
       drawRect(doc, MARGIN + col2W,  ry, col1W, rh, labelBg, BLUE);
       doc.font(fontBold).fontSize(9).fillColor('#1e293b')
-        .text(fitText(doc, ar(value), col2W - 14), MARGIN + 7, ry + 9, { width: col2W - 14, align: 'right', lineBreak: false });
+        .text(fitText(doc, value, col2W - 14), MARGIN + 7, ry + 9, { width: col2W - 14, align: 'right', lineBreak: false });
       doc.font(fontBold).fontSize(9).fillColor('#ffffff')
-        .text(ar(label), MARGIN + col2W + 5, ry + 9, { width: col1W - 10, align: 'right', lineBreak: false });
+        .text(label, MARGIN + col2W + 5, ry + 9, { width: col1W - 10, align: 'right', lineBreak: false });
     } else {
       // LTR: label column on the LEFT, value column on the RIGHT
       drawRect(doc, MARGIN,          ry, col1W, rh, labelBg, BLUE);
@@ -502,7 +496,7 @@ async function generateFinancialPDF(req, res) {
   cy = checkNewPage(doc, cy, 80);
   drawRect(doc, MARGIN, cy, CONTENT_W, 28, '#d1fae5', COLORS.income, 1);
   doc.font(fontTitle).fontSize(10).fillColor(COLORS.income)
-    .text(fitText(doc, isAr ? `(${incomeList.length} ${t.operations})  ${ar(t.income_detail)}` : `${t.income_detail}  (${incomeList.length} ${t.operations})`, CONTENT_W - 24),
+    .text(fitText(doc, isAr ? `${t.income_detail}  (${incomeList.length} ${t.operations})` : `${t.income_detail}  (${incomeList.length} ${t.operations})`, CONTENT_W - 24),
       MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
   cy += 28;
 
@@ -536,7 +530,7 @@ async function generateFinancialPDF(req, res) {
   cy = checkNewPage(doc, cy, 80);
   drawRect(doc, MARGIN, cy, CONTENT_W, 28, '#fee2e2', COLORS.expense, 1);
   doc.font(fontTitle).fontSize(10).fillColor(COLORS.expense)
-    .text(fitText(doc, isAr ? `(${expenseList.length} ${t.operations})  ${ar(t.expense_detail)}` : `${t.expense_detail}  (${expenseList.length} ${t.operations})`, CONTENT_W - 24),
+    .text(fitText(doc, isAr ? `${t.expense_detail}  (${expenseList.length} ${t.operations})` : `${t.expense_detail}  (${expenseList.length} ${t.operations})`, CONTENT_W - 24),
       MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
   cy += 28;
 
@@ -574,7 +568,7 @@ async function generateFinancialPDF(req, res) {
   const netBorder = balance >= 0 ? '#6ee7b7' : '#fca5a5';
   drawRect(doc, MARGIN, cy, CONTENT_W, 36, netBg, netBorder, 1.5);
   const netLabel = isAr
-    ? `${fmt(balance)} MAD  :${ar(t.balance)}`
+    ? `${fmt(balance)} MAD  :${t.balance}`
     : `${t.balance} :  ${fmt(balance)} MAD`;
   doc.font(fontBold).fontSize(13).fillColor(netColor)
     .text(netLabel, MARGIN + 10, cy + 11, { width: CONTENT_W - 20, align: 'center', lineBreak: false });
