@@ -209,6 +209,12 @@ model Project {
   status         String    @default("PLANNED")
   startDate      DateTime?
   endDate        DateTime?
+  code           String?
+  generalGoal    String?
+  specificGoals  String?
+  manager        String?
+  budget         Float?
+  beneficiaries  String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

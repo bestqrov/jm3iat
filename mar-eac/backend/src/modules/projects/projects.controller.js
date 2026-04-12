@@ -38,7 +38,7 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { title, type, description, location, startDate, endDate } = req.body;
+    const { title, type, description, location, startDate, endDate, code, generalGoal, specificGoals, manager, budget, beneficiaries } = req.body;
     if (!title) return res.status(400).json({ message: 'Title required' });
 
     const project = await prisma.$transaction(async (tx) => {
@@ -51,6 +51,12 @@ const create = async (req, res) => {
           location,
           startDate: startDate ? new Date(startDate) : null,
           endDate: endDate ? new Date(endDate) : null,
+          code,
+          generalGoal,
+          specificGoals,
+          manager,
+          budget: budget ? parseFloat(budget) : null,
+          beneficiaries,
         },
       });
 
@@ -71,7 +77,7 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const { title, type, description, location, status, startDate, endDate } = req.body;
+    const { title, type, description, location, status, startDate, endDate, code, generalGoal, specificGoals, manager, budget, beneficiaries } = req.body;
     const existing = await prisma.project.findFirst({
       where: { id: req.params.id, organizationId: req.organization.id },
     });
@@ -87,6 +93,12 @@ const update = async (req, res) => {
         status: status ?? existing.status,
         startDate: startDate ? new Date(startDate) : existing.startDate,
         endDate: endDate ? new Date(endDate) : existing.endDate,
+        code: code !== undefined ? code : existing.code,
+        generalGoal: generalGoal !== undefined ? generalGoal : existing.generalGoal,
+        specificGoals: specificGoals !== undefined ? specificGoals : existing.specificGoals,
+        manager: manager !== undefined ? manager : existing.manager,
+        budget: budget !== undefined ? parseFloat(budget) : existing.budget,
+        beneficiaries: beneficiaries !== undefined ? beneficiaries : existing.beneficiaries,
       },
       include: { funding: true },
     });

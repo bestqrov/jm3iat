@@ -26,7 +26,7 @@ export const ProjectsPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [form, setForm] = useState({ title: '', type: 'OTHER', description: '', location: '', startDate: '' });
+  const [form, setForm] = useState({ title: '', type: 'OTHER', description: '', location: '', startDate: '', endDate: '', code: '', generalGoal: '', specificGoals: '', manager: '', budget: '', beneficiaries: '' });
 
   const load = async () => {
     try {
@@ -48,7 +48,7 @@ export const ProjectsPage: React.FC = () => {
     try {
       await projectsApi.create(form);
       setShowModal(false);
-      setForm({ title: '', type: 'OTHER', description: '', location: '', startDate: '' });
+      setForm({ title: '', type: 'OTHER', description: '', location: '', startDate: '', endDate: '', code: '', generalGoal: '', specificGoals: '', manager: '', budget: '', beneficiaries: '' });
       load();
     } catch (err: any) {
       setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
@@ -146,9 +146,15 @@ export const ProjectsPage: React.FC = () => {
       >
         <div className="space-y-4">
           {saveError && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
-          <div>
-            <label className="label">{t('projects.projectTitle')} *</label>
-            <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">{t('projects.projectTitle')} *</label>
+              <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">{lang === 'ar' ? 'كود المشروع' : 'Code projet'}</label>
+              <input className="input" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -162,13 +168,41 @@ export const ProjectsPage: React.FC = () => {
               <input className="input" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">{t('projects.startDate')}</label>
+              <input className="input" type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">{lang === 'ar' ? 'تاريخ النهاية' : 'Date fin'}</label>
+              <input className="input" type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">{lang === 'ar' ? 'المسؤول' : 'Responsable'}</label>
+              <input className="input" value={form.manager} onChange={(e) => setForm({ ...form, manager: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">{lang === 'ar' ? 'الميزانية العامة (درهم)' : 'Montant général PRJ (MAD)'}</label>
+              <input className="input" type="number" min="0" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} />
+            </div>
+          </div>
           <div>
-            <label className="label">{t('projects.startDate')}</label>
-            <input className="input" type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+            <label className="label">{lang === 'ar' ? 'الهدف العام' : 'But général'}</label>
+            <textarea className="input" rows={2} value={form.generalGoal} onChange={(e) => setForm({ ...form, generalGoal: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">{lang === 'ar' ? 'الأهداف الخاصة' : 'Buts spéciaux'}</label>
+            <textarea className="input" rows={2} value={form.specificGoals} onChange={(e) => setForm({ ...form, specificGoals: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">{lang === 'ar' ? 'المستفيدون' : 'Bénéficiaires'}</label>
+            <textarea className="input" rows={2} value={form.beneficiaries} onChange={(e) => setForm({ ...form, beneficiaries: e.target.value })} />
           </div>
           <div>
             <label className="label">{t('projects.description')}</label>
-            <textarea className="input" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <textarea className="input" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </div>
         </div>
       </Modal>
