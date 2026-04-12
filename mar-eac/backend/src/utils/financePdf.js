@@ -1,6 +1,9 @@
 const PDFDocument = require('pdfkit');
 const prisma = require('../config/database');
 const path = require('path');
+const fs = require('fs');
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
 
 // ── Fonts ──────────────────────────────────────────────────────────────────────
 const FONT_DIR = path.join(__dirname, '../assets/fonts');
@@ -335,9 +338,16 @@ async function generateFinancialPDF(req, res) {
 
   // Logo box
   drawRect(doc, logoBoxX, 40, 110, 80, null, BLUE, 1);
-  drawRect(doc, logoBoxX + 5, 45, 100, 60, null, '#93c5fd', 0.5);
-  doc.font(fontReg).fontSize(8).fillColor('#9ca3af')
-    .text(t.logo, logoBoxX + 5, 68, { width: 100, align: 'center', lineBreak: false });
+  const logoFilePath = org.logo ? path.join(UPLOAD_DIR, path.basename(org.logo)) : null;
+  if (logoFilePath && fs.existsSync(logoFilePath)) {
+    try {
+      doc.image(logoFilePath, logoBoxX + 5, 45, { width: 100, height: 60, fit: [100, 60], align: 'center', valign: 'center' });
+    } catch { /* fall back to placeholder if image is corrupt */ }
+  } else {
+    drawRect(doc, logoBoxX + 5, 45, 100, 60, null, '#93c5fd', 0.5);
+    doc.font(fontReg).fontSize(8).fillColor('#9ca3af')
+      .text(t.logo, logoBoxX + 5, 68, { width: 100, align: 'center', lineBreak: false });
+  }
 
   // Center rounded title box
   const titleBoxW = PAGE_W - 130;

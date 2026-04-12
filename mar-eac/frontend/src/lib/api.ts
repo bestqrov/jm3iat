@@ -28,6 +28,11 @@ export const authApi = {
   getMe: () => api.get('/auth/me'),
   updateProfile: (data: any) => api.put('/auth/profile', data),
   updateOrganization: (data: any) => api.put('/auth/organization', data),
+  uploadLogo: (file: File) => {
+    const fd = new FormData();
+    fd.append('logo', file);
+    return api.post('/auth/organization/logo', fd);
+  },
   upgradeSubscription: (plan: string) => api.post('/auth/subscription/upgrade', { plan }),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
 };

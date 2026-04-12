@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -41,6 +41,10 @@ export const SettingsPage: React.FC = () => {
     newPassword: '',
   });
 
+  const [logoPreview, setLogoPreview] = useState<string | null>(org?.logo || null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
   const [saving, setSaving] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +54,18 @@ export const SettingsPage: React.FC = () => {
     setSuccess(key);
     setError(null);
     setTimeout(() => setSuccess(null), 2500);
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoPreview(URL.createObjectURL(file));
+    setUploadingLogo(true);
+    try {
+      await authApi.uploadLogo(file);
+      await refreshUser();
+    } catch { setLogoPreview(org?.logo || null); }
+    finally { setUploadingLogo(false); }
   };
 
   const handleSaveOrg = async () => {
@@ -125,6 +141,60 @@ export const SettingsPage: React.FC = () => {
           <h3 className="font-semibold text-gray-900 dark:text-white">{t('settings.orgProfile')}</h3>
         </div>
         <div className="space-y-4">
+
+          {/* ── Logo upload ── */}
+          <div className={`flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-700 ${lang === 'ar' ? 'flex-row-reverse' : ''}`}>
+            {/* Square logo preview / click target */}
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              className="relative flex-shrink-0 w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-500 overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title={lang === 'ar' ? 'تحميل الشعار' : 'Télécharger le logo'}
+            >
+              {logoPreview ? (
+                <img src={logoPreview} alt="logo" className="w-full h-full object-contain p-1" />
+              ) : (
+                <Building2 size={22} className="text-gray-300 dark:text-gray-600" />
+              )}
+              {/* Hover overlay */}
+              <span className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                <Camera size={16} className="text-white" />
+              </span>
+              {uploadingLogo && (
+                <span className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 flex items-center justify-center rounded-xl">
+                  <svg className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                </span>
+              )}
+            </button>
+            <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleLogoUpload} />
+
+            {/* Text info */}
+            <div className={`min-w-0 ${lang === 'ar' ? 'text-right' : ''}`}>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                {lang === 'ar' ? 'شعار الجمعية' : 'Logo de l\'association'}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {lang === 'ar'
+                  ? 'يظهر في التقارير والوثائق — PNG أو JPG'
+                  : 'Affiché dans les rapports · PNG ou JPG'}
+              </p>
+              {!uploadingLogo && (
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="mt-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  {logoPreview
+                    ? (lang === 'ar' ? 'تغيير الشعار' : 'Changer le logo')
+                    : (lang === 'ar' ? 'إضافة شعار' : 'Ajouter un logo')}
+                </button>
+              )}
+            </div>
+          </div>
+
           <div>
             <label className="label">{t('auth.orgName')}</label>
             <input className="input" value={orgForm.name} onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })} />

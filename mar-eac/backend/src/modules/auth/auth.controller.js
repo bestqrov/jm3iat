@@ -1,4 +1,6 @@
 const bcrypt = require('bcryptjs');
+const path = require('path');
+const fs = require('fs');
 const prisma = require('../../config/database');
 const { generateToken } = require('../../config/jwt');
 
@@ -204,6 +206,27 @@ const updateOrganization = async (req, res) => {
   }
 };
 
+const uploadLogo = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const orgId = req.user.organizationId;
+    const uploadDir = process.env.UPLOAD_DIR || path.resolve('./uploads');
+
+    // Delete old logo file if it exists
+    const current = await prisma.organization.findUnique({ where: { id: orgId }, select: { logo: true } });
+    if (current?.logo) {
+      const oldPath = path.join(uploadDir, path.basename(current.logo));
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const logoUrl = `/uploads/${req.file.filename}`;
+    const updated = await prisma.organization.update({ where: { id: orgId }, data: { logo: logoUrl } });
+    res.json({ logo: updated.logo });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const upgradeSubscription = async (req, res) => {
   try {
     const { plan } = req.body;
@@ -252,4 +275,4 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, updateOrganization, upgradeSubscription, forgotPassword };
+module.exports = { register, login, getMe, updateProfile, updateOrganization, uploadLogo, upgradeSubscription, forgotPassword };
