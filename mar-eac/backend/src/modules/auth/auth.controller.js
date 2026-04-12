@@ -181,10 +181,13 @@ const updateProfile = async (req, res) => {
 
 const updateOrganization = async (req, res) => {
   try {
-    const { name, email, phone, address, city, region, description, foundingDate, activities, adminHistory, bankName, bankAccount, bankRib } = req.body;
+    const {
+      name, email, phone, address, city, region, description, foundingDate, activities, adminHistory,
+      nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
+      bankName, bankAccount, bankRib,
+    } = req.body;
     const orgId = req.user.organizationId;
 
-    // Check email uniqueness if changing
     if (email) {
       const conflict = await prisma.organization.findFirst({ where: { email, id: { not: orgId } } });
       if (conflict) return res.status(409).json({ message: 'Email already used by another organization' });
@@ -193,8 +196,9 @@ const updateOrganization = async (req, res) => {
     const updated = await prisma.organization.update({
       where: { id: orgId },
       data: {
-        name, phone, address, city, region, description,
-        activities, adminHistory, bankName, bankAccount, bankRib,
+        name, phone, address, city, region, description, activities, adminHistory,
+        nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
+        bankName, bankAccount, bankRib,
         ...(email ? { email } : {}),
         foundingDate: foundingDate ? new Date(foundingDate) : undefined,
       },

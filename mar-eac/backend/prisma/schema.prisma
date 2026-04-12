@@ -16,11 +16,20 @@ model Organization {
   address     String?
   city        String?
   region      String?
-  logo         String?
+  logo        String?
   description  String?
   foundingDate DateTime?
   activities   String?
   adminHistory String?
+  // ── Arabic profile ──────────────────────────────
+  nameAr         String?
+  cityAr         String?
+  regionAr       String?
+  addressAr      String?
+  descriptionAr  String?
+  activitiesAr   String?
+  adminHistoryAr String?
+  // ── Bank (shared) ───────────────────────────────
   bankName     String?
   bankAccount  String?
   bankRib      String?

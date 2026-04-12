@@ -28,7 +28,8 @@ export const SettingsPage: React.FC = () => {
 
   const org = organization as any;
 
-  const [orgForm, setOrgForm] = useState({
+  // French profile
+  const [orgFormFr, setOrgFormFr] = useState({
     name: org?.name || '',
     phone: org?.phone || '',
     address: org?.address || '',
@@ -37,10 +38,24 @@ export const SettingsPage: React.FC = () => {
     description: org?.description || '',
   });
 
-  const [infoForm, setInfoForm] = useState({
+  // Arabic profile
+  const [orgFormAr, setOrgFormAr] = useState({
+    nameAr: org?.nameAr || '',
+    addressAr: org?.addressAr || '',
+    cityAr: org?.cityAr || '',
+    regionAr: org?.regionAr || '',
+    descriptionAr: org?.descriptionAr || '',
+  });
+
+  const [infoFormFr, setInfoFormFr] = useState({
     foundingDate: org?.foundingDate ? new Date(org.foundingDate).toISOString().split('T')[0] : '',
     activities: org?.activities || '',
     adminHistory: org?.adminHistory || '',
+  });
+
+  const [infoFormAr, setInfoFormAr] = useState({
+    activitiesAr: org?.activitiesAr || '',
+    adminHistoryAr: org?.adminHistoryAr || '',
   });
 
   const [contactForm, setContactForm] = useState({
@@ -86,7 +101,7 @@ export const SettingsPage: React.FC = () => {
   const handleSaveOrg = async () => {
     setSaving('org');
     try {
-      await authApi.updateOrganization(orgForm);
+      await authApi.updateOrganization(lang === 'ar' ? orgFormAr : orgFormFr);
       showSuccess('org');
     } catch { setError('org'); } finally { setSaving(null); }
   };
@@ -94,7 +109,15 @@ export const SettingsPage: React.FC = () => {
   const handleSaveInfo = async () => {
     setSaving('info');
     try {
-      await authApi.updateOrganization(infoForm);
+      if (lang === 'ar') {
+        await authApi.updateOrganization({
+          foundingDate: infoFormFr.foundingDate,
+          activitiesAr: infoFormAr.activitiesAr,
+          adminHistoryAr: infoFormAr.adminHistoryAr,
+        });
+      } else {
+        await authApi.updateOrganization(infoFormFr);
+      }
       showSuccess('info');
     } catch { setError('info'); } finally { setSaving(null); }
   };
@@ -153,13 +176,17 @@ export const SettingsPage: React.FC = () => {
           <div className="w-9 h-9 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
             <Building2 size={18} className="text-blue-600 dark:text-blue-400" />
           </div>
-          <h3 className="font-semibold text-gray-900 dark:text-white">{t('settings.orgProfile')}</h3>
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('settings.orgProfile')}</h3>
+            <span className="inline-flex items-center gap-1 mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+              {lang === 'ar' ? '🇲🇦 الملف الشخصي العربي' : '🇫🇷 Profil Français'}
+            </span>
+          </div>
         </div>
         <div className="space-y-4">
 
           {/* ── Logo upload ── */}
           <div className={`flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-700 ${lang === 'ar' ? 'flex-row-reverse' : ''}`}>
-            {/* Square logo preview / click target */}
             <button
               type="button"
               onClick={() => logoInputRef.current?.click()}
@@ -171,7 +198,6 @@ export const SettingsPage: React.FC = () => {
               ) : (
                 <Building2 size={22} className="text-gray-300 dark:text-gray-600" />
               )}
-              {/* Hover overlay */}
               <span className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
                 <Camera size={16} className="text-white" />
               </span>
@@ -185,69 +211,89 @@ export const SettingsPage: React.FC = () => {
               )}
             </button>
             <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleLogoUpload} />
-
-            {/* Text info */}
             <div className={`min-w-0 ${lang === 'ar' ? 'text-right' : ''}`}>
               <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
                 {lang === 'ar' ? 'شعار الجمعية' : 'Logo de l\'association'}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">
-                {lang === 'ar'
-                  ? 'يظهر في التقارير والوثائق — PNG أو JPG'
-                  : 'Affiché dans les rapports · PNG ou JPG'}
+                {lang === 'ar' ? 'يظهر في التقارير والوثائق — PNG أو JPG' : 'Affiché dans les rapports · PNG ou JPG'}
               </p>
               {!uploadingLogo && (
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  className="mt-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  {logoPreview
-                    ? (lang === 'ar' ? 'تغيير الشعار' : 'Changer le logo')
-                    : (lang === 'ar' ? 'إضافة شعار' : 'Ajouter un logo')}
+                <button type="button" onClick={() => logoInputRef.current?.click()} className="mt-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                  {logoPreview ? (lang === 'ar' ? 'تغيير الشعار' : 'Changer le logo') : (lang === 'ar' ? 'إضافة شعار' : 'Ajouter un logo')}
                 </button>
               )}
             </div>
           </div>
 
-          <div>
-            <label className="label">{t('auth.orgName')}</label>
-            <input className="input" value={orgForm.name} onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })} />
-          </div>
-          <div>
-            <label className="label">{lang === 'ar' ? 'العنوان' : 'Adresse'}</label>
-            <input className="input" value={orgForm.address} onChange={(e) => setOrgForm({ ...orgForm, address: e.target.value })} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">{t('auth.orgCity')}</label>
-              <input className="input" value={orgForm.city} onChange={(e) => setOrgForm({ ...orgForm, city: e.target.value })} />
+          {lang === 'ar' ? (
+            /* ── Arabic profile fields ── */
+            <div className="space-y-4" dir="rtl">
+              <div>
+                <label className="label text-right">اسم الجمعية بالعربية</label>
+                <input className="input text-right" value={orgFormAr.nameAr} onChange={(e) => setOrgFormAr({ ...orgFormAr, nameAr: e.target.value })} placeholder="اسم الجمعية" />
+              </div>
+              <div>
+                <label className="label text-right">العنوان</label>
+                <input className="input text-right" value={orgFormAr.addressAr} onChange={(e) => setOrgFormAr({ ...orgFormAr, addressAr: e.target.value })} placeholder="العنوان الكامل" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label text-right">المدينة</label>
+                  <input className="input text-right" value={orgFormAr.cityAr} onChange={(e) => setOrgFormAr({ ...orgFormAr, cityAr: e.target.value })} placeholder="المدينة" />
+                </div>
+                <div>
+                  <label className="label text-right">الجهة</label>
+                  <select className="input text-right" dir="rtl" value={orgFormAr.regionAr} onChange={(e) => setOrgFormAr({ ...orgFormAr, regionAr: e.target.value })}>
+                    <option value="">— اختر الجهة —</option>
+                    {MOROCCO_REGIONS.map((r) => (
+                      <option key={r.fr} value={r.ar}>{r.ar}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="label text-right">وصف مختصر</label>
+                <textarea className="input text-right" rows={2} value={orgFormAr.descriptionAr} onChange={(e) => setOrgFormAr({ ...orgFormAr, descriptionAr: e.target.value })} placeholder="وصف الجمعية" />
+              </div>
             </div>
-            <div>
-              <label className="label">{t('auth.orgRegion')}</label>
-              <select
-                className="input"
-                value={orgForm.region}
-                onChange={(e) => setOrgForm({ ...orgForm, region: e.target.value })}
-                dir={lang === 'ar' ? 'rtl' : 'ltr'}
-              >
-                <option value="">{lang === 'ar' ? '— اختر الجهة —' : '— Choisir la région —'}</option>
-                {MOROCCO_REGIONS.map((r) => (
-                  <option key={r.fr} value={lang === 'ar' ? r.ar : r.fr}>
-                    {lang === 'ar' ? r.ar : r.fr}
-                  </option>
-                ))}
-              </select>
+          ) : (
+            /* ── French profile fields ── */
+            <div className="space-y-4">
+              <div>
+                <label className="label">{t('auth.orgName')}</label>
+                <input className="input" value={orgFormFr.name} onChange={(e) => setOrgFormFr({ ...orgFormFr, name: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">Adresse</label>
+                <input className="input" value={orgFormFr.address} onChange={(e) => setOrgFormFr({ ...orgFormFr, address: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">{t('auth.orgCity')}</label>
+                  <input className="input" value={orgFormFr.city} onChange={(e) => setOrgFormFr({ ...orgFormFr, city: e.target.value })} />
+                </div>
+                <div>
+                  <label className="label">{t('auth.orgRegion')}</label>
+                  <select className="input" value={orgFormFr.region} onChange={(e) => setOrgFormFr({ ...orgFormFr, region: e.target.value })}>
+                    <option value="">— Choisir la région —</option>
+                    {MOROCCO_REGIONS.map((r) => (
+                      <option key={r.fr} value={r.fr}>{r.fr}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="label">Téléphone</label>
+                <input className="input" type="tel" value={orgFormFr.phone} onChange={(e) => setOrgFormFr({ ...orgFormFr, phone: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">Description courte</label>
+                <textarea className="input" rows={2} value={orgFormFr.description} onChange={(e) => setOrgFormFr({ ...orgFormFr, description: e.target.value })} />
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="label">{lang === 'ar' ? 'هاتف الجمعية' : 'Téléphone'}</label>
-            <input className="input" type="tel" value={orgForm.phone} onChange={(e) => setOrgForm({ ...orgForm, phone: e.target.value })} />
-          </div>
-          <div>
-            <label className="label">{lang === 'ar' ? 'وصف مختصر' : 'Description courte'}</label>
-            <textarea className="input" rows={2} value={orgForm.description} onChange={(e) => setOrgForm({ ...orgForm, description: e.target.value })} />
-          </div>
+          )}
+
           <button onClick={handleSaveOrg} disabled={saving === 'org'} className="btn-primary">
             {saving === 'org' ? t('common.loading') : t('common.save')}
             {success === 'org' && <span className="ms-1">✓</span>}
@@ -361,8 +407,8 @@ export const SettingsPage: React.FC = () => {
             <input
               className="input"
               type="date"
-              value={infoForm.foundingDate}
-              onChange={(e) => setInfoForm({ ...infoForm, foundingDate: e.target.value })}
+              value={infoFormFr.foundingDate}
+              onChange={(e) => setInfoFormFr({ ...infoFormFr, foundingDate: e.target.value })}
             />
             {org?.foundingDate && (
               <p className="text-xs text-gray-400 mt-1">
@@ -372,46 +418,59 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           {/* Activities */}
-          <div>
-            <label className="label flex items-center gap-1.5">
+          <div {...(lang === 'ar' ? { dir: 'rtl' } : {})}>
+            <label className={`label flex items-center gap-1.5 ${lang === 'ar' ? 'justify-end' : ''}`}>
               <Activity size={13} className="text-teal-500" />
               {lang === 'ar' ? 'أنشطة الجمعية' : 'Activités de l\'association'}
             </label>
-            <textarea
-              className="input"
-              rows={4}
-              placeholder={
-                lang === 'ar'
-                  ? 'صف الأنشطة الرئيسية للجمعية: التنمية المحلية، التعليم، الصحة...'
-                  : 'Décrivez les activités principales : développement local, éducation, santé...'
-              }
-              value={infoForm.activities}
-              onChange={(e) => setInfoForm({ ...infoForm, activities: e.target.value })}
-            />
+            {lang === 'ar' ? (
+              <textarea
+                className="input text-right"
+                rows={4}
+                placeholder="صف الأنشطة الرئيسية للجمعية: التنمية المحلية، التعليم، الصحة..."
+                value={infoFormAr.activitiesAr}
+                onChange={(e) => setInfoFormAr({ ...infoFormAr, activitiesAr: e.target.value })}
+              />
+            ) : (
+              <textarea
+                className="input"
+                rows={4}
+                placeholder="Décrivez les activités principales : développement local, éducation, santé..."
+                value={infoFormFr.activities}
+                onChange={(e) => setInfoFormFr({ ...infoFormFr, activities: e.target.value })}
+              />
+            )}
           </div>
 
           {/* Administrative history */}
-          <div>
-            <label className="label flex items-center gap-1.5">
+          <div {...(lang === 'ar' ? { dir: 'rtl' } : {})}>
+            <label className={`label flex items-center gap-1.5 ${lang === 'ar' ? 'justify-end' : ''}`}>
               <BookOpen size={13} className="text-teal-500" />
               {lang === 'ar' ? 'التاريخ الإداري' : 'Historique administratif'}
             </label>
-            <textarea
-              className="input"
-              rows={5}
-              placeholder={
-                lang === 'ar'
-                  ? 'سجل هنا تاريخ الهيئات الإدارية السابقة، الانتخابات، القرارات المهمة...'
-                  : 'Enregistrez ici l\'historique des bureaux passés, élections, décisions importantes...'
-              }
-              value={infoForm.adminHistory}
-              onChange={(e) => setInfoForm({ ...infoForm, adminHistory: e.target.value })}
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              {lang === 'ar'
-                ? 'مثال: 2020 - رئيس: محمد أمين، الكاتب: فاطمة...'
-                : 'Ex : 2020 – Président : Mohamed Amine, Secrétaire : Fatima...'}
-            </p>
+            {lang === 'ar' ? (
+              <>
+                <textarea
+                  className="input text-right"
+                  rows={5}
+                  placeholder="سجل هنا تاريخ الهيئات الإدارية السابقة، الانتخابات، القرارات المهمة..."
+                  value={infoFormAr.adminHistoryAr}
+                  onChange={(e) => setInfoFormAr({ ...infoFormAr, adminHistoryAr: e.target.value })}
+                />
+                <p className="text-xs text-gray-400 mt-1 text-right">مثال: 2020 - رئيس: محمد أمين، الكاتب: فاطمة...</p>
+              </>
+            ) : (
+              <>
+                <textarea
+                  className="input"
+                  rows={5}
+                  placeholder="Enregistrez ici l'historique des bureaux passés, élections, décisions importantes..."
+                  value={infoFormFr.adminHistory}
+                  onChange={(e) => setInfoFormFr({ ...infoFormFr, adminHistory: e.target.value })}
+                />
+                <p className="text-xs text-gray-400 mt-1">Ex : 2020 – Président : Mohamed Amine, Secrétaire : Fatima...</p>
+              </>
+            )}
           </div>
 
           <button onClick={handleSaveInfo} disabled={saving === 'info'} className="btn-primary">
