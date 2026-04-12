@@ -7,8 +7,9 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
 
 // ── Fonts ──────────────────────────────────────────────────────────────────────
 const FONT_DIR = path.join(__dirname, '../assets/fonts');
-const FONT_AR = path.join(FONT_DIR, 'Amiri-Regular.ttf');
-const FONT_AR_BOLD = path.join(FONT_DIR, 'Amiri-Bold.ttf');
+const FONT_AR        = path.join(FONT_DIR, 'Jordan.ttf');     // body text
+const FONT_AR_BOLD   = path.join(FONT_DIR, 'Jordan.ttf');     // bold fallback (Jordan has no bold)
+const FONT_AR_TITLE  = path.join(FONT_DIR, 'Line.ttf');       // grand titles only
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const PAGE_W = 595.28;
@@ -369,6 +370,7 @@ async function generateFinancialPDF(req, res) {
   const doc = new PDFDocument({ margin: MARGIN, size: 'A4', bufferPages: true });
   doc.registerFont('AR', FONT_AR);
   doc.registerFont('AR-Bold', FONT_AR_BOLD);
+  doc.registerFont('AR-Title', FONT_AR_TITLE);
 
   // Resolve org fields for current language (fallback to French if Arabic not set)
   const orgName    = isAr ? (org.nameAr    || org.name    || '') : (org.name    || '');
@@ -376,9 +378,10 @@ async function generateFinancialPDF(req, res) {
   const orgRegion  = isAr ? (org.regionAr  || org.region  || '') : (org.region  || '');
   const orgAddress = isAr ? (org.addressAr || org.address || '') : (org.address || '');
 
-  const fontReg = isAr ? 'AR' : 'Helvetica';
-  const fontBold = isAr ? 'AR-Bold' : 'Helvetica-Bold';
-  const fontAlt = isAr ? 'Helvetica' : 'AR';       // opposite-language font for bilingual content
+  const fontReg   = isAr ? 'AR'       : 'Helvetica';
+  const fontBold  = isAr ? 'AR-Bold'  : 'Helvetica-Bold';
+  const fontTitle = isAr ? 'AR-Title' : 'Helvetica-Bold'; // Line font — grand titles only
+  const fontAlt     = isAr ? 'Helvetica' : 'AR';
   const fontAltBold = isAr ? 'Helvetica-Bold' : 'AR-Bold';
 
   res.setHeader('Content-Type', 'application/pdf');
@@ -392,7 +395,7 @@ async function generateFinancialPDF(req, res) {
   // Association name box
   drawRect(doc, nameBoxX, 40, 240, 80, null, BLUE, 2);
   const nameSize = orgName.length > 25 ? 10 : orgName.length > 15 ? 13 : 16;
-  doc.font(fontBold).fontSize(nameSize).fillColor(BLUE)
+  doc.font(fontTitle).fontSize(nameSize).fillColor(BLUE)
     .text(fitText(doc, orgName || 'Association', 222), nameBoxX + 5, 62, { width: 230, align: isAr ? 'right' : 'center', lineBreak: false });
 
   // Logo box
@@ -411,16 +414,16 @@ async function generateFinancialPDF(req, res) {
   // Center rounded title box
   const titleBoxW = PAGE_W - 130;
   doc.roundedRect(65, 168, titleBoxW, 165, 10).strokeColor(BLUE).lineWidth(1.5).stroke();
-  doc.font(fontBold).fontSize(22).fillColor(BLUE)
+  doc.font(fontTitle).fontSize(22).fillColor(BLUE)
     .text(fitText(doc, t.cover_title, titleBoxW - 20), 65, 192, { width: titleBoxW, align: 'center', lineBreak: false });
   doc.font(fontAlt).fontSize(14).fillColor('#374151')
     .text(fitText(doc, t.cover_sub, titleBoxW - 20), 65, 228, { width: titleBoxW, align: 'center', lineBreak: false });
-  doc.font(fontBold).fontSize(13).fillColor(BLUE)
+  doc.font(fontTitle).fontSize(13).fillColor(BLUE)
     .text(fitText(doc, `${t.exercise} ${year}`, titleBoxW - 20), 65, 264, { width: titleBoxW, align: 'center', lineBreak: false });
   doc.font(fontReg).fontSize(10).fillColor('#6b7280')
     .text(`01/01/${year}  —  31/12/${year}`, 65, 296, { width: titleBoxW, align: 'center', lineBreak: false });
 
-  doc.font(fontBold).fontSize(13).fillColor('#374151')
+  doc.font(fontTitle).fontSize(13).fillColor('#374151')
     .text(fitText(doc, orgName || '', CONTENT_W - 20), MARGIN, 380, { width: CONTENT_W, align: 'center', lineBreak: false });
   if (orgCity) {
     doc.font(fontReg).fontSize(11).fillColor('#6b7280')
@@ -491,12 +494,12 @@ async function generateFinancialPDF(req, res) {
   // ── TABLEAU DÉTAILLÉ DES RECETTES ─────────────────────────────────────────────
   cy = checkNewPage(doc, cy, 80);
   drawRect(doc, MARGIN, cy, CONTENT_W, 28, '#d1fae5', COLORS.income, 1);
-  doc.font(fontBold).fontSize(10).fillColor(COLORS.income)
+  doc.font(fontTitle).fontSize(10).fillColor(COLORS.income)
     .text(fitText(doc, `${t.income_detail}  (${incomeList.length} ${t.operations})`, CONTENT_W - 24),
       MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
   cy += 28;
 
-  cy = drawTableHeader(doc, txCols, cy, isAr, fontBold, fontReg);
+  cy = drawTableHeader(doc, txCols, cy, isAr, fontTitle, fontReg);
 
   if (incomeList.length === 0) {
     drawRect(doc, MARGIN, cy, CONTENT_W, 22, COLORS.light, COLORS.border);
@@ -525,12 +528,12 @@ async function generateFinancialPDF(req, res) {
   // ── TABLEAU DÉTAILLÉ DES DÉPENSES ─────────────────────────────────────────────
   cy = checkNewPage(doc, cy, 80);
   drawRect(doc, MARGIN, cy, CONTENT_W, 28, '#fee2e2', COLORS.expense, 1);
-  doc.font(fontBold).fontSize(10).fillColor(COLORS.expense)
+  doc.font(fontTitle).fontSize(10).fillColor(COLORS.expense)
     .text(fitText(doc, `${t.expense_detail}  (${expenseList.length} ${t.operations})`, CONTENT_W - 24),
       MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
   cy += 28;
 
-  cy = drawTableHeader(doc, txCols, cy, isAr, fontBold, fontReg);
+  cy = drawTableHeader(doc, txCols, cy, isAr, fontTitle, fontReg);
 
   if (expenseList.length === 0) {
     drawRect(doc, MARGIN, cy, CONTENT_W, 22, COLORS.light, COLORS.border);
