@@ -17,26 +17,30 @@ const CATEGORIES = {
 
 const PAYMENT_METHODS = {
   fr: [
-    { value: 'especes', label: 'Espèces' },
+    { value: 'especes',  label: 'Espèces' },
     { value: 'virement', label: 'Virement bancaire' },
-    { value: 'cheque', label: 'Chèque' },
-    { value: 'poste', label: 'Poste Maroc' },
-    { value: 'autre', label: 'Autre' },
+    { value: 'cheque',   label: 'Chèque' },
+    { value: 'transfer', label: 'Transfer' },
+    { value: 'poste',    label: 'Poste Maroc' },
+    { value: 'autre',    label: 'Autre' },
   ],
   ar: [
-    { value: 'especes', label: 'نقداً' },
+    { value: 'especes',  label: 'نقداً' },
     { value: 'virement', label: 'تحويل بنكي' },
-    { value: 'cheque', label: 'شيك' },
-    { value: 'poste', label: 'بريد المغرب' },
-    { value: 'autre', label: 'أخرى' },
+    { value: 'cheque',   label: 'شيك' },
+    { value: 'transfer', label: 'إرسالية' },
+    { value: 'poste',    label: 'بريد المغرب' },
+    { value: 'autre',    label: 'أخرى' },
   ],
 };
 
 const BANKS = ['Chaabi', 'Attijariwafa', 'CIH', 'BMCE', 'Poste Maroc', 'Autre'];
+const TRANSFER_SERVICES = ['CashPlus', 'Wafacash', 'Lana Cash', 'Autre'];
 
 function buildReference(paymentMethod: string, bankName: string): string {
   if (paymentMethod === 'virement') return bankName ? `Virement - ${bankName}` : 'Virement bancaire';
   if (paymentMethod === 'cheque')   return bankName ? `Chèque - ${bankName}` : 'Chèque';
+  if (paymentMethod === 'transfer') return bankName ? `Transfer - ${bankName}` : 'Transfer';
   if (paymentMethod === 'poste')    return 'Poste Maroc';
   if (paymentMethod === 'especes')  return 'Espèces';
   return 'Autre';
@@ -46,11 +50,12 @@ function parsePaymentMethod(ref: string): { paymentMethod: string; bankName: str
   if (!ref) return { paymentMethod: 'especes', bankName: '' };
   const r = ref.toLowerCase();
   const bankMatch = BANKS.find((b) => r.includes(b.toLowerCase()));
-  const bankName = bankMatch || '';
-  if (r.includes('virement') || r.includes('transfert') || r.includes('تحويل')) return { paymentMethod: 'virement', bankName };
-  if (r.includes('cheque') || r.includes('chèque') || r.includes('شيك'))         return { paymentMethod: 'cheque', bankName };
-  if (r.includes('poste'))  return { paymentMethod: 'poste', bankName: '' };
-  if (r.includes('espece') || r.includes('caisse') || r.includes('نقد'))         return { paymentMethod: 'especes', bankName: '' };
+  const transferMatch = TRANSFER_SERVICES.find((s) => r.includes(s.toLowerCase()));
+  if (r.includes('virement') || r.includes('تحويل بنكي')) return { paymentMethod: 'virement', bankName: bankMatch || '' };
+  if (r.includes('cheque') || r.includes('chèque') || r.includes('شيك')) return { paymentMethod: 'cheque', bankName: bankMatch || '' };
+  if (r.includes('transfer') || r.includes('إرسالية') || r.includes('ارسالية')) return { paymentMethod: 'transfer', bankName: transferMatch || '' };
+  if (r.includes('poste maroc') || r.includes('بريد')) return { paymentMethod: 'poste', bankName: '' };
+  if (r.includes('espece') || r.includes('caisse') || r.includes('نقد')) return { paymentMethod: 'especes', bankName: '' };
   return { paymentMethod: 'autre', bankName: '' };
 }
 
@@ -335,17 +340,23 @@ export const FinancePage: React.FC = () => {
               <label className="label">{lang === 'ar' ? 'اسم البنك' : 'Nom de la banque'}</label>
               <div className="flex flex-wrap gap-2">
                 {BANKS.map((bank) => (
-                  <button
-                    key={bank}
-                    type="button"
-                    onClick={() => setForm({ ...form, bankName: bank })}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                      form.bankName === bank
-                        ? 'bg-primary-600 border-primary-600 text-white'
-                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'
-                    }`}
-                  >
+                  <button key={bank} type="button" onClick={() => setForm({ ...form, bankName: bank })}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${form.bankName === bank ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'}`}>
                     {bank}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {form.paymentMethod === 'transfer' && (
+            <div>
+              <label className="label">{lang === 'ar' ? 'خدمة الإرسالية' : 'Service de transfer'}</label>
+              <div className="flex flex-wrap gap-2">
+                {TRANSFER_SERVICES.map((svc) => (
+                  <button key={svc} type="button" onClick={() => setForm({ ...form, bankName: svc })}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${form.bankName === svc ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-primary-400'}`}>
+                    {svc}
                   </button>
                 ))}
               </div>
