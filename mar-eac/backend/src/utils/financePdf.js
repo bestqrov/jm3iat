@@ -341,7 +341,7 @@ async function generateFinancialPDF(req, res) {
   doc.roundedRect(65, 168, PAGE_W - 130, 165, 10).strokeColor(BLUE).lineWidth(1.5).stroke();
   doc.font(fontBold).fontSize(22).fillColor(BLUE)
     .text(t.cover_title, 65, 192, { width: PAGE_W - 130, align: 'center', lineBreak: false });
-  doc.font('Helvetica').fontSize(14).fillColor('#374151')
+  doc.font(isAr ? 'Helvetica' : 'AR').fontSize(14).fillColor('#374151')
     .text(t.cover_sub, 65, 228, { width: PAGE_W - 130, align: 'center', lineBreak: false });
   doc.font(fontBold).fontSize(13).fillColor(BLUE)
     .text(`${t.exercise} ${year}`, 65, 264, { width: PAGE_W - 130, align: 'center', lineBreak: false });
