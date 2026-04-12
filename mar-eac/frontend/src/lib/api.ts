@@ -87,7 +87,7 @@ export const financeApi = {
   getSummary: () => api.get('/finance/summary'),
   getMonthly: (year?: number) => api.get('/finance/monthly', { params: { year } }),
   getCategories: () => api.get('/finance/categories'),
-  exportPDF: (year?: number) => api.get('/finance/export/pdf', { responseType: 'blob', params: year ? { year } : {} }),
+  exportPDF: (year?: number, lang?: string) => api.get('/finance/export/pdf', { responseType: 'blob', params: { ...(year ? { year } : {}), ...(lang ? { lang } : {}) } }),
 };
 
 // ---- Documents ----
@@ -109,7 +109,7 @@ export const reportsApi = {
   getLiterary: () => api.get('/reports/literary'),
   getFinancial: () => api.get('/reports/financial'),
   exportLiterary: () => api.get('/reports/literary/export', { responseType: 'blob' }),
-  exportFinancial: (year?: number) => api.get('/reports/financial/export', { responseType: 'blob', params: year ? { year } : {} }),
+  exportFinancial: (year?: number, lang?: string) => api.get('/reports/financial/export', { responseType: 'blob', params: { ...(year ? { year } : {}), ...(lang ? { lang } : {}) } }),
 };
 
 // ---- Projects ----

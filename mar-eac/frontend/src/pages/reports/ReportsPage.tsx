@@ -30,8 +30,9 @@ export const ReportsPage: React.FC = () => {
 
   const exportFinancial = async () => {
     try {
-      const res = await reportsApi.exportFinancial(exportYear);
-      downloadBlob(new Blob([res.data], { type: 'application/pdf' }), `rapport_financier_${exportYear}.pdf`);
+      const res = await reportsApi.exportFinancial(exportYear, lang);
+      const filename = lang === 'ar' ? `التقرير_المالي_${exportYear}.pdf` : `rapport_financier_${exportYear}.pdf`;
+      downloadBlob(new Blob([res.data], { type: 'application/pdf' }), filename);
     } catch {}
   };
 
