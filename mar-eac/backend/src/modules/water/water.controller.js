@@ -313,7 +313,7 @@ const createRepair = async (req, res) => {
   try {
     const {
       title, type, description, location, installationId, cost, reportedDate,
-      technicianName, technicianAmount, partsNeeded, workDetails, deadline,
+      technicianName, technicianAmount, partsNeeded, workDetails, deadline, reference,
     } = req.body;
     if (!title) return res.status(400).json({ message: 'Title required' });
 
@@ -334,6 +334,7 @@ const createRepair = async (req, res) => {
         location,
         installationId: installationId || null,
         cost: cost ? parseFloat(cost) : null,
+        reference: reference || null,
         reportedDate: reportedDate ? new Date(reportedDate) : new Date(),
         technicianName: technicianName || null,
         technicianAmount: technicianAmount ? parseFloat(technicianAmount) : null,
@@ -355,7 +356,7 @@ const createRepair = async (req, res) => {
 const updateRepair = async (req, res) => {
   try {
     const {
-      title, type, description, location, status, cost,
+      title, type, description, location, status, cost, reference,
       technicianName, technicianAmount, partsNeeded, workDetails, deadline,
     } = req.body;
     const existing = await prisma.waterRepair.findFirst({
@@ -372,6 +373,7 @@ const updateRepair = async (req, res) => {
         location: location !== undefined ? location : existing.location,
         status: status ?? existing.status,
         cost: cost !== undefined ? parseFloat(cost) : existing.cost,
+        reference: reference !== undefined ? reference : existing.reference,
         resolvedDate: status === 'FIXED' && !existing.resolvedDate ? new Date() : existing.resolvedDate,
         technicianName: technicianName !== undefined ? technicianName : existing.technicianName,
         technicianAmount: technicianAmount !== undefined ? parseFloat(technicianAmount) : existing.technicianAmount,

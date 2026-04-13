@@ -233,7 +233,7 @@ export const WaterPage: React.FC = () => {
   useEffect(() => {
     const tasks: Promise<any>[] = [loadSummary(), loadInstallations()];
     if (isWaterReader) tasks.push(loadReaderAnalytics());
-    else tasks.push(loadReaders());
+    else tasks.push(loadReaders(), loadRepairs());
     Promise.all(tasks).finally(() => setLoading(false));
   }, []);
 
@@ -638,6 +638,21 @@ export const WaterPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Open réclamations (FUITE/BRANCHEMENT) alert */}
+          {repairs.filter((r) => (r.type === 'FUITE' || r.type === 'BRANCHEMENT') && r.status !== 'FIXED').length > 0 && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-4 flex items-center gap-3">
+              <Flame size={20} className="text-red-600 flex-shrink-0" />
+              <p className="text-sm text-red-800 dark:text-red-300">
+                {lang === 'ar'
+                  ? `${repairs.filter((r) => (r.type === 'FUITE' || r.type === 'BRANCHEMENT') && r.status !== 'FIXED').length} بلاغ تسرب / مشكل توصيل بحاجة للتدخل`
+                  : `${repairs.filter((r) => (r.type === 'FUITE' || r.type === 'BRANCHEMENT') && r.status !== 'FIXED').length} fuite(s)/problème(s) de branchement signalé(s) en attente`}
+              </p>
+              <button onClick={() => { setRepairFilter(''); setActiveTab('repairs'); }} className="ms-auto text-xs btn-secondary py-1 whitespace-nowrap">
+                {lang === 'ar' ? 'عرض البلاغات' : 'Voir les réclamations'}
+              </button>
+            </div>
+          )}
+
           {/* Recent unpaid invoices alert */}
           {(summary?.unpaidCount ?? 0) > 0 && (
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 flex items-center gap-3">
@@ -1036,6 +1051,7 @@ export const WaterPage: React.FC = () => {
                     </div>
                   )}
                   <div className="flex flex-wrap gap-3 text-xs text-gray-400 mt-2">
+                    {rep.reference && <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300">#{rep.reference}</span>}
                     {rep.location && <span className="flex items-center gap-1"><MapPin size={10} />{rep.location}</span>}
                     {rep.cost && <span className="font-semibold text-amber-600">{formatCurrency(rep.cost, lang)}</span>}
                     <span>{formatDate(rep.reportedDate, lang)}</span>

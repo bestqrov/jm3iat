@@ -347,6 +347,7 @@ model WaterRepair {
   location         String?
   status           String    @default("PENDING")
   cost             Float?
+  reference        String?
   technicianName   String?
   technicianAmount Float?
   partsNeeded      String?
