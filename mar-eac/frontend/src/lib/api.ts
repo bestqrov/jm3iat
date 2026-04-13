@@ -168,6 +168,7 @@ export const waterApi = {
   // Summary & Reports
   getSummary: () => api.get('/water/summary'),
   getReports: () => api.get('/water/reports'),
+  exportInvoicePDF: (invoiceId: string) => api.get(`/water/invoices/${invoiceId}/pdf`, { responseType: 'blob' }),
 };
 
 // ---- Reminders ----

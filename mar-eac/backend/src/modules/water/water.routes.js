@@ -13,6 +13,7 @@ router.get('/reports', ctrl.getReports);
 // Invoices
 router.get('/invoices', ctrl.getInvoices);
 router.put('/invoices/:invoiceId/pay', ctrl.markPaid);
+router.get('/invoices/:invoiceId/pdf', ctrl.exportInvoicePDF);
 
 // Readings (all)
 router.get('/readings', ctrl.getAllReadings);

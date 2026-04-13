@@ -1,4 +1,5 @@
 const prisma = require('../../config/database');
+const { generateWaterBillPDF } = require('../../utils/waterBillPdf');
 
 // ─── Installations ────────────────────────────────────────────────────────────
 
@@ -505,10 +506,15 @@ const getReports = async (req, res) => {
   }
 };
 
+const exportInvoicePDF = (req, res) => generateWaterBillPDF(req, res).catch((err) => {
+  console.error('Invoice PDF error:', err);
+  if (!res.headersSent) res.status(500).json({ message: 'Error generating PDF' });
+});
+
 module.exports = {
   getInstallations, getInstallation, createInstallation, updateInstallation, deleteInstallation,
   addReading, getReadings, getAllReadings,
-  getInvoices, markPaid,
+  getInvoices, markPaid, exportInvoicePDF,
   getRepairs, createRepair, updateRepair, deleteRepair,
   getSummary, getReports,
 };

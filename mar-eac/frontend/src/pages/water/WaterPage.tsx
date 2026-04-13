@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Plus, Droplets, Trash2, CheckCircle, Pencil, Wrench,
   BarChart2, AlertTriangle, Phone, MapPin, Hash, RefreshCw,
-  TrendingUp, Banknote, FileBarChart, Activity,
+  TrendingUp, Banknote, FileBarChart, Activity, FileDown,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -304,6 +304,18 @@ export const WaterPage: React.FC = () => {
     } catch (err: any) {
       alert(err.response?.data?.message || w('error'));
     } finally { setSaving(false); }
+  };
+
+  const handleDownloadInvoicePDF = async (invoiceId: string, meterNumber: string) => {
+    try {
+      const res = await waterApi.exportInvoicePDF(invoiceId);
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `facture-eau-${meterNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { alert(w('error')); }
   };
 
   const handleDelete = async () => {
@@ -643,12 +655,20 @@ export const WaterPage: React.FC = () => {
                             ) : '-'}
                           </td>
                           <td>
-                            {!inv.isPaid && (
-                              <button onClick={() => { setShowInvoicePayModal(inv); setPayForm({ method: 'CASH', notes: '' }); }}
-                                className="flex items-center gap-1 text-xs btn-success py-1 px-2">
-                                <CheckCircle size={12} />{w('markPaid')}
+                            <div className="flex items-center gap-1">
+                              {!inv.isPaid && (
+                                <button onClick={() => { setShowInvoicePayModal(inv); setPayForm({ method: 'CASH', notes: '' }); }}
+                                  className="flex items-center gap-1 text-xs btn-success py-1 px-2">
+                                  <CheckCircle size={12} />{w('markPaid')}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDownloadInvoicePDF(inv.id, inv.installation?.meterNumber)}
+                                className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                title={lang === 'ar' ? 'تحميل الفاتورة PDF' : 'Télécharger PDF'}>
+                                <FileDown size={14} />
                               </button>
-                            )}
+                            </div>
                           </td>
                         </tr>
                       );
