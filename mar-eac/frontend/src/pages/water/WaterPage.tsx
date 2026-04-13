@@ -419,12 +419,25 @@ export const WaterPage: React.FC = () => {
   const handleDownloadInvoicePDF = async (invoiceId: string, meterNumber: string) => {
     try {
       const res = await waterApi.exportInvoicePDF(invoiceId);
-      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `facture-eau-${meterNumber}.pdf`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch { alert(w('error')); }
+  };
+
+  const handlePreviewInvoicePDF = async (invoiceId: string) => {
+    try {
+      const res = await waterApi.exportInvoicePDF(invoiceId);
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch { alert(w('error')); }
   };
 
@@ -950,6 +963,12 @@ export const WaterPage: React.FC = () => {
                                   <CheckCircle size={12} />{w('markPaid')}
                                 </button>
                               )}
+                              <button
+                                onClick={() => handlePreviewInvoicePDF(inv.id)}
+                                className="p-1.5 rounded-lg text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                                title={lang === 'ar' ? 'معاينة الفاتورة' : 'Aperçu PDF'}>
+                                <Eye size={14} />
+                              </button>
                               <button
                                 onClick={() => handleDownloadInvoicePDF(inv.id, inv.installation?.meterNumber)}
                                 className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
