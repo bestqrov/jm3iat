@@ -1,4 +1,6 @@
 const prisma = require('../../config/database');
+const path = require('path');
+const fs = require('fs');
 const { generateWaterBillPDF } = require('../../utils/waterBillPdf');
 
 // ─── Installations ────────────────────────────────────────────────────────────
@@ -240,7 +242,7 @@ const getInvoices = async (req, res) => {
 
 const markPaid = async (req, res) => {
   try {
-    const { method, notes } = req.body;
+    const { method, notes, reference } = req.body;
     const invoice = await prisma.waterInvoice.findFirst({
       where: {
         id: req.params.invoiceId,
@@ -260,6 +262,7 @@ const markPaid = async (req, res) => {
           invoiceId: req.params.invoiceId,
           amount: invoice.amount,
           method: method || 'CASH',
+          reference: reference || null,
           notes,
         },
       });
@@ -506,6 +509,32 @@ const getReports = async (req, res) => {
   }
 };
 
+const uploadPaymentReceipt = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const invoice = await prisma.waterInvoice.findFirst({
+      where: { id: req.params.invoiceId, installation: { organizationId: req.organization.id } },
+      include: { payment: true },
+    });
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+    if (!invoice.payment) return res.status(404).json({ message: 'Payment not found' });
+
+    const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
+    if (invoice.payment.receiptUrl) {
+      const old = path.join(UPLOAD_DIR, path.basename(invoice.payment.receiptUrl));
+      if (fs.existsSync(old)) fs.unlinkSync(old);
+    }
+    const receiptUrl = `/uploads/${req.file.filename}`;
+    const payment = await prisma.waterPayment.update({
+      where: { id: invoice.payment.id },
+      data: { receiptUrl },
+    });
+    res.json({ receiptUrl: payment.receiptUrl });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const exportInvoicePDF = (req, res) => generateWaterBillPDF(req, res).catch((err) => {
   console.error('Invoice PDF error:', err);
   if (!res.headersSent) res.status(500).json({ message: 'Error generating PDF' });
@@ -514,7 +543,7 @@ const exportInvoicePDF = (req, res) => generateWaterBillPDF(req, res).catch((err
 module.exports = {
   getInstallations, getInstallation, createInstallation, updateInstallation, deleteInstallation,
   addReading, getReadings, getAllReadings,
-  getInvoices, markPaid, exportInvoicePDF,
+  getInvoices, markPaid, uploadPaymentReceipt, exportInvoicePDF,
   getRepairs, createRepair, updateRepair, deleteRepair,
   getSummary, getReports,
 };

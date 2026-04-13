@@ -323,13 +323,15 @@ model WaterInvoice {
 }
 
 model WaterPayment {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  invoiceId String   @unique @db.ObjectId
-  amount    Float
-  method    String   @default("CASH")
-  notes     String?
-  paidAt    DateTime @default(now())
-  createdAt DateTime @default(now())
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceId  String   @unique @db.ObjectId
+  amount     Float
+  method     String   @default("CASH")
+  reference  String?
+  receiptUrl String?
+  notes      String?
+  paidAt     DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   invoice WaterInvoice @relation(fields: [invoiceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

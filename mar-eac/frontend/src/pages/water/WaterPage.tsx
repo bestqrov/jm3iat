@@ -143,7 +143,8 @@ export const WaterPage: React.FC = () => {
   // Forms
   const [instForm, setInstForm] = useState({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true });
   const [readingForm, setReadingForm] = useState({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '' });
-  const [payForm, setPayForm] = useState({ method: 'CASH', notes: '' });
+  const [payForm, setPayForm] = useState({ method: 'CASH', reference: '', notes: '' });
+  const [payReceiptFile, setPayReceiptFile] = useState<File | null>(null);
   const [repairForm, setRepairForm] = useState({ title: '', type: 'REPARATION', description: '', location: '', installationId: '', cost: '', reportedDate: '', status: 'PENDING' });
 
   // ── Loaders ───────────────────────────────────────────────────────────────
@@ -260,8 +261,12 @@ export const WaterPage: React.FC = () => {
     setSaving(true);
     try {
       await waterApi.markPaid(showInvoicePayModal.id, payForm);
+      if (payReceiptFile) {
+        await waterApi.uploadPaymentReceipt(showInvoicePayModal.id, payReceiptFile);
+      }
       setShowInvoicePayModal(null);
-      setPayForm({ method: 'CASH', notes: '' });
+      setPayForm({ method: 'CASH', reference: '', notes: '' });
+      setPayReceiptFile(null);
       loadInvoices();
       loadSummary();
     } catch (err: any) {
@@ -649,15 +654,21 @@ export const WaterPage: React.FC = () => {
                           </td>
                           <td>
                             {inv.payment ? (
-                              <span className="text-xs text-gray-500">
-                                {inv.payment.method === 'CASH' ? (lang === 'ar' ? 'نقدًا' : 'Espèces') : inv.payment.method === 'TRANSFER' ? (lang === 'ar' ? 'تحويل' : 'Virement') : 'Chèque'}
-                              </span>
+                              <div className="text-xs text-gray-500">
+                                <span>{inv.payment.method === 'CASH' ? (lang === 'ar' ? 'نقدًا' : 'Espèces') : inv.payment.method === 'TRANSFER' ? (lang === 'ar' ? 'تحويل' : 'Virement') : 'Chèque'}</span>
+                                {inv.payment.reference && <div className="font-mono text-gray-400">{inv.payment.reference}</div>}
+                                {inv.payment.receiptUrl && (
+                                  <a href={inv.payment.receiptUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                                    {lang === 'ar' ? 'الإيصال' : 'Reçu'}
+                                  </a>
+                                )}
+                              </div>
                             ) : '-'}
                           </td>
                           <td>
                             <div className="flex items-center gap-1">
                               {!inv.isPaid && (
-                                <button onClick={() => { setShowInvoicePayModal(inv); setPayForm({ method: 'CASH', notes: '' }); }}
+                                <button onClick={() => { setShowInvoicePayModal(inv); setPayForm({ method: 'CASH', reference: '', notes: '' }); setPayReceiptFile(null); }}
                                   className="flex items-center gap-1 text-xs btn-success py-1 px-2">
                                   <CheckCircle size={12} />{w('markPaid')}
                                 </button>
@@ -989,6 +1000,37 @@ export const WaterPage: React.FC = () => {
                   </label>
                 ))}
               </div>
+            </div>
+            {(payForm.method === 'CHEQUE' || payForm.method === 'TRANSFER') && (
+              <div>
+                <label className="label">
+                  {payForm.method === 'CHEQUE'
+                    ? (lang === 'ar' ? 'رقم الشيك' : 'N° du chèque')
+                    : (lang === 'ar' ? 'مرجع التحويل' : 'Référence virement')}
+                  {' *'}
+                </label>
+                <input className="input font-mono" value={payForm.reference}
+                  onChange={(e) => setPayForm({ ...payForm, reference: e.target.value })}
+                  placeholder={payForm.method === 'CHEQUE' ? 'Ex: 0012345' : 'Ex: VIR-2025-001'} />
+              </div>
+            )}
+            <div>
+              <label className="label">{lang === 'ar' ? 'إيصال / وصل الأداء' : 'Reçu / Justificatif'}</label>
+              <label className={`flex items-center gap-3 cursor-pointer border-2 border-dashed rounded-xl p-3 transition-colors ${payReceiptFile ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'}`}>
+                <input type="file" accept="image/*,application/pdf" className="hidden"
+                  onChange={(e) => setPayReceiptFile(e.target.files?.[0] || null)} />
+                {payReceiptFile ? (
+                  <span className="text-sm text-blue-600 dark:text-blue-400 truncate">{payReceiptFile.name}</span>
+                ) : (
+                  <span className="text-sm text-gray-400">{lang === 'ar' ? 'انقر لرفع الإيصال (صورة أو PDF)' : 'Cliquer pour joindre le reçu (image ou PDF)'}</span>
+                )}
+              </label>
+              {payReceiptFile && (
+                <button type="button" onClick={() => setPayReceiptFile(null)}
+                  className="text-xs text-red-500 mt-1 hover:underline">
+                  {lang === 'ar' ? 'إزالة الملف' : 'Supprimer le fichier'}
+                </button>
+              )}
             </div>
             <div>
               <label className="label">{w('notes')}</label>

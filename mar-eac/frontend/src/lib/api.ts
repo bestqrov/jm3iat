@@ -169,6 +169,11 @@ export const waterApi = {
   getSummary: () => api.get('/water/summary'),
   getReports: () => api.get('/water/reports'),
   exportInvoicePDF: (invoiceId: string) => api.get(`/water/invoices/${invoiceId}/pdf`, { responseType: 'blob' }),
+  uploadPaymentReceipt: (invoiceId: string, file: File) => {
+    const fd = new FormData();
+    fd.append('receipt', file);
+    return api.post(`/water/invoices/${invoiceId}/receipt`, fd);
+  },
 };
 
 // ---- Reminders ----

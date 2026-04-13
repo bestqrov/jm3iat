@@ -3,6 +3,7 @@ const ctrl = require('./water.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
 const { requirePlan } = require('../../middleware/subscription');
+const upload = require('../../utils/multer');
 
 router.use(auth, tenant, requirePlan('PREMIUM'));
 
@@ -14,6 +15,7 @@ router.get('/reports', ctrl.getReports);
 router.get('/invoices', ctrl.getInvoices);
 router.put('/invoices/:invoiceId/pay', ctrl.markPaid);
 router.get('/invoices/:invoiceId/pdf', ctrl.exportInvoicePDF);
+router.post('/invoices/:invoiceId/receipt', upload.single('receipt'), ctrl.uploadPaymentReceipt);
 
 // Readings (all)
 router.get('/readings', ctrl.getAllReadings);
