@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Trash2, MapPin, Calendar } from 'lucide-react';
 import { projectsApi, fundingApi, requestsApi, documentsApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 const FUNDING_SOURCES = ['COMMUNE', 'DONOR', 'INTERNAL', 'GRANT', 'OTHER'];
@@ -23,6 +24,8 @@ export const ProjectDetailPage: React.FC = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [fundingForm, setFundingForm] = useState({ source: 'COMMUNE', amount: '', donor: '', notes: '' });
   const [budgetForm, setBudgetForm] = useState({ totalBudget: '' });
+  const [deleteEntryId, setDeleteEntryId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -69,12 +72,14 @@ export const ProjectDetailPage: React.FC = () => {
     } finally { setSaving(false); }
   };
 
-  const handleDeleteEntry = async (entryId: string) => {
-    if (!window.confirm(t('common.confirmDelete'))) return;
+  const handleDeleteEntry = async () => {
+    if (!deleteEntryId) return;
+    setDeleting(true);
     try {
-      await fundingApi.deleteEntry(entryId);
+      await fundingApi.deleteEntry(deleteEntryId);
+      setDeleteEntryId(null);
       load();
-    } catch {}
+    } catch {} finally { setDeleting(false); }
   };
 
   const handleStatusChange = async (status: string) => {
@@ -189,7 +194,7 @@ export const ProjectDetailPage: React.FC = () => {
                         <td>{formatDate(entry.date, lang)}</td>
                         <td className="font-semibold text-emerald-600">{formatCurrency(entry.amount, lang)}</td>
                         <td>
-                          <button onClick={() => handleDeleteEntry(entry.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
+                          <button onClick={() => setDeleteEntryId(entry.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
                         </td>
                       </tr>
                     ))}
@@ -270,6 +275,8 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog isOpen={!!deleteEntryId} onClose={() => setDeleteEntryId(null)} onConfirm={handleDeleteEntry} title={lang === 'ar' ? 'حذف الإدخال' : 'Supprimer l\'entrée'} message={t('common.confirmDelete')} loading={deleting} />
 
       {/* Update Budget Modal */}
       <Modal isOpen={showBudgetModal} onClose={() => { setShowBudgetModal(false); setSaveError(null); }} title={t('funding.updateBudget')}
