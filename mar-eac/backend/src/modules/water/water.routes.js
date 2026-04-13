@@ -11,6 +11,11 @@ router.use(auth, tenant, requirePlan('PREMIUM'));
 router.get('/summary', ctrl.getSummary);
 router.get('/reports', ctrl.getReports);
 
+// Readers (Lecteurs) — admin only
+router.get('/readers', ctrl.getReaders);
+router.post('/readers', ctrl.createReader);
+router.delete('/readers/:readerId', ctrl.deleteReader);
+
 // Invoices
 router.get('/invoices', ctrl.getInvoices);
 router.put('/invoices/:invoiceId/pay', ctrl.markPaid);

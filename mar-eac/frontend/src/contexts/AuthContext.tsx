@@ -5,7 +5,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'WATER_READER';
   organizationId: string | null;
 }
 
@@ -29,6 +29,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isSuperAdmin: boolean;
+  isWaterReader: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
@@ -52,6 +53,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   isSuperAdmin: false,
+  isWaterReader: false,
   login: async () => {},
   register: async () => {},
   logout: () => {},
@@ -124,6 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAuthenticated: !!user,
       isLoading,
       isSuperAdmin: user?.role === 'SUPER_ADMIN',
+      isWaterReader: user?.role === 'WATER_READER',
       login,
       register,
       logout,

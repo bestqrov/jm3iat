@@ -23,7 +23,7 @@ interface NavGroup {
 }
 
 export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const { user, organization, logout, isSuperAdmin } = useAuth();
+  const { user, organization, logout, isSuperAdmin, isWaterReader } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { t, lang, setLang } = useLanguage();
   const navigate = useNavigate();
@@ -36,7 +36,16 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     navigate('/login');
   };
 
-  const navGroups: NavGroup[] = [
+  // Water readers only see water management + settings
+  const navGroups: NavGroup[] = isWaterReader ? [
+    {
+      label: '',
+      items: [
+        { to: '/water', icon: <Droplets size={18} />, label: t('nav.water') },
+        { to: '/settings', icon: <Settings size={18} />, label: t('nav.settings') },
+      ],
+    },
+  ] : [
     {
       label: '',
       items: [

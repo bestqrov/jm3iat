@@ -176,6 +176,13 @@ export const waterApi = {
   },
 };
 
+// ---- Water Readers ----
+export const waterReadersApi = {
+  getAll: () => api.get('/water/readers'),
+  create: (data: { name: string; email: string; password: string }) => api.post('/water/readers', data),
+  delete: (readerId: string) => api.delete(`/water/readers/${readerId}`),
+};
+
 // ---- Reminders ----
 export const remindersApi = {
   getAll: (params?: any) => api.get('/reminders', { params }),

@@ -271,6 +271,7 @@ model Request {
 model WaterInstallation {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   organizationId String   @db.ObjectId
+  readerId       String?  @db.ObjectId
   householdName  String
   phone          String?
   address        String?
@@ -337,19 +338,24 @@ model WaterPayment {
 }
 
 model WaterRepair {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  organizationId String    @db.ObjectId
-  installationId String?   @db.ObjectId
-  title          String
-  type           String    @default("REPARATION")
-  description    String?
-  location       String?
-  status         String    @default("PENDING")
-  cost           Float?
-  reportedDate   DateTime  @default(now())
-  resolvedDate   DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId   String    @db.ObjectId
+  installationId   String?   @db.ObjectId
+  title            String
+  type             String    @default("REPARATION")
+  description      String?
+  location         String?
+  status           String    @default("PENDING")
+  cost             Float?
+  technicianName   String?
+  technicianAmount Float?
+  partsNeeded      String?
+  workDetails      String?
+  deadline         DateTime?
+  reportedDate     DateTime  @default(now())
+  resolvedDate     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   organization Organization       @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   installation WaterInstallation? @relation(fields: [installationId], references: [id], onDelete: NoAction, onUpdate: NoAction)

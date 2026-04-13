@@ -1,14 +1,19 @@
 const prisma = require('../../config/database');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
 const { generateWaterBillPDF } = require('../../utils/waterBillPdf');
+
+// Helper: extra filter when logged-in user is a WATER_READER
+const readerInstFilter = (req) =>
+  req.user.role === 'WATER_READER' ? { readerId: req.user.id } : {};
 
 // ─── Installations ────────────────────────────────────────────────────────────
 
 const getInstallations = async (req, res) => {
   try {
     const { isActive } = req.query;
-    const where = { organizationId: req.organization.id };
+    const where = { organizationId: req.organization.id, ...readerInstFilter(req) };
     if (isActive !== undefined) where.isActive = isActive === 'true';
 
     const installations = await prisma.waterInstallation.findMany({
@@ -54,7 +59,7 @@ const getInstallation = async (req, res) => {
 
 const createInstallation = async (req, res) => {
   try {
-    const { householdName, phone, address, meterNumber, pricePerUnit, installDate } = req.body;
+    const { householdName, phone, address, meterNumber, pricePerUnit, installDate, readerId } = req.body;
     if (!householdName || !meterNumber) {
       return res.status(400).json({ message: 'householdName and meterNumber required' });
     }
@@ -68,6 +73,7 @@ const createInstallation = async (req, res) => {
         meterNumber,
         pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : 5.0,
         installDate: installDate ? new Date(installDate) : new Date(),
+        readerId: readerId || null,
       },
     });
 
@@ -80,7 +86,7 @@ const createInstallation = async (req, res) => {
 
 const updateInstallation = async (req, res) => {
   try {
-    const { householdName, phone, address, pricePerUnit, isActive } = req.body;
+    const { householdName, phone, address, pricePerUnit, isActive, readerId } = req.body;
     const existing = await prisma.waterInstallation.findFirst({
       where: { id: req.params.id, organizationId: req.organization.id },
     });
@@ -94,6 +100,7 @@ const updateInstallation = async (req, res) => {
         address: address !== undefined ? address : existing.address,
         pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : existing.pricePerUnit,
         isActive: isActive !== undefined ? isActive : existing.isActive,
+        readerId: readerId !== undefined ? (readerId || null) : existing.readerId,
       },
     });
 
@@ -128,7 +135,7 @@ const addReading = async (req, res) => {
     }
 
     const installation = await prisma.waterInstallation.findFirst({
-      where: { id: installationId, organizationId: req.organization.id },
+      where: { id: installationId, organizationId: req.organization.id, ...readerInstFilter(req) },
     });
     if (!installation) return res.status(404).json({ message: 'Installation not found' });
 
@@ -195,7 +202,7 @@ const getReadings = async (req, res) => {
 const getAllReadings = async (req, res) => {
   try {
     const { installationId, month, year } = req.query;
-    const where = { installation: { organizationId: req.organization.id } };
+    const where = { installation: { organizationId: req.organization.id, ...readerInstFilter(req) } };
     if (installationId) where.installationId = installationId;
     if (month) where.month = parseInt(month);
     if (year) where.year = parseInt(year);
@@ -220,7 +227,7 @@ const getAllReadings = async (req, res) => {
 const getInvoices = async (req, res) => {
   try {
     const { isPaid, installationId } = req.query;
-    const where = { installation: { organizationId: req.organization.id } };
+    const where = { installation: { organizationId: req.organization.id, ...readerInstFilter(req) } };
     if (isPaid !== undefined) where.isPaid = isPaid === 'true';
     if (installationId) where.installationId = installationId;
 
@@ -246,7 +253,7 @@ const markPaid = async (req, res) => {
     const invoice = await prisma.waterInvoice.findFirst({
       where: {
         id: req.params.invoiceId,
-        installation: { organizationId: req.organization.id },
+        installation: { organizationId: req.organization.id, ...readerInstFilter(req) },
       },
     });
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
@@ -283,10 +290,15 @@ const getRepairs = async (req, res) => {
     const where = { organizationId: req.organization.id };
     if (status) where.status = status;
 
+    // WATER_READER sees only repairs linked to their installations
+    if (req.user.role === 'WATER_READER') {
+      where.installation = { readerId: req.user.id };
+    }
+
     const repairs = await prisma.waterRepair.findMany({
       where,
       include: {
-        installation: { select: { householdName: true, meterNumber: true } },
+        installation: { select: { householdName: true, meterNumber: true, readerId: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -299,8 +311,19 @@ const getRepairs = async (req, res) => {
 
 const createRepair = async (req, res) => {
   try {
-    const { title, type, description, location, installationId, cost, reportedDate } = req.body;
+    const {
+      title, type, description, location, installationId, cost, reportedDate,
+      technicianName, technicianAmount, partsNeeded, workDetails, deadline,
+    } = req.body;
     if (!title) return res.status(400).json({ message: 'Title required' });
+
+    // If WATER_READER, verify installation belongs to them
+    if (req.user.role === 'WATER_READER' && installationId) {
+      const inst = await prisma.waterInstallation.findFirst({
+        where: { id: installationId, readerId: req.user.id },
+      });
+      if (!inst) return res.status(403).json({ message: 'Access denied' });
+    }
 
     const repair = await prisma.waterRepair.create({
       data: {
@@ -312,6 +335,11 @@ const createRepair = async (req, res) => {
         installationId: installationId || null,
         cost: cost ? parseFloat(cost) : null,
         reportedDate: reportedDate ? new Date(reportedDate) : new Date(),
+        technicianName: technicianName || null,
+        technicianAmount: technicianAmount ? parseFloat(technicianAmount) : null,
+        partsNeeded: partsNeeded || null,
+        workDetails: workDetails || null,
+        deadline: deadline ? new Date(deadline) : null,
       },
       include: {
         installation: { select: { householdName: true, meterNumber: true } },
@@ -326,7 +354,10 @@ const createRepair = async (req, res) => {
 
 const updateRepair = async (req, res) => {
   try {
-    const { title, type, description, location, status, cost } = req.body;
+    const {
+      title, type, description, location, status, cost,
+      technicianName, technicianAmount, partsNeeded, workDetails, deadline,
+    } = req.body;
     const existing = await prisma.waterRepair.findFirst({
       where: { id: req.params.id, organizationId: req.organization.id },
     });
@@ -342,6 +373,11 @@ const updateRepair = async (req, res) => {
         status: status ?? existing.status,
         cost: cost !== undefined ? parseFloat(cost) : existing.cost,
         resolvedDate: status === 'FIXED' && !existing.resolvedDate ? new Date() : existing.resolvedDate,
+        technicianName: technicianName !== undefined ? technicianName : existing.technicianName,
+        technicianAmount: technicianAmount !== undefined ? parseFloat(technicianAmount) : existing.technicianAmount,
+        partsNeeded: partsNeeded !== undefined ? partsNeeded : existing.partsNeeded,
+        workDetails: workDetails !== undefined ? workDetails : existing.workDetails,
+        deadline: deadline !== undefined ? (deadline ? new Date(deadline) : null) : existing.deadline,
       },
     });
 
@@ -540,10 +576,86 @@ const exportInvoicePDF = (req, res) => generateWaterBillPDF(req, res).catch((err
   if (!res.headersSent) res.status(500).json({ message: 'Error generating PDF' });
 });
 
+// ─── Reader (Lecteur) Management ─────────────────────────────────────────────
+
+const getReaders = async (req, res) => {
+  try {
+    const readers = await prisma.user.findMany({
+      where: { organizationId: req.organization.id, role: 'WATER_READER' },
+      select: {
+        id: true, name: true, email: true, isActive: true, createdAt: true,
+        _count: { select: { organization: false } },
+      },
+    });
+
+    // Attach installation count per reader
+    const readersWithCount = await Promise.all(
+      readers.map(async (r) => {
+        const count = await prisma.waterInstallation.count({
+          where: { organizationId: req.organization.id, readerId: r.id },
+        });
+        return { ...r, installationCount: count };
+      })
+    );
+
+    res.json(readersWithCount);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const createReader = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password)
+      return res.status(400).json({ message: 'Name, email and password required' });
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) return res.status(409).json({ message: 'Email already in use' });
+
+    const hashed = await bcrypt.hash(password, 10);
+    const reader = await prisma.user.create({
+      data: {
+        organizationId: req.organization.id,
+        name,
+        email,
+        password: hashed,
+        role: 'WATER_READER',
+      },
+      select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+    });
+
+    res.status(201).json(reader);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const deleteReader = async (req, res) => {
+  try {
+    const reader = await prisma.user.findFirst({
+      where: { id: req.params.readerId, organizationId: req.organization.id, role: 'WATER_READER' },
+    });
+    if (!reader) return res.status(404).json({ message: 'Reader not found' });
+
+    // Unlink installations
+    await prisma.waterInstallation.updateMany({
+      where: { organizationId: req.organization.id, readerId: reader.id },
+      data: { readerId: null },
+    });
+
+    await prisma.user.delete({ where: { id: reader.id } });
+    res.json({ message: 'Reader deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getInstallations, getInstallation, createInstallation, updateInstallation, deleteInstallation,
   addReading, getReadings, getAllReadings,
   getInvoices, markPaid, uploadPaymentReceipt, exportInvoicePDF,
   getRepairs, createRepair, updateRepair, deleteRepair,
   getSummary, getReports,
+  getReaders, createReader, deleteReader,
 };

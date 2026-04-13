@@ -3,20 +3,22 @@ import {
   Plus, Droplets, Trash2, CheckCircle, Pencil, Wrench,
   BarChart2, AlertTriangle, Phone, MapPin, Hash, RefreshCw,
   TrendingUp, Banknote, FileBarChart, Activity, FileDown,
+  Users, UserPlus, Eye, EyeOff, Calendar,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts';
-import { waterApi } from '../../lib/api';
+import { waterApi, waterReadersApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
-type Tab = 'dashboard' | 'installations' | 'readings' | 'invoices' | 'repairs' | 'reports';
+type Tab = 'dashboard' | 'installations' | 'readings' | 'invoices' | 'repairs' | 'reports' | 'readers';
 
 const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
@@ -29,6 +31,7 @@ const repairStatusColor: Record<string, string> = {
 
 export const WaterPage: React.FC = () => {
   const { lang } = useLanguage();
+  const { isWaterReader } = useAuth();
   const t = (key: string) => key; // handled inline for water-specific labels
   const w = (key: string) => {
     const map: Record<string, Record<string, string>> = {
@@ -107,6 +110,19 @@ export const WaterPage: React.FC = () => {
       totalInstallations: { fr: 'Total installations', ar: 'إجمالي المنشآت' },
       totalRepairs: { fr: 'Total réparations', ar: 'إجمالي الأعطال' },
       repairCosts: { fr: 'Coût des réparations', ar: 'تكلفة الإصلاحات' },
+      readers: { fr: 'Lecteurs', ar: 'القرّاء' },
+      addReader: { fr: 'Ajouter un lecteur', ar: 'إضافة قارئ' },
+      readerName: { fr: 'Nom', ar: 'الاسم' },
+      readerEmail: { fr: 'Email', ar: 'البريد الإلكتروني' },
+      readerPassword: { fr: 'Mot de passe', ar: 'كلمة المرور' },
+      readerInstCount: { fr: 'Compteurs assignés', ar: 'العدادات المسندة' },
+      assignReader: { fr: 'Lecteur assigné', ar: 'القارئ المسؤول' },
+      noReaders: { fr: 'Aucun lecteur configuré', ar: 'لا يوجد قرّاء' },
+      technicianName: { fr: 'Nom du technicien', ar: 'اسم التقني' },
+      technicianAmount: { fr: 'Montant technicien (MAD)', ar: 'أتعاب التقني (درهم)' },
+      partsNeeded: { fr: 'Pièces nécessaires', ar: 'القطع اللازمة' },
+      workDetails: { fr: 'Détails des travaux', ar: 'تفاصيل الأشغال' },
+      deadline: { fr: 'Délai prévu', ar: 'الموعد النهائي' },
     };
     return (map[key]?.[lang]) ?? key;
   };
@@ -114,13 +130,14 @@ export const WaterPage: React.FC = () => {
   const MONTHS = lang === 'ar' ? MONTHS_AR : MONTHS_FR;
 
   // ── State ─────────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [activeTab, setActiveTab] = useState<Tab>(isWaterReader ? 'installations' : 'dashboard');
   const [summary, setSummary] = useState<any>(null);
   const [installations, setInstallations] = useState<any[]>([]);
   const [readings, setReadings] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [repairs, setRepairs] = useState<any[]>([]);
   const [reports, setReports] = useState<any>(null);
+  const [readers, setReaders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -135,17 +152,24 @@ export const WaterPage: React.FC = () => {
   const [showReadingModal, setShowReadingModal] = useState(false);
   const [showInvoicePayModal, setShowInvoicePayModal] = useState<any>(null);
   const [showRepairModal, setShowRepairModal] = useState(false);
+  const [showReaderModal, setShowReaderModal] = useState(false);
   const [editingInst, setEditingInst] = useState<any>(null);
   const [editingRepair, setEditingRepair] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string } | null>(null);
   const [readingInstId, setReadingInstId] = useState('');
+  const [showReaderPass, setShowReaderPass] = useState(false);
 
   // Forms
-  const [instForm, setInstForm] = useState({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true });
+  const [instForm, setInstForm] = useState({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true, readerId: '' });
   const [readingForm, setReadingForm] = useState({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '' });
   const [payForm, setPayForm] = useState({ method: 'CASH', reference: '', notes: '' });
   const [payReceiptFile, setPayReceiptFile] = useState<File | null>(null);
-  const [repairForm, setRepairForm] = useState({ title: '', type: 'REPARATION', description: '', location: '', installationId: '', cost: '', reportedDate: '', status: 'PENDING' });
+  const [repairForm, setRepairForm] = useState({
+    title: '', type: 'REPARATION', description: '', location: '', installationId: '',
+    cost: '', reportedDate: '', status: 'PENDING',
+    technicianName: '', technicianAmount: '', partsNeeded: '', workDetails: '', deadline: '',
+  });
+  const [readerForm, setReaderForm] = useState({ name: '', email: '', password: '' });
 
   // ── Loaders ───────────────────────────────────────────────────────────────
   const loadSummary = useCallback(async () => {
@@ -184,9 +208,16 @@ export const WaterPage: React.FC = () => {
     setReports(res.data);
   }, []);
 
+  const loadReaders = useCallback(async () => {
+    const res = await waterReadersApi.getAll();
+    setReaders(res.data);
+  }, []);
+
   // Initial load
   useEffect(() => {
-    Promise.all([loadSummary(), loadInstallations()]).finally(() => setLoading(false));
+    const tasks: Promise<any>[] = [loadSummary(), loadInstallations()];
+    if (!isWaterReader) tasks.push(loadReaders());
+    Promise.all(tasks).finally(() => setLoading(false));
   }, []);
 
   // Tab-triggered loads
@@ -202,6 +233,9 @@ export const WaterPage: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'reports') loadReports();
   }, [activeTab]);
+  useEffect(() => {
+    if (activeTab === 'readers') loadReaders();
+  }, [activeTab]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const openInstModal = (inst?: any) => {
@@ -215,10 +249,11 @@ export const WaterPage: React.FC = () => {
         pricePerUnit: String(inst.pricePerUnit),
         installDate: inst.installDate ? inst.installDate.split('T')[0] : '',
         isActive: inst.isActive,
+        readerId: inst.readerId || '',
       });
     } else {
       setEditingInst(null);
-      setInstForm({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true });
+      setInstForm({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true, readerId: '' });
     }
     setShowInstModal(true);
   };
@@ -286,12 +321,34 @@ export const WaterPage: React.FC = () => {
         cost: repair.cost ? String(repair.cost) : '',
         reportedDate: repair.reportedDate ? repair.reportedDate.split('T')[0] : '',
         status: repair.status,
+        technicianName: repair.technicianName || '',
+        technicianAmount: repair.technicianAmount ? String(repair.technicianAmount) : '',
+        partsNeeded: repair.partsNeeded || '',
+        workDetails: repair.workDetails || '',
+        deadline: repair.deadline ? repair.deadline.split('T')[0] : '',
       });
     } else {
       setEditingRepair(null);
-      setRepairForm({ title: '', type: 'REPARATION', description: '', location: '', installationId: '', cost: '', reportedDate: '', status: 'PENDING' });
+      setRepairForm({
+        title: '', type: 'REPARATION', description: '', location: '', installationId: '',
+        cost: '', reportedDate: '', status: 'PENDING',
+        technicianName: '', technicianAmount: '', partsNeeded: '', workDetails: '', deadline: '',
+      });
     }
     setShowRepairModal(true);
+  };
+
+  const handleSaveReader = async () => {
+    if (!readerForm.name || !readerForm.email || !readerForm.password) return;
+    setSaving(true);
+    try {
+      await waterReadersApi.create(readerForm);
+      setShowReaderModal(false);
+      setReaderForm({ name: '', email: '', password: '' });
+      loadReaders();
+    } catch (err: any) {
+      alert(err.response?.data?.message || w('error'));
+    } finally { setSaving(false); }
   };
 
   const handleSaveRepair = async () => {
@@ -330,23 +387,31 @@ export const WaterPage: React.FC = () => {
       if (deleteTarget.type === 'installation') {
         await waterApi.deleteInstallation(deleteTarget.id);
         loadInstallations();
+        loadSummary();
       } else if (deleteTarget.type === 'repair') {
         await waterApi.deleteRepair(deleteTarget.id);
         loadRepairs();
+        loadSummary();
+      } else if (deleteTarget.type === 'reader') {
+        await waterReadersApi.delete(deleteTarget.id);
+        loadReaders();
+        loadInstallations();
       }
-      loadSummary();
       setDeleteTarget(null);
     } finally { setDeleting(false); }
   };
 
   // ── Tab definitions ───────────────────────────────────────────────────────
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'dashboard', label: w('dashboard'), icon: <BarChart2 size={14} /> },
+    ...(!isWaterReader ? [{ key: 'dashboard' as Tab, label: w('dashboard'), icon: <BarChart2 size={14} /> }] : []),
     { key: 'installations', label: w('installations'), icon: <Droplets size={14} /> },
     { key: 'readings', label: w('readings'), icon: <Activity size={14} /> },
     { key: 'invoices', label: w('invoices'), icon: <Banknote size={14} /> },
     { key: 'repairs', label: w('repairs'), icon: <Wrench size={14} /> },
-    { key: 'reports', label: w('reports'), icon: <FileBarChart size={14} /> },
+    ...(!isWaterReader ? [
+      { key: 'reports' as Tab, label: w('reports'), icon: <FileBarChart size={14} /> },
+      { key: 'readers' as Tab, label: w('readers'), icon: <Users size={14} /> },
+    ] : []),
   ];
 
   if (loading) {
@@ -368,9 +433,11 @@ export const WaterPage: React.FC = () => {
           <button onClick={() => openRepairModal()} className="btn-warning text-sm">
             <Plus size={15} />{w('addIntervention')}
           </button>
-          <button onClick={() => openInstModal()} className="btn-primary text-sm">
-            <Plus size={15} />{w('addInstallation')}
-          </button>
+          {!isWaterReader && (
+            <button onClick={() => openInstModal()} className="btn-primary text-sm">
+              <Plus size={15} />{w('addInstallation')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -478,6 +545,7 @@ export const WaterPage: React.FC = () => {
                     <th>{w('address')}</th>
                     <th>{w('pricePerUnit')}</th>
                     <th>{lang === 'ar' ? 'مستحقات' : 'Impayés'}</th>
+                    {!isWaterReader && <th>{w('readers')}</th>}
                     <th>{w('status')}</th>
                     <th>{w('actions')}</th>
                   </tr></thead>
@@ -509,6 +577,20 @@ export const WaterPage: React.FC = () => {
                               <span className="text-emerald-600 text-xs">{lang === 'ar' ? 'محدّث' : 'À jour'}</span>
                             )}
                           </td>
+                          {!isWaterReader && (
+                            <td>
+                              {(() => {
+                                const reader = readers.find((r) => r.id === inst.readerId);
+                                return reader ? (
+                                  <span className="text-xs flex items-center gap-1 text-purple-600 dark:text-purple-400">
+                                    <Users size={11} />{reader.name}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-gray-400">—</span>
+                                );
+                              })()}
+                            </td>
+                          )}
                           <td>
                             <span className={inst.isActive ? 'badge-green' : 'badge-red'}>
                               {inst.isActive ? w('active') : w('inactive')}
@@ -521,12 +603,16 @@ export const WaterPage: React.FC = () => {
                                 className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20" title={w('addReading')}>
                                 <Hash size={14} />
                               </button>
-                              <button onClick={() => openInstModal(inst)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                                <Pencil size={14} />
-                              </button>
-                              <button onClick={() => setDeleteTarget({ type: 'installation', id: inst.id })} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-                                <Trash2 size={14} />
-                              </button>
+                              {!isWaterReader && (
+                                <>
+                                  <button onClick={() => openInstModal(inst)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                                    <Pencil size={14} />
+                                  </button>
+                                  <button onClick={() => setDeleteTarget({ type: 'installation', id: inst.id })} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                    <Trash2 size={14} />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -735,10 +821,32 @@ export const WaterPage: React.FC = () => {
                     </span>
                   </div>
                   {rep.description && <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{rep.description}</p>}
+                  {/* Technician info */}
+                  {(rep.technicianName || rep.partsNeeded || rep.workDetails) && (
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 mb-2 space-y-1">
+                      {rep.technicianName && (
+                        <p className="text-xs text-gray-600 dark:text-gray-300">
+                          <span className="font-medium text-gray-700 dark:text-gray-200">{w('technicianName')}: </span>{rep.technicianName}
+                          {rep.technicianAmount && <span className="ms-2 text-amber-600 font-semibold">{formatCurrency(rep.technicianAmount, lang)}</span>}
+                        </p>
+                      )}
+                      {rep.partsNeeded && (
+                        <p className="text-xs text-gray-600 dark:text-gray-300">
+                          <span className="font-medium text-gray-700 dark:text-gray-200">{w('partsNeeded')}: </span>{rep.partsNeeded}
+                        </p>
+                      )}
+                      {rep.workDetails && (
+                        <p className="text-xs text-gray-600 dark:text-gray-300">
+                          <span className="font-medium text-gray-700 dark:text-gray-200">{w('workDetails')}: </span>{rep.workDetails}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-3 text-xs text-gray-400 mt-2">
                     {rep.location && <span className="flex items-center gap-1"><MapPin size={10} />{rep.location}</span>}
                     {rep.cost && <span className="font-semibold text-amber-600">{formatCurrency(rep.cost, lang)}</span>}
                     <span>{formatDate(rep.reportedDate, lang)}</span>
+                    {rep.deadline && <span className="flex items-center gap-1 text-orange-500"><Calendar size={10} />{lang === 'ar' ? 'الموعد: ' : 'Délai: '}{formatDate(rep.deadline, lang)}</span>}
                     {rep.resolvedDate && <span className="text-emerald-600">{lang === 'ar' ? 'تم: ' : 'Résolu: '}{formatDate(rep.resolvedDate, lang)}</span>}
                   </div>
                   <div className="flex gap-2 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
@@ -882,6 +990,55 @@ export const WaterPage: React.FC = () => {
         )
       )}
 
+      {/* ── READERS ───────────────────────────────────────────────────────── */}
+      {activeTab === 'readers' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {lang === 'ar' ? 'إدارة حسابات قرّاء العدادات' : 'Gestion des comptes lecteurs de compteurs'}
+            </p>
+            <button onClick={() => { setReaderForm({ name: '', email: '', password: '' }); setShowReaderModal(true); }} className="btn-primary text-sm">
+              <UserPlus size={15} />{w('addReader')}
+            </button>
+          </div>
+
+          {readers.length === 0 ? (
+            <EmptyState icon={<Users size={28} />} title={w('noReaders')}
+              action={<button onClick={() => setShowReaderModal(true)} className="btn-primary"><UserPlus size={16} />{w('addReader')}</button>} />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {readers.map((reader) => (
+                <div key={reader.id} className="card p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-purple-700 dark:text-purple-300 font-bold text-sm">{reader.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white text-sm">{reader.name}</p>
+                        <p className="text-xs text-gray-400">{reader.email}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setDeleteTarget({ type: 'reader', id: reader.id })}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${reader.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700'}`}>
+                      {reader.isActive ? w('active') : w('inactive')}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <Droplets size={11} className="text-blue-400" />{reader.installationCount} {w('readerInstCount')}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ─── MODALS ───────────────────────────────────────────────────────── */}
 
       {/* Installation Modal */}
@@ -920,6 +1077,16 @@ export const WaterPage: React.FC = () => {
               <input className="input" type="date" value={instForm.installDate}
                 onChange={(e) => setInstForm({ ...instForm, installDate: e.target.value })} />
             </div>
+          </div>
+          <div>
+            <label className="label">{w('assignReader')}</label>
+            <select className="input" value={instForm.readerId}
+              onChange={(e) => setInstForm({ ...instForm, readerId: e.target.value })}>
+              <option value="">{lang === 'ar' ? '— بدون قارئ —' : '— Sans lecteur —'}</option>
+              {readers.map((r) => (
+                <option key={r.id} value={r.id}>{r.name} ({r.email})</option>
+              ))}
+            </select>
           </div>
           {editingInst && (
             <label className="flex items-center gap-3 cursor-pointer">
@@ -1100,6 +1267,44 @@ export const WaterPage: React.FC = () => {
                 onChange={(e) => setRepairForm({ ...repairForm, cost: e.target.value })} />
             </div>
           </div>
+
+          {/* Technician section */}
+          <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+              {lang === 'ar' ? 'معلومات التقني' : 'Informations technicien'}
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">{w('technicianName')}</label>
+                <input className="input" value={repairForm.technicianName}
+                  onChange={(e) => setRepairForm({ ...repairForm, technicianName: e.target.value })}
+                  placeholder={lang === 'ar' ? 'اسم التقني...' : 'Nom du technicien...'} />
+              </div>
+              <div>
+                <label className="label">{w('technicianAmount')}</label>
+                <input className="input" type="number" step="0.01" value={repairForm.technicianAmount}
+                  onChange={(e) => setRepairForm({ ...repairForm, technicianAmount: e.target.value })} />
+              </div>
+            </div>
+            <div className="mt-3">
+              <label className="label">{w('partsNeeded')}</label>
+              <input className="input" value={repairForm.partsNeeded}
+                onChange={(e) => setRepairForm({ ...repairForm, partsNeeded: e.target.value })}
+                placeholder={lang === 'ar' ? 'القطع المطلوبة...' : 'Pièces nécessaires...'} />
+            </div>
+            <div className="mt-3">
+              <label className="label">{w('workDetails')}</label>
+              <textarea className="input" rows={2} value={repairForm.workDetails}
+                onChange={(e) => setRepairForm({ ...repairForm, workDetails: e.target.value })}
+                placeholder={lang === 'ar' ? 'تفاصيل الأشغال...' : 'Détails des travaux effectués...'} />
+            </div>
+            <div className="mt-3">
+              <label className="label">{w('deadline')}</label>
+              <input className="input" type="date" value={repairForm.deadline}
+                onChange={(e) => setRepairForm({ ...repairForm, deadline: e.target.value })} />
+            </div>
+          </div>
+
           {editingRepair && (
             <div>
               <label className="label">{lang === 'ar' ? 'حالة الإصلاح' : 'Statut'}</label>
@@ -1111,6 +1316,41 @@ export const WaterPage: React.FC = () => {
               </select>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Reader Modal */}
+      <Modal isOpen={showReaderModal} onClose={() => setShowReaderModal(false)}
+        title={w('addReader')}
+        footer={<><button onClick={() => setShowReaderModal(false)} className="btn-secondary">{w('cancel')}</button><button onClick={handleSaveReader} disabled={saving} className="btn-primary">{saving ? w('loading') : w('save')}</button></>}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="label">{w('readerName')} *</label>
+            <input className="input" value={readerForm.name} onChange={(e) => setReaderForm({ ...readerForm, name: e.target.value })}
+              placeholder={lang === 'ar' ? 'الاسم الكامل...' : 'Nom complet...'} />
+          </div>
+          <div>
+            <label className="label">{w('readerEmail')} *</label>
+            <input className="input" type="email" value={readerForm.email} onChange={(e) => setReaderForm({ ...readerForm, email: e.target.value })}
+              placeholder="exemple@email.com" />
+          </div>
+          <div>
+            <label className="label">{w('readerPassword')} *</label>
+            <div className="relative">
+              <input className="input pe-10" type={showReaderPass ? 'text' : 'password'} value={readerForm.password}
+                onChange={(e) => setReaderForm({ ...readerForm, password: e.target.value })} />
+              <button type="button" onClick={() => setShowReaderPass(!showReaderPass)}
+                className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                {showReaderPass ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-300">
+            {lang === 'ar'
+              ? 'سيتمكن هذا القارئ من تسجيل الدخول وإدارة العدادات المسندة إليه فقط.'
+              : 'Ce lecteur pourra se connecter et gérer uniquement les compteurs qui lui sont assignés.'}
+          </div>
         </div>
       </Modal>
 

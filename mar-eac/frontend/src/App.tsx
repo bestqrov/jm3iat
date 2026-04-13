@@ -28,6 +28,11 @@ const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
   return isSuperAdmin ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
+const WaterReaderRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isWaterReader } = useAuth();
+  return isWaterReader ? <Navigate to="/water" replace /> : <>{children}</>;
+};
+
 const App: React.FC = () => {
   return (
     <BrowserRouter>
@@ -43,19 +48,19 @@ const App: React.FC = () => {
               {/* Protected routes */}
               <Route element={<Layout />}>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/members" element={<MembersPage />} />
-                <Route path="/administratifs" element={<AdministratifsPage />} />
-                <Route path="/meetings" element={<MeetingsPage />} />
-                <Route path="/meetings/:id" element={<MeetingDetailPage />} />
-                <Route path="/finance" element={<FinancePage />} />
-                <Route path="/documents" element={<DocumentsPage />} />
-                <Route path="/projects" element={<ProjectsPage />} />
-                <Route path="/projects/:id" element={<ProjectDetailPage />} />
+                <Route path="/dashboard" element={<WaterReaderRoute><DashboardPage /></WaterReaderRoute>} />
+                <Route path="/members" element={<WaterReaderRoute><MembersPage /></WaterReaderRoute>} />
+                <Route path="/administratifs" element={<WaterReaderRoute><AdministratifsPage /></WaterReaderRoute>} />
+                <Route path="/meetings" element={<WaterReaderRoute><MeetingsPage /></WaterReaderRoute>} />
+                <Route path="/meetings/:id" element={<WaterReaderRoute><MeetingDetailPage /></WaterReaderRoute>} />
+                <Route path="/finance" element={<WaterReaderRoute><FinancePage /></WaterReaderRoute>} />
+                <Route path="/documents" element={<WaterReaderRoute><DocumentsPage /></WaterReaderRoute>} />
+                <Route path="/projects" element={<WaterReaderRoute><ProjectsPage /></WaterReaderRoute>} />
+                <Route path="/projects/:id" element={<WaterReaderRoute><ProjectDetailPage /></WaterReaderRoute>} />
                 <Route path="/water" element={<WaterPage />} />
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/requests" element={<RequestsPage />} />
-                <Route path="/reminders" element={<RemindersPage />} />
+                <Route path="/reports" element={<WaterReaderRoute><ReportsPage /></WaterReaderRoute>} />
+                <Route path="/requests" element={<WaterReaderRoute><RequestsPage /></WaterReaderRoute>} />
+                <Route path="/reminders" element={<WaterReaderRoute><RemindersPage /></WaterReaderRoute>} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/superadmin" element={
                   <SuperAdminRoute><SuperAdminPage /></SuperAdminRoute>
