@@ -1,4 +1,4 @@
-const prisma = require('../../config/prisma');
+const prisma = require('../../config/database');
 const { generateProjectReportPDF } = require('../../utils/projectReportPdf');
 
 // ─── Templates per project type ───────────────────────────────────────────────

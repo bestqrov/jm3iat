@@ -37,7 +37,7 @@ const fmtCurrency = (n) => `${(n || 0).toLocaleString('fr-MA', { minimumFraction
 const hasFont = fs.existsSync(FONT_AR);
 
 async function generateProjectReportPDF(req, res) {
-  const prisma = require('../config/prisma');
+  const prisma = require('../config/database');
   const orgId = req.organization.id;
   const { id } = req.params;
   const lang = req.query.lang || 'fr';
