@@ -295,13 +295,14 @@ const getRepairs = async (req, res) => {
 
 const createRepair = async (req, res) => {
   try {
-    const { title, description, location, installationId, cost, reportedDate } = req.body;
+    const { title, type, description, location, installationId, cost, reportedDate } = req.body;
     if (!title) return res.status(400).json({ message: 'Title required' });
 
     const repair = await prisma.waterRepair.create({
       data: {
         organizationId: req.organization.id,
         title,
+        type: type || 'REPARATION',
         description,
         location,
         installationId: installationId || null,
@@ -321,7 +322,7 @@ const createRepair = async (req, res) => {
 
 const updateRepair = async (req, res) => {
   try {
-    const { title, description, location, status, cost } = req.body;
+    const { title, type, description, location, status, cost } = req.body;
     const existing = await prisma.waterRepair.findFirst({
       where: { id: req.params.id, organizationId: req.organization.id },
     });
@@ -331,6 +332,7 @@ const updateRepair = async (req, res) => {
       where: { id: req.params.id },
       data: {
         title: title ?? existing.title,
+        type: type ?? existing.type,
         description: description !== undefined ? description : existing.description,
         location: location !== undefined ? location : existing.location,
         status: status ?? existing.status,

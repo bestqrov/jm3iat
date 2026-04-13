@@ -39,8 +39,13 @@ export const WaterPage: React.FC = () => {
       invoices: { fr: 'Factures', ar: 'الفواتير' },
       repairs: { fr: 'Réparations', ar: 'الأعطال' },
       reports: { fr: 'Rapports', ar: 'التقارير' },
-      addInstallation: { fr: 'Ajouter', ar: 'إضافة' },
+      addInstallation: { fr: 'Nouveau compteur', ar: 'عداد جديد' },
       editInstallation: { fr: 'Modifier', ar: 'تعديل' },
+      addIntervention: { fr: 'Nouvelle intervention', ar: 'تدخل جديد' },
+      typeReparation: { fr: 'Réparation', ar: 'إصلاح' },
+      typeMaintenance: { fr: 'Maintenance', ar: 'صيانة' },
+      typeExtension: { fr: 'Extension branchement', ar: 'مد التوصيل' },
+      interventionType: { fr: 'Type d\'intervention', ar: 'نوع التدخل' },
       householdName: { fr: 'Nom du foyer', ar: 'اسم الأسرة' },
       phone: { fr: 'Téléphone', ar: 'الهاتف' },
       meterNumber: { fr: 'N° compteur', ar: 'رقم العداد' },
@@ -139,7 +144,7 @@ export const WaterPage: React.FC = () => {
   const [instForm, setInstForm] = useState({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true });
   const [readingForm, setReadingForm] = useState({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '' });
   const [payForm, setPayForm] = useState({ method: 'CASH', notes: '' });
-  const [repairForm, setRepairForm] = useState({ title: '', description: '', location: '', installationId: '', cost: '', reportedDate: '', status: 'PENDING' });
+  const [repairForm, setRepairForm] = useState({ title: '', type: 'REPARATION', description: '', location: '', installationId: '', cost: '', reportedDate: '', status: 'PENDING' });
 
   // ── Loaders ───────────────────────────────────────────────────────────────
   const loadSummary = useCallback(async () => {
@@ -269,6 +274,7 @@ export const WaterPage: React.FC = () => {
       setEditingRepair(repair);
       setRepairForm({
         title: repair.title,
+        type: repair.type || 'REPARATION',
         description: repair.description || '',
         location: repair.location || '',
         installationId: repair.installationId || '',
@@ -278,7 +284,7 @@ export const WaterPage: React.FC = () => {
       });
     } else {
       setEditingRepair(null);
-      setRepairForm({ title: '', description: '', location: '', installationId: '', cost: '', reportedDate: '', status: 'PENDING' });
+      setRepairForm({ title: '', type: 'REPARATION', description: '', location: '', installationId: '', cost: '', reportedDate: '', status: 'PENDING' });
     }
     setShowRepairModal(true);
   };
@@ -338,9 +344,12 @@ export const WaterPage: React.FC = () => {
           <Droplets size={22} className="text-blue-500" />
           {w('title')}
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={() => { setReadingInstId(''); setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '' }); setShowReadingModal(true); }} className="btn-secondary text-sm">
             <Plus size={15} />{w('addReading')}
+          </button>
+          <button onClick={() => openRepairModal()} className="btn-warning text-sm">
+            <Plus size={15} />{w('addIntervention')}
           </button>
           <button onClick={() => openInstModal()} className="btn-primary text-sm">
             <Plus size={15} />{w('addInstallation')}
@@ -678,7 +687,12 @@ export const WaterPage: React.FC = () => {
                 <div key={rep.id} className={`card p-4 border-l-4 ${rep.status === 'FIXED' ? 'border-l-emerald-500' : rep.status === 'IN_PROGRESS' ? 'border-l-blue-500' : 'border-l-amber-500'}`}>
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">{rep.title}</h4>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{rep.title}</h4>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                          {rep.type === 'MAINTENANCE' ? w('typeMaintenance') : rep.type === 'EXTENSION' ? w('typeExtension') : w('typeReparation')}
+                        </span>
+                      </div>
                       {rep.installation && (
                         <p className="text-xs text-blue-500 flex items-center gap-1 mt-0.5">
                           <Droplets size={10} />{rep.installation.householdName} ({rep.installation.meterNumber})
@@ -971,6 +985,18 @@ export const WaterPage: React.FC = () => {
         footer={<><button onClick={() => setShowRepairModal(false)} className="btn-secondary">{w('cancel')}</button><button onClick={handleSaveRepair} disabled={saving} className="btn-primary">{saving ? w('loading') : w('save')}</button></>}
       >
         <div className="space-y-4">
+          <div>
+            <label className="label">{w('interventionType')}</label>
+            <div className="flex gap-2">
+              {[['REPARATION', w('typeReparation')], ['MAINTENANCE', w('typeMaintenance')], ['EXTENSION', w('typeExtension')]].map(([val, label]) => (
+                <label key={val} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border-2 cursor-pointer text-sm font-medium transition-colors ${repairForm.type === val ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : 'border-gray-200 dark:border-gray-700 text-gray-600'}`}>
+                  <input type="radio" name="repairType" value={val} checked={repairForm.type === val}
+                    onChange={() => setRepairForm({ ...repairForm, type: val })} className="hidden" />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
           <div>
             <label className="label">{w('repairTitle')} *</label>
             <input className="input" value={repairForm.title} onChange={(e) => setRepairForm({ ...repairForm, title: e.target.value })} />

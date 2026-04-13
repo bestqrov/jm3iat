@@ -339,6 +339,7 @@ model WaterRepair {
   organizationId String    @db.ObjectId
   installationId String?   @db.ObjectId
   title          String
+  type           String    @default("REPARATION")
   description    String?
   location       String?
   status         String    @default("PENDING")
