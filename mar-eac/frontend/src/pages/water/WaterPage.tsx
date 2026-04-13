@@ -998,12 +998,33 @@ export const WaterPage: React.FC = () => {
             </div>
           </div>
           <div>
+            <label className="label">{w('linkedInstallation')} *</label>
+            <select className="input" value={repairForm.installationId}
+              onChange={(e) => setRepairForm({ ...repairForm, installationId: e.target.value })}>
+              <option value="">{lang === 'ar' ? '— اختر العداد —' : '— Choisir un compteur —'}</option>
+              {installations.map((inst) => (
+                <option key={inst.id} value={inst.id}>N° {inst.meterNumber} — {inst.householdName}</option>
+              ))}
+            </select>
+            {repairForm.installationId && (() => {
+              const sel = installations.find((i) => i.id === repairForm.installationId);
+              return sel ? (
+                <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-sm">
+                  <Droplets size={13} className="text-blue-500 flex-shrink-0" />
+                  <span className="font-semibold text-blue-700 dark:text-blue-300 font-mono">N° {sel.meterNumber}</span>
+                  <span className="text-blue-600 dark:text-blue-400">{sel.householdName}</span>
+                  {sel.phone && <span className="text-blue-400 text-xs ms-auto">{sel.phone}</span>}
+                </div>
+              ) : null;
+            })()}
+          </div>
+          <div>
             <label className="label">{w('repairTitle')} *</label>
             <input className="input" value={repairForm.title} onChange={(e) => setRepairForm({ ...repairForm, title: e.target.value })} />
           </div>
           <div>
             <label className="label">{w('repairDesc')}</label>
-            <textarea className="input" rows={3} value={repairForm.description}
+            <textarea className="input" rows={2} value={repairForm.description}
               onChange={(e) => setRepairForm({ ...repairForm, description: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -1016,16 +1037,6 @@ export const WaterPage: React.FC = () => {
               <input className="input" type="number" step="0.01" value={repairForm.cost}
                 onChange={(e) => setRepairForm({ ...repairForm, cost: e.target.value })} />
             </div>
-          </div>
-          <div>
-            <label className="label">{w('linkedInstallation')}</label>
-            <select className="input" value={repairForm.installationId}
-              onChange={(e) => setRepairForm({ ...repairForm, installationId: e.target.value })}>
-              <option value="">{lang === 'ar' ? 'بدون ربط' : 'Aucune installation'}</option>
-              {installations.map((inst) => (
-                <option key={inst.id} value={inst.id}>{inst.householdName} ({inst.meterNumber})</option>
-              ))}
-            </select>
           </div>
           {editingRepair && (
             <div>
