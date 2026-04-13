@@ -2,6 +2,14 @@ const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
 const prisma = require('../config/database');
+const arabicReshaper = require('arabic-reshaper');
+
+// Fix Arabic RTL: reshape ligatures + reverse word order for PDFKit
+const ar = (text) => {
+  if (!text) return '';
+  const shaped = arabicReshaper.convertArabic(String(text));
+  return shaped.split(' ').reverse().join(' ');
+};
 
 const FONT_DIR  = path.join(__dirname, '../assets/fonts');
 const FONT_AR   = path.join(FONT_DIR, 'Amiri-Regular.ttf');
@@ -47,11 +55,15 @@ const fillRect = (doc, x, y, w, h, fill, stroke, lw = 0.5) => {
 };
 
 const arText = (doc, text, x, y, w, opts = {}) => {
-  doc.text(String(text), x, y, { width: w, align: opts.align || 'right', lineBreak: false, ...opts });
+  doc.text(ar(String(text)), x, y, { width: w, align: opts.align || 'right', lineBreak: false, ...opts });
 };
 
 const centerText = (doc, text, x, y, w) => {
   doc.text(String(text), x, y, { width: w, align: 'center', lineBreak: false });
+};
+
+const centerAr = (doc, text, x, y, w) => {
+  doc.text(ar(String(text)), x, y, { width: w, align: 'center', lineBreak: false });
 };
 
 const hLine = (doc, x1, x2, y, color = C.border, lw = 0.4) => {
@@ -117,27 +129,24 @@ const generateWaterBillPDF = async (req, res) => {
     fillRect(doc, W - 6, 0, 6, headerH, C.accent);
 
     // Logo
-    let logoX = M + 4;
     if (org?.logo) {
       const lp = path.join(UPLOAD_DIR, path.basename(org.logo));
       if (fs.existsSync(lp)) {
-        doc.image(lp, logoX, 11, { fit: [58, 58] });
+        doc.image(lp, M + 4, 11, { fit: [58, 58] });
       }
     }
 
-    // Org name (Arabic, centered in remaining space)
+    // Org name
     const orgName = org?.nameAr || org?.name || '';
     doc.font('AR-Bold').fontSize(17).fillColor(C.white);
-    arText(doc, orgName, M + 65, 16, CW - 70, { align: 'center' });
+    centerAr(doc, orgName, M + 65, 16, CW - 70);
 
-    // Subtle tagline or city
     const city = org?.cityAr || org?.city || '';
     if (city) {
       doc.font('AR').fontSize(10).fillColor(C.blueMid);
-      arText(doc, city, M + 65, 40, CW - 70, { align: 'center' });
+      centerAr(doc, city, M + 65, 40, CW - 70);
     }
 
-    // Thin gold separator at bottom of header
     fillRect(doc, 0, headerH - 3, W, 3, C.accent);
     y = headerH;
 
@@ -146,21 +155,17 @@ const generateWaterBillPDF = async (req, res) => {
     // ═══════════════════════════════════════════════════════════════════════
     y += 10;
 
-    // Diamond left
     const diam = (cx, cy, r, color) => {
       doc.save().polygon([cx - r, cy], [cx, cy - r], [cx + r, cy], [cx, cy + r]).fill(color).restore();
     };
     diam(M + 14, y + 12, 8, C.blue);
 
     doc.font('Title').fontSize(24).fillColor(C.blue);
-    centerText(doc, 'فاتورة الماء', M, y + 2, CW);
+    centerAr(doc, 'فاتورة الماء', M, y + 2, CW);
 
-    // Diamond right
     diam(W - M - 14, y + 12, 8, C.blue);
 
     y += 30;
-
-    // Thin blue rule
     hLine(doc, M, W - M, y, C.blue, 1);
     y += 10;
 
@@ -168,15 +173,15 @@ const generateWaterBillPDF = async (req, res) => {
     // 3. CLIENT INFO SECTION
     // ═══════════════════════════════════════════════════════════════════════
     const infoH   = 72;
-    const periodW = 105; // left column: period box
-    const labelW  = 120; // right column: labels
+    const periodW = 105;
+    const labelW  = 120;
     const valW    = CW - periodW - labelW - 4;
 
     // Period box (leftmost)
     fillRect(doc, M, y, periodW, infoH, C.white, C.border, 0.6);
     fillRect(doc, M, y, periodW, 22, C.blueLight, C.border, 0.5);
     doc.font('AR-Bold').fontSize(10).fillColor(C.text);
-    arText(doc, 'فترة الاستهلاك', M, y + 6, periodW, { align: 'center' });
+    centerAr(doc, 'فترة الاستهلاك', M, y + 6, periodW);
 
     const reading = invoice.reading;
     let fromDate = '—', toDate = '—';
@@ -187,9 +192,8 @@ const generateWaterBillPDF = async (req, res) => {
     }
     const rowY1 = y + 28, rowY2 = y + 48;
     doc.font('AR').fontSize(9).fillColor(C.textDark);
-    // "من :" label right-aligned, value left-aligned inside box
-    arText(doc, `من :  ${fromDate}`, M + 3, rowY1, periodW - 5, { align: 'right' });
-    arText(doc, `الى :  ${toDate}`,   M + 3, rowY2, periodW - 5, { align: 'right' });
+    arText(doc, `${fromDate}  : من`, M + 3, rowY1, periodW - 5, { align: 'right' });
+    arText(doc, `${toDate}  : الى`, M + 3, rowY2, periodW - 5, { align: 'right' });
 
     // Values column (middle)
     const valX = M + periodW + 4;
@@ -197,13 +201,12 @@ const generateWaterBillPDF = async (req, res) => {
 
     const rH = infoH / 3;
     doc.font('AR').fontSize(11).fillColor(C.textDark);
-    centerText(doc, invoice.installation.householdName || '—', valX, y + rH * 0 + 8, valW);
+    centerAr(doc, invoice.installation.householdName || '—', valX, y + rH * 0 + 8, valW);
     doc.font('AR').fontSize(11);
     centerText(doc, invoice.installation.meterNumber || '—', valX, y + rH * 1 + 8, valW);
     doc.font('AR').fontSize(10);
     centerText(doc, fmtDate(reading?.readingDate || invoice.createdAt), valX, y + rH * 2 + 8, valW);
 
-    // Dividers inside value column
     hLine(doc, valX, valX + valW, y + rH,     C.divider, 0.5);
     hLine(doc, valX, valX + valW, y + rH * 2, C.divider, 0.5);
 
@@ -211,9 +214,9 @@ const generateWaterBillPDF = async (req, res) => {
     const lbX = valX + valW + 2;
     fillRect(doc, lbX, y, labelW, infoH, C.blueLight, C.border, 0.4);
     doc.font('AR-Bold').fontSize(10).fillColor(C.blue);
-    arText(doc, 'الاسم الكامل', lbX, y + rH * 0 + 8, labelW - 6);
-    arText(doc, 'رقم العداد',   lbX, y + rH * 1 + 8, labelW - 6);
-    arText(doc, 'التاريخ',      lbX, y + rH * 2 + 8, labelW - 6);
+    centerAr(doc, 'الاسم الكامل', lbX, y + rH * 0 + 8, labelW - 6);
+    centerAr(doc, 'رقم العداد',   lbX, y + rH * 1 + 8, labelW - 6);
+    centerAr(doc, 'التاريخ',      lbX, y + rH * 2 + 8, labelW - 6);
     hLine(doc, lbX, lbX + labelW, y + rH,     C.blueMid, 0.5);
     hLine(doc, lbX, lbX + labelW, y + rH * 2, C.blueMid, 0.5);
 
@@ -231,16 +234,14 @@ const generateWaterBillPDF = async (req, res) => {
     ];
     const colW3 = CW / 3;
 
-    // Header row
     fillRect(doc, M, y, CW, tblHdr, C.blue, C.blue);
     doc.font('AR-Bold').fontSize(11).fillColor(C.white);
     cols3.forEach((h, i) => {
-      centerText(doc, h, M + i * colW3, y + 7, colW3);
+      centerAr(doc, h, M + i * colW3, y + 7, colW3);
       if (i > 0) vLine(doc, M + i * colW3, y, y + tblHdr, C.accent, 0.5);
     });
     y += tblHdr;
 
-    // Data row
     fillRect(doc, M, y, CW, tblRow, C.white, C.border, 0.5);
     doc.font('AR-Bold').fontSize(14).fillColor(C.textDark);
     vals3.forEach((v, i) => {
@@ -257,32 +258,29 @@ const generateWaterBillPDF = async (req, res) => {
     const unitBxW = CW - taxBxW - 5;
     const unitBxX = M + taxBxW + 5;
     const pricePerUnit = invoice.installation.pricePerUnit || 3;
-    // Estimate fixed monthly tax as total - (pricePerUnit × consumption), floored at 0
     const varAmount    = pricePerUnit * (reading?.consumption || 0);
     const fixedTax     = Math.max(0, invoice.amount - varAmount);
 
-    // ─ Right: ثمن الوحدة ─
+    // Right: ثمن الوحدة
     fillRect(doc, unitBxX, y, unitBxW, pricH, C.white, C.border, 0.5);
     fillRect(doc, unitBxX, y, unitBxW, 22, C.blueLight, C.border, 0.5);
     doc.font('AR-Bold').fontSize(10).fillColor(C.text);
-    arText(doc, 'ثمن الوحدة (بالدرهم)', unitBxX, y + 6, unitBxW - 4, { align: 'center' });
+    centerAr(doc, 'ثمن الوحدة (بالدرهم)', unitBxX, y + 6, unitBxW - 4);
 
     const halfUnit = unitBxW / 2;
-    // Sub-headers
     fillRect(doc, unitBxX,           y + 22, halfUnit, 22, C.divider, C.border, 0.4);
     fillRect(doc, unitBxX + halfUnit, y + 22, halfUnit, 22, C.divider, C.border, 0.4);
     doc.font('AR').fontSize(9).fillColor(C.gray);
-    centerText(doc, 'Taxe (للشهر)', unitBxX,            y + 29, halfUnit);
-    centerText(doc, 'الطن / م³',    unitBxX + halfUnit, y + 29, halfUnit);
+    centerAr(doc, 'الرسوم الثابتة', unitBxX,            y + 29, halfUnit);
+    centerAr(doc, 'سعر م³',         unitBxX + halfUnit, y + 29, halfUnit);
 
-    // Values
     fillRect(doc, unitBxX,           y + 44, halfUnit, pricH - 44, C.white, C.border, 0.4);
     fillRect(doc, unitBxX + halfUnit, y + 44, halfUnit, pricH - 44, C.white, C.border, 0.4);
     doc.font('AR-Bold').fontSize(14).fillColor(C.textDark);
     centerText(doc, fixedTax.toFixed(2),    unitBxX,            y + 51, halfUnit);
     centerText(doc, pricePerUnit.toFixed(2), unitBxX + halfUnit, y + 51, halfUnit);
 
-    // ─ Left: TAXE summary ─
+    // Left: TAXE
     fillRect(doc, M, y, taxBxW, pricH, C.white, C.border, 0.5);
     fillRect(doc, M, y, taxBxW, 22, C.blueLight, C.border, 0.5);
     doc.font('AR-Bold').fontSize(10).fillColor(C.text);
@@ -292,8 +290,8 @@ const generateWaterBillPDF = async (req, res) => {
     hLine(doc, M, M + taxBxW, y + 22 + taxRowH, C.divider, 0.5);
 
     doc.font('AR').fontSize(9).fillColor(C.gray);
-    arText(doc, 'عدد الأشهر', M + 4, y + 26, taxBxW - 8);
-    arText(doc, 'المبلغ',     M + 4, y + 26 + taxRowH, taxBxW - 8);
+    centerAr(doc, 'عدد الأشهر', M, y + 26, taxBxW);
+    centerAr(doc, 'المبلغ',     M, y + 26 + taxRowH, taxBxW);
 
     doc.font('AR-Bold').fontSize(13).fillColor(C.textDark);
     centerText(doc, '1',                   M, y + 40, taxBxW);
@@ -314,7 +312,7 @@ const generateWaterBillPDF = async (req, res) => {
     fillRect(doc, M, y, notesW, botH, C.white, C.border, 0.5);
     fillRect(doc, M, y, notesW, 22, C.blueLight, C.border, 0.5);
     doc.font('AR-Bold').fontSize(10).fillColor(C.text);
-    arText(doc, 'ملاحظات', M, y + 6, notesW - 4, { align: 'center' });
+    centerAr(doc, 'ملاحظات', M, y + 6, notesW - 4);
     if (reading?.notes) {
       doc.font('AR').fontSize(9).fillColor(C.gray);
       arText(doc, reading.notes, M + 5, y + 27, notesW - 10);
@@ -325,28 +323,23 @@ const generateWaterBillPDF = async (req, res) => {
     hLine(doc, amtX, amtX + amtW, y + amtRowH,     C.divider, 0.5);
     hLine(doc, amtX, amtX + amtW, y + amtRowH * 2, C.divider, 0.5);
 
-    const amtLabelOffset = 8; // right-side label inset
+    const lblX = amtX + 6;
+    const lblW = amtW - 12;
 
     // Row 1 — الواجب أداؤه
     doc.font('AR-Bold').fontSize(10).fillColor(C.textDark);
-    arText(doc, 'الواجب أداؤه :', amtX + amtLabelOffset, y + (amtRowH / 2) - 7, amtW - amtLabelOffset - 4);
-    doc.font('AR').fontSize(10).fillColor(C.textDark);
-    arText(doc, `${fmt2(invoice.amount)} درهم`, amtX + amtLabelOffset, y + (amtRowH / 2) - 7, amtW - amtLabelOffset - 4, { align: 'left' });
+    centerAr(doc, `${fmt2(invoice.amount)} درهم  :  الواجب أداؤه`, amtX, y + (amtRowH / 2) - 7, amtW);
 
     // Row 2 — الدين السابق
     const r2y = y + amtRowH;
-    doc.font('AR-Bold').fontSize(10).fillColor(C.textDark);
-    arText(doc, 'الدين السابق :', amtX + amtLabelOffset, r2y + (amtRowH / 2) - 7, amtW - amtLabelOffset - 4);
     doc.font('AR').fontSize(10).fillColor(C.gray);
-    arText(doc, `${fmt2(previousDebt)} درهم`, amtX + amtLabelOffset, r2y + (amtRowH / 2) - 7, amtW - amtLabelOffset - 4, { align: 'left' });
+    centerAr(doc, `${fmt2(previousDebt)} درهم  :  الدين السابق`, amtX, r2y + (amtRowH / 2) - 7, amtW);
 
-    // Row 3 — المجموع (red bg)
+    // Row 3 — المجموع
     const r3y = y + amtRowH * 2;
     fillRect(doc, amtX, r3y, amtW, amtRowH, C.redBg, null);
     doc.font('AR-Bold').fontSize(12).fillColor(C.red);
-    arText(doc, 'المجموع :', amtX + amtLabelOffset, r3y + (amtRowH / 2) - 7, amtW - amtLabelOffset - 4);
-    doc.font('AR-Bold').fontSize(12).fillColor(C.red);
-    arText(doc, `${fmt2(total)} درهم`, amtX + amtLabelOffset, r3y + (amtRowH / 2) - 7, amtW - amtLabelOffset - 4, { align: 'left' });
+    centerAr(doc, `${fmt2(total)} درهم  :  المجموع`, amtX, r3y + (amtRowH / 2) - 7, amtW);
 
     y += botH + 18;
 
@@ -357,12 +350,11 @@ const generateWaterBillPDF = async (req, res) => {
     if (invoice.isPaid) {
       fillRect(doc, M, y, CW, badgeH, C.greenBg, C.green, 0.7);
       doc.font('AR-Bold').fontSize(13).fillColor(C.green);
-      centerText(doc, `✓  مدفوعة  —  ${fmtDate(invoice.paidAt)}`, M, y + 9, CW);
+      centerAr(doc, `${fmtDate(invoice.paidAt)}  —  مدفوعة  ✓`, M, y + 9, CW);
     } else {
       fillRect(doc, M, y, CW, badgeH, C.orangeBg, C.orange, 0.7);
       doc.font('AR-Bold').fontSize(13).fillColor(C.orange);
-      const due = fmtDate(invoice.dueDate);
-      centerText(doc, `⚠  غير مدفوعة  —  الاستحقاق: ${due}`, M, y + 9, CW);
+      centerAr(doc, `${fmtDate(invoice.dueDate)}  :الاستحقاق  —  غير مدفوعة  ⚠`, M, y + 9, CW);
     }
 
     y += badgeH + 20;
@@ -372,18 +364,10 @@ const generateWaterBillPDF = async (req, res) => {
     // ═══════════════════════════════════════════════════════════════════════
     hLine(doc, M, W - M, H - 38, C.blue, 0.7);
     doc.font('AR').fontSize(8).fillColor(C.gray);
-    arText(doc, org?.nameAr || org?.name || '', M, H - 28, CW, { align: 'center' });
-    // Invoice ref
+    centerAr(doc, orgName, M, H - 28, CW);
     doc.font('AR').fontSize(7).fillColor(C.border);
-    arText(doc, `N° compteur: ${invoice.installation.meterNumber}  |  ${MONTHS_AR[(reading?.month || 1) - 1]} ${reading?.year || ''}`, M, H - 18, CW, { align: 'center' });
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 9. WATERMARK (light background)
-    // ═══════════════════════════════════════════════════════════════════════
-    doc.save();
-    doc.opacity(0.04).font('Title').fontSize(90).fillColor(C.blue);
-    doc.text('💧', W / 2 - 60, H / 2 - 50, { lineBreak: false });
-    doc.restore();
+    const monthLabel = ar(MONTHS_AR[(reading?.month || 1) - 1]);
+    centerText(doc, `N° compteur: ${invoice.installation.meterNumber}  |  ${monthLabel} ${reading?.year || ''}`, M, H - 18, CW);
 
     doc.end();
   } catch (err) {
