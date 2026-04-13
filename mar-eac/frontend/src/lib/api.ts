@@ -168,6 +168,7 @@ export const waterApi = {
   // Summary & Reports
   getSummary: () => api.get('/water/summary'),
   getReports: () => api.get('/water/reports'),
+  getReaderAnalytics: () => api.get('/water/reader-analytics'),
   exportInvoicePDF: (invoiceId: string) => api.get(`/water/invoices/${invoiceId}/pdf`, { responseType: 'blob' }),
   uploadPaymentReceipt: (invoiceId: string, file: File) => {
     const fd = new FormData();

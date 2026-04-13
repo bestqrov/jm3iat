@@ -36,13 +36,12 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     navigate('/login');
   };
 
-  // Water readers only see water management + settings
+  // Water readers only see water management (no settings, no other pages)
   const navGroups: NavGroup[] = isWaterReader ? [
     {
       label: '',
       items: [
         { to: '/water', icon: <Droplets size={18} />, label: t('nav.water') },
-        { to: '/settings', icon: <Settings size={18} />, label: t('nav.settings') },
       ],
     },
   ] : [

@@ -11,6 +11,9 @@ router.use(auth, tenant, requirePlan('PREMIUM'));
 router.get('/summary', ctrl.getSummary);
 router.get('/reports', ctrl.getReports);
 
+// Reader analytics (for WATER_READER role)
+router.get('/reader-analytics', ctrl.getReaderAnalytics);
+
 // Readers (Lecteurs) — admin only
 router.get('/readers', ctrl.getReaders);
 router.post('/readers', ctrl.createReader);

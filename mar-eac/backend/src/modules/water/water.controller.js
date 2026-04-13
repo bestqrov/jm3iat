@@ -407,23 +407,30 @@ const getSummary = async (req, res) => {
     const orgId = req.organization.id;
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const instFilter = req.user.role === 'WATER_READER'
+      ? { organizationId: orgId, readerId: req.user.id }
+      : { organizationId: orgId };
 
     const [
       totalInstallations, activeInstallations,
       invoices, monthReadings, openRepairs,
     ] = await Promise.all([
-      prisma.waterInstallation.count({ where: { organizationId: orgId } }),
-      prisma.waterInstallation.count({ where: { organizationId: orgId, isActive: true } }),
+      prisma.waterInstallation.count({ where: instFilter }),
+      prisma.waterInstallation.count({ where: { ...instFilter, isActive: true } }),
       prisma.waterInvoice.findMany({
-        where: { installation: { organizationId: orgId } },
+        where: { installation: instFilter },
         select: { amount: true, isPaid: true },
       }),
       prisma.meterReading.findMany({
-        where: { installation: { organizationId: orgId }, readingDate: { gte: startOfMonth } },
+        where: { installation: instFilter, readingDate: { gte: startOfMonth } },
         select: { consumption: true },
       }),
       prisma.waterRepair.count({
-        where: { organizationId: orgId, status: { in: ['PENDING', 'IN_PROGRESS'] } },
+        where: {
+          organizationId: orgId,
+          status: { in: ['PENDING', 'IN_PROGRESS'] },
+          ...(req.user.role === 'WATER_READER' ? { installation: { readerId: req.user.id } } : {}),
+        },
       }),
     ]);
 
@@ -576,6 +583,48 @@ const exportInvoicePDF = (req, res) => generateWaterBillPDF(req, res).catch((err
   if (!res.headersSent) res.status(500).json({ message: 'Error generating PDF' });
 });
 
+// ─── Reader Analytics ─────────────────────────────────────────────────────────
+
+const getReaderAnalytics = async (req, res) => {
+  try {
+    const orgId = req.organization.id;
+    const readerId = req.user.id;
+
+    const [unpaidInvoices, openRepairs, installations] = await Promise.all([
+      prisma.waterInvoice.findMany({
+        where: {
+          isPaid: false,
+          installation: { organizationId: orgId, readerId },
+        },
+        include: {
+          installation: { select: { householdName: true, meterNumber: true, phone: true } },
+          reading: { select: { month: true, year: true, consumption: true } },
+        },
+        orderBy: { dueDate: 'asc' },
+      }),
+      prisma.waterRepair.findMany({
+        where: {
+          organizationId: orgId,
+          status: { in: ['PENDING', 'IN_PROGRESS'] },
+          installation: { readerId },
+        },
+        include: {
+          installation: { select: { householdName: true, meterNumber: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.waterInstallation.findMany({
+        where: { organizationId: orgId, readerId },
+        select: { id: true, householdName: true, meterNumber: true, isActive: true, phone: true },
+      }),
+    ]);
+
+    res.json({ unpaidInvoices, openRepairs, installations });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // ─── Reader (Lecteur) Management ─────────────────────────────────────────────
 
 const getReaders = async (req, res) => {
@@ -656,6 +705,6 @@ module.exports = {
   addReading, getReadings, getAllReadings,
   getInvoices, markPaid, uploadPaymentReceipt, exportInvoicePDF,
   getRepairs, createRepair, updateRepair, deleteRepair,
-  getSummary, getReports,
+  getSummary, getReports, getReaderAnalytics,
   getReaders, createReader, deleteReader,
 };
