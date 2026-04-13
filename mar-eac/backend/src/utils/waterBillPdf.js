@@ -150,13 +150,13 @@ const generateWaterBillPDF = async (req, res) => {
     const diam = (cx, cy, r, color) => {
       doc.save().polygon([cx - r, cy], [cx, cy - r], [cx + r, cy], [cx, cy + r]).fill(color).restore();
     };
-    diam(doc, M + 14, y + 12, 8, C.blue);
+    diam(M + 14, y + 12, 8, C.blue);
 
     doc.font('Title').fontSize(24).fillColor(C.blue);
     centerText(doc, 'فاتورة الماء', M, y + 2, CW);
 
     // Diamond right
-    diam(doc, W - M - 14, y + 12, 8, C.blue);
+    diam(W - M - 14, y + 12, 8, C.blue);
 
     y += 30;
 
