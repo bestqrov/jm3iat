@@ -657,7 +657,7 @@ const getReaders = async (req, res) => {
 
 const createReader = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, installationIds } = req.body;
     if (!name || !email || !password)
       return res.status(400).json({ message: 'Name, email and password required' });
 
@@ -676,7 +676,22 @@ const createReader = async (req, res) => {
       select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
     });
 
-    res.status(201).json(reader);
+    // Assign selected installations to this reader
+    if (Array.isArray(installationIds) && installationIds.length > 0) {
+      await prisma.waterInstallation.updateMany({
+        where: {
+          id: { in: installationIds },
+          organizationId: req.organization.id,
+        },
+        data: { readerId: reader.id },
+      });
+    }
+
+    const count = await prisma.waterInstallation.count({
+      where: { organizationId: req.organization.id, readerId: reader.id },
+    });
+
+    res.status(201).json({ ...reader, installationCount: count });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

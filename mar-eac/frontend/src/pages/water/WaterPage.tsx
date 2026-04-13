@@ -181,6 +181,7 @@ export const WaterPage: React.FC = () => {
     technicianName: '', technicianAmount: '', partsNeeded: '', workDetails: '', deadline: '',
   });
   const [readerForm, setReaderForm] = useState({ name: '', email: '', password: '' });
+  const [readerInstIds, setReaderInstIds] = useState<string[]>([]);
 
   // ── Loaders ───────────────────────────────────────────────────────────────
   const loadSummary = useCallback(async () => {
@@ -360,10 +361,12 @@ export const WaterPage: React.FC = () => {
     if (!readerForm.name || !readerForm.email || !readerForm.password) return;
     setSaving(true);
     try {
-      await waterReadersApi.create(readerForm);
+      await waterReadersApi.create({ ...readerForm, installationIds: readerInstIds });
       setShowReaderModal(false);
       setReaderForm({ name: '', email: '', password: '' });
+      setReaderInstIds([]);
       loadReaders();
+      loadInstallations(); // refresh to show updated reader assignments
     } catch (err: any) {
       alert(err.response?.data?.message || w('error'));
     } finally { setSaving(false); }
@@ -1206,7 +1209,7 @@ export const WaterPage: React.FC = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {lang === 'ar' ? 'إدارة حسابات قرّاء العدادات' : 'Gestion des comptes lecteurs de compteurs'}
             </p>
-            <button onClick={() => { setReaderForm({ name: '', email: '', password: '' }); setShowReaderModal(true); }} className="btn-primary text-sm">
+            <button onClick={() => { setReaderForm({ name: '', email: '', password: '' }); setReaderInstIds([]); setShowReaderModal(true); }} className="btn-primary text-sm">
               <UserPlus size={15} />{w('addReader')}
             </button>
           </div>
@@ -1581,6 +1584,52 @@ export const WaterPage: React.FC = () => {
               </button>
             </div>
           </div>
+          {/* Installation assignment */}
+          <div>
+            <label className="label">
+              {lang === 'ar' ? 'أسند إليه العدادات التالية' : 'Assigner les compteurs suivants'}
+              {readerInstIds.length > 0 && (
+                <span className="ms-2 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                  {readerInstIds.length} {lang === 'ar' ? 'محدد' : 'sélectionné(s)'}
+                </span>
+              )}
+            </label>
+            <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl divide-y divide-gray-100 dark:divide-gray-700">
+              {installations.filter((i) => i.isActive).length === 0 ? (
+                <p className="p-3 text-xs text-gray-400 text-center">{w('noInstallations')}</p>
+              ) : (
+                installations.filter((i) => i.isActive).map((inst) => {
+                  const checked = readerInstIds.includes(inst.id);
+                  const alreadyAssigned = inst.readerId && !checked;
+                  return (
+                    <label key={inst.id} className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${checked ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'} ${alreadyAssigned ? 'opacity-50' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={!!alreadyAssigned}
+                        onChange={(e) => {
+                          setReaderInstIds(e.target.checked
+                            ? [...readerInstIds, inst.id]
+                            : readerInstIds.filter((id) => id !== inst.id));
+                        }}
+                        className="rounded"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{inst.householdName}</p>
+                        <p className="text-xs text-gray-400 font-mono">{inst.meterNumber}</p>
+                      </div>
+                      {alreadyAssigned && (
+                        <span className="text-xs text-purple-500 flex-shrink-0">
+                          {readers.find((r) => r.id === inst.readerId)?.name ?? lang === 'ar' ? 'مسند' : 'assigné'}
+                        </span>
+                      )}
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-300">
             {lang === 'ar'
               ? 'سيتمكن هذا القارئ من تسجيل الدخول وإدارة العدادات المسندة إليه فقط.'
