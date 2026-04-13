@@ -48,6 +48,7 @@ model Organization {
   waterInstallations WaterInstallation[]
   waterRepairs       WaterRepair[]
   reminders          Reminder[]
+  waterTariff        WaterTariff?
 }
 
 model Subscription {
@@ -376,6 +377,17 @@ model WaterRepair {
 
   organization Organization       @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   installation WaterInstallation? @relation(fields: [installationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model WaterTariff {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @unique @db.ObjectId
+  fixedFee       Float    @default(0)
+  tranches       Json     @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model Reminder {

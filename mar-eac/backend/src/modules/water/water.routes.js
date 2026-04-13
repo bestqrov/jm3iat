@@ -11,6 +11,10 @@ router.use(auth, tenant, requirePlan('PREMIUM'));
 router.get('/summary', ctrl.getSummary);
 router.get('/reports', ctrl.getReports);
 
+// Tariff
+router.get('/tariff', ctrl.getTariff);
+router.put('/tariff', ctrl.updateTariff);
+
 // Reader analytics (for WATER_READER role)
 router.get('/reader-analytics', ctrl.getReaderAnalytics);
 

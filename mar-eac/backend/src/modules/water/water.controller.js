@@ -8,6 +8,29 @@ const { generateWaterBillPDF } = require('../../utils/waterBillPdf');
 const readerInstFilter = (req) =>
   req.user.role === 'WATER_READER' ? { readerId: req.user.id } : {};
 
+// Helper: calculate amount using tranche pricing
+const calcAmount = (consumption, tariff, fallbackPricePerUnit = 5) => {
+  if (!tariff || !Array.isArray(tariff.tranches) || tariff.tranches.length === 0) {
+    return consumption * fallbackPricePerUnit + (tariff?.fixedFee || 0);
+  }
+  const sorted = [...tariff.tranches].sort((a, b) => a.from - b.from);
+  let amount = tariff.fixedFee || 0;
+  let remaining = consumption;
+  for (const t of sorted) {
+    if (remaining <= 0) break;
+    const trancheMax = t.to !== null && t.to !== undefined ? t.to - t.from : Infinity;
+    const consumed = Math.min(remaining, trancheMax);
+    amount += consumed * t.price;
+    remaining -= consumed;
+  }
+  if (remaining > 0) {
+    // use last tranche price for overflow
+    const lastPrice = sorted[sorted.length - 1]?.price || fallbackPricePerUnit;
+    amount += remaining * lastPrice;
+  }
+  return amount;
+};
+
 // ─── Installations ────────────────────────────────────────────────────────────
 
 const getInstallations = async (req, res) => {
@@ -146,7 +169,8 @@ const addReading = async (req, res) => {
 
     const previousReading = lastReading ? lastReading.currentReading : 0;
     const consumption = Math.max(0, parseFloat(currentReading) - previousReading);
-    const amount = consumption * installation.pricePerUnit;
+    const tariff = await prisma.waterTariff.findUnique({ where: { organizationId: req.organization.id } });
+    const amount = calcAmount(consumption, tariff, installation.pricePerUnit);
     const dueDate = new Date(parseInt(year), parseInt(month), 15);
 
     const reading = await prisma.$transaction(async (tx) => {
@@ -717,6 +741,40 @@ const deleteReader = async (req, res) => {
   }
 };
 
+// ─── Tariff ───────────────────────────────────────────────────────────────────
+
+const getTariff = async (req, res) => {
+  try {
+    const tariff = await prisma.waterTariff.findUnique({
+      where: { organizationId: req.organization.id },
+    });
+    res.json(tariff || { fixedFee: 0, tranches: [] });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const updateTariff = async (req, res) => {
+  try {
+    const { fixedFee, tranches } = req.body;
+    const tariff = await prisma.waterTariff.upsert({
+      where: { organizationId: req.organization.id },
+      update: {
+        fixedFee: fixedFee !== undefined ? parseFloat(fixedFee) : 0,
+        tranches: Array.isArray(tranches) ? tranches : [],
+      },
+      create: {
+        organizationId: req.organization.id,
+        fixedFee: fixedFee !== undefined ? parseFloat(fixedFee) : 0,
+        tranches: Array.isArray(tranches) ? tranches : [],
+      },
+    });
+    res.json(tariff);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getInstallations, getInstallation, createInstallation, updateInstallation, deleteInstallation,
   addReading, getReadings, getAllReadings,
@@ -724,4 +782,5 @@ module.exports = {
   getRepairs, createRepair, updateRepair, deleteRepair,
   getSummary, getReports, getReaderAnalytics,
   getReaders, createReader, deleteReader,
+  getTariff, updateTariff,
 };

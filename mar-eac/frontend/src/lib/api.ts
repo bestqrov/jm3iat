@@ -179,6 +179,9 @@ export const waterApi = {
   getSummary: () => api.get('/water/summary'),
   getReports: () => api.get('/water/reports'),
   getReaderAnalytics: () => api.get('/water/reader-analytics'),
+  // Tariff
+  getTariff: () => api.get('/water/tariff'),
+  updateTariff: (data: { fixedFee: number; tranches: any[] }) => api.put('/water/tariff', data),
   exportInvoicePDF: (invoiceId: string) => api.get(`/water/invoices/${invoiceId}/pdf`, { responseType: 'blob' }),
   uploadPaymentReceipt: (invoiceId: string, file: File) => {
     const fd = new FormData();

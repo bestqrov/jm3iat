@@ -19,7 +19,8 @@ import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
-type Tab = 'dashboard' | 'analytics' | 'installations' | 'readings' | 'invoices' | 'repairs' | 'reports' | 'readers';
+type Tab = 'dashboard' | 'analytics' | 'installations' | 'readings' | 'invoices' | 'repairs' | 'reports' | 'readers' | 'tariff';
+type Tranche = { from: number; to: number | null; price: number };
 
 const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
@@ -149,6 +150,9 @@ export const WaterPage: React.FC = () => {
   const [reports, setReports] = useState<any>(null);
   const [readers, setReaders] = useState<any[]>([]);
   const [readerAnalytics, setReaderAnalytics] = useState<any>(null);
+  const [tariff, setTariff] = useState<{ fixedFee: number; tranches: Tranche[] }>({ fixedFee: 0, tranches: [] });
+  const [tariffDraft, setTariffDraft] = useState<{ fixedFee: number; tranches: Tranche[] }>({ fixedFee: 0, tranches: [] });
+  const [tariffSaving, setTariffSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -230,11 +234,17 @@ export const WaterPage: React.FC = () => {
     setReaderAnalytics(res.data);
   }, []);
 
+  const loadTariff = useCallback(async () => {
+    const res = await waterApi.getTariff();
+    setTariff(res.data);
+    setTariffDraft(res.data);
+  }, []);
+
   // Initial load
   useEffect(() => {
     const tasks: Promise<any>[] = [loadSummary(), loadInstallations()];
     if (isWaterReader) tasks.push(loadReaderAnalytics());
-    else tasks.push(loadReaders(), loadRepairs());
+    else tasks.push(loadReaders(), loadRepairs(), loadTariff());
     Promise.all(tasks).finally(() => setLoading(false));
   }, []);
 
@@ -254,6 +264,35 @@ export const WaterPage: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'readers') loadReaders();
   }, [activeTab]);
+  useEffect(() => {
+    if (activeTab === 'tariff') loadTariff();
+  }, [activeTab]);
+
+  // ── Tariff handlers ───────────────────────────────────────────────────────
+  const addTranche = () => {
+    const last = tariffDraft.tranches[tariffDraft.tranches.length - 1];
+    const from = last ? (last.to ?? 0) : 0;
+    setTariffDraft(d => ({ ...d, tranches: [...d.tranches, { from, to: null, price: 0 }] }));
+  };
+  const removeTranche = (i: number) => {
+    setTariffDraft(d => ({ ...d, tranches: d.tranches.filter((_, idx) => idx !== i) }));
+  };
+  const updateTranche = (i: number, field: keyof Tranche, val: string) => {
+    setTariffDraft(d => {
+      const tranches = [...d.tranches];
+      tranches[i] = { ...tranches[i], [field]: field === 'to' && val === '' ? null : parseFloat(val) || 0 };
+      return { ...d, tranches };
+    });
+  };
+  const saveTariff = async () => {
+    setTariffSaving(true);
+    try {
+      const res = await waterApi.updateTariff(tariffDraft);
+      setTariff(res.data);
+      setTariffDraft(res.data);
+    } catch { alert(w('error')); }
+    finally { setTariffSaving(false); }
+  };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const openInstModal = (inst?: any) => {
@@ -477,6 +516,7 @@ export const WaterPage: React.FC = () => {
     { key: 'repairs', label: w('repairs'), icon: <Wrench size={14} /> },
     { key: 'reports', label: w('reports'), icon: <FileBarChart size={14} /> },
     { key: 'readers', label: w('readers'), icon: <Users size={14} /> },
+    { key: 'tariff', label: lang === 'ar' ? 'التسعيرة' : 'Tarification', icon: <Gauge size={14} /> },
   ];
 
   if (loading) {
@@ -1267,6 +1307,159 @@ export const WaterPage: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── TARIFF ───────────────────────────────────────────────────────── */}
+      {activeTab === 'tariff' && !isWaterReader && (
+        <div className="space-y-6 max-w-2xl">
+          <div className="card p-6 space-y-6">
+            {/* Fixed fee */}
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+                <Gauge size={16} className="text-blue-500" />
+                {lang === 'ar' ? 'الرسوم الثابتة الشهرية (درهم)' : 'Redevance fixe mensuelle (MAD)'}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                {lang === 'ar' ? 'مبلغ ثابت يُضاف لكل فاتورة بغض النظر عن الاستهلاك' : 'Montant fixe ajouté à chaque facture indépendamment de la consommation'}
+              </p>
+              <input
+                type="number" min="0" step="0.01"
+                className="input w-48"
+                value={tariffDraft.fixedFee}
+                onChange={(e) => setTariffDraft(d => ({ ...d, fixedFee: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+
+            {/* Tranches */}
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+                <BarChart2 size={16} className="text-emerald-500" />
+                {lang === 'ar' ? 'شرائح الأسعار (درهم / م³)' : 'Tranches de prix (MAD / m³)'}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                {lang === 'ar'
+                  ? 'حدد شرائح الاستهلاك مع السعر المقابل لكل متر مكعب. اتركِ "إلى" فارغاً للشريحة الأخيرة (غير محدودة).'
+                  : 'Définissez les tranches de consommation avec le prix par m³. Laissez "Jusqu\'à" vide pour la dernière tranche (illimité).'}
+              </p>
+
+              {tariffDraft.tranches.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-500 dark:text-gray-400">
+                  {lang === 'ar'
+                    ? 'لا توجد شرائح — سيُستخدم السعر الفردي المعيّن لكل عداد'
+                    : 'Aucune tranche — le prix par unité de chaque compteur sera utilisé'}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* Header row */}
+                  <div className="grid grid-cols-[1fr_1fr_1fr_36px] gap-3 px-1">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{lang === 'ar' ? 'من (م³)' : 'De (m³)'}</span>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{lang === 'ar' ? 'إلى (م³)' : 'Jusqu\'à (m³)'}</span>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{lang === 'ar' ? 'السعر (درهم/م³)' : 'Prix (MAD/m³)'}</span>
+                    <span />
+                  </div>
+                  {tariffDraft.tranches.map((t, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_1fr_1fr_36px] gap-3 items-center bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+                      <input
+                        type="number" min="0" step="0.1" className="input py-1.5 text-sm"
+                        value={t.from}
+                        onChange={(e) => updateTranche(i, 'from', e.target.value)}
+                      />
+                      <input
+                        type="number" min="0" step="0.1" className="input py-1.5 text-sm"
+                        value={t.to ?? ''}
+                        placeholder={lang === 'ar' ? 'غير محدود' : 'Illimité'}
+                        onChange={(e) => updateTranche(i, 'to', e.target.value)}
+                      />
+                      <div className="relative">
+                        <input
+                          type="number" min="0" step="0.01" className="input py-1.5 text-sm pr-12"
+                          value={t.price}
+                          onChange={(e) => updateTranche(i, 'price', e.target.value)}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">MAD</span>
+                      </div>
+                      <button onClick={() => removeTranche(i)}
+                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button onClick={addTranche}
+                className="mt-3 flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-medium">
+                <Plus size={15} />{lang === 'ar' ? 'إضافة شريحة' : 'Ajouter une tranche'}
+              </button>
+            </div>
+
+            {/* Preview */}
+            {tariffDraft.tranches.length > 0 && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-1">
+                  <Eye size={12} />{lang === 'ar' ? 'مثال على الحساب — 15 م³' : 'Exemple de calcul — 15 m³'}
+                </p>
+                {(() => {
+                  const conso = 15;
+                  const sorted = [...tariffDraft.tranches].sort((a, b) => a.from - b.from);
+                  let remaining = conso;
+                  let total = tariffDraft.fixedFee;
+                  const lines: { label: string; amount: number }[] = [];
+                  if (tariffDraft.fixedFee > 0) lines.push({ label: lang === 'ar' ? 'رسوم ثابتة' : 'Redevance fixe', amount: tariffDraft.fixedFee });
+                  for (const t of sorted) {
+                    if (remaining <= 0) break;
+                    const max = t.to !== null && t.to !== undefined ? t.to - t.from : Infinity;
+                    const consumed = Math.min(remaining, max);
+                    const amt = consumed * t.price;
+                    total += amt;
+                    lines.push({
+                      label: `${t.from}–${t.to ?? '∞'} m³ × ${t.price} MAD`,
+                      amount: amt,
+                    });
+                    remaining -= consumed;
+                  }
+                  return (
+                    <div className="space-y-1">
+                      {lines.map((l, i) => (
+                        <div key={i} className="flex justify-between text-xs text-blue-700 dark:text-blue-300">
+                          <span>{l.label}</span><span className="font-mono">{l.amount.toFixed(2)} MAD</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between text-sm font-bold text-blue-900 dark:text-blue-200 border-t border-blue-200 dark:border-blue-700 pt-1 mt-1">
+                        <span>Total</span><span className="font-mono">{total.toFixed(2)} MAD</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Save */}
+            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+              <button onClick={() => setTariffDraft(tariff)} className="btn-secondary text-sm">
+                {lang === 'ar' ? 'إلغاء' : 'Annuler'}
+              </button>
+              <button onClick={saveTariff} disabled={tariffSaving} className="btn-primary text-sm">
+                {tariffSaving ? w('loading') : (lang === 'ar' ? 'حفظ التسعيرة' : 'Enregistrer le tarif')}
+              </button>
+            </div>
+          </div>
+
+          {/* Info box */}
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-sm text-amber-800 dark:text-amber-300 flex gap-3">
+            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold mb-1">
+                {lang === 'ar' ? 'ملاحظة مهمة' : 'Note importante'}
+              </p>
+              <p className="text-xs leading-relaxed">
+                {lang === 'ar'
+                  ? 'هذه التسعيرة تُطبَّق على القراءات الجديدة فقط. الفواتير القديمة لا تتأثر. إذا لم تحدد شرائح، يُستخدم السعر الفردي المعيّن لكل عداد.'
+                  : 'Ce tarif s\'applique uniquement aux nouvelles relevés. Les anciennes factures ne sont pas affectées. Si aucune tranche n\'est définie, le prix unitaire de chaque compteur est utilisé.'}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
