@@ -127,6 +127,16 @@ export const projectsApi = {
   getStats: () => api.get('/projects/stats'),
 };
 
+// ---- Project Milestones ----
+export const milestonesApi = {
+  getAll: (projectId: string) => api.get(`/projects/${projectId}/milestones`),
+  create: (projectId: string, data: any) => api.post(`/projects/${projectId}/milestones`, data),
+  update: (projectId: string, milestoneId: string, data: any) => api.put(`/projects/${projectId}/milestones/${milestoneId}`, data),
+  delete: (projectId: string, milestoneId: string) => api.delete(`/projects/${projectId}/milestones/${milestoneId}`),
+  generatePlan: (projectId: string) => api.post(`/projects/${projectId}/milestones/generate`),
+  exportReport: (projectId: string, lang?: string) => api.get(`/projects/${projectId}/report`, { responseType: 'blob', params: { lang } }),
+};
+
 // ---- Funding ----
 export const fundingApi = {
   get: (projectId: string) => api.get(`/funding/projects/${projectId}`),

@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, MapPin, Calendar } from 'lucide-react';
-import { projectsApi, fundingApi, requestsApi, documentsApi } from '../../lib/api';
+import {
+  ArrowLeft, Plus, Trash2, MapPin, Calendar, CheckCircle2,
+  Clock, AlertCircle, Circle, Pencil, Sparkles, FileDown, ChevronRight,
+} from 'lucide-react';
+import { projectsApi, fundingApi, requestsApi, documentsApi, milestonesApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -9,75 +12,156 @@ import { formatCurrency, formatDate } from '../../lib/utils';
 
 const FUNDING_SOURCES = ['COMMUNE', 'DONOR', 'INTERNAL', 'GRANT', 'OTHER'];
 
+const MS_STATUS_CONFIG: Record<string, { color: string; bg: string; icon: React.ReactNode; label: { fr: string; ar: string } }> = {
+  PENDING:     { color: 'text-gray-400',    bg: 'bg-gray-100 dark:bg-gray-800',      icon: <Circle size={14} />,       label: { fr: 'En attente', ar: 'قيد الانتظار' } },
+  IN_PROGRESS: { color: 'text-blue-500',    bg: 'bg-blue-50 dark:bg-blue-900/20',    icon: <Clock size={14} />,        label: { fr: 'En cours',   ar: 'جاري' } },
+  COMPLETED:   { color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', icon: <CheckCircle2 size={14} />, label: { fr: 'Réalisé',   ar: 'منجز' } },
+  DELAYED:     { color: 'text-red-500',     bg: 'bg-red-50 dark:bg-red-900/20',      icon: <AlertCircle size={14} />,  label: { fr: 'Retardé',   ar: 'متأخر' } },
+};
+
 export const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { t, lang } = useLanguage();
+
   const [project, setProject] = useState<any>(null);
   const [funding, setFunding] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState('details');
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('avancement');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Modal states
   const [showFundingModal, setShowFundingModal] = useState(false);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'funding' | 'milestone'; id: string } | null>(null);
+
+  // Forms
   const [fundingForm, setFundingForm] = useState({ source: 'COMMUNE', amount: '', donor: '', notes: '' });
   const [budgetForm, setBudgetForm] = useState({ totalBudget: '' });
-  const [deleteEntryId, setDeleteEntryId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [msForm, setMsForm] = useState({ title: '', description: '', plannedDate: '', actualDate: '', status: 'PENDING' });
 
   const load = async () => {
     if (!id) return;
     try {
-      const [p, f, r, d] = await Promise.allSettled([
+      const [p, f, r, d, m] = await Promise.allSettled([
         projectsApi.getById(id),
         fundingApi.get(id),
         requestsApi.getAll(),
         documentsApi.getAll({ projectId: id }),
+        milestonesApi.getAll(id),
       ]);
       if (p.status === 'fulfilled') setProject(p.value.data);
       if (f.status === 'fulfilled') setFunding(f.value.data);
       if (r.status === 'fulfilled') setRequests(r.value.data.filter((req: any) => req.projectId === id));
       if (d.status === 'fulfilled') setDocuments(d.value.data);
+      if (m.status === 'fulfilled') setMilestones(m.value.data);
     } finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, [id]);
 
+  // ── Funding handlers ─────────────────────────────────────────────────────
   const handleAddFunding = async () => {
     if (!id || !fundingForm.amount) return;
-    setSaving(true);
-    setSaveError(null);
+    setSaving(true); setSaveError(null);
     try {
       await fundingApi.addEntry(id, fundingForm);
       setShowFundingModal(false);
       setFundingForm({ source: 'COMMUNE', amount: '', donor: '', notes: '' });
       load();
-    } catch (err: any) {
-      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
-    } finally { setSaving(false); }
+    } catch (err: any) { setSaveError(err?.response?.data?.message || 'Erreur'); }
+    finally { setSaving(false); }
   };
 
   const handleUpdateBudget = async () => {
     if (!id || !budgetForm.totalBudget) return;
-    setSaving(true);
-    setSaveError(null);
+    setSaving(true); setSaveError(null);
     try {
       await fundingApi.updateBudget(id, parseFloat(budgetForm.totalBudget));
-      setShowBudgetModal(false);
-      load();
-    } catch (err: any) {
-      setSaveError(err?.response?.data?.message || 'Erreur lors de la sauvegarde');
-    } finally { setSaving(false); }
+      setShowBudgetModal(false); load();
+    } catch (err: any) { setSaveError(err?.response?.data?.message || 'Erreur'); }
+    finally { setSaving(false); }
   };
 
-  const handleDeleteEntry = async () => {
-    if (!deleteEntryId) return;
+  // ── Milestone handlers ────────────────────────────────────────────────────
+  const openMilestoneModal = (ms?: any) => {
+    if (ms) {
+      setEditingMilestone(ms);
+      setMsForm({
+        title: ms.title,
+        description: ms.description || '',
+        plannedDate: ms.plannedDate ? ms.plannedDate.split('T')[0] : '',
+        actualDate: ms.actualDate ? ms.actualDate.split('T')[0] : '',
+        status: ms.status,
+      });
+    } else {
+      setEditingMilestone(null);
+      setMsForm({ title: '', description: '', plannedDate: '', actualDate: '', status: 'PENDING' });
+    }
+    setShowMilestoneModal(true);
+  };
+
+  const handleSaveMilestone = async () => {
+    if (!id || !msForm.title) return;
+    setSaving(true);
+    try {
+      if (editingMilestone) {
+        await milestonesApi.update(id, editingMilestone.id, msForm);
+      } else {
+        await milestonesApi.create(id, msForm);
+      }
+      setShowMilestoneModal(false);
+      load();
+    } catch (err: any) { alert(err?.response?.data?.message || 'Erreur'); }
+    finally { setSaving(false); }
+  };
+
+  const handleGeneratePlan = async () => {
+    if (!id) return;
+    const confirmed = window.confirm(
+      lang === 'ar'
+        ? 'سيتم حذف المراحل الحالية وإنشاء خطة جديدة تلقائياً. هل تريد المتابعة؟'
+        : 'Cela va remplacer les jalons existants par un plan généré automatiquement. Continuer ?'
+    );
+    if (!confirmed) return;
+    setGenerating(true);
+    try {
+      const res = await milestonesApi.generatePlan(id);
+      setMilestones(res.data);
+    } catch { alert(lang === 'ar' ? 'خطأ في توليد الخطة' : 'Erreur lors de la génération'); }
+    finally { setGenerating(false); }
+  };
+
+  const handleExportReport = async () => {
+    if (!id) return;
+    setExporting(true);
+    try {
+      const res = await milestonesApi.exportReport(id, lang);
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport-projet-${id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { alert(lang === 'ar' ? 'خطأ في تصدير التقرير' : 'Erreur export PDF'); }
+    finally { setExporting(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget || !id) return;
     setDeleting(true);
     try {
-      await fundingApi.deleteEntry(deleteEntryId);
-      setDeleteEntryId(null);
+      if (deleteTarget.type === 'funding') await fundingApi.deleteEntry(deleteTarget.id);
+      else await milestonesApi.delete(id, deleteTarget.id);
+      setDeleteTarget(null);
       load();
     } catch {} finally { setDeleting(false); }
   };
@@ -88,17 +172,36 @@ export const ProjectDetailPage: React.FC = () => {
     load();
   };
 
+  const handleMilestoneStatusCycle = async (ms: any) => {
+    if (!id) return;
+    const next: Record<string, string> = { PENDING: 'IN_PROGRESS', IN_PROGRESS: 'COMPLETED', COMPLETED: 'PENDING', DELAYED: 'IN_PROGRESS' };
+    const actualDate = next[ms.status] === 'COMPLETED' ? new Date().toISOString().split('T')[0] : ms.actualDate?.split('T')[0] || '';
+    await milestonesApi.update(id, ms.id, { status: next[ms.status], actualDate });
+    load();
+  };
+
   if (loading) return <div className="flex justify-center py-16"><div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>;
   if (!project) return <div className="text-center py-16 text-gray-500">{t('common.noData')}</div>;
 
   const funded = funding?.fundedAmount || 0;
   const total = funding?.totalBudget || 0;
   const pct = total > 0 ? Math.min(100, (funded / total) * 100) : 0;
+  const completedMs = milestones.filter((m) => m.status === 'COMPLETED').length;
+  const msPct = milestones.length > 0 ? Math.round((completedMs / milestones.length) * 100) : 0;
 
   const statusBadge: Record<string, string> = { PLANNED: 'badge-blue', IN_PROGRESS: 'badge-yellow', COMPLETED: 'badge-green', CANCELLED: 'badge-red' };
 
+  const TABS = [
+    { key: 'avancement', label: lang === 'ar' ? 'التقدم والمراحل' : 'Avancement' },
+    { key: 'details',   label: t('projects.tabs.details') },
+    { key: 'funding',   label: t('projects.tabs.funding') },
+    { key: 'requests',  label: t('projects.tabs.requests') },
+    { key: 'documents', label: t('projects.tabs.documents') },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Back + header */}
       <div>
         <Link to="/projects" className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary-600 mb-4">
           <ArrowLeft size={16} />{t('common.back')}
@@ -111,46 +214,203 @@ export const ProjectDetailPage: React.FC = () => {
               <span className={statusBadge[project.status]}>{t(`projects.statuses.${project.status}`)}</span>
               {project.location && <span className="flex items-center gap-1 text-sm text-gray-500"><MapPin size={13} />{project.location}</span>}
               {project.startDate && <span className="flex items-center gap-1 text-sm text-gray-500"><Calendar size={13} />{formatDate(project.startDate, lang)}</span>}
+              {project.endDate && <span className="flex items-center gap-1 text-sm text-gray-500"><ChevronRight size={13} />{formatDate(project.endDate, lang)}</span>}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={handleExportReport} disabled={exporting}
+              className="btn-secondary text-sm">
+              <FileDown size={15} />{exporting ? '...' : (lang === 'ar' ? 'تصدير التقرير' : 'Rapport PDF')}
+            </button>
             {project.status === 'PLANNED' && <button onClick={() => handleStatusChange('IN_PROGRESS')} className="btn-primary text-sm">{lang === 'ar' ? 'بدء المشروع' : 'Démarrer'}</button>}
             {project.status === 'IN_PROGRESS' && <button onClick={() => handleStatusChange('COMPLETED')} className="btn-success text-sm">{lang === 'ar' ? 'إتمام المشروع' : 'Terminer'}</button>}
           </div>
         </div>
       </div>
 
-      {/* Funding progress bar */}
-      {total > 0 && (
+      {/* Progress overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Milestones progress */}
         <div className="card p-4">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-gray-600 dark:text-gray-400">{t('projects.funding')}</span>
-            <span className="font-semibold text-gray-900 dark:text-white">{pct.toFixed(0)}%</span>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {lang === 'ar' ? 'تقدم المراحل' : 'Avancement des jalons'}
+            </span>
+            <span className="text-lg font-bold text-primary-600">{msPct}%</span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-3">
-            <div className="bg-primary-500 h-3 rounded-full transition-all" style={{ width: `${pct}%` }} />
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2">
+            <div className="bg-primary-500 h-3 rounded-full transition-all duration-500" style={{ width: `${msPct}%` }} />
           </div>
-          <div className="grid grid-cols-3 gap-3 text-center text-sm">
-            <div><div className="font-bold text-gray-900 dark:text-white">{formatCurrency(total, lang)}</div><div className="text-xs text-gray-500">{t('projects.totalBudget')}</div></div>
-            <div><div className="font-bold text-emerald-600">{formatCurrency(funded, lang)}</div><div className="text-xs text-gray-500">{t('projects.fundedAmount')}</div></div>
-            <div><div className="font-bold text-red-500">{formatCurrency(total - funded, lang)}</div><div className="text-xs text-gray-500">{t('projects.remaining')}</div></div>
+          <p className="text-xs text-gray-400">{completedMs} / {milestones.length} {lang === 'ar' ? 'مرحلة منجزة' : 'jalons réalisés'}</p>
+        </div>
+        {/* Funding progress */}
+        <div className="card p-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('projects.funding')}</span>
+            <span className="text-lg font-bold text-emerald-600">{pct.toFixed(0)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2">
+            <div className="bg-emerald-500 h-3 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+          </div>
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>{formatCurrency(funded, lang)}</span>
+            <span>{lang === 'ar' ? 'من ' : 'sur '}{formatCurrency(total, lang)}</span>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-        {['details', 'funding', 'requests', 'documents'].map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${activeTab === tab ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500'}`}>
-            {t(`projects.tabs.${tab}`)}
+      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+        {TABS.map((tab) => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${activeTab === tab.key ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500'}`}>
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Details Tab */}
+      {/* ── AVANCEMENT TAB ────────────────────────────────────────────────── */}
+      {activeTab === 'avancement' && (
+        <div className="space-y-4">
+          {/* Actions */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {lang === 'ar'
+                ? 'أضف مراحل يدوياً أو اترك النظام يولّد خطة متكاملة حسب نوع المشروع'
+                : 'Ajoutez des jalons manuellement ou laissez le système générer un plan complet selon le type de projet'}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={handleGeneratePlan} disabled={generating}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-medium transition-colors disabled:opacity-60">
+                <Sparkles size={15} />
+                {generating
+                  ? (lang === 'ar' ? 'جاري التوليد...' : 'Génération...')
+                  : (lang === 'ar' ? 'توليد خطة تلقائية' : 'Générer un plan')}
+              </button>
+              <button onClick={() => openMilestoneModal()} className="btn-primary text-sm">
+                <Plus size={15} />{lang === 'ar' ? 'مرحلة جديدة' : 'Nouveau jalon'}
+              </button>
+            </div>
+          </div>
+
+          {milestones.length === 0 ? (
+            <div className="card p-12 text-center">
+              <Sparkles size={36} className="text-violet-400 mx-auto mb-3" />
+              <p className="font-semibold text-gray-700 dark:text-gray-300 text-lg mb-1">
+                {lang === 'ar' ? 'لا توجد مراحل بعد' : 'Aucun jalon défini'}
+              </p>
+              <p className="text-sm text-gray-400 mb-4">
+                {lang === 'ar'
+                  ? 'انقر على "توليد خطة تلقائية" لإنشاء مراحل المشروع حسب نوعه ومدته'
+                  : 'Cliquez sur "Générer un plan" pour créer automatiquement les jalons selon le type et la durée du projet'}
+              </p>
+              <div className="flex justify-center gap-3">
+                <button onClick={handleGeneratePlan} disabled={generating}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-medium text-sm">
+                  <Sparkles size={16} />{lang === 'ar' ? 'توليد خطة تلقائية' : 'Générer un plan automatique'}
+                </button>
+                <button onClick={() => openMilestoneModal()} className="btn-secondary text-sm">
+                  <Plus size={15} />{lang === 'ar' ? 'إضافة يدوية' : 'Ajouter manuellement'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute start-[22px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary-300 via-primary-200 to-gray-200 dark:from-primary-700 dark:via-primary-800 dark:to-gray-700" />
+
+              <div className="space-y-3">
+                {milestones.map((ms, idx) => {
+                  const cfg = MS_STATUS_CONFIG[ms.status] || MS_STATUS_CONFIG.PENDING;
+                  const isLast = idx === milestones.length - 1;
+                  const isOverdue = ms.status !== 'COMPLETED' && ms.plannedDate && new Date(ms.plannedDate) < new Date();
+                  return (
+                    <div key={ms.id} className="flex gap-4 ps-0">
+                      {/* Timeline dot */}
+                      <div className="relative z-10 flex-shrink-0">
+                        <button
+                          onClick={() => handleMilestoneStatusCycle(ms)}
+                          title={lang === 'ar' ? 'انقر لتغيير الحالة' : 'Cliquer pour changer le statut'}
+                          className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 ${
+                            ms.status === 'COMPLETED' ? 'bg-emerald-500 border-emerald-600 text-white' :
+                            ms.status === 'IN_PROGRESS' ? 'bg-blue-500 border-blue-600 text-white' :
+                            ms.status === 'DELAYED' ? 'bg-red-500 border-red-600 text-white' :
+                            'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400'
+                          }`}>
+                          {cfg.icon}
+                        </button>
+                        <span className="absolute -bottom-1 -end-1 w-4 h-4 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-[9px] font-bold text-gray-500">
+                          {idx + 1}
+                        </span>
+                      </div>
+
+                      {/* Card */}
+                      <div className={`flex-1 mb-2 rounded-xl border p-4 transition-all ${cfg.bg} ${isOverdue ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{ms.title}</h4>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.color} bg-white dark:bg-gray-900 border border-current`}>
+                                {cfg.label[lang as 'fr' | 'ar'] || cfg.label.fr}
+                              </span>
+                              {isOverdue && ms.status !== 'COMPLETED' && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">
+                                  {lang === 'ar' ? 'متأخر' : 'En retard'}
+                                </span>
+                              )}
+                            </div>
+                            {ms.description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{ms.description}</p>}
+                            <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-400">
+                              {ms.plannedDate && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar size={10} className="text-gray-400" />
+                                  {lang === 'ar' ? 'مخطط: ' : 'Prévu : '}{formatDate(ms.plannedDate, lang)}
+                                </span>
+                              )}
+                              {ms.actualDate && (
+                                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                                  <CheckCircle2 size={10} />
+                                  {lang === 'ar' ? 'فعلي: ' : 'Réalisé : '}{formatDate(ms.actualDate, lang)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button onClick={() => openMilestoneModal(ms)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                              <Pencil size={13} />
+                            </button>
+                            <button onClick={() => setDeleteTarget({ type: 'milestone', id: ms.id })} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Progress summary at bottom */}
+              <div className="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center gap-4 flex-wrap">
+                {Object.entries(MS_STATUS_CONFIG).map(([status, cfg]) => {
+                  const count = milestones.filter((m) => m.status === status).length;
+                  return (
+                    <div key={status} className="flex items-center gap-1.5 text-sm">
+                      <span className={cfg.color}>{cfg.icon}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{count}</span>
+                      <span className="text-gray-500">{cfg.label[lang as 'fr' | 'ar'] || cfg.label.fr}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── DETAILS TAB ───────────────────────────────────────────────────── */}
       {activeTab === 'details' && (
-        <div className="card p-5 space-y-3">
+        <div className="card p-5 space-y-4">
           {project.description && (
             <div>
               <label className="label">{t('projects.description')}</label>
@@ -160,42 +420,53 @@ export const ProjectDetailPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div><span className="text-gray-500">{t('projects.type')}:</span> <strong>{t(`projects.types.${project.type}`)}</strong></div>
             <div><span className="text-gray-500">{t('projects.status')}:</span> <strong>{t(`projects.statuses.${project.status}`)}</strong></div>
+            {project.manager && <div><span className="text-gray-500">{lang === 'ar' ? 'المسؤول:' : 'Responsable:'}</span> <strong>{project.manager}</strong></div>}
             {project.startDate && <div><span className="text-gray-500">{t('projects.startDate')}:</span> <strong>{formatDate(project.startDate, lang)}</strong></div>}
             {project.endDate && <div><span className="text-gray-500">{t('projects.endDate')}:</span> <strong>{formatDate(project.endDate, lang)}</strong></div>}
+            {project.budget && <div><span className="text-gray-500">{lang === 'ar' ? 'الميزانية:' : 'Budget:'}</span> <strong>{formatCurrency(project.budget, lang)}</strong></div>}
+            {project.beneficiaries && <div className="col-span-2"><span className="text-gray-500">{lang === 'ar' ? 'المستفيدون:' : 'Bénéficiaires:'}</span> <strong>{project.beneficiaries}</strong></div>}
           </div>
+          {project.generalGoal && (
+            <div>
+              <label className="label">{lang === 'ar' ? 'الهدف العام' : 'But général'}</label>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{project.generalGoal}</p>
+            </div>
+          )}
+          {project.specificGoals && (
+            <div>
+              <label className="label">{lang === 'ar' ? 'الأهداف الخاصة' : 'Buts spécifiques'}</label>
+              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{project.specificGoals}</p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Funding Tab */}
+      {/* ── FUNDING TAB ───────────────────────────────────────────────────── */}
       {activeTab === 'funding' && (
         <div className="space-y-4">
           <div className="flex justify-end gap-2">
             <button onClick={() => { setBudgetForm({ totalBudget: total.toString() }); setShowBudgetModal(true); }} className="btn-secondary text-sm">{t('funding.updateBudget')}</button>
             <button onClick={() => setShowFundingModal(true)} className="btn-primary text-sm"><Plus size={14} />{t('funding.addEntry')}</button>
           </div>
-          {funding?.entries?.length === 0 ? (
+          {!funding?.entries?.length ? (
             <div className="card p-8 text-center text-gray-400 text-sm">{t('common.noData')}</div>
           ) : (
             <div className="card">
               <div className="table-wrap">
                 <table className="table">
                   <thead><tr>
-                    <th>{t('funding.source')}</th>
-                    <th>{t('funding.donor')}</th>
-                    <th>{t('common.date')}</th>
-                    <th>{lang === 'ar' ? 'المبلغ' : 'Montant'}</th>
+                    <th>{t('funding.source')}</th><th>{t('funding.donor')}</th>
+                    <th>{t('common.date')}</th><th>{lang === 'ar' ? 'المبلغ' : 'Montant'}</th>
                     <th>{t('common.actions')}</th>
                   </tr></thead>
                   <tbody>
-                    {funding?.entries?.map((entry: any) => (
+                    {funding.entries.map((entry: any) => (
                       <tr key={entry.id}>
                         <td><span className="badge badge-blue">{t(`funding.sources.${entry.source}`)}</span></td>
                         <td>{entry.donor || '-'}</td>
                         <td>{formatDate(entry.date, lang)}</td>
                         <td className="font-semibold text-emerald-600">{formatCurrency(entry.amount, lang)}</td>
-                        <td>
-                          <button onClick={() => setDeleteEntryId(entry.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
-                        </td>
+                        <td><button onClick={() => setDeleteTarget({ type: 'funding', id: entry.id })} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -206,7 +477,7 @@ export const ProjectDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Requests Tab */}
+      {/* ── REQUESTS TAB ──────────────────────────────────────────────────── */}
       {activeTab === 'requests' && (
         <div className="card p-4">
           {requests.length === 0 ? (
@@ -229,7 +500,7 @@ export const ProjectDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Documents Tab */}
+      {/* ── DOCUMENTS TAB ─────────────────────────────────────────────────── */}
       {activeTab === 'documents' && (
         <div className="card p-4">
           {documents.length === 0 ? (
@@ -247,7 +518,49 @@ export const ProjectDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Add Funding Modal */}
+      {/* ─── MODALS ───────────────────────────────────────────────────────── */}
+
+      {/* Milestone Modal */}
+      <Modal isOpen={showMilestoneModal} onClose={() => setShowMilestoneModal(false)}
+        title={editingMilestone ? (lang === 'ar' ? 'تعديل المرحلة' : 'Modifier le jalon') : (lang === 'ar' ? 'مرحلة جديدة' : 'Nouveau jalon')}
+        footer={<><button onClick={() => setShowMilestoneModal(false)} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleSaveMilestone} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="label">{lang === 'ar' ? 'عنوان المرحلة' : 'Titre du jalon'} *</label>
+            <input className="input" value={msForm.title} onChange={(e) => setMsForm({ ...msForm, title: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">{lang === 'ar' ? 'وصف' : 'Description'}</label>
+            <textarea className="input" rows={2} value={msForm.description} onChange={(e) => setMsForm({ ...msForm, description: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">{lang === 'ar' ? 'التاريخ المخطط' : 'Date prévue'}</label>
+              <input className="input" type="date" value={msForm.plannedDate} onChange={(e) => setMsForm({ ...msForm, plannedDate: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">{lang === 'ar' ? 'التاريخ الفعلي' : 'Date réelle'}</label>
+              <input className="input" type="date" value={msForm.actualDate} onChange={(e) => setMsForm({ ...msForm, actualDate: e.target.value })} />
+            </div>
+          </div>
+          <div>
+            <label className="label">{lang === 'ar' ? 'الحالة' : 'Statut'}</label>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(MS_STATUS_CONFIG).map(([status, cfg]) => (
+                <label key={status} className={`flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer text-sm font-medium transition-colors ${msForm.status === status ? `border-current ${cfg.color} bg-white dark:bg-gray-900` : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}>
+                  <input type="radio" name="msStatus" value={status} checked={msForm.status === status}
+                    onChange={() => setMsForm({ ...msForm, status })} className="hidden" />
+                  <span className={msForm.status === status ? cfg.color : ''}>{cfg.icon}</span>
+                  {cfg.label[lang as 'fr' | 'ar'] || cfg.label.fr}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Funding Entry Modal */}
       <Modal isOpen={showFundingModal} onClose={() => { setShowFundingModal(false); setSaveError(null); }} title={t('funding.addEntry')}
         footer={<><button onClick={() => { setShowFundingModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleAddFunding} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
@@ -276,9 +589,7 @@ export const ProjectDetailPage: React.FC = () => {
         </div>
       </Modal>
 
-      <ConfirmDialog isOpen={!!deleteEntryId} onClose={() => setDeleteEntryId(null)} onConfirm={handleDeleteEntry} title={lang === 'ar' ? 'حذف الإدخال' : 'Supprimer l\'entrée'} message={t('common.confirmDelete')} loading={deleting} />
-
-      {/* Update Budget Modal */}
+      {/* Budget Modal */}
       <Modal isOpen={showBudgetModal} onClose={() => { setShowBudgetModal(false); setSaveError(null); }} title={t('funding.updateBudget')}
         footer={<><button onClick={() => { setShowBudgetModal(false); setSaveError(null); }} className="btn-secondary">{t('common.cancel')}</button><button onClick={handleUpdateBudget} disabled={saving} className="btn-primary">{saving ? t('common.loading') : t('common.save')}</button></>}
       >
@@ -288,6 +599,12 @@ export const ProjectDetailPage: React.FC = () => {
           <input className="input" type="number" step="0.01" value={budgetForm.totalBudget} onChange={(e) => setBudgetForm({ totalBudget: e.target.value })} />
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete}
+        title={lang === 'ar' ? 'تأكيد الحذف' : 'Confirmer la suppression'}
+        message={t('common.confirmDelete')} loading={deleting}
+      />
     </div>
   );
 };

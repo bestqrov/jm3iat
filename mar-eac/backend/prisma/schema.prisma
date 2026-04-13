@@ -222,6 +222,22 @@ model Project {
   funding      Funding?
   requests     Request[]
   documents    Document[]
+  milestones   ProjectMilestone[]
+}
+
+model ProjectMilestone {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  projectId   String    @db.ObjectId
+  title       String
+  description String?
+  plannedDate DateTime?
+  actualDate  DateTime?
+  status      String    @default("PENDING")
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Funding {
