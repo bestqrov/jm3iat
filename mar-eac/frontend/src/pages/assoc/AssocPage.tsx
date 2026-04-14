@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   ShoppingBag, Package, Factory, TrendingUp, Users,
   CalendarDays, Plus, Trash2, Edit, Eye, X,
-  BarChart3, Boxes, ChevronRight,
+  BarChart3, Boxes, ChevronRight, FileBarChart,
 } from 'lucide-react';
+import AssocReportsPage from './AssocReportsPage';
 import { assocApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
@@ -78,7 +79,7 @@ const EventTypeBadge: React.FC<{ type: string }> = ({ type }) => {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-type Tab = 'dashboard' | 'products' | 'production' | 'sales' | 'clients' | 'events' | 'stock';
+type Tab = 'dashboard' | 'products' | 'production' | 'sales' | 'clients' | 'events' | 'stock' | 'reports';
 
 const AssocPage: React.FC = () => {
   const { lang } = useLanguage();
@@ -319,6 +320,7 @@ const AssocPage: React.FC = () => {
     { id: 'clients', label: 'Clients', icon: <Users size={16} /> },
     { id: 'events', label: 'Événements', icon: <CalendarDays size={16} /> },
     { id: 'stock', label: 'Stock', icon: <Boxes size={16} /> },
+    { id: 'reports', label: 'Rapports', icon: <FileBarChart size={16} /> },
   ];
 
   const fmt = (n: number) => n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -638,6 +640,9 @@ const AssocPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ── Reports ───────────────────────────────────────────────────────── */}
+      {tab === 'reports' && <AssocReportsPage />}
 
       {/* ── Modals ────────────────────────────────────────────────────────── */}
 

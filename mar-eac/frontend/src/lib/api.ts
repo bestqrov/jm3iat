@@ -115,6 +115,12 @@ export const reportsApi = {
   getFinancial: () => api.get('/reports/financial'),
   exportLiterary: () => api.get('/reports/literary/export', { responseType: 'blob' }),
   exportFinancial: (year?: number, lang?: string) => api.get('/reports/financial/export', { responseType: 'blob', params: { ...(year ? { year } : {}), ...(lang ? { lang } : {}) } }),
+  // Association reports
+  getAssocLiterary: (params?: any) => api.get('/reports/assoc/literary', { params }),
+  getAssocFinancial: (params?: any) => api.get('/reports/assoc/financial', { params }),
+  getAssocAdvanced: (params?: any) => api.get('/reports/assoc/advanced', { params }),
+  exportAssocLiterary: (params?: any) => api.get('/reports/assoc/literary/export', { responseType: 'blob', params }),
+  exportAssocFinancial: (params?: any) => api.get('/reports/assoc/financial/export', { responseType: 'blob', params }),
 };
 
 // ---- Projects ----
