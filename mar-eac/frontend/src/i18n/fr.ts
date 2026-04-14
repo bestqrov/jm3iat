@@ -39,7 +39,7 @@ const fr = {
     orgRegion: 'Région',
     adminName: 'Nom du responsable',
     adminEmail: 'E-mail du responsable',
-    trialBadge: 'Essai gratuit de 3 jours',
+    trialBadge: 'Essai gratuit de 15 jours',
     loginTitle: 'Bon retour !',
     loginSubtitle: 'Entrez vos identifiants pour accéder au tableau de bord',
     registerTitle: 'Créez le compte de votre association',

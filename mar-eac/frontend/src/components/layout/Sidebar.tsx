@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Users, Calendar, DollarSign, FileText,
   Briefcase, Droplets, BarChart2, Bell, Shield, Settings,
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
+  Building2, FolderKanban, Layers,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -15,7 +16,6 @@ interface NavItem {
   label: string;
   plan?: string;
   module?: string;
-  superAdminOnly?: boolean;
 }
 
 interface NavGroup {
@@ -23,28 +23,112 @@ interface NavGroup {
   items: NavItem[];
 }
 
+// ─── Association theme ────────────────────────────────────────────────────────
+
+type OrgTheme = {
+  logoBg: string;         // inline gradient background
+  activeClass: string;    // active nav item bg+text classes
+  activeBorder: string;   // inline border-color for active indicator
+  badgeBg: string;
+  badgeText: string;
+  stripeBg: string;       // top-of-sidebar colored stripe
+  icon: React.ReactNode;
+  labelFr: string;
+  labelAr: string;
+};
+
+const getOrgTheme = (modules: string[]): OrgTheme => {
+  const hasWater = modules.includes('WATER');
+  const hasProd  = modules.includes('PRODUCTIVE');
+  const hasProj  = modules.includes('PROJECTS');
+
+  if (hasWater && hasProd) return {
+    logoBg: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+    activeClass: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 font-semibold',
+    activeBorder: '#7c3aed',
+    badgeBg: 'bg-purple-100 dark:bg-purple-900/30',
+    badgeText: 'text-purple-700 dark:text-purple-300',
+    stripeBg: 'linear-gradient(90deg, #7c3aed, #4f46e5, #0891b2)',
+    icon: <Layers size={14} />,
+    labelFr: 'Productive + Eau',
+    labelAr: 'إنتاجية + ماء',
+  };
+  if (hasWater) return {
+    logoBg: 'linear-gradient(135deg, #0891b2, #2563eb)',
+    activeClass: 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 font-semibold',
+    activeBorder: '#0891b2',
+    badgeBg: 'bg-cyan-100 dark:bg-cyan-900/30',
+    badgeText: 'text-cyan-700 dark:text-cyan-300',
+    stripeBg: 'linear-gradient(90deg, #0891b2, #2563eb)',
+    icon: <Droplets size={14} />,
+    labelFr: 'Association de l\'eau',
+    labelAr: 'جمعية الماء',
+  };
+  if (hasProd) return {
+    logoBg: 'linear-gradient(135deg, #059669, #0d9488)',
+    activeClass: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 font-semibold',
+    activeBorder: '#059669',
+    badgeBg: 'bg-emerald-100 dark:bg-emerald-900/30',
+    badgeText: 'text-emerald-700 dark:text-emerald-300',
+    stripeBg: 'linear-gradient(90deg, #059669, #0d9488)',
+    icon: <ShoppingBag size={14} />,
+    labelFr: 'Association productive',
+    labelAr: 'جمعية إنتاجية',
+  };
+  if (hasProj) return {
+    logoBg: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+    activeClass: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold',
+    activeBorder: '#2563eb',
+    badgeBg: 'bg-blue-100 dark:bg-blue-900/30',
+    badgeText: 'text-blue-700 dark:text-blue-300',
+    stripeBg: 'linear-gradient(90deg, #2563eb, #4f46e5)',
+    icon: <FolderKanban size={14} />,
+    labelFr: 'Association avec projets',
+    labelAr: 'جمعية المشاريع',
+  };
+  return {
+    logoBg: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+    activeClass: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-semibold',
+    activeBorder: '#4f46e5',
+    badgeBg: 'bg-gray-100 dark:bg-gray-700',
+    badgeText: 'text-gray-600 dark:text-gray-300',
+    stripeBg: 'linear-gradient(90deg, #4f46e5, #7c3aed)',
+    icon: <Building2 size={14} />,
+    labelFr: 'Association classique',
+    labelAr: 'جمعية عادية',
+  };
+};
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+
 export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const { user, organization, logout, isSuperAdmin, isWaterReader, hasModule } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { t, lang, setLang } = useLanguage();
   const navigate = useNavigate();
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(['main', 'management', 'rural']);
 
-  const sub = organization?.subscription;
+  const sub  = organization?.subscription;
+  const mods = organization?.modules ?? [];
+  const orgTheme = getOrgTheme(mods);
+  const isAr = lang === 'ar';
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Water readers only see water management (no settings, no other pages)
+  const PLAN_LEVELS: Record<string, number> = { BASIC: 1, STANDARD: 2, PREMIUM: 3 };
+  const isPlanLocked = (plan?: string) => {
+    if (!plan || !sub) return false;
+    if (sub.status === 'TRIAL' || sub.status === 'ACTIVE') {
+      return (PLAN_LEVELS[sub.plan] || 0) < (PLAN_LEVELS[plan] || 0);
+    }
+    return true;
+  };
+
+  // Water readers only see water
   const navGroups: NavGroup[] = isWaterReader ? [
-    {
-      label: '',
-      items: [
-        { to: '/water', icon: <Droplets size={18} />, label: t('nav.water') },
-      ],
-    },
+    { label: '', items: [{ to: '/water', icon: <Droplets size={18} />, label: t('nav.water') }] },
   ] : [
     {
       label: '',
@@ -55,54 +139,55 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     {
       label: t('nav.management'),
       items: [
-        { to: '/administratifs', icon: <UserCog size={18} />, label: t('nav.administratifs') },
-        { to: '/members', icon: <Users size={18} />, label: t('nav.members') },
-        { to: '/meetings', icon: <Calendar size={18} />, label: t('nav.meetings') },
-        { to: '/finance', icon: <DollarSign size={18} />, label: t('nav.finance'), plan: 'STANDARD' },
-        { to: '/documents', icon: <FileText size={18} />, label: t('nav.documents') },
+        { to: '/administratifs', icon: <UserCog size={18} />,   label: t('nav.administratifs') },
+        { to: '/members',        icon: <Users size={18} />,     label: t('nav.members') },
+        { to: '/meetings',       icon: <Calendar size={18} />,  label: t('nav.meetings') },
+        { to: '/finance',        icon: <DollarSign size={18} />, label: t('nav.finance'), plan: 'STANDARD' },
+        { to: '/documents',      icon: <FileText size={18} />,  label: t('nav.documents') },
       ],
     },
     {
       label: t('nav.ruralProjects'),
       items: [
-        { to: '/projects', icon: <Briefcase size={18} />, label: t('nav.projects'), module: 'PROJECTS' },
-        { to: '/requests', icon: <FileText size={18} />, label: t('nav.requests') },
-        { to: '/water', icon: <Droplets size={18} />, label: t('nav.water'), module: 'WATER' },
-        { to: '/assoc', icon: <ShoppingBag size={18} />, label: t('nav.assoc'), module: 'PRODUCTIVE' },
+        // Only shown if module is enabled
+        ...(hasModule('PROJECTS') ? [{ to: '/projects', icon: <Briefcase size={18} />,   label: t('nav.projects') }] : []),
+        { to: '/requests',  icon: <FileText size={18} />, label: t('nav.requests') },
+        ...(hasModule('WATER')      ? [{ to: '/water',    icon: <Droplets size={18} />,   label: t('nav.water') }] : []),
+        ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',    icon: <ShoppingBag size={18} />, label: t('nav.assoc') }] : []),
       ],
     },
     {
       label: '',
       items: [
-        { to: '/reports', icon: <BarChart2 size={18} />, label: t('nav.reports'), plan: 'STANDARD' },
-        { to: '/reminders', icon: <Bell size={18} />, label: t('nav.reminders'), plan: 'PREMIUM' },
-        { to: '/settings', icon: <Settings size={18} />, label: t('nav.settings') },
+        { to: '/reports',   icon: <BarChart2 size={18} />, label: t('nav.reports'),   plan: 'STANDARD' },
+        { to: '/reminders', icon: <Bell size={18} />,      label: t('nav.reminders'), plan: 'PREMIUM' },
+        { to: '/settings',  icon: <Settings size={18} />,  label: t('nav.settings') },
         ...(isSuperAdmin ? [{ to: '/superadmin', icon: <Shield size={18} />, label: t('nav.superadmin') }] : []),
       ],
     },
   ];
 
-  const PLAN_LEVELS: Record<string, number> = { BASIC: 1, STANDARD: 2, PREMIUM: 3 };
-  const isPlanLocked = (plan?: string) => {
-    if (!plan || !sub) return false;
-    if (sub.status === 'TRIAL' || sub.status === 'ACTIVE') {
-      return (PLAN_LEVELS[sub.plan] || 0) < (PLAN_LEVELS[plan] || 0);
-    }
-    return true;
-  };
-  const isModuleLocked = (mod?: string) => {
-    if (!mod) return false;
-    return !hasModule(mod);
-  };
-  const isLocked = (item: NavItem) => isPlanLocked(item.plan) || isModuleLocked(item.module);
+  // Filter out plan-locked items (hide, don't show grayed)
+  const filteredGroups = navGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => !isPlanLocked(item.plan)),
+  })).filter(group => group.items.length > 0);
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {/* Logo */}
+
+      {/* Colored top stripe */}
+      <div className="h-1 w-full" style={{ background: orgTheme.stripeBg }} />
+
+      {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">MA</span>
+          {/* Themed logo */}
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
+            style={{ background: orgTheme.logoBg }}
+          >
+            <span className="font-bold text-sm text-white">MA</span>
           </div>
           <div className="min-w-0">
             <div className="font-bold text-gray-900 dark:text-white text-sm">Mar E-A.C</div>
@@ -111,56 +196,56 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
             )}
           </div>
         </div>
-        {sub && (
-          <div className="mt-2">
+
+        {/* Module type badge */}
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${orgTheme.badgeBg} ${orgTheme.badgeText}`}>
+            {orgTheme.icon}
+            {isAr ? orgTheme.labelAr : orgTheme.labelFr}
+          </span>
+          {sub && (
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              sub.status === 'TRIAL' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-              sub.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+              sub.status === 'TRIAL'   ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+              sub.status === 'ACTIVE'  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
               'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
             }`}>
-              {sub.status === 'TRIAL' ? `${t('subscription.trial')} • ` : ''}{sub.plan}
+              {sub.status === 'TRIAL' ? (isAr ? 'تجريبي' : 'Essai') : sub.plan}
             </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-        {navGroups.map((group, gi) => (
+        {filteredGroups.map((group, gi) => (
           <div key={gi}>
             {group.label && (
               <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-2">
                 {group.label}
               </div>
             )}
-            {group.items.map((item) => {
-              const locked = isLocked(item);
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `sidebar-item ${isActive ? 'sidebar-item-active' : 'sidebar-item-inactive'} ${locked ? 'opacity-50 pointer-events-none' : ''}`
-                  }
-                >
-                  {item.icon}
-                  <span className="flex-1">{item.label}</span>
-                  {locked && (
-                    <span className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 px-1.5 py-0.5 rounded-full">
-                      {item.module ? '🔒' : item.plan}
-                    </span>
-                  )}
-                </NavLink>
-              );
-            })}
+            {group.items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `sidebar-item ${isActive ? orgTheme.activeClass : 'sidebar-item-inactive'}`
+                }
+                style={({ isActive }) => isActive
+                  ? { borderInlineEnd: `3px solid ${orgTheme.activeBorder}` }
+                  : {}}
+              >
+                {item.icon}
+                <span className="flex-1">{item.label}</span>
+              </NavLink>
+            ))}
           </div>
         ))}
       </nav>
 
       {/* Bottom controls */}
       <div className="p-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
-        {/* Language & Theme */}
         <div className="flex gap-2">
           <button
             onClick={() => setLang(lang === 'ar' ? 'fr' : 'ar')}
@@ -174,13 +259,16 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
             className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
             {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-            {theme === 'dark' ? (lang === 'ar' ? 'فاتح' : 'Clair') : (lang === 'ar' ? 'داكن' : 'Sombre')}
+            {theme === 'dark' ? (isAr ? 'فاتح' : 'Clair') : (isAr ? 'داكن' : 'Sombre')}
           </button>
         </div>
         {/* User info + logout */}
         <div className="flex items-center gap-2 p-2 rounded-lg">
-          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
-            <span className="text-primary-700 dark:text-primary-400 font-semibold text-xs">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: orgTheme.logoBg, opacity: 0.85 }}
+          >
+            <span className="font-semibold text-xs text-white">
               {user?.name?.charAt(0).toUpperCase()}
             </span>
           </div>
@@ -202,15 +290,9 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
       )}
-
-      {/* Desktop sidebar */}
       <aside className={`
         fixed top-0 bottom-0 z-50 w-64 bg-white dark:bg-gray-800 border-e border-gray-200 dark:border-gray-700
         transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto
@@ -218,7 +300,6 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
       `}
         style={{ [document.documentElement.dir === 'rtl' ? 'right' : 'left']: 0 }}
       >
-        {/* Mobile close btn */}
         <button
           onClick={onClose}
           className="absolute top-3 start-3 lg:hidden p-1 rounded-lg text-gray-500 hover:bg-gray-100"

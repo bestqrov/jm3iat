@@ -20,6 +20,15 @@ const ASSOC_TYPE_MODULES: Record<AssocTypeKey, string[]> = {
   PRODUCTIVE_WATER: ['PRODUCTIVE', 'WATER'],
 };
 
+// Prices in MAD / month
+const ASSOC_TYPE_PRICES: Record<AssocTypeKey, { monthly: number; setup: number }> = {
+  REGULAR:          { monthly: 99,  setup: 0 },
+  PROJECTS:         { monthly: 149, setup: 0 },
+  WATER:            { monthly: 199, setup: 0 },
+  PRODUCTIVE:       { monthly: 199, setup: 0 },
+  PRODUCTIVE_WATER: { monthly: 299, setup: 0 },
+};
+
 const ASSOC_ICONS: Record<AssocTypeKey, React.ReactNode> = {
   REGULAR:          <Building2 size={22} />,
   PROJECTS:         <FolderKanban size={22} />,
@@ -213,42 +222,74 @@ export const RegisterPage: React.FC = () => {
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 pb-2 border-b border-gray-200 dark:border-gray-700">
                   {t('auth.assocTypeTitle')}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">{t('auth.assocTypeSubtitle')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{t('auth.assocTypeSubtitle')}</p>
 
-                <div className="space-y-2.5">
+                {/* Trial banner */}
+                <div className="mb-4 flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                  <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                    {isAr
+                      ? 'جميع الأنواع تشمل تجربة مجانية لمدة 15 يوماً بدون أي التزام'
+                      : 'Tous les types incluent 15 jours d\'essai gratuit sans engagement'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   {ASSOC_TYPES.map((key) => {
                     const typeLabel = (t(`auth.assocTypes.${key}.label`) as string);
                     const typeDesc  = (t(`auth.assocTypes.${key}.desc`) as string);
-                    const selected = assocType === key;
+                    const price     = ASSOC_TYPE_PRICES[key];
+                    const selected  = assocType === key;
                     return (
                       <button
                         key={key}
                         type="button"
                         onClick={() => setAssocType(key)}
-                        className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-start ring-2 ring-transparent
+                        className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-start
                           ${selected
-                            ? `${ASSOC_SELECTED_COLORS[key]} ring-offset-1`
+                            ? `${ASSOC_SELECTED_COLORS[key]} ring-2 ring-offset-1 ring-current`
                             : `border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800`
                           }`}
                       >
                         {/* Icon bubble */}
-                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${ASSOC_COLORS[key]}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${ASSOC_COLORS[key]}`}>
                           {ASSOC_ICONS[key]}
                         </div>
                         {/* Text */}
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-gray-900 dark:text-white text-sm">{typeLabel}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{typeDesc}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">{typeDesc}</div>
                         </div>
-                        {/* Check indicator */}
-                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                          selected ? 'border-primary-600 bg-primary-600' : 'border-gray-300 dark:border-gray-600'
-                        }`}>
-                          {selected && <div className="w-2 h-2 rounded-full bg-white" />}
+                        {/* Price + radio */}
+                        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                          <div className="text-end">
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">{price.monthly}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400"> {isAr ? 'د.م/شهر' : 'MAD/mois'}</span>
+                          </div>
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            selected ? 'border-primary-600 bg-primary-600' : 'border-gray-300 dark:border-gray-600'
+                          }`}>
+                            {selected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
                         </div>
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Selected summary */}
+                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {isAr ? 'بعد التجربة المجانية:' : 'Après l\'essai gratuit :'}
+                    </span>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {ASSOC_TYPE_PRICES[assocType].monthly} {isAr ? 'د.م / شهر' : 'MAD / mois'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {isAr ? '✓ يمكن إلغاء الاشتراك في أي وقت' : '✓ Résiliable à tout moment'}
+                  </p>
                 </div>
               </div>
             )}

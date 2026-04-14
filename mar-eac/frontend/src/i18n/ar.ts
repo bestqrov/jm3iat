@@ -39,7 +39,7 @@ const ar = {
     orgRegion: 'الجهة',
     adminName: 'اسم المسؤول',
     adminEmail: 'البريد الإلكتروني للمسؤول',
-    trialBadge: 'تجربة مجانية لمدة 3 أيام',
+    trialBadge: 'تجربة مجانية لمدة 15 يوماً',
     loginTitle: 'مرحباً بعودتك',
     loginSubtitle: 'أدخل بياناتك للدخول إلى لوحة التحكم',
     registerTitle: 'إنشاء حساب جمعيتك',
