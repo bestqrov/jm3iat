@@ -55,6 +55,7 @@ model Organization {
   productSales       AssocSale[]
   assocClients       AssocClient[]
   assocEvents        AssocEvent[]
+  payments           Payment[]
 }
 
 model Subscription {
@@ -503,4 +504,16 @@ model Reminder {
   createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Payment {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  amount         Float
+  method         String   @default("CASH")
+  note           String?
+  paidAt         DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
