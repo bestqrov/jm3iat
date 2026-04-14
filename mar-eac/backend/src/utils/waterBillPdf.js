@@ -272,7 +272,7 @@ const generateWaterBillPDF = async (req, res) => {
     fillRect(doc, unitBxX, y, unitBxW, pricH, C.white, C.border, 0.5);
     fillRect(doc, unitBxX, y, unitBxW, 22, C.blueLight, C.border, 0.5);
     doc.font('AR-Bold').fontSize(10).fillColor(C.text);
-    centerAr(doc, 'ثمن الوحدة (بالدرهم)', unitBxX, y + 6, unitBxW - 4);
+    centerAr(doc, 'ثمن الوحدة — بالدرهم', unitBxX, y + 6, unitBxW - 4);
 
     // Two columns inside the right box
     const halfUnit = unitBxW / 2;
@@ -282,8 +282,8 @@ const generateWaterBillPDF = async (req, res) => {
     fillRect(doc, unitBxX,           y + 22, halfUnit, 18, C.divider, null);
     fillRect(doc, unitBxX + halfUnit, y + 22, halfUnit, 18, C.divider, null);
     doc.font('AR-Bold').fontSize(8).fillColor(C.gray);
-    centerAr(doc, 'الرسوم الثابتة (درهم)', unitBxX,            y + 27, halfUnit);
-    centerAr(doc, 'سعر م³ (درهم)',          unitBxX + halfUnit, y + 27, halfUnit);
+    centerAr(doc, 'الرسوم الثابتة — درهم', unitBxX,            y + 27, halfUnit);
+    centerAr(doc, 'سعر م³ — درهم',         unitBxX + halfUnit, y + 27, halfUnit);
 
     // Values
     doc.font('AR-Bold').fontSize(18).fillColor(C.textDark);
@@ -315,7 +315,7 @@ const generateWaterBillPDF = async (req, res) => {
     // Row 2: المبلغ | 0.00
     const tr2y = y + 22 + taxRowH + (taxRowH / 2) - 6;
     doc.font('AR-Bold').fontSize(8).fillColor(C.gray);
-    centerAr(doc, 'المبلغ (درهم)', M, tr2y, lblColW);
+    centerAr(doc, 'المبلغ — درهم', M, tr2y, lblColW);
     doc.font('AR-Bold').fontSize(12).fillColor(C.blue);
     centerText(doc, fixedTax.toFixed(2), M + lblColW, tr2y, valColW);
 
