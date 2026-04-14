@@ -1,28 +1,53 @@
 const prisma = require('../../config/database');
 const bcrypt = require('bcryptjs');
 
+// Derive association type key from modules array
+const getAssocTypeKey = (modules) => {
+  const m = Array.isArray(modules) ? modules : [];
+  const hasProd  = m.includes('PRODUCTIVE');
+  const hasWater = m.includes('WATER');
+  const hasProj  = m.includes('PROJECTS');
+  if (hasProd && hasWater) return 'PRODUCTIVE_WATER';
+  if (hasProd)  return 'PRODUCTIVE';
+  if (hasWater) return 'WATER';
+  if (hasProj)  return 'PROJECTS';
+  return 'REGULAR';
+};
+
+// Map association type to subscription plan tier
+const ASSOC_TYPE_PLAN = {
+  REGULAR:          'BASIC',
+  PROJECTS:         'STANDARD',
+  WATER:            'PREMIUM',
+  PRODUCTIVE:       'PREMIUM',
+  PRODUCTIVE_WATER: 'PREMIUM',
+};
+
+// Map association type to modules array
+const ASSOC_TYPE_MODULES = {
+  REGULAR:          [],
+  PROJECTS:         ['PROJECTS'],
+  WATER:            ['WATER'],
+  PRODUCTIVE:       ['PRODUCTIVE'],
+  PRODUCTIVE_WATER: ['PRODUCTIVE', 'WATER'],
+};
+
 const getStats = async (req, res) => {
   try {
-    const [
-      totalOrgs, totalUsers, trialOrgs, activeOrgs,
-      basicCount, standardCount, premiumCount,
-    ] = await Promise.all([
+    const [totalOrgs, totalUsers, trialOrgs, activeOrgs, allOrgs] = await Promise.all([
       prisma.organization.count(),
       prisma.user.count({ where: { role: { not: 'SUPER_ADMIN' } } }),
       prisma.subscription.count({ where: { status: 'TRIAL' } }),
       prisma.subscription.count({ where: { status: 'ACTIVE' } }),
-      prisma.subscription.count({ where: { plan: 'BASIC' } }),
-      prisma.subscription.count({ where: { plan: 'STANDARD' } }),
-      prisma.subscription.count({ where: { plan: 'PREMIUM' } }),
+      prisma.organization.findMany({ select: { modules: true } }),
     ]);
 
-    res.json({
-      totalOrgs,
-      totalUsers,
-      trialOrgs,
-      activeOrgs,
-      planDistribution: { BASIC: basicCount, STANDARD: standardCount, PREMIUM: premiumCount },
-    });
+    const typeDistribution = { REGULAR: 0, PROJECTS: 0, WATER: 0, PRODUCTIVE: 0, PRODUCTIVE_WATER: 0 };
+    for (const org of allOrgs) {
+      typeDistribution[getAssocTypeKey(org.modules)]++;
+    }
+
+    res.json({ totalOrgs, totalUsers, trialOrgs, activeOrgs, typeDistribution });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -48,6 +73,7 @@ const getOrganizations = async (req, res) => {
           subscription: true,
           _count: { select: { users: true, members: true, meetings: true } },
         },
+        // modules is a scalar field, included automatically
         orderBy: { createdAt: 'desc' },
         skip,
         take: parseInt(limit),
@@ -80,14 +106,22 @@ const getOrganization = async (req, res) => {
 
 const updateSubscription = async (req, res) => {
   try {
-    const { plan, status, expiresAt } = req.body;
+    const { assocType, status, expiresAt } = req.body;
     const orgId = req.params.id;
+
+    const plan    = assocType ? (ASSOC_TYPE_PLAN[assocType]    || 'BASIC') : undefined;
+    const modules = assocType ? (ASSOC_TYPE_MODULES[assocType] || [])       : undefined;
+
+    // Update org modules if assocType provided
+    if (modules !== undefined) {
+      await prisma.organization.update({ where: { id: orgId }, data: { modules } });
+    }
 
     const sub = await prisma.subscription.upsert({
       where: { organizationId: orgId },
       update: {
-        plan: plan || undefined,
-        status: status || undefined,
+        ...(plan   ? { plan }                           : {}),
+        ...(status ? { status }                         : {}),
         expiresAt: expiresAt ? new Date(expiresAt) : undefined,
       },
       create: {
