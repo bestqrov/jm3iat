@@ -278,7 +278,7 @@ const getAssocAdvanced = async (req, res) => {
       orderBy: { date: 'asc' },
     });
 
-    const weekly: Record<string, number> = {};
+    const weekly = {};
     recentSales.forEach(s => {
       const d = new Date(s.date);
       const week = `${d.getFullYear()}-W${Math.ceil((d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7).toString().padStart(2, '0')}`;
