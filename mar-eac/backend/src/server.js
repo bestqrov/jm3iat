@@ -64,6 +64,7 @@ app.use('/api/funding', require('./modules/funding/funding.routes'));
 app.use('/api/requests', require('./modules/requests/requests.routes'));
 app.use('/api/water', require('./modules/water/water.routes'));
 app.use('/api/reminders', require('./modules/reminders/reminders.routes'));
+app.use('/api/assoc', require('./modules/assoc/assoc.routes'));
 app.use('/api/superadmin', require('./modules/superadmin/superadmin.routes'));
 
 // Serve frontend static files (single-service deployment)

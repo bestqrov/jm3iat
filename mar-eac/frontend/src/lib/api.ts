@@ -207,6 +207,25 @@ export const remindersApi = {
   delete: (id: string) => api.delete(`/reminders/${id}`),
 };
 
+// ---- Assoc Production ----
+export const assocApi = {
+  getStats: () => api.get('/assoc/stats'),
+  getStock: () => api.get('/assoc/stock'),
+  // Products
+  getProducts: () => api.get('/assoc/products'),
+  createProduct: (data: any) => api.post('/assoc/products', data),
+  updateProduct: (id: string, data: any) => api.put(`/assoc/products/${id}`, data),
+  deleteProduct: (id: string) => api.delete(`/assoc/products/${id}`),
+  // Productions
+  getProductions: (params?: any) => api.get('/assoc/productions', { params }),
+  createProduction: (data: any) => api.post('/assoc/productions', data),
+  deleteProduction: (id: string) => api.delete(`/assoc/productions/${id}`),
+  // Sales
+  getSales: (params?: any) => api.get('/assoc/sales', { params }),
+  createSale: (data: any) => api.post('/assoc/sales', data),
+  deleteSale: (id: string) => api.delete(`/assoc/sales/${id}`),
+};
+
 // ---- Super Admin ----
 export const superadminApi = {
   getStats: () => api.get('/superadmin/stats'),

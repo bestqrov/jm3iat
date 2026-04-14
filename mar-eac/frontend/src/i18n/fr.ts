@@ -19,6 +19,7 @@ const fr = {
     logout: 'Déconnexion',
     management: 'Gestion',
     ruralProjects: 'Projets Ruraux',
+    assoc: 'Production & Ventes',
   },
   auth: {
     login: 'Connexion',

@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, DollarSign, FileText,
   Briefcase, Droplets, BarChart2, Bell, Shield, Settings,
-  LogOut, Sun, Moon, X, Globe, UserCog,
+  LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -67,6 +67,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
         { to: '/projects', icon: <Briefcase size={18} />, label: t('nav.projects'), plan: 'PREMIUM' },
         { to: '/requests', icon: <FileText size={18} />, label: t('nav.requests') },
         { to: '/water', icon: <Droplets size={18} />, label: t('nav.water'), plan: 'PREMIUM' },
+        { to: '/assoc', icon: <ShoppingBag size={18} />, label: t('nav.assoc'), plan: 'STANDARD' },
       ],
     },
     {

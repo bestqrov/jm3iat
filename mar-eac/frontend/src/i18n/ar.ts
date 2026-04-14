@@ -19,6 +19,7 @@ const ar = {
     logout: 'تسجيل الخروج',
     management: 'الإدارة',
     ruralProjects: 'المشاريع القروية',
+    assoc: 'الإنتاج والمبيعات',
   },
   auth: {
     login: 'تسجيل الدخول',

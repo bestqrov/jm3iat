@@ -22,6 +22,7 @@ import { RequestsPage } from './pages/requests/RequestsPage';
 import { RemindersPage } from './pages/reminders/RemindersPage';
 import { SuperAdminPage } from './pages/superadmin/SuperAdminPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
+import AssocPage from './pages/assoc/AssocPage';
 
 const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSuperAdmin } = useAuth();
@@ -58,6 +59,7 @@ const App: React.FC = () => {
                 <Route path="/projects" element={<WaterReaderRoute><ProjectsPage /></WaterReaderRoute>} />
                 <Route path="/projects/:id" element={<WaterReaderRoute><ProjectDetailPage /></WaterReaderRoute>} />
                 <Route path="/water" element={<WaterPage />} />
+                <Route path="/assoc" element={<WaterReaderRoute><AssocPage /></WaterReaderRoute>} />
                 <Route path="/reports" element={<WaterReaderRoute><ReportsPage /></WaterReaderRoute>} />
                 <Route path="/requests" element={<WaterReaderRoute><RequestsPage /></WaterReaderRoute>} />
                 <Route path="/reminders" element={<WaterReaderRoute><RemindersPage /></WaterReaderRoute>} />

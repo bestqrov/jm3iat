@@ -49,6 +49,9 @@ model Organization {
   waterRepairs       WaterRepair[]
   reminders          Reminder[]
   waterTariff        WaterTariff?
+  products           AssocProduct[]
+  productions        AssocProduction[]
+  productSales       AssocSale[]
 }
 
 model Subscription {
@@ -388,6 +391,57 @@ model WaterTariff {
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// ── Productive Association Module ─────────────────────────────────────────────
+
+model AssocProduct {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  name           String
+  nameAr         String?
+  category       String?
+  unit           String   @default("unité")
+  price          Float    @default(0)
+  lowStockAlert  Float    @default(10)
+  description    String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  productions  AssocProduction[]
+  sales        AssocSale[]
+}
+
+model AssocProduction {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId   String   @db.ObjectId
+  productId        String   @db.ObjectId
+  quantityProduced Float
+  productionCost   Float    @default(0)
+  date             DateTime @default(now())
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product      AssocProduct @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model AssocSale {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  productId      String   @db.ObjectId
+  quantity       Float
+  unitPrice      Float
+  totalAmount    Float
+  date           DateTime @default(now())
+  customer       String?
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product      AssocProduct @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Reminder {
