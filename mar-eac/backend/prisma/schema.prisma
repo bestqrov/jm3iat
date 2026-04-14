@@ -511,6 +511,7 @@ model Payment {
   organizationId String   @db.ObjectId
   amount         Float
   method         String   @default("CASH")
+  reference      String?
   note           String?
   paidAt         DateTime @default(now())
   createdAt      DateTime @default(now())

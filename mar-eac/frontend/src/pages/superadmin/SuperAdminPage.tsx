@@ -112,7 +112,7 @@ export const SuperAdminPage: React.FC = () => {
     assocType: 'REGULAR', status: 'ACTIVE', expiresAt: '',
   });
   const [paymentForm, setPaymentForm] = useState({
-    organizationId: '', amount: '', method: 'CASH', note: '', paidAt: '',
+    organizationId: '', amount: '', method: 'CASH', reference: '', note: '', paidAt: '',
   });
 
   // ── Operation state ──
@@ -220,7 +220,7 @@ export const SuperAdminPage: React.FC = () => {
         amount: parseFloat(paymentForm.amount),
       });
       setShowPaymentModal(false);
-      setPaymentForm({ organizationId: '', amount: '', method: 'CASH', note: '', paidAt: '' });
+      setPaymentForm({ organizationId: '', amount: '', method: 'CASH', reference: '', note: '', paidAt: '' });
       loadPayments(); loadAnalytics();
     } finally { setSaving(false); }
   };
@@ -509,7 +509,10 @@ export const SuperAdminPage: React.FC = () => {
                     <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white">{p.organization?.name}</p>
-                        <p className="text-xs text-gray-500">{formatDate(p.paidAt, lang)} · {isAr ? METHOD_LABEL[p.method]?.ar : METHOD_LABEL[p.method]?.fr}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatDate(p.paidAt, lang)} · {isAr ? METHOD_LABEL[p.method]?.ar : METHOD_LABEL[p.method]?.fr}
+                          {p.reference && <span className="font-mono ms-1">#{p.reference}</span>}
+                        </p>
                       </div>
                       <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                         +{p.amount.toFixed(0)} MAD
@@ -693,6 +696,9 @@ export const SuperAdminPage: React.FC = () => {
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                             {isAr ? METHOD_LABEL[p.method]?.ar : METHOD_LABEL[p.method]?.fr}
                           </span>
+                          {p.reference && (
+                            <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-0.5">{p.reference}</p>
+                          )}
                         </td>
                         <td className="text-sm text-gray-600 dark:text-gray-400">{formatDate(p.paidAt, lang)}</td>
                         <td className="text-sm text-gray-500 max-w-40 truncate">{p.note || '-'}</td>
@@ -878,11 +884,31 @@ export const SuperAdminPage: React.FC = () => {
             </div>
             <div>
               <label className="label">{isAr ? 'طريقة الدفع' : 'Mode de paiement'}</label>
-              <select className="input" value={paymentForm.method} onChange={e => setPaymentForm({ ...paymentForm, method: e.target.value })}>
+              <select className="input" value={paymentForm.method} onChange={e => setPaymentForm({ ...paymentForm, method: e.target.value, reference: '' })}>
                 {PAYMENT_METHODS.map(m => <option key={m} value={m}>{isAr ? METHOD_LABEL[m]?.ar : METHOD_LABEL[m]?.fr}</option>)}
               </select>
             </div>
           </div>
+
+          {/* Reference — shown only for CHECK or TRANSFER */}
+          {(paymentForm.method === 'CHECK' || paymentForm.method === 'TRANSFER') && (
+            <div>
+              <label className="label">
+                {paymentForm.method === 'CHECK'
+                  ? (isAr ? 'رقم الشيك' : 'Numéro de chèque')
+                  : (isAr ? 'مرجع التحويل' : 'Référence du virement')}
+              </label>
+              <input
+                className="input font-mono"
+                placeholder={paymentForm.method === 'CHECK'
+                  ? (isAr ? 'مثال: 0012345' : 'ex: 0012345')
+                  : (isAr ? 'مثال: VIR-2024-001' : 'ex: VIR-2024-001')}
+                value={paymentForm.reference}
+                onChange={e => setPaymentForm({ ...paymentForm, reference: e.target.value })}
+              />
+            </div>
+          )}
+
           <div>
             <label className="label">{isAr ? 'تاريخ الدفع' : 'Date du paiement'}</label>
             <input className="input" type="date" value={paymentForm.paidAt} onChange={e => setPaymentForm({ ...paymentForm, paidAt: e.target.value })} />

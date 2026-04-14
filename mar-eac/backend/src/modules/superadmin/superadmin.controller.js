@@ -289,7 +289,7 @@ const getPayments = async (req, res) => {
 
 const createPayment = async (req, res) => {
   try {
-    const { organizationId, amount, method, note, paidAt } = req.body;
+    const { organizationId, amount, method, reference, note, paidAt } = req.body;
     if (!organizationId || !amount) {
       return res.status(400).json({ message: 'organizationId and amount are required' });
     }
@@ -299,6 +299,7 @@ const createPayment = async (req, res) => {
         organizationId,
         amount: parseFloat(amount),
         method: method || 'CASH',
+        reference: reference || null,
         note: note || null,
         paidAt: paidAt ? new Date(paidAt) : new Date(),
       },
