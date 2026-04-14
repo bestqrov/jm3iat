@@ -251,9 +251,14 @@ export const superadminApi = {
   getOrganization:     (id: string)              => api.get(`/superadmin/organizations/${id}`),
   updateSubscription:  (id: string, data: any)   => api.put(`/superadmin/organizations/${id}/subscription`, data),
   deleteOrganization:  (id: string)              => api.delete(`/superadmin/organizations/${id}`),
-  getPayments:         (params?: any)            => api.get('/superadmin/payments', { params }),
-  createPayment:       (data: any)               => api.post('/superadmin/payments', data),
-  deletePayment:       (paymentId: string)       => api.delete(`/superadmin/payments/${paymentId}`),
+  getPayments:              (params?: any)            => api.get('/superadmin/payments', { params }),
+  createPayment:            (fd: FormData)            => api.post('/superadmin/payments', fd),
+  uploadPaymentReceipt:     (paymentId: string, file: File) => {
+    const fd = new FormData();
+    fd.append('receipt', file);
+    return api.post(`/superadmin/payments/${paymentId}/receipt`, fd);
+  },
+  deletePayment:            (paymentId: string)       => api.delete(`/superadmin/payments/${paymentId}`),
   getUsers:            (params?: any)            => api.get('/superadmin/users', { params }),
   toggleUser:          (userId: string)          => api.put(`/superadmin/users/${userId}/toggle`),
   resetUserPassword:   (userId: string)          => api.post(`/superadmin/users/${userId}/reset-password`),

@@ -4,6 +4,7 @@ import {
   KeyRound, Copy, Check, Droplets, ShoppingBag, FolderKanban, Layers,
   TrendingUp, DollarSign, AlertTriangle, Search, Filter, Plus,
   BarChart2, CreditCard, Calendar, RefreshCw, X, Clock,
+  Paperclip, ExternalLink, Upload, FileText,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -114,6 +115,7 @@ export const SuperAdminPage: React.FC = () => {
   const [paymentForm, setPaymentForm] = useState({
     organizationId: '', amount: '', method: 'CASH', reference: '', note: '', paidAt: '',
   });
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   // ── Operation state ──
   const [saving,   setSaving]   = useState(false);
@@ -215,12 +217,13 @@ export const SuperAdminPage: React.FC = () => {
     if (!paymentForm.organizationId || !paymentForm.amount) return;
     setSaving(true);
     try {
-      await superadminApi.createPayment({
-        ...paymentForm,
-        amount: parseFloat(paymentForm.amount),
-      });
+      const fd = new FormData();
+      Object.entries(paymentForm).forEach(([k, v]) => { if (v) fd.append(k, v); });
+      if (receiptFile) fd.append('receipt', receiptFile);
+      await superadminApi.createPayment(fd);
       setShowPaymentModal(false);
       setPaymentForm({ organizationId: '', amount: '', method: 'CASH', reference: '', note: '', paidAt: '' });
+      setReceiptFile(null);
       loadPayments(); loadAnalytics();
     } finally { setSaving(false); }
   };
@@ -703,10 +706,23 @@ export const SuperAdminPage: React.FC = () => {
                         <td className="text-sm text-gray-600 dark:text-gray-400">{formatDate(p.paidAt, lang)}</td>
                         <td className="text-sm text-gray-500 max-w-40 truncate">{p.note || '-'}</td>
                         <td>
-                          <button onClick={() => setDeletePaymentId(p.id)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            {p.receiptUrl && (
+                              <a
+                                href={`${import.meta.env.VITE_API_URL?.replace('/api', '') ?? ''}${p.receiptUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                                title={isAr ? 'عرض الوصل' : 'Voir le reçu'}
+                              >
+                                <Paperclip size={14} />
+                              </a>
+                            )}
+                            <button onClick={() => setDeletePaymentId(p.id)}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -857,7 +873,7 @@ export const SuperAdminPage: React.FC = () => {
       {/* Record payment modal */}
       <Modal
         isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
+        onClose={() => { setShowPaymentModal(false); setReceiptFile(null); }}
         title={isAr ? 'تسجيل دفعة جديدة' : 'Enregistrer un paiement'}
         footer={
           <>
@@ -917,6 +933,34 @@ export const SuperAdminPage: React.FC = () => {
             <label className="label">{isAr ? 'ملاحظة (اختياري)' : 'Note (optionnel)'}</label>
             <input className="input" placeholder={isAr ? 'دفعة شهر أبريل…' : 'Paiement mois d\'avril…'}
               value={paymentForm.note} onChange={e => setPaymentForm({ ...paymentForm, note: e.target.value })} />
+          </div>
+
+          {/* Receipt upload */}
+          <div>
+            <label className="label">{isAr ? 'وصل الدفع (اختياري)' : 'Reçu de paiement (optionnel)'}</label>
+            {receiptFile ? (
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20">
+                <FileText size={18} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                <span className="flex-1 text-sm text-emerald-700 dark:text-emerald-300 truncate">{receiptFile.name}</span>
+                <button type="button" onClick={() => setReceiptFile(null)}
+                  className="p-1 rounded text-emerald-500 hover:text-red-500 transition-colors">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 cursor-pointer transition-colors group">
+                <Upload size={20} className="text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                <span className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  {isAr ? 'انقر لرفع الوصل (PDF، صورة)' : 'Cliquer pour uploader le reçu (PDF, image)'}
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="hidden"
+                  onChange={e => setReceiptFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            )}
           </div>
         </div>
       </Modal>

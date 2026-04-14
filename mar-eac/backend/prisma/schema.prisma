@@ -512,6 +512,7 @@ model Payment {
   amount         Float
   method         String   @default("CASH")
   reference      String?
+  receiptUrl     String?
   note           String?
   paidAt         DateTime @default(now())
   createdAt      DateTime @default(now())

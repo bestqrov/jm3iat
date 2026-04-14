@@ -294,12 +294,15 @@ const createPayment = async (req, res) => {
       return res.status(400).json({ message: 'organizationId and amount are required' });
     }
 
+    const receiptUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
     const payment = await prisma.payment.create({
       data: {
         organizationId,
         amount: parseFloat(amount),
         method: method || 'CASH',
         reference: reference || null,
+        receiptUrl,
         note: note || null,
         paidAt: paidAt ? new Date(paidAt) : new Date(),
       },
@@ -307,6 +310,21 @@ const createPayment = async (req, res) => {
     });
 
     res.status(201).json(payment);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const uploadPaymentReceipt = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const receiptUrl = `/uploads/${req.file.filename}`;
+    const payment = await prisma.payment.update({
+      where: { id: req.params.paymentId },
+      data: { receiptUrl },
+      include: { organization: { select: { id: true, name: true } } },
+    });
+    res.json(payment);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -392,6 +410,6 @@ const resetUserPassword = async (req, res) => {
 module.exports = {
   getStats, getAnalytics,
   getOrganizations, getOrganization, updateSubscription, deleteOrganization,
-  getPayments, createPayment, deletePayment,
+  getPayments, createPayment, uploadPaymentReceipt, deletePayment,
   getUsers, toggleUser, resetUserPassword,
 };
