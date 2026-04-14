@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Shield, Building2, Users, Pencil, Trash2, ToggleLeft, ToggleRight,
   KeyRound, Copy, Check, Droplets, ShoppingBag, FolderKanban, Layers,
@@ -74,8 +75,15 @@ export const SuperAdminPage: React.FC = () => {
   const { lang } = useLanguage();
   const isAr = lang === 'ar';
 
-  // ── Tab ──
-  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  // ── Tab — driven by URL ?tab= so sidebar links work ──
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = useMemo<ActiveTab>(() => {
+    const t = searchParams.get('tab');
+    return (t === 'orgs' || t === 'payments' || t === 'users') ? t : 'dashboard';
+  }, [searchParams]);
+  const setActiveTab = (tab: ActiveTab) => {
+    setSearchParams(tab === 'dashboard' ? {} : { tab }, { replace: true });
+  };
 
   // ── Data ──
   const [stats,     setStats]     = useState<any>({});

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, DollarSign, FileText,
   Briefcase, Droplets, BarChart2, Bell, Shield, Settings,
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
-  Building2, FolderKanban, Layers,
+  Building2, FolderKanban, Layers, CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -16,6 +16,7 @@ interface NavItem {
   label: string;
   plan?: string;
   module?: string;
+  tab?: string; // superadmin tab matching via ?tab=
 }
 
 interface NavGroup {
@@ -106,11 +107,15 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
   const { theme, toggleTheme } = useTheme();
   const { t, lang, setLang } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const sub  = organization?.subscription;
   const mods = organization?.modules ?? [];
   const orgTheme = getOrgTheme(mods);
   const isAr = lang === 'ar';
+
+  // For superadmin: determine active tab from query param
+  const currentSATab = new URLSearchParams(location.search).get('tab') || 'dashboard';
 
   const handleLogout = () => {
     logout();
@@ -126,6 +131,30 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     return true;
   };
 
+  // ── SuperAdmin-specific nav ────────────────────────────────────────────────
+  const superAdminGroups: NavGroup[] = [
+    {
+      label: '',
+      items: [
+        { to: '/superadmin', icon: <BarChart2 size={18} />, label: isAr ? 'لوحة التحكم' : 'Tableau de bord', tab: 'dashboard' },
+      ],
+    },
+    {
+      label: isAr ? 'إدارة المنصة' : 'Gestion de la plateforme',
+      items: [
+        { to: '/superadmin?tab=orgs',     icon: <Building2 size={18} />,  label: isAr ? 'الجمعيات'   : 'Associations',  tab: 'orgs'     },
+        { to: '/superadmin?tab=payments', icon: <CreditCard size={18} />, label: isAr ? 'المدفوعات'  : 'Paiements',     tab: 'payments' },
+        { to: '/superadmin?tab=users',    icon: <Users size={18} />,      label: isAr ? 'المستخدمون' : 'Utilisateurs',  tab: 'users'    },
+      ],
+    },
+    {
+      label: '',
+      items: [
+        { to: '/settings', icon: <Settings size={18} />, label: t('nav.settings') },
+      ],
+    },
+  ];
+
   // Water readers only see water
   const navGroups: NavGroup[] = isWaterReader ? [
     { label: '', items: [{ to: '/water', icon: <Droplets size={18} />, label: t('nav.water') }] },
@@ -139,21 +168,20 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     {
       label: t('nav.management'),
       items: [
-        { to: '/administratifs', icon: <UserCog size={18} />,   label: t('nav.administratifs') },
-        { to: '/members',        icon: <Users size={18} />,     label: t('nav.members') },
-        { to: '/meetings',       icon: <Calendar size={18} />,  label: t('nav.meetings') },
+        { to: '/administratifs', icon: <UserCog size={18} />,    label: t('nav.administratifs') },
+        { to: '/members',        icon: <Users size={18} />,      label: t('nav.members') },
+        { to: '/meetings',       icon: <Calendar size={18} />,   label: t('nav.meetings') },
         { to: '/finance',        icon: <DollarSign size={18} />, label: t('nav.finance'), plan: 'STANDARD' },
-        { to: '/documents',      icon: <FileText size={18} />,  label: t('nav.documents') },
+        { to: '/documents',      icon: <FileText size={18} />,   label: t('nav.documents') },
       ],
     },
     {
       label: t('nav.ruralProjects'),
       items: [
-        // Only shown if module is enabled
-        ...(hasModule('PROJECTS') ? [{ to: '/projects', icon: <Briefcase size={18} />,   label: t('nav.projects') }] : []),
-        { to: '/requests',  icon: <FileText size={18} />, label: t('nav.requests') },
-        ...(hasModule('WATER')      ? [{ to: '/water',    icon: <Droplets size={18} />,   label: t('nav.water') }] : []),
-        ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',    icon: <ShoppingBag size={18} />, label: t('nav.assoc') }] : []),
+        ...(hasModule('PROJECTS')   ? [{ to: '/projects', icon: <Briefcase size={18} />,    label: t('nav.projects') }] : []),
+        { to: '/requests',            icon: <FileText size={18} />,    label: t('nav.requests') },
+        ...(hasModule('WATER')      ? [{ to: '/water',    icon: <Droplets size={18} />,     label: t('nav.water') }]    : []),
+        ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',    icon: <ShoppingBag size={18} />,  label: t('nav.assoc') }]    : []),
       ],
     },
     {
@@ -162,13 +190,12 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
         { to: '/reports',   icon: <BarChart2 size={18} />, label: t('nav.reports'),   plan: 'STANDARD' },
         { to: '/reminders', icon: <Bell size={18} />,      label: t('nav.reminders'), plan: 'PREMIUM' },
         { to: '/settings',  icon: <Settings size={18} />,  label: t('nav.settings') },
-        ...(isSuperAdmin ? [{ to: '/superadmin', icon: <Shield size={18} />, label: t('nav.superadmin') }] : []),
       ],
     },
   ];
 
   // Filter out plan-locked items (hide, don't show grayed)
-  const filteredGroups = navGroups.map(group => ({
+  const filteredGroups = (isSuperAdmin ? superAdminGroups : navGroups).map(group => ({
     ...group,
     items: group.items.filter(item => !isPlanLocked(item.plan)),
   })).filter(group => group.items.length > 0);
@@ -197,20 +224,29 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
           </div>
         </div>
 
-        {/* Module type badge */}
+        {/* Module type badge / superadmin badge */}
         <div className="mt-2 flex items-center gap-2 flex-wrap">
-          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${orgTheme.badgeBg} ${orgTheme.badgeText}`}>
-            {orgTheme.icon}
-            {isAr ? orgTheme.labelAr : orgTheme.labelFr}
-          </span>
-          {sub && (
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              sub.status === 'TRIAL'   ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-              sub.status === 'ACTIVE'  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-              'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-            }`}>
-              {sub.status === 'TRIAL' ? (isAr ? 'تجريبي' : 'Essai') : sub.plan}
+          {isSuperAdmin ? (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+              <Shield size={11} />
+              {isAr ? 'مدير النظام' : 'Super Admin'}
             </span>
+          ) : (
+            <>
+              <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${orgTheme.badgeBg} ${orgTheme.badgeText}`}>
+                {orgTheme.icon}
+                {isAr ? orgTheme.labelAr : orgTheme.labelFr}
+              </span>
+              {sub && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  sub.status === 'TRIAL'   ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                  sub.status === 'ACTIVE'  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                }`}>
+                  {sub.status === 'TRIAL' ? (isAr ? 'تجريبي' : 'Essai') : sub.plan}
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -224,22 +260,32 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
                 {group.label}
               </div>
             )}
-            {group.items.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `sidebar-item ${isActive ? orgTheme.activeClass : 'sidebar-item-inactive'}`
-                }
-                style={({ isActive }) => isActive
-                  ? { borderInlineEnd: `3px solid ${orgTheme.activeBorder}` }
-                  : {}}
-              >
-                {item.icon}
-                <span className="flex-1">{item.label}</span>
-              </NavLink>
-            ))}
+            {group.items.map((item) => {
+              // For superadmin tab items, derive active state from query param
+              const tabActive = item.tab !== undefined
+                ? currentSATab === item.tab
+                : undefined;
+
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.tab !== undefined}
+                  onClick={onClose}
+                  className={({ isActive }) => {
+                    const active = tabActive !== undefined ? tabActive : isActive;
+                    return `sidebar-item ${active ? orgTheme.activeClass : 'sidebar-item-inactive'}`;
+                  }}
+                  style={({ isActive }) => {
+                    const active = tabActive !== undefined ? tabActive : isActive;
+                    return active ? { borderInlineEnd: `3px solid ${orgTheme.activeBorder}` } : {};
+                  }}
+                >
+                  {item.icon}
+                  <span className="flex-1">{item.label}</span>
+                </NavLink>
+              );
+            })}
           </div>
         ))}
       </nav>
