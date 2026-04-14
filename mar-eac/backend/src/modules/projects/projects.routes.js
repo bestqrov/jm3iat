@@ -3,9 +3,9 @@ const ctrl = require('./projects.controller');
 const ms = require('./milestones.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
-const { requirePlan } = require('../../middleware/subscription');
+const { requireModule } = require('../../middleware/module');
 
-router.use(auth, tenant, requirePlan('PREMIUM'));
+router.use(auth, tenant, requireModule('PROJECTS'));
 
 router.get('/stats', ctrl.getStats);
 router.get('/', ctrl.getAll);

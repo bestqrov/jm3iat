@@ -2,10 +2,10 @@ const router = require('express').Router();
 const ctrl = require('./water.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
-const { requirePlan } = require('../../middleware/subscription');
+const { requireModule } = require('../../middleware/module');
 const upload = require('../../utils/multer');
 
-router.use(auth, tenant, requirePlan('PREMIUM'));
+router.use(auth, tenant, requireModule('WATER'));
 
 // Summary & Reports
 router.get('/summary', ctrl.getSummary);

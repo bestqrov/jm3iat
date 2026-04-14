@@ -8,7 +8,7 @@ const register = async (req, res) => {
   try {
     const {
       orgName, orgEmail, orgPhone, orgCity, orgRegion,
-      adminName, adminEmail, password,
+      adminName, adminEmail, password, modules,
     } = req.body;
 
     if (!orgName || !orgEmail || !adminName || !adminEmail || !password) {
@@ -36,6 +36,7 @@ const register = async (req, res) => {
           city: orgCity,
           region: orgRegion,
           trialEndsAt,
+          modules: Array.isArray(modules) ? modules : [],
         },
       });
 

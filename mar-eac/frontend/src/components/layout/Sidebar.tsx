@@ -14,6 +14,7 @@ interface NavItem {
   icon: React.ReactNode;
   label: string;
   plan?: string;
+  module?: string;
   superAdminOnly?: boolean;
 }
 
@@ -23,7 +24,7 @@ interface NavGroup {
 }
 
 export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const { user, organization, logout, isSuperAdmin, isWaterReader } = useAuth();
+  const { user, organization, logout, isSuperAdmin, isWaterReader, hasModule } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { t, lang, setLang } = useLanguage();
   const navigate = useNavigate();
@@ -64,10 +65,10 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     {
       label: t('nav.ruralProjects'),
       items: [
-        { to: '/projects', icon: <Briefcase size={18} />, label: t('nav.projects'), plan: 'PREMIUM' },
+        { to: '/projects', icon: <Briefcase size={18} />, label: t('nav.projects'), module: 'PROJECTS' },
         { to: '/requests', icon: <FileText size={18} />, label: t('nav.requests') },
-        { to: '/water', icon: <Droplets size={18} />, label: t('nav.water'), plan: 'PREMIUM' },
-        { to: '/assoc', icon: <ShoppingBag size={18} />, label: t('nav.assoc'), plan: 'STANDARD' },
+        { to: '/water', icon: <Droplets size={18} />, label: t('nav.water'), module: 'WATER' },
+        { to: '/assoc', icon: <ShoppingBag size={18} />, label: t('nav.assoc'), module: 'PRODUCTIVE' },
       ],
     },
     {
@@ -82,13 +83,18 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
   ];
 
   const PLAN_LEVELS: Record<string, number> = { BASIC: 1, STANDARD: 2, PREMIUM: 3 };
-  const isLocked = (plan?: string) => {
+  const isPlanLocked = (plan?: string) => {
     if (!plan || !sub) return false;
     if (sub.status === 'TRIAL' || sub.status === 'ACTIVE') {
       return (PLAN_LEVELS[sub.plan] || 0) < (PLAN_LEVELS[plan] || 0);
     }
     return true;
   };
+  const isModuleLocked = (mod?: string) => {
+    if (!mod) return false;
+    return !hasModule(mod);
+  };
+  const isLocked = (item: NavItem) => isPlanLocked(item.plan) || isModuleLocked(item.module);
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
@@ -128,21 +134,21 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
               </div>
             )}
             {group.items.map((item) => {
-              const locked = isLocked(item.plan);
+              const locked = isLocked(item);
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `sidebar-item ${isActive ? 'sidebar-item-active' : 'sidebar-item-inactive'} ${locked ? 'opacity-50' : ''}`
+                    `sidebar-item ${isActive ? 'sidebar-item-active' : 'sidebar-item-inactive'} ${locked ? 'opacity-50 pointer-events-none' : ''}`
                   }
                 >
                   {item.icon}
                   <span className="flex-1">{item.label}</span>
                   {locked && (
                     <span className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 px-1.5 py-0.5 rounded-full">
-                      {item.plan}
+                      {item.module ? '🔒' : item.plan}
                     </span>
                   )}
                 </NavLink>

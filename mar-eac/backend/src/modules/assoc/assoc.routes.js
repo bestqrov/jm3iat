@@ -2,9 +2,9 @@ const router = require('express').Router();
 const ctrl = require('./assoc.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
-const { requirePlan } = require('../../middleware/subscription');
+const { requireModule } = require('../../middleware/module');
 
-router.use(auth, tenant, requirePlan('STANDARD'));
+router.use(auth, tenant, requireModule('PRODUCTIVE'));
 
 router.get('/stats', ctrl.getStats);
 router.get('/stock', ctrl.getStock);

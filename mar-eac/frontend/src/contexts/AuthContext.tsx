@@ -16,6 +16,7 @@ interface Organization {
   city?: string;
   region?: string;
   trialEndsAt?: string;
+  modules?: string[];
   subscription?: {
     plan: 'BASIC' | 'STANDARD' | 'PREMIUM';
     status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
@@ -30,6 +31,7 @@ interface AuthContextType {
   isLoading: boolean;
   isSuperAdmin: boolean;
   isWaterReader: boolean;
+  hasModule: (mod: string) => boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
@@ -45,6 +47,7 @@ interface RegisterData {
   adminName: string;
   adminEmail: string;
   password: string;
+  modules?: string[];
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -54,6 +57,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isSuperAdmin: false,
   isWaterReader: false,
+  hasModule: () => false,
   login: async () => {},
   register: async () => {},
   logout: () => {},
@@ -119,6 +123,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setOrganization(null);
   };
 
+  // hasModule: new orgs check modules array; legacy orgs (empty) fall back to plan
+  const hasModule = (mod: string): boolean => {
+    const sub = organization?.subscription;
+    const modules = organization?.modules ?? [];
+    if (!sub || sub.status === 'EXPIRED' || sub.status === 'CANCELLED') return false;
+    if (modules.length > 0) return modules.includes(mod);
+    // Legacy fallback: plan-based
+    const LEGACY: Record<string, string[]> = {
+      WATER:      ['PREMIUM'],
+      PROJECTS:   ['PREMIUM'],
+      PRODUCTIVE: ['STANDARD', 'PREMIUM'],
+    };
+    return (LEGACY[mod] ?? []).includes(sub.plan);
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -127,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoading,
       isSuperAdmin: user?.role === 'SUPER_ADMIN',
       isWaterReader: user?.role === 'WATER_READER',
+      hasModule,
       login,
       register,
       logout,

@@ -46,6 +46,15 @@ const fr = {
     registerSubtitle: 'Rejoignez la plateforme de gestion des associations marocaines',
     orgInfo: 'Informations de l\'association',
     adminInfo: 'Informations du responsable',
+    assocTypeTitle: 'Type d\'association',
+    assocTypeSubtitle: 'Choisissez le ou les modules dont vous avez besoin',
+    assocTypes: {
+      REGULAR:          { label: 'Association classique', desc: 'Membres, réunions, finances, documents' },
+      PROJECTS:         { label: 'Association avec projets', desc: 'Modules de base + gestion de projets et demandes' },
+      WATER:            { label: 'Association de l\'eau', desc: 'Modules de base + gestion du réseau d\'eau' },
+      PRODUCTIVE:       { label: 'Association productive', desc: 'Modules de base + production, ventes, clients, événements' },
+      PRODUCTIVE_WATER: { label: 'Association productive + eau', desc: 'Tous les modules : production, eau, projets' },
+    },
   },
   dashboard: {
     welcome: 'Bienvenue',
