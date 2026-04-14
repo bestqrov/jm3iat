@@ -130,9 +130,16 @@ const generateWaterBillPDF = async (req, res) => {
 
     // Logo
     if (org?.logo) {
-      const lp = path.join(UPLOAD_DIR, path.basename(org.logo));
-      if (fs.existsSync(lp)) {
-        doc.image(lp, M + 4, 11, { fit: [58, 58] });
+      // org.logo is stored as "/uploads/filename.ext" — resolve to filesystem path
+      const logoFile = path.basename(org.logo);
+      const logoPaths = [
+        path.join(UPLOAD_DIR, logoFile),
+        path.join(process.cwd(), 'uploads', logoFile),
+        path.join(__dirname, '../../uploads', logoFile),
+      ];
+      const lp = logoPaths.find(p => fs.existsSync(p));
+      if (lp) {
+        try { doc.image(lp, M + 4, 11, { fit: [58, 58] }); } catch (_) {}
       }
     }
 
@@ -261,41 +268,56 @@ const generateWaterBillPDF = async (req, res) => {
     const varAmount    = pricePerUnit * (reading?.consumption || 0);
     const fixedTax     = Math.max(0, invoice.amount - varAmount);
 
-    // Right: ثمن الوحدة
+    // ── RIGHT BOX: ثمن الوحدة (price details) ──────────────────────────────
     fillRect(doc, unitBxX, y, unitBxW, pricH, C.white, C.border, 0.5);
     fillRect(doc, unitBxX, y, unitBxW, 22, C.blueLight, C.border, 0.5);
     doc.font('AR-Bold').fontSize(10).fillColor(C.text);
     centerAr(doc, 'ثمن الوحدة (بالدرهم)', unitBxX, y + 6, unitBxW - 4);
 
+    // Two columns inside the right box
     const halfUnit = unitBxW / 2;
-    fillRect(doc, unitBxX,           y + 22, halfUnit, 22, C.divider, C.border, 0.4);
-    fillRect(doc, unitBxX + halfUnit, y + 22, halfUnit, 22, C.divider, C.border, 0.4);
-    doc.font('AR').fontSize(9).fillColor(C.gray);
-    centerAr(doc, 'الرسوم الثابتة', unitBxX,            y + 29, halfUnit);
-    centerAr(doc, 'سعر م³',         unitBxX + halfUnit, y + 29, halfUnit);
+    vLine(doc, unitBxX + halfUnit, y + 22, y + pricH, C.border, 0.5);
 
-    fillRect(doc, unitBxX,           y + 44, halfUnit, pricH - 44, C.white, C.border, 0.4);
-    fillRect(doc, unitBxX + halfUnit, y + 44, halfUnit, pricH - 44, C.white, C.border, 0.4);
-    doc.font('AR-Bold').fontSize(14).fillColor(C.textDark);
-    centerText(doc, fixedTax.toFixed(2),    unitBxX,            y + 51, halfUnit);
-    centerText(doc, pricePerUnit.toFixed(2), unitBxX + halfUnit, y + 51, halfUnit);
+    // Sub-headers
+    fillRect(doc, unitBxX,           y + 22, halfUnit, 18, C.divider, null);
+    fillRect(doc, unitBxX + halfUnit, y + 22, halfUnit, 18, C.divider, null);
+    doc.font('AR-Bold').fontSize(8).fillColor(C.gray);
+    centerAr(doc, 'الرسوم الثابتة (درهم)', unitBxX,            y + 27, halfUnit);
+    centerAr(doc, 'سعر م³ (درهم)',          unitBxX + halfUnit, y + 27, halfUnit);
 
-    // Left: TAXE
+    // Values
+    doc.font('AR-Bold').fontSize(18).fillColor(C.textDark);
+    centerText(doc, fixedTax.toFixed(2),    unitBxX,            y + 44, halfUnit);
+    centerText(doc, pricePerUnit.toFixed(2), unitBxX + halfUnit, y + 44, halfUnit);
+
+    // ── LEFT BOX: TAXE (label + value rows) ─────────────────────────────────
     fillRect(doc, M, y, taxBxW, pricH, C.white, C.border, 0.5);
     fillRect(doc, M, y, taxBxW, 22, C.blueLight, C.border, 0.5);
     doc.font('AR-Bold').fontSize(10).fillColor(C.text);
     centerText(doc, 'TAXE', M, y + 6, taxBxW);
 
-    const taxRowH = (pricH - 22) / 2;
+    // Row heights inside TAXE box
+    const taxBodyH = pricH - 22;
+    const taxRowH  = taxBodyH / 2;
+    const valColW  = taxBxW * 0.38;
+    const lblColW  = taxBxW - valColW;
+
     hLine(doc, M, M + taxBxW, y + 22 + taxRowH, C.divider, 0.5);
+    vLine(doc, M + lblColW, y + 22, y + pricH, C.divider, 0.5);
 
-    doc.font('AR').fontSize(9).fillColor(C.gray);
-    centerAr(doc, 'عدد الأشهر', M, y + 26, taxBxW);
-    centerAr(doc, 'المبلغ',     M, y + 26 + taxRowH, taxBxW);
+    // Row 1: عدد الأشهر | 1
+    const tr1y = y + 22 + (taxRowH / 2) - 6;
+    doc.font('AR-Bold').fontSize(8).fillColor(C.gray);
+    centerAr(doc, 'عدد الأشهر', M, tr1y, lblColW);
+    doc.font('AR-Bold').fontSize(14).fillColor(C.textDark);
+    centerText(doc, '1', M + lblColW, tr1y - 1, valColW);
 
-    doc.font('AR-Bold').fontSize(13).fillColor(C.textDark);
-    centerText(doc, '1',                   M, y + 40, taxBxW);
-    centerText(doc, fixedTax.toFixed(2),   M, y + 40 + taxRowH, taxBxW);
+    // Row 2: المبلغ | 0.00
+    const tr2y = y + 22 + taxRowH + (taxRowH / 2) - 6;
+    doc.font('AR-Bold').fontSize(8).fillColor(C.gray);
+    centerAr(doc, 'المبلغ (درهم)', M, tr2y, lblColW);
+    doc.font('AR-Bold').fontSize(12).fillColor(C.blue);
+    centerText(doc, fixedTax.toFixed(2), M + lblColW, tr2y, valColW);
 
     y += pricH + 16;
 
