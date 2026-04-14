@@ -52,6 +52,8 @@ model Organization {
   products           AssocProduct[]
   productions        AssocProduction[]
   productSales       AssocSale[]
+  assocClients       AssocClient[]
+  assocEvents        AssocEvent[]
 }
 
 model Subscription {
@@ -411,7 +413,49 @@ model AssocProduct {
 
   organization Organization     @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   productions  AssocProduction[]
+  saleItems    AssocSaleItem[]
+}
+
+model AssocClient {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  name           String
+  phone          String?
+  email          String?
+  address        String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sales        AssocSale[]
+}
+
+model AssocSale {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId  String   @db.ObjectId
+  clientId        String?  @db.ObjectId
+  totalAmount     Float
+  date            DateTime @default(now())
+  notes           String?
+  transactionId   String?  @db.ObjectId
+  createdAt       DateTime @default(now())
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  client       AssocClient?   @relation(fields: [clientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items        AssocSaleItem[]
+}
+
+model AssocSaleItem {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  saleId     String @db.ObjectId
+  productId  String @db.ObjectId
+  quantity   Float
+  unitPrice  Float
+  subtotal   Float
+
+  sale    AssocSale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product AssocProduct @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model AssocProduction {
@@ -422,26 +466,29 @@ model AssocProduction {
   productionCost   Float    @default(0)
   date             DateTime @default(now())
   notes            String?
+  transactionId    String?  @db.ObjectId
   createdAt        DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   product      AssocProduct @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model AssocSale {
+model AssocEvent {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   organizationId String   @db.ObjectId
-  productId      String   @db.ObjectId
-  quantity       Float
-  unitPrice      Float
-  totalAmount    Float
-  date           DateTime @default(now())
-  customer       String?
-  notes          String?
+  name           String
+  type           String   @default("EVENT")
+  date           DateTime
+  location       String?
+  description    String?
+  revenue        Float    @default(0)
+  cost           Float    @default(0)
+  incomeTransId  String?  @db.ObjectId
+  expenseTransId String?  @db.ObjectId
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  product      AssocProduct @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Reminder {

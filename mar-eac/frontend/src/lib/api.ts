@@ -220,10 +220,21 @@ export const assocApi = {
   getProductions: (params?: any) => api.get('/assoc/productions', { params }),
   createProduction: (data: any) => api.post('/assoc/productions', data),
   deleteProduction: (id: string) => api.delete(`/assoc/productions/${id}`),
+  // Clients
+  getClients: () => api.get('/assoc/clients'),
+  createClient: (data: any) => api.post('/assoc/clients', data),
+  updateClient: (id: string, data: any) => api.put(`/assoc/clients/${id}`, data),
+  deleteClient: (id: string) => api.delete(`/assoc/clients/${id}`),
+  getClientHistory: (id: string) => api.get(`/assoc/clients/${id}/history`),
   // Sales
   getSales: (params?: any) => api.get('/assoc/sales', { params }),
   createSale: (data: any) => api.post('/assoc/sales', data),
   deleteSale: (id: string) => api.delete(`/assoc/sales/${id}`),
+  // Events
+  getEvents: () => api.get('/assoc/events'),
+  createEvent: (data: any) => api.post('/assoc/events', data),
+  updateEvent: (id: string, data: any) => api.put(`/assoc/events/${id}`, data),
+  deleteEvent: (id: string) => api.delete(`/assoc/events/${id}`),
 };
 
 // ---- Super Admin ----

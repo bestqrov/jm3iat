@@ -1,594 +1,908 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Plus, Trash2, Pencil, Package, Factory, ShoppingBag,
-  TrendingUp, AlertTriangle, CheckCircle, BarChart2,
-  Banknote, Archive, ArrowUpCircle, ArrowDownCircle,
+  ShoppingBag, Package, Factory, TrendingUp, Users,
+  CalendarDays, Plus, Trash2, Edit, Eye, X,
+  BarChart3, Boxes, ChevronRight,
 } from 'lucide-react';
 import { assocApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
-type Tab = 'dashboard' | 'products' | 'production' | 'sales' | 'stock';
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const CATEGORIES_FR = ['Alimentaire', 'Artisanat', 'Agriculture', 'Textile', 'Cosmétique', 'Autre'];
-const CATEGORIES_AR = ['غذائي', 'صناعة تقليدية', 'فلاحي', 'نسيج', 'تجميل', 'أخرى'];
+interface Product {
+  id: string; name: string; nameAr?: string; category?: string;
+  unit: string; price: number; lowStockAlert: number; description?: string;
+  isActive: boolean; stock: number;
+}
+interface Production {
+  id: string; productId: string; quantityProduced: number; productionCost: number;
+  date: string; notes?: string; transactionId?: string;
+  product: { name: string; unit: string };
+}
+interface SaleItem { productId: string; quantity: number; unitPrice: number; subtotal: number; product?: { name: string; unit: string } }
+interface Sale {
+  id: string; clientId?: string; totalAmount: number; date: string; notes?: string;
+  transactionId?: string;
+  client?: { id: string; name: string; phone?: string };
+  items: SaleItem[];
+}
+interface Client {
+  id: string; name: string; phone?: string; email?: string; address?: string;
+  notes?: string; totalPurchases: number; totalSpent: number;
+}
+interface AssocEvent {
+  id: string; name: string; type: string; date: string; location?: string;
+  description?: string; revenue: number; cost: number;
+}
+interface Stats {
+  productCount: number; clientCount: number; totalProductionCost: number;
+  totalRevenue: number; totalSales: number;
+  eventCount: number; eventRevenue: number; eventCost: number;
+}
+interface StockItem extends Product {
+  currentStock: number; totalProduced: number; totalSold: number;
+  totalRevenue: number; totalCost: number; level: 'empty' | 'low' | 'normal' | 'high';
+}
 
-const fmtCurrency = (n: number) => `${(n || 0).toLocaleString('fr-MA', { minimumFractionDigits: 2 })} MAD`;
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('fr-MA');
-const fmtQty = (n: number, unit: string) => `${n % 1 === 0 ? n : n.toFixed(2)} ${unit}`;
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-const StockBadge = ({ level, stock, unit }: { level: string; stock: number; unit: string }) => {
-  const cfg: Record<string, { cls: string; label: string }> = {
-    empty:  { cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',   label: 'Épuisé / نفذ' },
-    low:    { cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',     label: 'Faible / منخفض' },
-    normal: { cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', label: 'Normal / عادي' },
-    high:   { cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', label: 'Élevé / مرتفع' },
-  };
-  const { cls, label } = cfg[level] || cfg.normal;
-  return (
-    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${cls}`}>
-      {stock % 1 === 0 ? stock : stock.toFixed(2)} {unit} — {label}
-    </span>
-  );
-};
-
-const StatCard = ({ title, value, icon, color }: any) => (
-  <div className="card p-5 flex items-center gap-4">
-    <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
-    <div>
-      <p className="text-xs text-gray-500 dark:text-gray-400">{title}</p>
-      <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
-    </div>
+const StatCard: React.FC<{ label: string; value: string | number; icon: React.ReactNode; color: string }> = ({ label, value, icon, color }) => (
+  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-center gap-4">
+    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
+    <div><div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div><div className="text-sm text-gray-500 dark:text-gray-400">{label}</div></div>
   </div>
 );
 
-export default function AssocPage() {
-  const { lang } = useLanguage();
-  const [tab, setTab] = useState<Tab>('dashboard');
+const StockBadge: React.FC<{ level: string }> = ({ level }) => {
+  const map: Record<string, { label: string; cls: string }> = {
+    empty: { label: 'Épuisé', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+    low: { label: 'Faible', cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+    normal: { label: 'Normal', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    high: { label: 'Élevé', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+  };
+  const s = map[level] || map.normal;
+  return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.cls}`}>{s.label}</span>;
+};
 
-  // Data
-  const [stats, setStats]         = useState<any>(null);
-  const [products, setProducts]   = useState<any[]>([]);
-  const [productions, setProductions] = useState<any[]>([]);
-  const [sales, setSales]         = useState<any[]>([]);
-  const [stock, setStock]         = useState<any[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
+const EventTypeBadge: React.FC<{ type: string }> = ({ type }) => {
+  const map: Record<string, { label: string; cls: string }> = {
+    EVENT: { label: 'Événement', cls: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+    CATERING: { label: 'Restauration', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    EXHIBITION: { label: 'Exposition', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  };
+  const s = map[type] || map.EVENT;
+  return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.cls}`}>{s.label}</span>;
+};
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+type Tab = 'dashboard' | 'products' | 'production' | 'sales' | 'clients' | 'events' | 'stock';
+
+const AssocPage: React.FC = () => {
+  const { lang } = useLanguage();
+  const isAr = lang === 'ar';
+
+  const [tab, setTab] = useState<Tab>('dashboard');
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productions, setProductions] = useState<Production[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [events, setEvents] = useState<AssocEvent[]>([]);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Modals
-  const [showProductModal, setShowProductModal]   = useState(false);
-  const [showProdModal, setShowProdModal]         = useState(false);
-  const [showSaleModal, setShowSaleModal]         = useState(false);
-  const [editingProduct, setEditingProduct]       = useState<any>(null);
-  const [deleteTarget, setDeleteTarget]           = useState<{ type: string; id: string } | null>(null);
-  const [deleting, setDeleting]                   = useState(false);
+  const [productModal, setProductModal] = useState(false);
+  const [productEdit, setProductEdit] = useState<Product | null>(null);
+  const [productForm, setProductForm] = useState({ name: '', nameAr: '', category: '', unit: 'unité', price: '', lowStockAlert: '10', description: '' });
 
-  // Forms
-  const emptyProduct = { name: '', nameAr: '', category: '', unit: 'kg', price: '', lowStockAlert: '10', description: '' };
-  const emptyProd    = { productId: '', quantityProduced: '', productionCost: '', date: '', notes: '' };
-  const emptySale    = { productId: '', quantity: '', unitPrice: '', date: '', customer: '', notes: '' };
-  const [productForm, setProductForm] = useState(emptyProduct);
-  const [prodForm, setProdForm]       = useState(emptyProd);
-  const [saleForm, setSaleForm]       = useState(emptySale);
+  const [productionModal, setProductionModal] = useState(false);
+  const [productionForm, setProductionForm] = useState({ productId: '', quantityProduced: '', productionCost: '', date: new Date().toISOString().slice(0, 10), notes: '' });
 
-  const load = useCallback(async () => {
+  // Multi-product sale cart
+  const [saleModal, setSaleModal] = useState(false);
+  const [saleClientId, setSaleClientId] = useState('');
+  const [saleDate, setSaleDate] = useState(new Date().toISOString().slice(0, 10));
+  const [saleNotes, setSaleNotes] = useState('');
+  const [cartItems, setCartItems] = useState<{ productId: string; quantity: string; unitPrice: string }[]>([
+    { productId: '', quantity: '', unitPrice: '' },
+  ]);
+
+  const [clientModal, setClientModal] = useState(false);
+  const [clientEdit, setClientEdit] = useState<Client | null>(null);
+  const [clientForm, setClientForm] = useState({ name: '', phone: '', email: '', address: '', notes: '' });
+  const [clientHistory, setClientHistory] = useState<{ client: Client; sales: Sale[] } | null>(null);
+  const [historyModal, setHistoryModal] = useState(false);
+
+  const [eventModal, setEventModal] = useState(false);
+  const [eventEdit, setEventEdit] = useState<AssocEvent | null>(null);
+  const [eventForm, setEventForm] = useState({ name: '', type: 'EVENT', date: new Date().toISOString().slice(0, 10), location: '', description: '', revenue: '', cost: '' });
+
+  const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; label: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // ── Load data ────────────────────────────────────────────────────────────────
+
+  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    if (tab === 'stock') loadStock();
+    if (tab === 'sales') loadSales();
+    if (tab === 'clients') loadClients();
+    if (tab === 'events') loadEvents();
+    if (tab === 'production') loadProductions();
+    if (tab === 'products') loadProducts();
+  }, [tab]);
+
+  const loadAll = async () => {
+    setLoading(true);
     try {
-      const [s, p, st] = await Promise.all([assocApi.getStats(), assocApi.getProducts(), assocApi.getStock()]);
-      setStats(s.data); setProducts(p.data); setStock(st.data);
-    } finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { load(); }, []);
-  useEffect(() => { if (tab === 'production') assocApi.getProductions().then(r => setProductions(r.data)); }, [tab]);
-  useEffect(() => { if (tab === 'sales') assocApi.getSales().then(r => setSales(r.data)); }, [tab]);
-  useEffect(() => { if (tab === 'stock') assocApi.getStock().then(r => setStock(r.data)); }, [tab]);
-
-  // ── Product handlers ───────────────────────────────────────────────────────
-  const openProductModal = (p?: any) => {
-    setEditingProduct(p || null);
-    setProductForm(p ? { name: p.name, nameAr: p.nameAr || '', category: p.category || '', unit: p.unit, price: String(p.price), lowStockAlert: String(p.lowStockAlert), description: p.description || '' } : emptyProduct);
-    setShowProductModal(true);
+      const [s, p] = await Promise.all([assocApi.getStats(), assocApi.getProducts()]);
+      setStats(s.data); setProducts(p.data);
+    } catch { setError('Erreur de chargement'); }
+    setLoading(false);
   };
+
+  const loadProducts = async () => { const r = await assocApi.getProducts(); setProducts(r.data); };
+  const loadProductions = async () => { const r = await assocApi.getProductions(); setProductions(r.data); };
+  const loadSales = async () => { const r = await assocApi.getSales(); setSales(r.data); };
+  const loadClients = async () => { const r = await assocApi.getClients(); setClients(r.data); };
+  const loadEvents = async () => { const r = await assocApi.getEvents(); setEvents(r.data); };
+  const loadStock = async () => { const r = await assocApi.getStock(); setStockItems(r.data); };
+
+  // ── Products ─────────────────────────────────────────────────────────────────
+
+  const openProductModal = (p?: Product) => {
+    setProductEdit(p || null);
+    setProductForm(p ? { name: p.name, nameAr: p.nameAr || '', category: p.category || '', unit: p.unit, price: String(p.price), lowStockAlert: String(p.lowStockAlert), description: p.description || '' } : { name: '', nameAr: '', category: '', unit: 'unité', price: '', lowStockAlert: '10', description: '' });
+    setProductModal(true);
+  };
+
   const saveProduct = async () => {
-    if (!productForm.name.trim()) return alert(lang === 'ar' ? 'الاسم مطلوب' : 'Nom requis');
+    if (!productForm.name) return;
     setSaving(true);
     try {
-      if (editingProduct) {
-        const res = await assocApi.updateProduct(editingProduct.id, productForm);
-        setProducts(p => p.map(x => x.id === editingProduct.id ? { ...res.data, stock: x.stock } : x));
+      if (productEdit) {
+        const r = await assocApi.updateProduct(productEdit.id, productForm);
+        setProducts(prev => prev.map(p => p.id === productEdit.id ? { ...p, ...r.data } : p));
       } else {
-        const res = await assocApi.createProduct(productForm);
-        setProducts(p => [...p, res.data]);
-        setStats((s: any) => s ? { ...s, productCount: s.productCount + 1 } : s);
+        const r = await assocApi.createProduct(productForm);
+        setProducts(prev => [r.data, ...prev]);
+        if (stats) setStats({ ...stats, productCount: stats.productCount + 1 });
       }
-      setShowProductModal(false);
-      assocApi.getStock().then(r => setStock(r.data));
-    } catch { alert(lang === 'ar' ? 'حدث خطأ' : 'Erreur'); }
-    finally { setSaving(false); }
+      setProductModal(false);
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Erreur');
+    }
+    setSaving(false);
   };
 
-  // ── Production handlers ────────────────────────────────────────────────────
-  const saveProd = async () => {
-    if (!prodForm.productId || !prodForm.quantityProduced) return alert(lang === 'ar' ? 'الحقول المطلوبة ناقصة' : 'Champs requis manquants');
+  // ── Productions ───────────────────────────────────────────────────────────────
+
+  const saveProduction = async () => {
+    if (!productionForm.productId || !productionForm.quantityProduced) return;
     setSaving(true);
     try {
-      const res = await assocApi.createProduction(prodForm);
-      setProductions(p => [res.data, ...p]);
-      setProducts(prev => prev.map(p => p.id === prodForm.productId ? { ...p, stock: (p.stock || 0) + parseFloat(prodForm.quantityProduced) } : p));
-      assocApi.getStats().then(r => setStats(r.data));
-      assocApi.getStock().then(r => setStock(r.data));
-      setShowProdModal(false); setProdForm(emptyProd);
-    } catch { alert(lang === 'ar' ? 'حدث خطأ' : 'Erreur'); }
-    finally { setSaving(false); }
+      const r = await assocApi.createProduction(productionForm);
+      setProductions(prev => [r.data, ...prev]);
+      await loadProducts();
+      setProductionModal(false);
+      setProductionForm({ productId: '', quantityProduced: '', productionCost: '', date: new Date().toISOString().slice(0, 10), notes: '' });
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Erreur');
+    }
+    setSaving(false);
   };
 
-  // ── Sale handlers ──────────────────────────────────────────────────────────
+  // ── Sales (multi-product cart) ────────────────────────────────────────────────
+
+  const cartTotal = cartItems.reduce((s, i) => s + (parseFloat(i.quantity) || 0) * (parseFloat(i.unitPrice) || 0), 0);
+
+  const addCartRow = () => setCartItems(prev => [...prev, { productId: '', quantity: '', unitPrice: '' }]);
+  const removeCartRow = (idx: number) => setCartItems(prev => prev.filter((_, i) => i !== idx));
+  const updateCartRow = (idx: number, field: string, val: string) => {
+    setCartItems(prev => {
+      const next = [...prev];
+      (next[idx] as any)[field] = val;
+      if (field === 'productId') {
+        const p = products.find(p => p.id === val);
+        if (p) next[idx].unitPrice = String(p.price);
+      }
+      return next;
+    });
+  };
+
   const saveSale = async () => {
-    if (!saleForm.productId || !saleForm.quantity || !saleForm.unitPrice) return alert(lang === 'ar' ? 'الحقول المطلوبة ناقصة' : 'Champs requis manquants');
+    const items = cartItems.filter(i => i.productId && i.quantity && i.unitPrice).map(i => ({
+      productId: i.productId,
+      quantity: parseFloat(i.quantity),
+      unitPrice: parseFloat(i.unitPrice),
+    }));
+    if (items.length === 0) return;
     setSaving(true);
     try {
-      const res = await assocApi.createSale(saleForm);
-      setSales(s => [res.data, ...s]);
-      setProducts(prev => prev.map(p => p.id === saleForm.productId ? { ...p, stock: (p.stock || 0) - parseFloat(saleForm.quantity) } : p));
-      assocApi.getStats().then(r => setStats(r.data));
-      assocApi.getStock().then(r => setStock(r.data));
-      setShowSaleModal(false); setSaleForm(emptySale);
-    } catch (e: any) { alert(e?.response?.data?.message || (lang === 'ar' ? 'حدث خطأ' : 'Erreur')); }
-    finally { setSaving(false); }
+      const r = await assocApi.createSale({ clientId: saleClientId || undefined, items, date: saleDate, notes: saleNotes });
+      setSales(prev => [r.data, ...prev]);
+      await loadProducts();
+      setSaleModal(false);
+      setCartItems([{ productId: '', quantity: '', unitPrice: '' }]);
+      setSaleClientId(''); setSaleNotes('');
+      if (stats) setStats({ ...stats, totalRevenue: stats.totalRevenue + r.data.totalAmount, totalSales: stats.totalSales + 1 });
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Erreur');
+    }
+    setSaving(false);
   };
 
-  // ── Delete ─────────────────────────────────────────────────────────────────
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
+  // ── Clients ───────────────────────────────────────────────────────────────────
+
+  const openClientModal = (c?: Client) => {
+    setClientEdit(c || null);
+    setClientForm(c ? { name: c.name, phone: c.phone || '', email: c.email || '', address: c.address || '', notes: c.notes || '' } : { name: '', phone: '', email: '', address: '', notes: '' });
+    setClientModal(true);
+  };
+
+  const saveClient = async () => {
+    if (!clientForm.name) return;
+    setSaving(true);
     try {
-      if (deleteTarget.type === 'product') { await assocApi.deleteProduct(deleteTarget.id); setProducts(p => p.filter(x => x.id !== deleteTarget.id)); }
-      if (deleteTarget.type === 'production') { await assocApi.deleteProduction(deleteTarget.id); setProductions(p => p.filter(x => x.id !== deleteTarget.id)); }
-      if (deleteTarget.type === 'sale') { await assocApi.deleteSale(deleteTarget.id); setSales(s => s.filter(x => x.id !== deleteTarget.id)); }
-      assocApi.getStock().then(r => setStock(r.data));
-      assocApi.getStats().then(r => setStats(r.data));
-    } catch { alert(lang === 'ar' ? 'حدث خطأ' : 'Erreur'); }
-    finally { setDeleting(false); setDeleteTarget(null); }
+      if (clientEdit) {
+        const r = await assocApi.updateClient(clientEdit.id, clientForm);
+        setClients(prev => prev.map(c => c.id === clientEdit.id ? { ...c, ...r.data } : c));
+      } else {
+        const r = await assocApi.createClient(clientForm);
+        setClients(prev => [r.data, ...prev]);
+      }
+      setClientModal(false);
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Erreur');
+    }
+    setSaving(false);
   };
 
-  const categories = lang === 'ar' ? CATEGORIES_AR : CATEGORIES_FR;
-  const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'dashboard',  label: lang === 'ar' ? 'لوحة القيادة' : 'Tableau de bord', icon: <BarChart2 size={14} /> },
-    { key: 'products',   label: lang === 'ar' ? 'المنتجات' : 'Produits',           icon: <Package size={14} /> },
-    { key: 'production', label: lang === 'ar' ? 'الإنتاج' : 'Production',          icon: <Factory size={14} /> },
-    { key: 'sales',      label: lang === 'ar' ? 'المبيعات' : 'Ventes',             icon: <ShoppingBag size={14} /> },
-    { key: 'stock',      label: lang === 'ar' ? 'المخزون' : 'Stock',               icon: <Archive size={14} /> },
+  const openHistory = async (c: Client) => {
+    const r = await assocApi.getClientHistory(c.id);
+    setClientHistory(r.data);
+    setHistoryModal(true);
+  };
+
+  // ── Events ────────────────────────────────────────────────────────────────────
+
+  const openEventModal = (e?: AssocEvent) => {
+    setEventEdit(e || null);
+    setEventForm(e ? { name: e.name, type: e.type, date: e.date.slice(0, 10), location: e.location || '', description: e.description || '', revenue: String(e.revenue), cost: String(e.cost) } : { name: '', type: 'EVENT', date: new Date().toISOString().slice(0, 10), location: '', description: '', revenue: '', cost: '' });
+    setEventModal(true);
+  };
+
+  const saveEvent = async () => {
+    if (!eventForm.name || !eventForm.date) return;
+    setSaving(true);
+    try {
+      if (eventEdit) {
+        const r = await assocApi.updateEvent(eventEdit.id, eventForm);
+        setEvents(prev => prev.map(e => e.id === eventEdit.id ? r.data : e));
+      } else {
+        const r = await assocApi.createEvent(eventForm);
+        setEvents(prev => [r.data, ...prev]);
+      }
+      setEventModal(false);
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Erreur');
+    }
+    setSaving(false);
+  };
+
+  // ── Delete ────────────────────────────────────────────────────────────────────
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.type === 'product') { await assocApi.deleteProduct(deleteTarget.id); setProducts(prev => prev.filter(p => p.id !== deleteTarget.id)); }
+      if (deleteTarget.type === 'production') { await assocApi.deleteProduction(deleteTarget.id); setProductions(prev => prev.filter(p => p.id !== deleteTarget.id)); }
+      if (deleteTarget.type === 'sale') { await assocApi.deleteSale(deleteTarget.id); setSales(prev => prev.filter(s => s.id !== deleteTarget.id)); }
+      if (deleteTarget.type === 'client') { await assocApi.deleteClient(deleteTarget.id); setClients(prev => prev.filter(c => c.id !== deleteTarget.id)); }
+      if (deleteTarget.type === 'event') { await assocApi.deleteEvent(deleteTarget.id); setEvents(prev => prev.filter(e => e.id !== deleteTarget.id)); }
+    } catch (e: any) { alert(e.response?.data?.message || 'Erreur'); }
+    setDeleteTarget(null);
+  };
+
+  // ── Tabs config ───────────────────────────────────────────────────────────────
+
+  const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: 'dashboard', label: 'Tableau de bord', icon: <BarChart3 size={16} /> },
+    { id: 'products', label: 'Produits', icon: <Package size={16} /> },
+    { id: 'production', label: 'Production', icon: <Factory size={16} /> },
+    { id: 'sales', label: 'Ventes', icon: <TrendingUp size={16} /> },
+    { id: 'clients', label: 'Clients', icon: <Users size={16} /> },
+    { id: 'events', label: 'Événements', icon: <CalendarDays size={16} /> },
+    { id: 'stock', label: 'Stock', icon: <Boxes size={16} /> },
   ];
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>;
+  const fmt = (n: number) => n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="page-title flex items-center gap-2">
-          <ShoppingBag size={22} className="text-emerald-600 dark:text-emerald-400" />
-          {lang === 'ar' ? 'الإنتاج والمبيعات' : 'Production & Ventes'}
-        </h2>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setShowProdModal(true)} className="btn-secondary text-sm flex items-center gap-1.5">
-            <Factory size={15} />{lang === 'ar' ? 'تسجيل إنتاج' : 'Enregistrer production'}
-          </button>
-          <button onClick={() => setShowSaleModal(true)} className="btn-primary text-sm flex items-center gap-1.5">
-            <ShoppingBag size={15} />{lang === 'ar' ? 'تسجيل بيع' : 'Enregistrer vente'}
-          </button>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
+          <ShoppingBag size={20} className="text-white" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {isAr ? 'الإنتاج والمبيعات' : 'Association Productive'}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Gestion des produits, ventes, clients et événements</p>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title={lang === 'ar' ? 'المنتجات النشطة' : 'Produits actifs'} value={stats?.productCount ?? 0} icon={<Package size={18} />} color="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" />
-        <StatCard title={lang === 'ar' ? 'تكلفة الإنتاج' : 'Coût de production'} value={fmtCurrency(stats?.totalProductionCost ?? 0)} icon={<Factory size={18} />} color="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" />
-        <StatCard title={lang === 'ar' ? 'رقم المعاملات' : 'Chiffre d\'affaires'} value={fmtCurrency(stats?.totalRevenue ?? 0)} icon={<Banknote size={18} />} color="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400" />
-        <StatCard title={lang === 'ar' ? 'الربح الصافي' : 'Bénéfice net'} value={fmtCurrency((stats?.totalRevenue ?? 0) - (stats?.totalProductionCost ?? 0))} icon={<TrendingUp size={18} />} color="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" />
-      </div>
-
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex-wrap">
         {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${tab === t.key ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.id ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}>
             {t.icon}{t.label}
           </button>
         ))}
       </div>
 
-      {/* ── DASHBOARD ─────────────────────────────────────────────────────── */}
-      {tab === 'dashboard' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Stock alerts */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <AlertTriangle size={16} className="text-amber-500" />
-              {lang === 'ar' ? 'تنبيهات المخزون' : 'Alertes de stock'}
-            </h3>
-            {stock.filter(s => s.level === 'empty' || s.level === 'low').length === 0 ? (
-              <p className="text-sm text-gray-400 flex items-center gap-2"><CheckCircle size={14} className="text-emerald-500" />{lang === 'ar' ? 'المخزون بخير' : 'Stock en bon état'}</p>
-            ) : stock.filter(s => s.level === 'empty' || s.level === 'low').map(s => (
-              <div key={s.id} className={`flex items-center justify-between py-2 border-b last:border-0 border-gray-100 dark:border-gray-700`}>
-                <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{s.name}</span>
-                <StockBadge level={s.level} stock={s.currentStock} unit={s.unit} />
-              </div>
-            ))}
-          </div>
+      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
-          {/* Top products by revenue */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <TrendingUp size={16} className="text-emerald-500" />
-              {lang === 'ar' ? 'أفضل المنتجات مبيعاً' : 'Meilleures ventes'}
-            </h3>
-            {stock.sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 5).map(s => (
-              <div key={s.id} className="flex items-center justify-between py-2 border-b last:border-0 border-gray-100 dark:border-gray-700">
-                <div>
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{s.name}</span>
-                  <span className="ml-2 text-xs text-gray-400">{fmtQty(s.totalSold, s.unit)}</span>
-                </div>
-                <span className="text-sm font-bold text-emerald-600">{fmtCurrency(s.totalRevenue)}</span>
-              </div>
-            ))}
-            {stock.length === 0 && <p className="text-sm text-gray-400">{lang === 'ar' ? 'لا توجد بيانات' : 'Aucune donnée'}</p>}
+      {/* ── Dashboard ─────────────────────────────────────────────────────── */}
+      {tab === 'dashboard' && stats && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Produits actifs" value={stats.productCount} icon={<Package size={20} className="text-white" />} color="bg-blue-500" />
+            <StatCard label="Clients" value={stats.clientCount} icon={<Users size={20} className="text-white" />} color="bg-purple-500" />
+            <StatCard label="Recettes ventes" value={`${fmt(stats.totalRevenue)} DH`} icon={<TrendingUp size={20} className="text-white" />} color="bg-emerald-500" />
+            <StatCard label="Coûts production" value={`${fmt(stats.totalProductionCost)} DH`} icon={<Factory size={20} className="text-white" />} color="bg-orange-500" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard label="Nombre de ventes" value={stats.totalSales} icon={<ShoppingBag size={20} className="text-white" />} color="bg-teal-500" />
+            <StatCard label="Recettes événements" value={`${fmt(stats.eventRevenue)} DH`} icon={<CalendarDays size={20} className="text-white" />} color="bg-indigo-500" />
+            <StatCard label="Bénéfice net" value={`${fmt(stats.totalRevenue + stats.eventRevenue - stats.totalProductionCost - stats.eventCost)} DH`} icon={<BarChart3 size={20} className="text-white" />} color="bg-rose-500" />
           </div>
         </div>
       )}
 
-      {/* ── PRODUCTS ──────────────────────────────────────────────────────── */}
+      {/* ── Products ──────────────────────────────────────────────────────── */}
       {tab === 'products' && (
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <button onClick={() => openProductModal()} className="btn-primary text-sm flex items-center gap-1.5">
-              <Plus size={15} />{lang === 'ar' ? 'منتج جديد' : 'Nouveau produit'}
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Produits</h2>
+            <button onClick={() => openProductModal()} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+              <Plus size={16} /> Nouveau produit
             </button>
           </div>
-          {products.length === 0 ? (
-            <div className="card p-12 text-center">
-              <Package size={40} className="mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-500">{lang === 'ar' ? 'لا توجد منتجات بعد' : 'Aucun produit pour l\'instant'}</p>
-              <button onClick={() => openProductModal()} className="btn-primary mt-4 mx-auto"><Plus size={16} />{lang === 'ar' ? 'إضافة منتج' : 'Ajouter un produit'}</button>
-            </div>
-          ) : (
-            <div className="card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800/60">
-                  <tr>
-                    {[lang === 'ar' ? 'المنتج' : 'Produit', lang === 'ar' ? 'الفئة' : 'Catégorie', lang === 'ar' ? 'الوحدة' : 'Unité', lang === 'ar' ? 'السعر' : 'Prix', lang === 'ar' ? 'المخزون الحالي' : 'Stock actuel', ''].map((h, i) => (
-                      <th key={i} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
-                    ))}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
+                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Produit</th>
+                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Catégorie</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Prix</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Stock</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {products.map(p => (
+                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900 dark:text-white">{p.name}</div>
+                      {p.nameAr && <div className="text-xs text-gray-500 dark:text-gray-400">{p.nameAr}</div>}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{p.category || '—'}</td>
+                    <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{fmt(p.price)} DH/{p.unit}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`font-semibold ${p.stock <= 0 ? 'text-red-600' : p.stock <= p.lowStockAlert ? 'text-orange-600' : 'text-emerald-600'}`}>
+                        {p.stock} {p.unit}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => openProductModal(p)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><Edit size={14} /></button>
+                        <button onClick={() => setDeleteTarget({ type: 'product', id: p.id, label: p.name })} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {products.map(p => {
-                    const s = stock.find(s => s.id === p.id);
-                    return (
-                      <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-gray-900 dark:text-white">{p.name}</div>
-                          {p.nameAr && <div className="text-xs text-gray-400">{p.nameAr}</div>}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.category || '—'}</td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.unit}</td>
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{fmtCurrency(p.price)}</td>
-                        <td className="px-4 py-3">
-                          {s ? <StockBadge level={s.level} stock={s.currentStock} unit={s.unit} /> : <span className="text-gray-400">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1 justify-end">
-                            <button onClick={() => openProductModal(p)} className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"><Pencil size={14} /></button>
-                            <button onClick={() => setDeleteTarget({ type: 'product', id: p.id })} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+                ))}
+                {products.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun produit</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* ── PRODUCTION ────────────────────────────────────────────────────── */}
+      {/* ── Production ────────────────────────────────────────────────────── */}
       {tab === 'production' && (
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <button onClick={() => setShowProdModal(true)} className="btn-primary text-sm flex items-center gap-1.5">
-              <Plus size={15} />{lang === 'ar' ? 'تسجيل إنتاج' : 'Enregistrer production'}
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Production</h2>
+            <button onClick={() => setProductionModal(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+              <Plus size={16} /> Enregistrer production
             </button>
           </div>
-          {productions.length === 0 ? (
-            <div className="card p-12 text-center">
-              <Factory size={40} className="mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-500">{lang === 'ar' ? 'لا توجد عمليات إنتاج بعد' : 'Aucune production enregistrée'}</p>
-            </div>
-          ) : (
-            <div className="card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800/60">
-                  <tr>
-                    {[lang === 'ar' ? 'المنتج' : 'Produit', lang === 'ar' ? 'الكمية المنتجة' : 'Quantité produite', lang === 'ar' ? 'تكلفة الإنتاج' : 'Coût de production', lang === 'ar' ? 'التاريخ' : 'Date', lang === 'ar' ? 'ملاحظات' : 'Notes', ''].map((h, i) => (
-                      <th key={i} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
-                    ))}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
+                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Produit</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Quantité</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Coût</th>
+                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Date</th>
+                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Notes</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {productions.map(pr => (
+                  <tr key={pr.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{pr.product.name}</td>
+                    <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{pr.quantityProduced} {pr.product.unit}</td>
+                    <td className="px-4 py-3 text-right text-orange-600 dark:text-orange-400">
+                      {fmt(pr.productionCost)} DH
+                      {pr.transactionId && <span className="ml-1 text-xs text-emerald-500" title="Enregistré en comptabilité">✓</span>}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{new Date(pr.date).toLocaleDateString('fr-MA')}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{pr.notes || '—'}</td>
+                    <td className="px-4 py-3">
+                      <button onClick={() => setDeleteTarget({ type: 'production', id: pr.id, label: `Production ${pr.product.name}` })} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {productions.map(p => (
-                    <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{p.product?.name}</td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold">
-                          <ArrowUpCircle size={14} />{fmtQty(p.quantityProduced, p.product?.unit)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{fmtCurrency(p.productionCost)}</td>
-                      <td className="px-4 py-3 text-gray-500">{fmtDate(p.date)}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs max-w-xs truncate">{p.notes || '—'}</td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => setDeleteTarget({ type: 'production', id: p.id })} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                ))}
+                {productions.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucune production enregistrée</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* ── SALES ─────────────────────────────────────────────────────────── */}
+      {/* ── Sales ─────────────────────────────────────────────────────────── */}
       {tab === 'sales' && (
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <button onClick={() => setShowSaleModal(true)} className="btn-primary text-sm flex items-center gap-1.5">
-              <Plus size={15} />{lang === 'ar' ? 'تسجيل بيع' : 'Enregistrer vente'}
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ventes</h2>
+            <button onClick={() => { setCartItems([{ productId: '', quantity: '', unitPrice: '' }]); setSaleClientId(''); setSaleNotes(''); setSaleModal(true); }} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+              <Plus size={16} /> Nouvelle vente
             </button>
           </div>
-          {sales.length === 0 ? (
-            <div className="card p-12 text-center">
-              <ShoppingBag size={40} className="mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-500">{lang === 'ar' ? 'لا توجد مبيعات بعد' : 'Aucune vente enregistrée'}</p>
-            </div>
-          ) : (
-            <div className="card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800/60">
-                  <tr>
-                    {[lang === 'ar' ? 'المنتج' : 'Produit', lang === 'ar' ? 'الكمية' : 'Quantité', lang === 'ar' ? 'سعر الوحدة' : 'Prix unitaire', lang === 'ar' ? 'المجموع' : 'Total', lang === 'ar' ? 'الزبون' : 'Client', lang === 'ar' ? 'التاريخ' : 'Date', ''].map((h, i) => (
-                      <th key={i} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {sales.map(s => (
-                    <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{s.product?.name}</td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold">
-                          <ArrowDownCircle size={14} />{fmtQty(s.quantity, s.product?.unit)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{fmtCurrency(s.unitPrice)}</td>
-                      <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(s.totalAmount)}</td>
-                      <td className="px-4 py-3 text-gray-500">{s.customer || '—'}</td>
-                      <td className="px-4 py-3 text-gray-500">{fmtDate(s.date)}</td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => setDeleteTarget({ type: 'sale', id: s.id })} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <div className="space-y-3">
+            {sales.map(s => (
+              <div key={s.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="font-semibold text-gray-900 dark:text-white">{fmt(s.totalAmount)} DH</span>
+                      {s.client && <span className="text-sm text-purple-600 dark:text-purple-400 flex items-center gap-1"><Users size={12} />{s.client.name}</span>}
+                      {s.transactionId && <span className="text-xs text-emerald-500" title="Enregistré en comptabilité">✓ Finance</span>}
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {s.items.map((item, i) => (
+                        <div key={i} className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                          <ChevronRight size={12} />
+                          {item.product?.name} — {item.quantity} {item.product?.unit} × {fmt(item.unitPrice)} DH = {fmt(item.subtotal)} DH
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(s.date).toLocaleDateString('fr-MA')}{s.notes && ` · ${s.notes}`}</div>
+                  </div>
+                  <button onClick={() => setDeleteTarget({ type: 'sale', id: s.id, label: `Vente ${fmt(s.totalAmount)} DH` })} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
+                </div>
+              </div>
+            ))}
+            {sales.length === 0 && <div className="text-center py-12 text-gray-500 dark:text-gray-400">Aucune vente enregistrée</div>}
+          </div>
         </div>
       )}
 
-      {/* ── STOCK ─────────────────────────────────────────────────────────── */}
-      {tab === 'stock' && (
+      {/* ── Clients ───────────────────────────────────────────────────────── */}
+      {tab === 'clients' && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            {[
-              { level: 'empty',  label: lang === 'ar' ? 'نفذ' : 'Épuisé',  cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' },
-              { level: 'low',    label: lang === 'ar' ? 'منخفض' : 'Faible', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-              { level: 'normal', label: lang === 'ar' ? 'عادي' : 'Normal',  cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-              { level: 'high',   label: lang === 'ar' ? 'مرتفع' : 'Élevé',  cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-            ].map(l => (
-              <span key={l.level} className={`text-xs font-semibold px-3 py-1 rounded-full ${l.cls}`}>
-                {stock.filter(s => s.level === l.level).length} {l.label}
-              </span>
-            ))}
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Clients</h2>
+            <button onClick={() => openClientModal()} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+              <Plus size={16} /> Nouveau client
+            </button>
           </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
+                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Client</th>
+                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Contact</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Achats</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Total dépensé</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {clients.map(c => (
+                  <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{c.name}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                      <div>{c.phone || '—'}</div>
+                      {c.email && <div className="text-xs">{c.email}</div>}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{c.totalPurchases}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">{fmt(c.totalSpent)} DH</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => openHistory(c)} className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg" title="Historique"><Eye size={14} /></button>
+                        <button onClick={() => openClientModal(c)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><Edit size={14} /></button>
+                        <button onClick={() => setDeleteTarget({ type: 'client', id: c.id, label: c.name })} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {clients.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun client</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {stock.map(s => {
-              const pct = s.totalProduced > 0 ? Math.min(100, (s.currentStock / s.totalProduced) * 100) : 0;
-              const barColor = { empty: 'bg-gray-300', low: 'bg-red-500', normal: 'bg-amber-400', high: 'bg-emerald-500' }[s.level as string] || 'bg-emerald-500';
-              return (
-                <div key={s.id} className="card p-5 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">{s.name}</h4>
-                      {s.category && <span className="text-xs text-gray-400">{s.category}</span>}
+      {/* ── Events ────────────────────────────────────────────────────────── */}
+      {tab === 'events' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Événements</h2>
+            <button onClick={() => openEventModal()} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+              <Plus size={16} /> Nouvel événement
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {events.map(ev => (
+              <div key={ev.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="font-semibold text-gray-900 dark:text-white">{ev.name}</span>
+                      <EventTypeBadge type={ev.type} />
                     </div>
-                    <StockBadge level={s.level} stock={s.currentStock} unit={s.unit} />
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{new Date(ev.date).toLocaleDateString('fr-MA')}{ev.location && ` · ${ev.location}`}</div>
+                    {ev.description && <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{ev.description}</div>}
+                    <div className="flex gap-4 mt-2 text-sm flex-wrap">
+                      <span className="text-emerald-600 dark:text-emerald-400">Recette: {fmt(ev.revenue)} DH</span>
+                      <span className="text-red-600 dark:text-red-400">Coût: {fmt(ev.cost)} DH</span>
+                      <span className={`font-medium ${ev.revenue - ev.cost >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        Bénéfice: {fmt(ev.revenue - ev.cost)} DH
+                      </span>
+                    </div>
                   </div>
-
-                  {/* Progress bar */}
-                  <div>
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>{lang === 'ar' ? 'المخزون الحالي' : 'Stock actuel'}</span>
-                      <span>{pct.toFixed(0)}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Stats row */}
-                  <div className="grid grid-cols-3 gap-2 pt-1 border-t border-gray-100 dark:border-gray-700 text-center">
-                    <div>
-                      <p className="text-xs text-gray-400">{lang === 'ar' ? 'منتَج' : 'Produit'}</p>
-                      <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{s.totalProduced % 1 === 0 ? s.totalProduced : s.totalProduced.toFixed(1)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">{lang === 'ar' ? 'مباع' : 'Vendu'}</p>
-                      <p className="text-sm font-bold text-red-500">{s.totalSold % 1 === 0 ? s.totalSold : s.totalSold.toFixed(1)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">{lang === 'ar' ? 'الإيراد' : 'CA'}</p>
-                      <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{(s.totalRevenue / 1000).toFixed(1)}K</p>
-                    </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button onClick={() => openEventModal(ev)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><Edit size={14} /></button>
+                    <button onClick={() => setDeleteTarget({ type: 'event', id: ev.id, label: ev.name })} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
+            {events.length === 0 && <div className="col-span-2 text-center py-12 text-gray-500 dark:text-gray-400">Aucun événement</div>}
           </div>
-          {stock.length === 0 && (
-            <div className="card p-12 text-center">
-              <Archive size={40} className="mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-500">{lang === 'ar' ? 'أضف منتجات أولاً' : 'Ajoutez des produits d\'abord'}</p>
-            </div>
-          )}
         </div>
       )}
 
-      {/* ─── MODALS ─────────────────────────────────────────────────────────── */}
+      {/* ── Stock ─────────────────────────────────────────────────────────── */}
+      {tab === 'stock' && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Niveaux de stock</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {stockItems.map(s => (
+              <div key={s.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div className="font-semibold text-gray-900 dark:text-white">{s.name}</div>
+                    {s.category && <div className="text-xs text-gray-500 dark:text-gray-400">{s.category}</div>}
+                  </div>
+                  <StockBadge level={s.level} />
+                </div>
+                <div className="mb-3">
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    <span>Stock actuel</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{s.currentStock} {s.unit}</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${s.level === 'empty' ? 'bg-red-500' : s.level === 'low' ? 'bg-orange-500' : s.level === 'normal' ? 'bg-blue-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.min(100, s.totalProduced > 0 ? (s.currentStock / s.totalProduced) * 100 : 0)}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
+                    <div className="font-semibold text-gray-900 dark:text-white">{s.totalProduced}</div>
+                    <div className="text-gray-500 dark:text-gray-400">Produit</div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
+                    <div className="font-semibold text-gray-900 dark:text-white">{s.totalSold}</div>
+                    <div className="text-gray-500 dark:text-gray-400">Vendu</div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
+                    <div className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(s.totalRevenue)} DH</div>
+                    <div className="text-gray-500 dark:text-gray-400">Recettes</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {stockItems.length === 0 && <div className="col-span-2 text-center py-12 text-gray-500 dark:text-gray-400">Aucun produit actif</div>}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modals ────────────────────────────────────────────────────────── */}
 
       {/* Product Modal */}
-      <Modal isOpen={showProductModal} onClose={() => setShowProductModal(false)}
-        title={editingProduct ? (lang === 'ar' ? 'تعديل المنتج' : 'Modifier le produit') : (lang === 'ar' ? 'منتج جديد' : 'Nouveau produit')}
-        footer={<><button onClick={() => setShowProductModal(false)} className="btn-secondary">{lang === 'ar' ? 'إلغاء' : 'Annuler'}</button><button onClick={saveProduct} disabled={saving} className="btn-primary">{saving ? '...' : (lang === 'ar' ? 'حفظ' : 'Enregistrer')}</button></>}
-      >
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+      <Modal isOpen={productModal} onClose={() => setProductModal(false)} title={productEdit ? 'Modifier produit' : 'Nouveau produit'}>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">{lang === 'ar' ? 'الاسم (فرنسية) *' : 'Nom (FR) *'}</label>
-              <input className="input" value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} placeholder="Ex: Couscous fin" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nom (FR) *</label>
+              <input value={productForm.name} onChange={e => setProductForm(p => ({ ...p, name: e.target.value }))} className="input w-full" placeholder="Nom du produit" />
             </div>
             <div>
-              <label className="label">{lang === 'ar' ? 'الاسم (عربية)' : 'Nom (AR)'}</label>
-              <input className="input" dir="rtl" value={productForm.nameAr} onChange={e => setProductForm(f => ({ ...f, nameAr: e.target.value }))} placeholder="مثال: كسكس ناعم" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nom (AR)</label>
+              <input value={productForm.nameAr} onChange={e => setProductForm(p => ({ ...p, nameAr: e.target.value }))} className="input w-full text-right" placeholder="اسم المنتج" dir="rtl" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">{lang === 'ar' ? 'الفئة' : 'Catégorie'}</label>
-              <select className="input" value={productForm.category} onChange={e => setProductForm(f => ({ ...f, category: e.target.value }))}>
-                <option value="">{lang === 'ar' ? '— اختر فئة —' : '— Choisir —'}</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
+              <input value={productForm.category} onChange={e => setProductForm(p => ({ ...p, category: e.target.value }))} className="input w-full" placeholder="Ex: Artisanat, Alimentaire" />
             </div>
             <div>
-              <label className="label">{lang === 'ar' ? 'وحدة القياس' : 'Unité de mesure'}</label>
-              <select className="input" value={productForm.unit} onChange={e => setProductForm(f => ({ ...f, unit: e.target.value }))}>
-                {['kg', 'g', 'L', 'unité', 'boîte', 'sac', 'paquet'].map(u => <option key={u} value={u}>{u}</option>)}
-              </select>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Unité</label>
+              <input value={productForm.unit} onChange={e => setProductForm(p => ({ ...p, unit: e.target.value }))} className="input w-full" placeholder="kg, unité, litre..." />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">{lang === 'ar' ? 'سعر البيع (MAD)' : 'Prix de vente (MAD)'}</label>
-              <input className="input" type="number" min="0" step="0.01" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} placeholder="0.00" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Prix de vente (DH)</label>
+              <input type="number" value={productForm.price} onChange={e => setProductForm(p => ({ ...p, price: e.target.value }))} className="input w-full" placeholder="0.00" min="0" step="0.01" />
             </div>
             <div>
-              <label className="label">{lang === 'ar' ? 'تنبيه مخزون منخفض' : 'Seuil d\'alerte stock bas'}</label>
-              <input className="input" type="number" min="0" step="0.1" value={productForm.lowStockAlert} onChange={e => setProductForm(f => ({ ...f, lowStockAlert: e.target.value }))} />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Seuil alerte stock</label>
+              <input type="number" value={productForm.lowStockAlert} onChange={e => setProductForm(p => ({ ...p, lowStockAlert: e.target.value }))} className="input w-full" placeholder="10" min="0" />
             </div>
           </div>
           <div>
-            <label className="label">{lang === 'ar' ? 'الوصف' : 'Description'}</label>
-            <textarea className="input" rows={2} value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <textarea value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} className="input w-full" rows={2} placeholder="Description optionnelle" />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => setProductModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
+            <button onClick={saveProduct} disabled={saving || !productForm.name} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer'}</button>
           </div>
         </div>
       </Modal>
 
       {/* Production Modal */}
-      <Modal isOpen={showProdModal} onClose={() => setShowProdModal(false)}
-        title={lang === 'ar' ? 'تسجيل عملية إنتاج' : 'Enregistrer une production'}
-        footer={<><button onClick={() => setShowProdModal(false)} className="btn-secondary">{lang === 'ar' ? 'إلغاء' : 'Annuler'}</button><button onClick={saveProd} disabled={saving} className="btn-primary">{saving ? '...' : (lang === 'ar' ? 'حفظ' : 'Enregistrer')}</button></>}
-      >
-        <div className="space-y-4">
+      <Modal isOpen={productionModal} onClose={() => setProductionModal(false)} title="Enregistrer une production">
+        <div className="space-y-3">
           <div>
-            <label className="label">{lang === 'ar' ? 'المنتج *' : 'Produit *'}</label>
-            <select className="input" value={prodForm.productId} onChange={e => setProdForm(f => ({ ...f, productId: e.target.value }))}>
-              <option value="">{lang === 'ar' ? '— اختر منتجاً —' : '— Choisir un produit —'}</option>
-              {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Produit *</label>
+            <select value={productionForm.productId} onChange={e => setProductionForm(p => ({ ...p, productId: e.target.value }))} className="input w-full">
+              <option value="">Choisir un produit</option>
+              {products.filter(p => p.isActive).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">{lang === 'ar' ? 'الكمية المنتجة *' : 'Quantité produite *'}</label>
-              <input className="input" type="number" min="0" step="0.1" value={prodForm.quantityProduced} onChange={e => setProdForm(f => ({ ...f, quantityProduced: e.target.value }))} placeholder="0" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Quantité produite *</label>
+              <input type="number" value={productionForm.quantityProduced} onChange={e => setProductionForm(p => ({ ...p, quantityProduced: e.target.value }))} className="input w-full" placeholder="0" min="0" step="0.01" />
             </div>
             <div>
-              <label className="label">{lang === 'ar' ? 'تكلفة الإنتاج (MAD)' : 'Coût de production (MAD)'}</label>
-              <input className="input" type="number" min="0" step="0.01" value={prodForm.productionCost} onChange={e => setProdForm(f => ({ ...f, productionCost: e.target.value }))} placeholder="0.00" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Coût de production (DH)</label>
+              <input type="number" value={productionForm.productionCost} onChange={e => setProductionForm(p => ({ ...p, productionCost: e.target.value }))} className="input w-full" placeholder="0.00" min="0" step="0.01" />
             </div>
           </div>
           <div>
-            <label className="label">{lang === 'ar' ? 'التاريخ' : 'Date'}</label>
-            <input className="input" type="date" value={prodForm.date} onChange={e => setProdForm(f => ({ ...f, date: e.target.value }))} />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+            <input type="date" value={productionForm.date} onChange={e => setProductionForm(p => ({ ...p, date: e.target.value }))} className="input w-full" />
           </div>
           <div>
-            <label className="label">{lang === 'ar' ? 'ملاحظات' : 'Notes'}</label>
-            <input className="input" value={prodForm.notes} onChange={e => setProdForm(f => ({ ...f, notes: e.target.value }))} />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <textarea value={productionForm.notes} onChange={e => setProductionForm(p => ({ ...p, notes: e.target.value }))} className="input w-full" rows={2} />
+          </div>
+          {parseFloat(productionForm.productionCost) > 0 && (
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-2 text-xs text-orange-700 dark:text-orange-400">
+              Une dépense de {fmt(parseFloat(productionForm.productionCost))} DH sera enregistrée automatiquement en comptabilité.
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => setProductionModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
+            <button onClick={saveProduction} disabled={saving || !productionForm.productId || !productionForm.quantityProduced} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer'}</button>
           </div>
         </div>
       </Modal>
 
-      {/* Sale Modal */}
-      <Modal isOpen={showSaleModal} onClose={() => setShowSaleModal(false)}
-        title={lang === 'ar' ? 'تسجيل عملية بيع' : 'Enregistrer une vente'}
-        footer={<><button onClick={() => setShowSaleModal(false)} className="btn-secondary">{lang === 'ar' ? 'إلغاء' : 'Annuler'}</button><button onClick={saveSale} disabled={saving} className="btn-primary">{saving ? '...' : (lang === 'ar' ? 'حفظ' : 'Enregistrer')}</button></>}
-      >
-        <div className="space-y-4">
+      {/* Sale Modal (multi-product cart) */}
+      <Modal isOpen={saleModal} onClose={() => setSaleModal(false)} title="Nouvelle vente">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Client (optionnel)</label>
+              <select value={saleClientId} onChange={e => setSaleClientId(e.target.value)} className="input w-full">
+                <option value="">Sans client</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+              <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} className="input w-full" />
+            </div>
+          </div>
+
+          {/* Cart items */}
           <div>
-            <label className="label">{lang === 'ar' ? 'المنتج *' : 'Produit *'}</label>
-            <select className="input" value={saleForm.productId} onChange={e => {
-              const p = products.find(x => x.id === e.target.value);
-              setSaleForm(f => ({ ...f, productId: e.target.value, unitPrice: p ? String(p.price) : f.unitPrice }));
-            }}>
-              <option value="">{lang === 'ar' ? '— اختر منتجاً —' : '— Choisir un produit —'}</option>
-              {products.map(p => {
-                const s = stock.find(s => s.id === p.id);
-                return <option key={p.id} value={p.id}>{p.name} — {lang === 'ar' ? 'المخزون' : 'Stock'}: {s ? s.currentStock.toFixed(1) : 0} {p.unit}</option>;
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Articles *</label>
+            <div className="space-y-2">
+              {cartItems.map((item, idx) => {
+                const prod = products.find(p => p.id === item.productId);
+                const stock = prod ? prod.stock : 0;
+                return (
+                  <div key={idx} className="flex gap-2 items-start">
+                    <select value={item.productId} onChange={e => updateCartRow(idx, 'productId', e.target.value)} className="input flex-1 min-w-0">
+                      <option value="">Produit</option>
+                      {products.filter(p => p.isActive).map(p => <option key={p.id} value={p.id}>{p.name} (stock: {p.stock} {p.unit})</option>)}
+                    </select>
+                    <input type="number" value={item.quantity} onChange={e => updateCartRow(idx, 'quantity', e.target.value)} className="input w-20 flex-shrink-0" placeholder="Qté" min="0" max={stock} step="0.01" />
+                    <input type="number" value={item.unitPrice} onChange={e => updateCartRow(idx, 'unitPrice', e.target.value)} className="input w-24 flex-shrink-0" placeholder="Prix DH" min="0" step="0.01" />
+                    {cartItems.length > 1 && (
+                      <button onClick={() => removeCartRow(idx)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg flex-shrink-0"><X size={14} /></button>
+                    )}
+                  </div>
+                );
               })}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">{lang === 'ar' ? 'الكمية *' : 'Quantité *'}</label>
-              <input className="input" type="number" min="0" step="0.1" value={saleForm.quantity} onChange={e => setSaleForm(f => ({ ...f, quantity: e.target.value }))} placeholder="0" />
             </div>
-            <div>
-              <label className="label">{lang === 'ar' ? 'سعر الوحدة (MAD) *' : 'Prix unitaire (MAD) *'}</label>
-              <input className="input" type="number" min="0" step="0.01" value={saleForm.unitPrice} onChange={e => setSaleForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="0.00" />
-            </div>
+            <button onClick={addCartRow} className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700">
+              <Plus size={12} /> Ajouter un article
+            </button>
           </div>
-          {saleForm.quantity && saleForm.unitPrice && (
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 flex justify-between items-center">
-              <span className="text-sm text-emerald-700 dark:text-emerald-300">{lang === 'ar' ? 'المجموع' : 'Total'}</span>
-              <span className="font-bold text-emerald-700 dark:text-emerald-300 text-lg">{fmtCurrency(parseFloat(saleForm.quantity || '0') * parseFloat(saleForm.unitPrice || '0'))}</span>
+
+          {cartTotal > 0 && (
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
+              <div className="flex justify-between text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                <span>Total</span><span>{fmt(cartTotal)} DH</span>
+              </div>
+              <div className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">Un revenu de {fmt(cartTotal)} DH sera enregistré en comptabilité.</div>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4">
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <textarea value={saleNotes} onChange={e => setSaleNotes(e.target.value)} className="input w-full" rows={2} />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => setSaleModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
+            <button onClick={saveSale} disabled={saving || cartTotal === 0} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer la vente'}</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Client Modal */}
+      <Modal isOpen={clientModal} onClose={() => setClientModal(false)} title={clientEdit ? 'Modifier client' : 'Nouveau client'}>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
+            <input value={clientForm.name} onChange={e => setClientForm(p => ({ ...p, name: e.target.value }))} className="input w-full" placeholder="Nom complet" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">{lang === 'ar' ? 'الزبون' : 'Client'}</label>
-              <input className="input" value={saleForm.customer} onChange={e => setSaleForm(f => ({ ...f, customer: e.target.value }))} placeholder={lang === 'ar' ? 'اسم الزبون' : 'Nom du client'} />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Téléphone</label>
+              <input value={clientForm.phone} onChange={e => setClientForm(p => ({ ...p, phone: e.target.value }))} className="input w-full" placeholder="06xxxxxxxx" />
             </div>
             <div>
-              <label className="label">{lang === 'ar' ? 'التاريخ' : 'Date'}</label>
-              <input className="input" type="date" value={saleForm.date} onChange={e => setSaleForm(f => ({ ...f, date: e.target.value }))} />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <input value={clientForm.email} onChange={e => setClientForm(p => ({ ...p, email: e.target.value }))} className="input w-full" type="email" />
             </div>
           </div>
           <div>
-            <label className="label">{lang === 'ar' ? 'ملاحظات' : 'Notes'}</label>
-            <input className="input" value={saleForm.notes} onChange={e => setSaleForm(f => ({ ...f, notes: e.target.value }))} />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Adresse</label>
+            <input value={clientForm.address} onChange={e => setClientForm(p => ({ ...p, address: e.target.value }))} className="input w-full" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <textarea value={clientForm.notes} onChange={e => setClientForm(p => ({ ...p, notes: e.target.value }))} className="input w-full" rows={2} />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => setClientModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
+            <button onClick={saveClient} disabled={saving || !clientForm.name} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer'}</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Client History Modal */}
+      <Modal isOpen={historyModal} onClose={() => setHistoryModal(false)} title={clientHistory ? `Historique — ${clientHistory.client.name}` : 'Historique'}>
+        {clientHistory && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-gray-900 dark:text-white">{clientHistory.sales.length}</div>
+                <div className="text-gray-500 dark:text-gray-400">Achats</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-emerald-600">{fmt(clientHistory.sales.reduce((s, x) => s + x.totalAmount, 0))} DH</div>
+                <div className="text-gray-500 dark:text-gray-400">Total dépensé</div>
+              </div>
+            </div>
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {clientHistory.sales.map(s => (
+                <div key={s.id} className="border border-gray-100 dark:border-gray-700 rounded-lg p-3">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-500 dark:text-gray-400">{new Date(s.date).toLocaleDateString('fr-MA')}</span>
+                    <span className="font-semibold text-emerald-600">{fmt(s.totalAmount)} DH</span>
+                  </div>
+                  {s.items.map((item, i) => (
+                    <div key={i} className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                      <ChevronRight size={10} />{item.product?.name} — {item.quantity} × {fmt(item.unitPrice)} DH
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {clientHistory.sales.length === 0 && <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">Aucun achat enregistré</div>}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Event Modal */}
+      <Modal isOpen={eventModal} onClose={() => setEventModal(false)} title={eventEdit ? 'Modifier événement' : 'Nouvel événement'}>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
+            <input value={eventForm.name} onChange={e => setEventForm(p => ({ ...p, name: e.target.value }))} className="input w-full" placeholder="Nom de l'événement" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+              <select value={eventForm.type} onChange={e => setEventForm(p => ({ ...p, type: e.target.value }))} className="input w-full">
+                <option value="EVENT">Événement</option>
+                <option value="CATERING">Restauration</option>
+                <option value="EXHIBITION">Exposition</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date *</label>
+              <input type="date" value={eventForm.date} onChange={e => setEventForm(p => ({ ...p, date: e.target.value }))} className="input w-full" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Lieu</label>
+            <input value={eventForm.location} onChange={e => setEventForm(p => ({ ...p, location: e.target.value }))} className="input w-full" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <textarea value={eventForm.description} onChange={e => setEventForm(p => ({ ...p, description: e.target.value }))} className="input w-full" rows={2} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Recette (DH)</label>
+              <input type="number" value={eventForm.revenue} onChange={e => setEventForm(p => ({ ...p, revenue: e.target.value }))} className="input w-full" placeholder="0.00" min="0" step="0.01" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Coût (DH)</label>
+              <input type="number" value={eventForm.cost} onChange={e => setEventForm(p => ({ ...p, cost: e.target.value }))} className="input w-full" placeholder="0.00" min="0" step="0.01" />
+            </div>
+          </div>
+          {(parseFloat(eventForm.revenue) > 0 || parseFloat(eventForm.cost) > 0) && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2 text-xs text-blue-700 dark:text-blue-400 space-y-0.5">
+              {parseFloat(eventForm.revenue) > 0 && <div>✓ Revenu de {fmt(parseFloat(eventForm.revenue))} DH → comptabilité (Recette)</div>}
+              {parseFloat(eventForm.cost) > 0 && <div>✓ Dépense de {fmt(parseFloat(eventForm.cost))} DH → comptabilité (Charge)</div>}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => setEventModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
+            <button onClick={saveEvent} disabled={saving || !eventForm.name || !eventForm.date} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer'}</button>
           </div>
         </div>
       </Modal>
@@ -596,12 +910,14 @@ export default function AssocPage() {
       {/* Confirm Delete */}
       <ConfirmDialog
         isOpen={!!deleteTarget}
+        onConfirm={confirmDelete}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
-        title={lang === 'ar' ? 'تأكيد الحذف' : 'Confirmer la suppression'}
-        message={lang === 'ar' ? 'هل أنت متأكد من الحذف؟' : 'Confirmer la suppression ?'}
-        loading={deleting}
+        title="Confirmer la suppression"
+        message={`Supprimer "${deleteTarget?.label}" ? Cette action est irréversible.`}
+        variant="danger"
       />
     </div>
   );
-}
+};
+
+export default AssocPage;
