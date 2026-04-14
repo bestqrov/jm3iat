@@ -4,11 +4,11 @@ import {
   CalendarDays, Plus, Trash2, Edit, Eye, X,
   BarChart3, Boxes, ChevronRight, FileBarChart,
 } from 'lucide-react';
-import AssocReportsPage from './AssocReportsPage';
 import { assocApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import AssocReportsPage from './AssocReportsPage';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,7 +22,10 @@ interface Production {
   date: string; notes?: string; transactionId?: string;
   product: { name: string; unit: string };
 }
-interface SaleItem { productId: string; quantity: number; unitPrice: number; subtotal: number; product?: { name: string; unit: string } }
+interface SaleItem {
+  productId: string; quantity: number; unitPrice: number; subtotal: number;
+  product?: { name: string; unit: string };
+}
 interface Sale {
   id: string; clientId?: string; totalAmount: number; date: string; notes?: string;
   transactionId?: string;
@@ -49,32 +52,43 @@ interface StockItem extends Product {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const StatCard: React.FC<{ label: string; value: string | number; icon: React.ReactNode; color: string }> = ({ label, value, icon, color }) => (
+const StatCard: React.FC<{
+  label: string; value: string | number; icon: React.ReactNode; color: string;
+}> = ({ label, value, icon, color }) => (
   <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-center gap-4">
     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
-    <div><div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div><div className="text-sm text-gray-500 dark:text-gray-400">{label}</div></div>
+    <div>
+      <div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div>
+      <div className="text-sm text-gray-500 dark:text-gray-400">{label}</div>
+    </div>
   </div>
 );
 
-const StockBadge: React.FC<{ level: string }> = ({ level }) => {
-  const map: Record<string, { label: string; cls: string }> = {
-    empty: { label: 'Épuisé', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-    low: { label: 'Faible', cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-    normal: { label: 'Normal', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-    high: { label: 'Élevé', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+const StockBadge: React.FC<{ level: string; t: (k: string) => string }> = ({ level, t }) => {
+  const map: Record<string, string> = {
+    empty: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    low:   'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+    normal:'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    high:  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   };
-  const s = map[level] || map.normal;
-  return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.cls}`}>{s.label}</span>;
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${map[level] || map.normal}`}>
+      {t(`assoc.stock.levels.${level}`)}
+    </span>
+  );
 };
 
-const EventTypeBadge: React.FC<{ type: string }> = ({ type }) => {
-  const map: Record<string, { label: string; cls: string }> = {
-    EVENT: { label: 'Événement', cls: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-    CATERING: { label: 'Restauration', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-    EXHIBITION: { label: 'Exposition', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+const EventTypeBadge: React.FC<{ type: string; t: (k: string) => string }> = ({ type, t }) => {
+  const map: Record<string, string> = {
+    EVENT:     'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+    CATERING:  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    EXHIBITION:'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   };
-  const s = map[type] || map.EVENT;
-  return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.cls}`}>{s.label}</span>;
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${map[type] || map.EVENT}`}>
+      {t(`assoc.event.types.${type}`)}
+    </span>
+  );
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -82,8 +96,9 @@ const EventTypeBadge: React.FC<{ type: string }> = ({ type }) => {
 type Tab = 'dashboard' | 'products' | 'production' | 'sales' | 'clients' | 'events' | 'stock' | 'reports';
 
 const AssocPage: React.FC = () => {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const isAr = lang === 'ar';
+  const dir = isAr ? 'rtl' : 'ltr';
 
   const [tab, setTab] = useState<Tab>('dashboard');
   const [stats, setStats] = useState<Stats | null>(null);
@@ -99,12 +114,17 @@ const AssocPage: React.FC = () => {
   // Modals
   const [productModal, setProductModal] = useState(false);
   const [productEdit, setProductEdit] = useState<Product | null>(null);
-  const [productForm, setProductForm] = useState({ name: '', nameAr: '', category: '', unit: 'unité', price: '', lowStockAlert: '10', description: '' });
+  const [productForm, setProductForm] = useState({
+    name: '', nameAr: '', category: '', unit: 'unité',
+    price: '', lowStockAlert: '10', description: '',
+  });
 
   const [productionModal, setProductionModal] = useState(false);
-  const [productionForm, setProductionForm] = useState({ productId: '', quantityProduced: '', productionCost: '', date: new Date().toISOString().slice(0, 10), notes: '' });
+  const [productionForm, setProductionForm] = useState({
+    productId: '', quantityProduced: '', productionCost: '',
+    date: new Date().toISOString().slice(0, 10), notes: '',
+  });
 
-  // Multi-product sale cart
   const [saleModal, setSaleModal] = useState(false);
   const [saleClientId, setSaleClientId] = useState('');
   const [saleDate, setSaleDate] = useState(new Date().toISOString().slice(0, 10));
@@ -121,12 +141,15 @@ const AssocPage: React.FC = () => {
 
   const [eventModal, setEventModal] = useState(false);
   const [eventEdit, setEventEdit] = useState<AssocEvent | null>(null);
-  const [eventForm, setEventForm] = useState({ name: '', type: 'EVENT', date: new Date().toISOString().slice(0, 10), location: '', description: '', revenue: '', cost: '' });
+  const [eventForm, setEventForm] = useState({
+    name: '', type: 'EVENT', date: new Date().toISOString().slice(0, 10),
+    location: '', description: '', revenue: '', cost: '',
+  });
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; label: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // ── Load data ────────────────────────────────────────────────────────────────
+  // ── Load ─────────────────────────────────────────────────────────────────────
 
   useEffect(() => { loadAll(); }, []);
   useEffect(() => {
@@ -143,22 +166,23 @@ const AssocPage: React.FC = () => {
     try {
       const [s, p] = await Promise.all([assocApi.getStats(), assocApi.getProducts()]);
       setStats(s.data); setProducts(p.data);
-    } catch { setError('Erreur de chargement'); }
+    } catch { setError(t('common.error')); }
     setLoading(false);
   };
-
-  const loadProducts = async () => { const r = await assocApi.getProducts(); setProducts(r.data); };
-  const loadProductions = async () => { const r = await assocApi.getProductions(); setProductions(r.data); };
-  const loadSales = async () => { const r = await assocApi.getSales(); setSales(r.data); };
-  const loadClients = async () => { const r = await assocApi.getClients(); setClients(r.data); };
-  const loadEvents = async () => { const r = await assocApi.getEvents(); setEvents(r.data); };
-  const loadStock = async () => { const r = await assocApi.getStock(); setStockItems(r.data); };
+  const loadProducts   = async () => { const r = await assocApi.getProducts(); setProducts(r.data); };
+  const loadProductions= async () => { const r = await assocApi.getProductions(); setProductions(r.data); };
+  const loadSales      = async () => { const r = await assocApi.getSales(); setSales(r.data); };
+  const loadClients    = async () => { const r = await assocApi.getClients(); setClients(r.data); };
+  const loadEvents     = async () => { const r = await assocApi.getEvents(); setEvents(r.data); };
+  const loadStock      = async () => { const r = await assocApi.getStock(); setStockItems(r.data); };
 
   // ── Products ─────────────────────────────────────────────────────────────────
 
   const openProductModal = (p?: Product) => {
     setProductEdit(p || null);
-    setProductForm(p ? { name: p.name, nameAr: p.nameAr || '', category: p.category || '', unit: p.unit, price: String(p.price), lowStockAlert: String(p.lowStockAlert), description: p.description || '' } : { name: '', nameAr: '', category: '', unit: 'unité', price: '', lowStockAlert: '10', description: '' });
+    setProductForm(p
+      ? { name: p.name, nameAr: p.nameAr || '', category: p.category || '', unit: p.unit, price: String(p.price), lowStockAlert: String(p.lowStockAlert), description: p.description || '' }
+      : { name: '', nameAr: '', category: '', unit: 'unité', price: '', lowStockAlert: '10', description: '' });
     setProductModal(true);
   };
 
@@ -175,9 +199,7 @@ const AssocPage: React.FC = () => {
         if (stats) setStats({ ...stats, productCount: stats.productCount + 1 });
       }
       setProductModal(false);
-    } catch (e: any) {
-      alert(e.response?.data?.message || 'Erreur');
-    }
+    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setSaving(false);
   };
 
@@ -192,17 +214,15 @@ const AssocPage: React.FC = () => {
       await loadProducts();
       setProductionModal(false);
       setProductionForm({ productId: '', quantityProduced: '', productionCost: '', date: new Date().toISOString().slice(0, 10), notes: '' });
-    } catch (e: any) {
-      alert(e.response?.data?.message || 'Erreur');
-    }
+    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setSaving(false);
   };
 
-  // ── Sales (multi-product cart) ────────────────────────────────────────────────
+  // ── Sales ─────────────────────────────────────────────────────────────────────
 
   const cartTotal = cartItems.reduce((s, i) => s + (parseFloat(i.quantity) || 0) * (parseFloat(i.unitPrice) || 0), 0);
 
-  const addCartRow = () => setCartItems(prev => [...prev, { productId: '', quantity: '', unitPrice: '' }]);
+  const addCartRow    = () => setCartItems(prev => [...prev, { productId: '', quantity: '', unitPrice: '' }]);
   const removeCartRow = (idx: number) => setCartItems(prev => prev.filter((_, i) => i !== idx));
   const updateCartRow = (idx: number, field: string, val: string) => {
     setCartItems(prev => {
@@ -217,12 +237,10 @@ const AssocPage: React.FC = () => {
   };
 
   const saveSale = async () => {
-    const items = cartItems.filter(i => i.productId && i.quantity && i.unitPrice).map(i => ({
-      productId: i.productId,
-      quantity: parseFloat(i.quantity),
-      unitPrice: parseFloat(i.unitPrice),
-    }));
-    if (items.length === 0) return;
+    const items = cartItems
+      .filter(i => i.productId && i.quantity && i.unitPrice)
+      .map(i => ({ productId: i.productId, quantity: parseFloat(i.quantity), unitPrice: parseFloat(i.unitPrice) }));
+    if (!items.length) return;
     setSaving(true);
     try {
       const r = await assocApi.createSale({ clientId: saleClientId || undefined, items, date: saleDate, notes: saleNotes });
@@ -232,9 +250,7 @@ const AssocPage: React.FC = () => {
       setCartItems([{ productId: '', quantity: '', unitPrice: '' }]);
       setSaleClientId(''); setSaleNotes('');
       if (stats) setStats({ ...stats, totalRevenue: stats.totalRevenue + r.data.totalAmount, totalSales: stats.totalSales + 1 });
-    } catch (e: any) {
-      alert(e.response?.data?.message || 'Erreur');
-    }
+    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setSaving(false);
   };
 
@@ -242,7 +258,9 @@ const AssocPage: React.FC = () => {
 
   const openClientModal = (c?: Client) => {
     setClientEdit(c || null);
-    setClientForm(c ? { name: c.name, phone: c.phone || '', email: c.email || '', address: c.address || '', notes: c.notes || '' } : { name: '', phone: '', email: '', address: '', notes: '' });
+    setClientForm(c
+      ? { name: c.name, phone: c.phone || '', email: c.email || '', address: c.address || '', notes: c.notes || '' }
+      : { name: '', phone: '', email: '', address: '', notes: '' });
     setClientModal(true);
   };
 
@@ -258,9 +276,7 @@ const AssocPage: React.FC = () => {
         setClients(prev => [r.data, ...prev]);
       }
       setClientModal(false);
-    } catch (e: any) {
-      alert(e.response?.data?.message || 'Erreur');
-    }
+    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setSaving(false);
   };
 
@@ -274,7 +290,9 @@ const AssocPage: React.FC = () => {
 
   const openEventModal = (e?: AssocEvent) => {
     setEventEdit(e || null);
-    setEventForm(e ? { name: e.name, type: e.type, date: e.date.slice(0, 10), location: e.location || '', description: e.description || '', revenue: String(e.revenue), cost: String(e.cost) } : { name: '', type: 'EVENT', date: new Date().toISOString().slice(0, 10), location: '', description: '', revenue: '', cost: '' });
+    setEventForm(e
+      ? { name: e.name, type: e.type, date: e.date.slice(0, 10), location: e.location || '', description: e.description || '', revenue: String(e.revenue), cost: String(e.cost) }
+      : { name: '', type: 'EVENT', date: new Date().toISOString().slice(0, 10), location: '', description: '', revenue: '', cost: '' });
     setEventModal(true);
   };
 
@@ -290,9 +308,7 @@ const AssocPage: React.FC = () => {
         setEvents(prev => [r.data, ...prev]);
       }
       setEventModal(false);
-    } catch (e: any) {
-      alert(e.response?.data?.message || 'Erreur');
-    }
+    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setSaving(false);
   };
 
@@ -301,53 +317,51 @@ const AssocPage: React.FC = () => {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      if (deleteTarget.type === 'product') { await assocApi.deleteProduct(deleteTarget.id); setProducts(prev => prev.filter(p => p.id !== deleteTarget.id)); }
+      if (deleteTarget.type === 'product')    { await assocApi.deleteProduct(deleteTarget.id);    setProducts(prev => prev.filter(p => p.id !== deleteTarget.id)); }
       if (deleteTarget.type === 'production') { await assocApi.deleteProduction(deleteTarget.id); setProductions(prev => prev.filter(p => p.id !== deleteTarget.id)); }
-      if (deleteTarget.type === 'sale') { await assocApi.deleteSale(deleteTarget.id); setSales(prev => prev.filter(s => s.id !== deleteTarget.id)); }
-      if (deleteTarget.type === 'client') { await assocApi.deleteClient(deleteTarget.id); setClients(prev => prev.filter(c => c.id !== deleteTarget.id)); }
-      if (deleteTarget.type === 'event') { await assocApi.deleteEvent(deleteTarget.id); setEvents(prev => prev.filter(e => e.id !== deleteTarget.id)); }
-    } catch (e: any) { alert(e.response?.data?.message || 'Erreur'); }
+      if (deleteTarget.type === 'sale')       { await assocApi.deleteSale(deleteTarget.id);       setSales(prev => prev.filter(s => s.id !== deleteTarget.id)); }
+      if (deleteTarget.type === 'client')     { await assocApi.deleteClient(deleteTarget.id);     setClients(prev => prev.filter(c => c.id !== deleteTarget.id)); }
+      if (deleteTarget.type === 'event')      { await assocApi.deleteEvent(deleteTarget.id);      setEvents(prev => prev.filter(e => e.id !== deleteTarget.id)); }
+    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setDeleteTarget(null);
   };
 
-  // ── Tabs config ───────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────────
 
+  const fmt = (n: number) => n.toLocaleString(isAr ? 'ar-MA' : 'fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString(isAr ? 'ar-MA' : 'fr-MA');
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: <BarChart3 size={16} /> },
-    { id: 'products', label: 'Produits', icon: <Package size={16} /> },
-    { id: 'production', label: 'Production', icon: <Factory size={16} /> },
-    { id: 'sales', label: 'Ventes', icon: <TrendingUp size={16} /> },
-    { id: 'clients', label: 'Clients', icon: <Users size={16} /> },
-    { id: 'events', label: 'Événements', icon: <CalendarDays size={16} /> },
-    { id: 'stock', label: 'Stock', icon: <Boxes size={16} /> },
-    { id: 'reports', label: 'Rapports', icon: <FileBarChart size={16} /> },
+    { id: 'dashboard',  label: t('assoc.tabs.dashboard'),  icon: <BarChart3 size={16} /> },
+    { id: 'products',   label: t('assoc.tabs.products'),   icon: <Package size={16} /> },
+    { id: 'production', label: t('assoc.tabs.production'), icon: <Factory size={16} /> },
+    { id: 'sales',      label: t('assoc.tabs.sales'),      icon: <TrendingUp size={16} /> },
+    { id: 'clients',    label: t('assoc.tabs.clients'),    icon: <Users size={16} /> },
+    { id: 'events',     label: t('assoc.tabs.events'),     icon: <CalendarDays size={16} /> },
+    { id: 'stock',      label: t('assoc.tabs.stock'),      icon: <Boxes size={16} /> },
+    { id: 'reports',    label: t('assoc.tabs.reports'),    icon: <FileBarChart size={16} /> },
   ];
-
-  const fmt = (n: number) => n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={dir}>
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
           <ShoppingBag size={20} className="text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isAr ? 'الإنتاج والمبيعات' : 'Association Productive'}
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Gestion des produits, ventes, clients et événements</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('assoc.title')}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('assoc.subtitle')}</p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex-wrap">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.id ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}>
-            {t.icon}{t.label}
+        {TABS.map(tabItem => (
+          <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${tab === tabItem.id ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}>
+            {tabItem.icon}{tabItem.label}
           </button>
         ))}
       </div>
@@ -358,15 +372,23 @@ const AssocPage: React.FC = () => {
       {tab === 'dashboard' && stats && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Produits actifs" value={stats.productCount} icon={<Package size={20} className="text-white" />} color="bg-blue-500" />
-            <StatCard label="Clients" value={stats.clientCount} icon={<Users size={20} className="text-white" />} color="bg-purple-500" />
-            <StatCard label="Recettes ventes" value={`${fmt(stats.totalRevenue)} DH`} icon={<TrendingUp size={20} className="text-white" />} color="bg-emerald-500" />
-            <StatCard label="Coûts production" value={`${fmt(stats.totalProductionCost)} DH`} icon={<Factory size={20} className="text-white" />} color="bg-orange-500" />
+            <StatCard label={t('assoc.stats.activeProducts')} value={stats.productCount}
+              icon={<Package size={20} className="text-white" />} color="bg-blue-500" />
+            <StatCard label={t('assoc.stats.clients')} value={stats.clientCount}
+              icon={<Users size={20} className="text-white" />} color="bg-purple-500" />
+            <StatCard label={t('assoc.stats.salesRevenue')} value={`${fmt(stats.totalRevenue)} ${t('common.MAD')}`}
+              icon={<TrendingUp size={20} className="text-white" />} color="bg-emerald-500" />
+            <StatCard label={t('assoc.stats.productionCost')} value={`${fmt(stats.totalProductionCost)} ${t('common.MAD')}`}
+              icon={<Factory size={20} className="text-white" />} color="bg-orange-500" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Nombre de ventes" value={stats.totalSales} icon={<ShoppingBag size={20} className="text-white" />} color="bg-teal-500" />
-            <StatCard label="Recettes événements" value={`${fmt(stats.eventRevenue)} DH`} icon={<CalendarDays size={20} className="text-white" />} color="bg-indigo-500" />
-            <StatCard label="Bénéfice net" value={`${fmt(stats.totalRevenue + stats.eventRevenue - stats.totalProductionCost - stats.eventCost)} DH`} icon={<BarChart3 size={20} className="text-white" />} color="bg-rose-500" />
+            <StatCard label={t('assoc.stats.totalSales')} value={stats.totalSales}
+              icon={<ShoppingBag size={20} className="text-white" />} color="bg-teal-500" />
+            <StatCard label={t('assoc.stats.eventRevenue')} value={`${fmt(stats.eventRevenue)} ${t('common.MAD')}`}
+              icon={<CalendarDays size={20} className="text-white" />} color="bg-indigo-500" />
+            <StatCard label={t('assoc.stats.netProfit')}
+              value={`${fmt(stats.totalRevenue + stats.eventRevenue - stats.totalProductionCost - stats.eventCost)} ${t('common.MAD')}`}
+              icon={<BarChart3 size={20} className="text-white" />} color="bg-rose-500" />
           </div>
         </div>
       )}
@@ -375,19 +397,19 @@ const AssocPage: React.FC = () => {
       {tab === 'products' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Produits</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('assoc.tabs.products')}</h2>
             <button onClick={() => openProductModal()} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
-              <Plus size={16} /> Nouveau produit
+              <Plus size={16} /> {t('assoc.product.new')}
             </button>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
-                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Produit</th>
-                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Catégorie</th>
-                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Prix</th>
-                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Stock</th>
+                  <th className="text-start px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.reports.literary.colProduct')}</th>
+                  <th className="text-start px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.product.category')}</th>
+                  <th className="text-end px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.product.price')}</th>
+                  <th className="text-end px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.stock.current')}</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -395,12 +417,13 @@ const AssocPage: React.FC = () => {
                 {products.map(p => (
                   <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900 dark:text-white">{p.name}</div>
-                      {p.nameAr && <div className="text-xs text-gray-500 dark:text-gray-400">{p.nameAr}</div>}
+                      <div className="font-medium text-gray-900 dark:text-white">{isAr && p.nameAr ? p.nameAr : p.name}</div>
+                      {isAr && p.nameAr && <div className="text-xs text-gray-500">{p.name}</div>}
+                      {!isAr && p.nameAr && <div className="text-xs text-gray-500 text-right">{p.nameAr}</div>}
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{p.category || '—'}</td>
-                    <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{fmt(p.price)} DH/{p.unit}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-end text-gray-900 dark:text-white">{fmt(p.price)} {t('common.MAD')}/{p.unit}</td>
+                    <td className="px-4 py-3 text-end">
                       <span className={`font-semibold ${p.stock <= 0 ? 'text-red-600' : p.stock <= p.lowStockAlert ? 'text-orange-600' : 'text-emerald-600'}`}>
                         {p.stock} {p.unit}
                       </span>
@@ -413,8 +436,8 @@ const AssocPage: React.FC = () => {
                     </td>
                   </tr>
                 ))}
-                {products.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun produit</td></tr>
+                {!products.length && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">{t('assoc.product.noProducts')}</td></tr>
                 )}
               </tbody>
             </table>
@@ -426,20 +449,20 @@ const AssocPage: React.FC = () => {
       {tab === 'production' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Production</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('assoc.tabs.production')}</h2>
             <button onClick={() => setProductionModal(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
-              <Plus size={16} /> Enregistrer production
+              <Plus size={16} /> {t('assoc.production.new')}
             </button>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
-                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Produit</th>
-                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Quantité</th>
-                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Coût</th>
-                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Date</th>
-                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Notes</th>
+                  <th className="text-start px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.production.product')}</th>
+                  <th className="text-end px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.production.produced')}</th>
+                  <th className="text-end px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.production.costCol')}</th>
+                  <th className="text-start px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('common.date')}</th>
+                  <th className="text-start px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('common.description')}</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -447,20 +470,21 @@ const AssocPage: React.FC = () => {
                 {productions.map(pr => (
                   <tr key={pr.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{pr.product.name}</td>
-                    <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{pr.quantityProduced} {pr.product.unit}</td>
-                    <td className="px-4 py-3 text-right text-orange-600 dark:text-orange-400">
-                      {fmt(pr.productionCost)} DH
-                      {pr.transactionId && <span className="ml-1 text-xs text-emerald-500" title="Enregistré en comptabilité">✓</span>}
+                    <td className="px-4 py-3 text-end text-gray-900 dark:text-white">{pr.quantityProduced} {pr.product.unit}</td>
+                    <td className="px-4 py-3 text-end text-orange-600 dark:text-orange-400">
+                      {fmt(pr.productionCost)} {t('common.MAD')}
+                      {pr.transactionId && <span className="ms-1 text-xs text-emerald-500">✓</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{new Date(pr.date).toLocaleDateString('fr-MA')}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{fmtDate(pr.date)}</td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{pr.notes || '—'}</td>
                     <td className="px-4 py-3">
-                      <button onClick={() => setDeleteTarget({ type: 'production', id: pr.id, label: `Production ${pr.product.name}` })} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
+                      <button onClick={() => setDeleteTarget({ type: 'production', id: pr.id, label: pr.product.name })}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
                     </td>
                   </tr>
                 ))}
-                {productions.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucune production enregistrée</td></tr>
+                {!productions.length && (
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">{t('assoc.production.noProductions')}</td></tr>
                 )}
               </tbody>
             </table>
@@ -472,9 +496,10 @@ const AssocPage: React.FC = () => {
       {tab === 'sales' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ventes</h2>
-            <button onClick={() => { setCartItems([{ productId: '', quantity: '', unitPrice: '' }]); setSaleClientId(''); setSaleNotes(''); setSaleModal(true); }} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
-              <Plus size={16} /> Nouvelle vente
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('assoc.tabs.sales')}</h2>
+            <button onClick={() => { setCartItems([{ productId: '', quantity: '', unitPrice: '' }]); setSaleClientId(''); setSaleNotes(''); setSaleModal(true); }}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+              <Plus size={16} /> {t('assoc.sale.new')}
             </button>
           </div>
           <div className="space-y-3">
@@ -483,25 +508,28 @@ const AssocPage: React.FC = () => {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-semibold text-gray-900 dark:text-white">{fmt(s.totalAmount)} DH</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{fmt(s.totalAmount)} {t('common.MAD')}</span>
                       {s.client && <span className="text-sm text-purple-600 dark:text-purple-400 flex items-center gap-1"><Users size={12} />{s.client.name}</span>}
-                      {s.transactionId && <span className="text-xs text-emerald-500" title="Enregistré en comptabilité">✓ Finance</span>}
+                      {s.transactionId && <span className="text-xs text-emerald-500">{t('assoc.sale.financeRecorded')}</span>}
                     </div>
                     <div className="mt-2 space-y-1">
                       {s.items.map((item, i) => (
                         <div key={i} className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                          <ChevronRight size={12} />
-                          {item.product?.name} — {item.quantity} {item.product?.unit} × {fmt(item.unitPrice)} DH = {fmt(item.subtotal)} DH
+                          <ChevronRight size={12} className={isAr ? 'rotate-180' : ''} />
+                          {item.product?.name} — {item.quantity} {item.product?.unit} × {fmt(item.unitPrice)} {t('common.MAD')} = {fmt(item.subtotal)} {t('common.MAD')}
                         </div>
                       ))}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(s.date).toLocaleDateString('fr-MA')}{s.notes && ` · ${s.notes}`}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {fmtDate(s.date)}{s.notes && ` · ${s.notes}`}
+                    </div>
                   </div>
-                  <button onClick={() => setDeleteTarget({ type: 'sale', id: s.id, label: `Vente ${fmt(s.totalAmount)} DH` })} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
+                  <button onClick={() => setDeleteTarget({ type: 'sale', id: s.id, label: `${fmt(s.totalAmount)} ${t('common.MAD')}` })}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
                 </div>
               </div>
             ))}
-            {sales.length === 0 && <div className="text-center py-12 text-gray-500 dark:text-gray-400">Aucune vente enregistrée</div>}
+            {!sales.length && <div className="text-center py-12 text-gray-500 dark:text-gray-400">{t('assoc.sale.noSales')}</div>}
           </div>
         </div>
       )}
@@ -510,19 +538,19 @@ const AssocPage: React.FC = () => {
       {tab === 'clients' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Clients</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('assoc.tabs.clients')}</h2>
             <button onClick={() => openClientModal()} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
-              <Plus size={16} /> Nouveau client
+              <Plus size={16} /> {t('assoc.client.new')}
             </button>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
-                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Client</th>
-                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Contact</th>
-                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Achats</th>
-                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Total dépensé</th>
+                  <th className="text-start px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('common.name')}</th>
+                  <th className="text-start px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.client.phone')}</th>
+                  <th className="text-end px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.client.purchases')}</th>
+                  <th className="text-end px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">{t('assoc.client.totalSpent')}</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -534,19 +562,19 @@ const AssocPage: React.FC = () => {
                       <div>{c.phone || '—'}</div>
                       {c.email && <div className="text-xs">{c.email}</div>}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{c.totalPurchases}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">{fmt(c.totalSpent)} DH</td>
+                    <td className="px-4 py-3 text-end text-gray-900 dark:text-white">{c.totalPurchases}</td>
+                    <td className="px-4 py-3 text-end font-semibold text-emerald-600 dark:text-emerald-400">{fmt(c.totalSpent)} {t('common.MAD')}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openHistory(c)} className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg" title="Historique"><Eye size={14} /></button>
+                        <button onClick={() => openHistory(c)} title={t('assoc.client.history')} className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg"><Eye size={14} /></button>
                         <button onClick={() => openClientModal(c)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><Edit size={14} /></button>
                         <button onClick={() => setDeleteTarget({ type: 'client', id: c.id, label: c.name })} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {clients.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun client</td></tr>
+                {!clients.length && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">{t('assoc.client.noClients')}</td></tr>
                 )}
               </tbody>
             </table>
@@ -558,9 +586,9 @@ const AssocPage: React.FC = () => {
       {tab === 'events' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Événements</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('assoc.tabs.events')}</h2>
             <button onClick={() => openEventModal()} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
-              <Plus size={16} /> Nouvel événement
+              <Plus size={16} /> {t('assoc.event.new')}
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -570,15 +598,17 @@ const AssocPage: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="font-semibold text-gray-900 dark:text-white">{ev.name}</span>
-                      <EventTypeBadge type={ev.type} />
+                      <EventTypeBadge type={ev.type} t={t} />
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{new Date(ev.date).toLocaleDateString('fr-MA')}{ev.location && ` · ${ev.location}`}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {fmtDate(ev.date)}{ev.location && ` · ${ev.location}`}
+                    </div>
                     {ev.description && <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{ev.description}</div>}
                     <div className="flex gap-4 mt-2 text-sm flex-wrap">
-                      <span className="text-emerald-600 dark:text-emerald-400">Recette: {fmt(ev.revenue)} DH</span>
-                      <span className="text-red-600 dark:text-red-400">Coût: {fmt(ev.cost)} DH</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">{t('assoc.event.revenue').split(' ')[0]}: {fmt(ev.revenue)} {t('common.MAD')}</span>
+                      <span className="text-red-600 dark:text-red-400">{t('assoc.event.cost').split(' ')[0]}: {fmt(ev.cost)} {t('common.MAD')}</span>
                       <span className={`font-medium ${ev.revenue - ev.cost >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        Bénéfice: {fmt(ev.revenue - ev.cost)} DH
+                        {t('assoc.event.profit')}: {fmt(ev.revenue - ev.cost)} {t('common.MAD')}
                       </span>
                     </div>
                   </div>
@@ -589,7 +619,7 @@ const AssocPage: React.FC = () => {
                 </div>
               </div>
             ))}
-            {events.length === 0 && <div className="col-span-2 text-center py-12 text-gray-500 dark:text-gray-400">Aucun événement</div>}
+            {!events.length && <div className="col-span-2 text-center py-12 text-gray-500 dark:text-gray-400">{t('assoc.event.noEvents')}</div>}
           </div>
         </div>
       )}
@@ -597,46 +627,42 @@ const AssocPage: React.FC = () => {
       {/* ── Stock ─────────────────────────────────────────────────────────── */}
       {tab === 'stock' && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Niveaux de stock</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('assoc.stock.title')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {stockItems.map(s => (
               <div key={s.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">{s.name}</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">{isAr && s.nameAr ? s.nameAr : s.name}</div>
                     {s.category && <div className="text-xs text-gray-500 dark:text-gray-400">{s.category}</div>}
                   </div>
-                  <StockBadge level={s.level} />
+                  <StockBadge level={s.level} t={t} />
                 </div>
                 <div className="mb-3">
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    <span>Stock actuel</span>
+                    <span>{t('assoc.stock.current')}</span>
                     <span className="font-medium text-gray-900 dark:text-white">{s.currentStock} {s.unit}</span>
                   </div>
                   <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${s.level === 'empty' ? 'bg-red-500' : s.level === 'low' ? 'bg-orange-500' : s.level === 'normal' ? 'bg-blue-500' : 'bg-emerald-500'}`}
-                      style={{ width: `${Math.min(100, s.totalProduced > 0 ? (s.currentStock / s.totalProduced) * 100 : 0)}%` }}
-                    />
+                    <div className={`h-full rounded-full transition-all ${s.level === 'empty' ? 'bg-red-500' : s.level === 'low' ? 'bg-orange-500' : s.level === 'normal' ? 'bg-blue-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.min(100, s.totalProduced > 0 ? (s.currentStock / s.totalProduced) * 100 : 0)}%` }} />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-                    <div className="font-semibold text-gray-900 dark:text-white">{s.totalProduced}</div>
-                    <div className="text-gray-500 dark:text-gray-400">Produit</div>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-                    <div className="font-semibold text-gray-900 dark:text-white">{s.totalSold}</div>
-                    <div className="text-gray-500 dark:text-gray-400">Vendu</div>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-                    <div className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(s.totalRevenue)} DH</div>
-                    <div className="text-gray-500 dark:text-gray-400">Recettes</div>
-                  </div>
+                  {[
+                    { label: t('assoc.stock.produced'), val: s.totalProduced, cls: '' },
+                    { label: t('assoc.stock.sold'),     val: s.totalSold,     cls: '' },
+                    { label: t('assoc.stock.revenue'),  val: `${fmt(s.totalRevenue)} ${t('common.MAD')}`, cls: 'text-emerald-600 dark:text-emerald-400' },
+                  ].map(item => (
+                    <div key={item.label} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
+                      <div className={`font-semibold text-gray-900 dark:text-white ${item.cls}`}>{item.val}</div>
+                      <div className="text-gray-500 dark:text-gray-400">{item.label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
-            {stockItems.length === 0 && <div className="col-span-2 text-center py-12 text-gray-500 dark:text-gray-400">Aucun produit actif</div>}
+            {!stockItems.length && <div className="col-span-2 text-center py-12 text-gray-500 dark:text-gray-400">{t('assoc.stock.noProducts')}</div>}
           </div>
         </div>
       )}
@@ -647,121 +673,120 @@ const AssocPage: React.FC = () => {
       {/* ── Modals ────────────────────────────────────────────────────────── */}
 
       {/* Product Modal */}
-      <Modal isOpen={productModal} onClose={() => setProductModal(false)} title={productEdit ? 'Modifier produit' : 'Nouveau produit'}>
-        <div className="space-y-3">
+      <Modal isOpen={productModal} onClose={() => setProductModal(false)} title={productEdit ? t('assoc.product.edit') : t('assoc.product.new')}>
+        <div className="space-y-3" dir={dir}>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nom (FR) *</label>
-              <input value={productForm.name} onChange={e => setProductForm(p => ({ ...p, name: e.target.value }))} className="input w-full" placeholder="Nom du produit" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.product.nameFr')} *</label>
+              <input value={productForm.name} onChange={e => setProductForm(p => ({ ...p, name: e.target.value }))} className="input w-full" placeholder={isAr ? 'Nom en français' : 'Nom du produit'} dir="ltr" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nom (AR)</label>
-              <input value={productForm.nameAr} onChange={e => setProductForm(p => ({ ...p, nameAr: e.target.value }))} className="input w-full text-right" placeholder="اسم المنتج" dir="rtl" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.product.nameAr')}</label>
+              <input value={productForm.nameAr} onChange={e => setProductForm(p => ({ ...p, nameAr: e.target.value }))} className="input w-full" placeholder="اسم المنتج" dir="rtl" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
-              <input value={productForm.category} onChange={e => setProductForm(p => ({ ...p, category: e.target.value }))} className="input w-full" placeholder="Ex: Artisanat, Alimentaire" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.product.category')}</label>
+              <input value={productForm.category} onChange={e => setProductForm(p => ({ ...p, category: e.target.value }))} className="input w-full" placeholder={t('assoc.product.categoryPlaceholder')} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Unité</label>
-              <input value={productForm.unit} onChange={e => setProductForm(p => ({ ...p, unit: e.target.value }))} className="input w-full" placeholder="kg, unité, litre..." />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.product.unit')}</label>
+              <input value={productForm.unit} onChange={e => setProductForm(p => ({ ...p, unit: e.target.value }))} className="input w-full" placeholder={t('assoc.product.unitPlaceholder')} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Prix de vente (DH)</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.product.price')}</label>
               <input type="number" value={productForm.price} onChange={e => setProductForm(p => ({ ...p, price: e.target.value }))} className="input w-full" placeholder="0.00" min="0" step="0.01" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Seuil alerte stock</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.product.alertThreshold')}</label>
               <input type="number" value={productForm.lowStockAlert} onChange={e => setProductForm(p => ({ ...p, lowStockAlert: e.target.value }))} className="input w-full" placeholder="10" min="0" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-            <textarea value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} className="input w-full" rows={2} placeholder="Description optionnelle" />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.product.description')}</label>
+            <textarea value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} className="input w-full" rows={2} placeholder={t('assoc.product.descriptionPlaceholder')} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setProductModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
-            <button onClick={saveProduct} disabled={saving || !productForm.name} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer'}</button>
+            <button onClick={() => setProductModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{t('assoc.cancel')}</button>
+            <button onClick={saveProduct} disabled={saving || !productForm.name} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? t('assoc.saving') : t('assoc.save')}</button>
           </div>
         </div>
       </Modal>
 
       {/* Production Modal */}
-      <Modal isOpen={productionModal} onClose={() => setProductionModal(false)} title="Enregistrer une production">
-        <div className="space-y-3">
+      <Modal isOpen={productionModal} onClose={() => setProductionModal(false)} title={t('assoc.production.new')}>
+        <div className="space-y-3" dir={dir}>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Produit *</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.production.product')} *</label>
             <select value={productionForm.productId} onChange={e => setProductionForm(p => ({ ...p, productId: e.target.value }))} className="input w-full">
-              <option value="">Choisir un produit</option>
-              {products.filter(p => p.isActive).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              <option value="">{t('assoc.production.chooseProduct')}</option>
+              {products.filter(p => p.isActive).map(p => <option key={p.id} value={p.id}>{isAr && p.nameAr ? p.nameAr : p.name}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Quantité produite *</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.production.quantity')} *</label>
               <input type="number" value={productionForm.quantityProduced} onChange={e => setProductionForm(p => ({ ...p, quantityProduced: e.target.value }))} className="input w-full" placeholder="0" min="0" step="0.01" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Coût de production (DH)</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.production.cost')}</label>
               <input type="number" value={productionForm.productionCost} onChange={e => setProductionForm(p => ({ ...p, productionCost: e.target.value }))} className="input w-full" placeholder="0.00" min="0" step="0.01" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.production.date')}</label>
             <input type="date" value={productionForm.date} onChange={e => setProductionForm(p => ({ ...p, date: e.target.value }))} className="input w-full" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.production.notes')}</label>
             <textarea value={productionForm.notes} onChange={e => setProductionForm(p => ({ ...p, notes: e.target.value }))} className="input w-full" rows={2} />
           </div>
           {parseFloat(productionForm.productionCost) > 0 && (
             <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-2 text-xs text-orange-700 dark:text-orange-400">
-              Une dépense de {fmt(parseFloat(productionForm.productionCost))} DH sera enregistrée automatiquement en comptabilité.
+              {t('assoc.production.financeNote')} ({fmt(parseFloat(productionForm.productionCost))} {t('common.MAD')})
             </div>
           )}
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setProductionModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
-            <button onClick={saveProduction} disabled={saving || !productionForm.productId || !productionForm.quantityProduced} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer'}</button>
+            <button onClick={() => setProductionModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{t('assoc.cancel')}</button>
+            <button onClick={saveProduction} disabled={saving || !productionForm.productId || !productionForm.quantityProduced} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? t('assoc.saving') : t('assoc.save')}</button>
           </div>
         </div>
       </Modal>
 
-      {/* Sale Modal (multi-product cart) */}
-      <Modal isOpen={saleModal} onClose={() => setSaleModal(false)} title="Nouvelle vente">
-        <div className="space-y-3">
+      {/* Sale Modal */}
+      <Modal isOpen={saleModal} onClose={() => setSaleModal(false)} title={t('assoc.sale.new')}>
+        <div className="space-y-3" dir={dir}>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Client (optionnel)</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.sale.client')}</label>
               <select value={saleClientId} onChange={e => setSaleClientId(e.target.value)} className="input w-full">
-                <option value="">Sans client</option>
+                <option value="">{t('assoc.sale.noClient')}</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.sale.date')}</label>
               <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} className="input w-full" />
             </div>
           </div>
-
-          {/* Cart items */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Articles *</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">{t('assoc.sale.items')} *</label>
             <div className="space-y-2">
               {cartItems.map((item, idx) => {
                 const prod = products.find(p => p.id === item.productId);
-                const stock = prod ? prod.stock : 0;
                 return (
                   <div key={idx} className="flex gap-2 items-start">
                     <select value={item.productId} onChange={e => updateCartRow(idx, 'productId', e.target.value)} className="input flex-1 min-w-0">
-                      <option value="">Produit</option>
-                      {products.filter(p => p.isActive).map(p => <option key={p.id} value={p.id}>{p.name} (stock: {p.stock} {p.unit})</option>)}
+                      <option value="">{t('assoc.production.chooseProduct')}</option>
+                      {products.filter(p => p.isActive).map(p => (
+                        <option key={p.id} value={p.id}>{(isAr && p.nameAr ? p.nameAr : p.name)} ({t('assoc.stock.current')}: {p.stock} {p.unit})</option>
+                      ))}
                     </select>
-                    <input type="number" value={item.quantity} onChange={e => updateCartRow(idx, 'quantity', e.target.value)} className="input w-20 flex-shrink-0" placeholder="Qté" min="0" max={stock} step="0.01" />
-                    <input type="number" value={item.unitPrice} onChange={e => updateCartRow(idx, 'unitPrice', e.target.value)} className="input w-24 flex-shrink-0" placeholder="Prix DH" min="0" step="0.01" />
+                    <input type="number" value={item.quantity} onChange={e => updateCartRow(idx, 'quantity', e.target.value)} className="input w-20 flex-shrink-0" placeholder={t('assoc.sale.qty')} min="0" max={prod?.stock} step="0.01" />
+                    <input type="number" value={item.unitPrice} onChange={e => updateCartRow(idx, 'unitPrice', e.target.value)} className="input w-24 flex-shrink-0" placeholder={t('assoc.sale.unitPrice')} min="0" step="0.01" />
                     {cartItems.length > 1 && (
                       <button onClick={() => removeCartRow(idx)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg flex-shrink-0"><X size={14} /></button>
                     )}
@@ -770,144 +795,144 @@ const AssocPage: React.FC = () => {
               })}
             </div>
             <button onClick={addCartRow} className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700">
-              <Plus size={12} /> Ajouter un article
+              <Plus size={12} /> {t('assoc.sale.addItem')}
             </button>
           </div>
-
           {cartTotal > 0 && (
             <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
               <div className="flex justify-between text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                <span>Total</span><span>{fmt(cartTotal)} DH</span>
+                <span>{t('assoc.sale.total')}</span><span>{fmt(cartTotal)} {t('common.MAD')}</span>
               </div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">Un revenu de {fmt(cartTotal)} DH sera enregistré en comptabilité.</div>
+              <div className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">{t('assoc.sale.financeNote')}</div>
             </div>
           )}
-
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.sale.notes')}</label>
             <textarea value={saleNotes} onChange={e => setSaleNotes(e.target.value)} className="input w-full" rows={2} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setSaleModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
-            <button onClick={saveSale} disabled={saving || cartTotal === 0} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer la vente'}</button>
+            <button onClick={() => setSaleModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{t('assoc.cancel')}</button>
+            <button onClick={saveSale} disabled={saving || cartTotal === 0} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? t('assoc.saving') : t('assoc.save')}</button>
           </div>
         </div>
       </Modal>
 
       {/* Client Modal */}
-      <Modal isOpen={clientModal} onClose={() => setClientModal(false)} title={clientEdit ? 'Modifier client' : 'Nouveau client'}>
-        <div className="space-y-3">
+      <Modal isOpen={clientModal} onClose={() => setClientModal(false)} title={clientEdit ? t('assoc.client.edit') : t('assoc.client.new')}>
+        <div className="space-y-3" dir={dir}>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
-            <input value={clientForm.name} onChange={e => setClientForm(p => ({ ...p, name: e.target.value }))} className="input w-full" placeholder="Nom complet" />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.client.name')} *</label>
+            <input value={clientForm.name} onChange={e => setClientForm(p => ({ ...p, name: e.target.value }))} className="input w-full" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Téléphone</label>
-              <input value={clientForm.phone} onChange={e => setClientForm(p => ({ ...p, phone: e.target.value }))} className="input w-full" placeholder="06xxxxxxxx" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.client.phone')}</label>
+              <input value={clientForm.phone} onChange={e => setClientForm(p => ({ ...p, phone: e.target.value }))} className="input w-full" placeholder="06xxxxxxxx" dir="ltr" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-              <input value={clientForm.email} onChange={e => setClientForm(p => ({ ...p, email: e.target.value }))} className="input w-full" type="email" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.client.email')}</label>
+              <input value={clientForm.email} onChange={e => setClientForm(p => ({ ...p, email: e.target.value }))} className="input w-full" type="email" dir="ltr" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Adresse</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.client.address')}</label>
             <input value={clientForm.address} onChange={e => setClientForm(p => ({ ...p, address: e.target.value }))} className="input w-full" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.client.notes')}</label>
             <textarea value={clientForm.notes} onChange={e => setClientForm(p => ({ ...p, notes: e.target.value }))} className="input w-full" rows={2} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setClientModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
-            <button onClick={saveClient} disabled={saving || !clientForm.name} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer'}</button>
+            <button onClick={() => setClientModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{t('assoc.cancel')}</button>
+            <button onClick={saveClient} disabled={saving || !clientForm.name} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? t('assoc.saving') : t('assoc.save')}</button>
           </div>
         </div>
       </Modal>
 
       {/* Client History Modal */}
-      <Modal isOpen={historyModal} onClose={() => setHistoryModal(false)} title={clientHistory ? `Historique — ${clientHistory.client.name}` : 'Historique'}>
+      <Modal isOpen={historyModal} onClose={() => setHistoryModal(false)} title={clientHistory ? `${t('assoc.client.history')} — ${clientHistory.client.name}` : t('assoc.client.history')}>
         {clientHistory && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="space-y-3" dir={dir}>
+            <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
                 <div className="text-lg font-bold text-gray-900 dark:text-white">{clientHistory.sales.length}</div>
-                <div className="text-gray-500 dark:text-gray-400">Achats</div>
+                <div className="text-gray-500 dark:text-gray-400 text-sm">{t('assoc.client.purchases')}</div>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-emerald-600">{fmt(clientHistory.sales.reduce((s, x) => s + x.totalAmount, 0))} DH</div>
-                <div className="text-gray-500 dark:text-gray-400">Total dépensé</div>
+                <div className="text-lg font-bold text-emerald-600">{fmt(clientHistory.sales.reduce((s, x) => s + x.totalAmount, 0))} {t('common.MAD')}</div>
+                <div className="text-gray-500 dark:text-gray-400 text-sm">{t('assoc.client.totalSpent')}</div>
               </div>
             </div>
             <div className="space-y-2 max-h-72 overflow-y-auto">
               {clientHistory.sales.map(s => (
                 <div key={s.id} className="border border-gray-100 dark:border-gray-700 rounded-lg p-3">
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-500 dark:text-gray-400">{new Date(s.date).toLocaleDateString('fr-MA')}</span>
-                    <span className="font-semibold text-emerald-600">{fmt(s.totalAmount)} DH</span>
+                    <span className="text-gray-500 dark:text-gray-400">{fmtDate(s.date)}</span>
+                    <span className="font-semibold text-emerald-600">{fmt(s.totalAmount)} {t('common.MAD')}</span>
                   </div>
                   {s.items.map((item, i) => (
                     <div key={i} className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                      <ChevronRight size={10} />{item.product?.name} — {item.quantity} × {fmt(item.unitPrice)} DH
+                      <ChevronRight size={10} className={isAr ? 'rotate-180' : ''} />
+                      {item.product?.name} — {item.quantity} × {fmt(item.unitPrice)} {t('common.MAD')}
                     </div>
                   ))}
                 </div>
               ))}
-              {clientHistory.sales.length === 0 && <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">Aucun achat enregistré</div>}
+              {!clientHistory.sales.length && <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">{t('assoc.client.noPurchases')}</div>}
             </div>
           </div>
         )}
       </Modal>
 
       {/* Event Modal */}
-      <Modal isOpen={eventModal} onClose={() => setEventModal(false)} title={eventEdit ? 'Modifier événement' : 'Nouvel événement'}>
-        <div className="space-y-3">
+      <Modal isOpen={eventModal} onClose={() => setEventModal(false)} title={eventEdit ? t('assoc.event.edit') : t('assoc.event.new')}>
+        <div className="space-y-3" dir={dir}>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
-            <input value={eventForm.name} onChange={e => setEventForm(p => ({ ...p, name: e.target.value }))} className="input w-full" placeholder="Nom de l'événement" />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.event.name')} *</label>
+            <input value={eventForm.name} onChange={e => setEventForm(p => ({ ...p, name: e.target.value }))} className="input w-full" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.event.type')}</label>
               <select value={eventForm.type} onChange={e => setEventForm(p => ({ ...p, type: e.target.value }))} className="input w-full">
-                <option value="EVENT">Événement</option>
-                <option value="CATERING">Restauration</option>
-                <option value="EXHIBITION">Exposition</option>
+                {['EVENT', 'CATERING', 'EXHIBITION'].map(tp => (
+                  <option key={tp} value={tp}>{t(`assoc.event.types.${tp}`)}</option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date *</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.event.date')} *</label>
               <input type="date" value={eventForm.date} onChange={e => setEventForm(p => ({ ...p, date: e.target.value }))} className="input w-full" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Lieu</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.event.location')}</label>
             <input value={eventForm.location} onChange={e => setEventForm(p => ({ ...p, location: e.target.value }))} className="input w-full" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.event.description')}</label>
             <textarea value={eventForm.description} onChange={e => setEventForm(p => ({ ...p, description: e.target.value }))} className="input w-full" rows={2} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Recette (DH)</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.event.revenue')}</label>
               <input type="number" value={eventForm.revenue} onChange={e => setEventForm(p => ({ ...p, revenue: e.target.value }))} className="input w-full" placeholder="0.00" min="0" step="0.01" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Coût (DH)</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('assoc.event.cost')}</label>
               <input type="number" value={eventForm.cost} onChange={e => setEventForm(p => ({ ...p, cost: e.target.value }))} className="input w-full" placeholder="0.00" min="0" step="0.01" />
             </div>
           </div>
           {(parseFloat(eventForm.revenue) > 0 || parseFloat(eventForm.cost) > 0) && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2 text-xs text-blue-700 dark:text-blue-400 space-y-0.5">
-              {parseFloat(eventForm.revenue) > 0 && <div>✓ Revenu de {fmt(parseFloat(eventForm.revenue))} DH → comptabilité (Recette)</div>}
-              {parseFloat(eventForm.cost) > 0 && <div>✓ Dépense de {fmt(parseFloat(eventForm.cost))} DH → comptabilité (Charge)</div>}
+              <div>{t('assoc.event.financeNote')}</div>
+              {parseFloat(eventForm.revenue) > 0 && <div>↑ {fmt(parseFloat(eventForm.revenue))} {t('common.MAD')}</div>}
+              {parseFloat(eventForm.cost) > 0 && <div>↓ {fmt(parseFloat(eventForm.cost))} {t('common.MAD')}</div>}
             </div>
           )}
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setEventModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
-            <button onClick={saveEvent} disabled={saving || !eventForm.name || !eventForm.date} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? '...' : 'Enregistrer'}</button>
+            <button onClick={() => setEventModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{t('assoc.cancel')}</button>
+            <button onClick={saveEvent} disabled={saving || !eventForm.name || !eventForm.date} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{saving ? t('assoc.saving') : t('assoc.save')}</button>
           </div>
         </div>
       </Modal>
@@ -917,8 +942,8 @@ const AssocPage: React.FC = () => {
         isOpen={!!deleteTarget}
         onConfirm={confirmDelete}
         onClose={() => setDeleteTarget(null)}
-        title="Confirmer la suppression"
-        message={`Supprimer "${deleteTarget?.label}" ? Cette action est irréversible.`}
+        title={t('assoc.deleteTitle')}
+        message={`${t('assoc.deleteMsg')} "${deleteTarget?.label}" ? ${t('assoc.irreversible')}`}
         variant="danger"
       />
     </div>
