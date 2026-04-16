@@ -384,7 +384,6 @@ export const MarketingTab: React.FC = () => {
         onConfirm={sendCampaign}
         title={mk('confirmSend')}
         message={mk('confirmSendMsg')}
-        variant="default"
       />
       <ConfirmDialog
         isOpen={!!deleteId}
