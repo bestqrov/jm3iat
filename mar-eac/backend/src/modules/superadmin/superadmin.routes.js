@@ -34,6 +34,7 @@ router.post('/users/:userId/reset-password',          ctrl.resetUserPassword);
 
 // ── Packs ──────────────────────────────────────────────────────────────────────
 router.get('/packs',                                  ctrl.getPacks);
+router.post('/packs/seed-defaults',                   ctrl.seedDefaultPacks);
 router.post('/packs',                                 ctrl.createPack);
 router.put('/packs/:packId',                          ctrl.updatePack);
 router.delete('/packs/:packId',                       ctrl.deletePack);

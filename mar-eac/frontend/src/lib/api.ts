@@ -276,6 +276,7 @@ export const superadminApi = {
   resetUserPassword:    (userId: string)                 => api.post(`/superadmin/users/${userId}/reset-password`),
 
   // ── Packs ───────────────────────────────────────────────────────────────────
+  seedDefaultPacks:     ()                               => api.post('/superadmin/packs/seed-defaults'),
   getPacks:             ()                               => api.get('/superadmin/packs'),
   createPack:           (data: any)                      => api.post('/superadmin/packs', data),
   updatePack:           (packId: string, data: any)      => api.put(`/superadmin/packs/${packId}`, data),

@@ -723,6 +723,97 @@ const resetUserPassword = async (req, res) => {
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
 
+const DEFAULT_PACKS = [
+  {
+    name: 'Starter — Association classique', nameAr: 'ستارتر — جمعية عادية',
+    description: 'Idéal pour les petites associations avec des besoins basiques.',
+    descriptionAr: 'مثالي للجمعيات الصغيرة ذات الاحتياجات الأساسية.',
+    price: 99,  currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'REGULAR', size: 'SMALL',
+    features:   ['Gestion des membres (50 max)', 'Réunions illimitées', 'Documents (1 Go)', 'Rappels automatiques', 'Support email'],
+    featuresAr: ['إدارة الأعضاء (50 كحد أقصى)', 'اجتماعات غير محدودة', 'مستندات (1 جيجا)', 'تذكيرات تلقائية', 'دعم بريدي'],
+    limits: { members: 50, storage: 1 }, trialDays: 15, isActive: true,
+  },
+  {
+    name: 'Pro — Association classique', nameAr: 'برو — جمعية عادية',
+    description: 'Pour les associations en croissance avec plus de membres.',
+    descriptionAr: 'للجمعيات المتنامية التي تضم عدداً أكبر من الأعضاء.',
+    price: 199, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'REGULAR', size: 'MEDIUM',
+    features:   ['Membres illimités', 'Réunions illimitées', 'Documents (5 Go)', 'Rapports avancés', 'Rappels WhatsApp', 'Support prioritaire'],
+    featuresAr: ['أعضاء غير محدودين', 'اجتماعات غير محدودة', 'مستندات (5 جيجا)', 'تقارير متقدمة', 'تذكيرات واتساب', 'دعم ذو أولوية'],
+    limits: { members: -1, storage: 5 }, trialDays: 15, isActive: true,
+  },
+  {
+    name: 'Starter — Gestion de l\'eau', nameAr: 'ستارتر — جمعية الماء',
+    description: 'Pour les associations gérant un réseau d\'eau potable.',
+    descriptionAr: 'لجمعيات إدارة شبكة مياه الشرب.',
+    price: 249, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'WATER', size: 'SMALL',
+    features:   ['Suivi des compteurs', 'Facturation eau', 'Gestion des installations', 'Rapports de consommation', 'Membres (100 max)'],
+    featuresAr: ['متابعة العدادات', 'فواتير الماء', 'إدارة المنشآت', 'تقارير الاستهلاك', 'أعضاء (100 كحد أقصى)'],
+    limits: { members: 100, storage: 2 }, trialDays: 15, isActive: true,
+  },
+  {
+    name: 'Pro — Gestion de l\'eau', nameAr: 'برو — جمعية الماء',
+    description: 'Solution complète pour les associations d\'eau de grande taille.',
+    descriptionAr: 'حل متكامل لجمعيات الماء الكبيرة.',
+    price: 399, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'WATER', size: 'LARGE',
+    features:   ['Membres illimités', 'Suivi compteurs avancé', 'Facturation automatique', 'Alertes de fuite', 'API d\'intégration', 'Support dédié'],
+    featuresAr: ['أعضاء غير محدودين', 'متابعة عدادات متقدمة', 'فوترة تلقائية', 'تنبيهات التسرب', 'API للتكامل', 'دعم مخصص'],
+    limits: { members: -1, storage: 20 }, trialDays: 15, isActive: true,
+  },
+  {
+    name: 'Starter — Association productive', nameAr: 'ستارتر — جمعية إنتاجية',
+    description: 'Pour les coopératives et associations à activité productive.',
+    descriptionAr: 'للتعاونيات والجمعيات ذات النشاط الإنتاجي.',
+    price: 249, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'PRODUCTIVE', size: 'SMALL',
+    features:   ['Gestion des productions', 'Suivi des stocks', 'Projets illimités', 'Rapports financiers', 'Membres (80 max)'],
+    featuresAr: ['إدارة الإنتاج', 'متابعة المخزون', 'مشاريع غير محدودة', 'تقارير مالية', 'أعضاء (80 كحد أقصى)'],
+    limits: { members: 80, storage: 3 }, trialDays: 15, isActive: true,
+  },
+  {
+    name: 'Pro — Association productive', nameAr: 'برو — جمعية إنتاجية',
+    description: 'Toutes les fonctionnalités productives sans limites.',
+    descriptionAr: 'جميع مزايا الإنتاج بدون قيود.',
+    price: 449, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'PRODUCTIVE', size: 'LARGE',
+    features:   ['Membres illimités', 'Productions illimitées', 'Gestion des ventes', 'Intégration comptable', 'Rapports BI', 'Support dédié'],
+    featuresAr: ['أعضاء غير محدودين', 'إنتاج غير محدود', 'إدارة المبيعات', 'تكامل محاسبي', 'تقارير BI', 'دعم مخصص'],
+    limits: { members: -1, storage: 20 }, trialDays: 15, isActive: true,
+  },
+  {
+    name: 'Pro — Productive + Eau', nameAr: 'برو — إنتاجية + ماء',
+    description: 'La solution tout-en-un pour les associations mixtes.',
+    descriptionAr: 'الحل الشامل للجمعيات المختلطة.',
+    price: 599, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'PRODUCTIVE_WATER', size: 'LARGE',
+    features:   ['Toutes les fonctionnalités Eau', 'Toutes les fonctionnalités Productives', 'Membres illimités', 'Tableau de bord unifié', 'Support dédié 24/7'],
+    featuresAr: ['جميع مزايا الماء', 'جميع مزايا الإنتاج', 'أعضاء غير محدودين', 'لوحة تحكم موحدة', 'دعم مخصص 24/7'],
+    limits: { members: -1, storage: 50 }, trialDays: 15, isActive: true,
+  },
+  {
+    name: 'Starter — Association avec projets', nameAr: 'ستارتر — جمعية مع مشاريع',
+    description: 'Pour les associations gérant des projets de développement.',
+    descriptionAr: 'لجمعيات إدارة مشاريع التنمية.',
+    price: 149, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'PROJECTS', size: 'SMALL',
+    features:   ['Gestion de projets', 'Suivi des tâches', 'Rapports d\'avancement', 'Documents projets', 'Membres (60 max)'],
+    featuresAr: ['إدارة المشاريع', 'متابعة المهام', 'تقارير التقدم', 'مستندات المشاريع', 'أعضاء (60 كحد أقصى)'],
+    limits: { members: 60, storage: 2 }, trialDays: 15, isActive: true,
+  },
+];
+
+const seedDefaultPacks = async (req, res) => {
+  try {
+    const existing = await prisma.pack.count();
+    if (existing > 0) {
+      return res.status(409).json({ message: `${existing} pack(s) already exist. Delete them first to reseed.` });
+    }
+    const created = [];
+    for (const pack of DEFAULT_PACKS) {
+      created.push(await prisma.pack.create({ data: pack }));
+    }
+    res.status(201).json({ message: `${created.length} default packs created`, packs: created });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 const getPacks = async (req, res) => {
   try {
     const packs = await prisma.pack.findMany({ orderBy: { price: 'asc' } });
@@ -1332,7 +1423,7 @@ module.exports = {
   getOrganizations, getOrganization, updateSubscription, deleteOrganization,
   getPayments, createPayment, uploadPaymentReceipt, deletePayment,
   getUsers, toggleUser, resetUserPassword,
-  getPacks, createPack, updatePack, deletePack,
+  seedDefaultPacks, getPacks, createPack, updatePack, deletePack,
   getPromoCodes, createPromoCode, updatePromoCode, deletePromoCode,
   getEmailCampaigns, createEmailCampaign, sendEmailCampaign, deleteEmailCampaign,
   getWhatsAppMessages, sendWhatsAppMessage, sendBulkWhatsApp,
