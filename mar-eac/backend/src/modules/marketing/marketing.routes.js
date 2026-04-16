@@ -15,5 +15,6 @@ router.delete('/campaigns/:id',     requireRole('SUPER_ADMIN', 'ADMIN'), ctrl.de
 // ── Utilities (read-only — any authenticated user) ───────────────────────────
 router.get('/templates',            ctrl.getTemplates);
 router.post('/preview-segment',     requireRole('SUPER_ADMIN', 'ADMIN'), ctrl.previewSegment);
+router.get('/organizations',        requireRole('SUPER_ADMIN', 'ADMIN'), ctrl.getOrganizations);
 
 module.exports = router;

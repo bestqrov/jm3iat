@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Mail, MessageCircle, Send, Trash2, Plus, Users, CheckCircle, Clock,
   Zap, Calendar, ToggleLeft, ToggleRight, ChevronDown, BarChart2,
-  AlertCircle, RefreshCw,
+  AlertCircle, RefreshCw, Search, X, Phone,
 } from 'lucide-react';
 import { superadminApi, marketingApi } from '../../../lib/api';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -19,11 +19,20 @@ type Channel = 'whatsapp' | 'email' | 'both';
 type Segment = 'all' | 'water_users' | 'productive_orgs' | 'trial_expired' | 'inactive_users' | 'by_pack';
 type AutoTrigger = 'trial_expired' | 'unpaid_invoice' | 'inactive_user';
 
+interface OrgOption {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  modules: string[];
+  subscription?: { status: string };
+}
+
 interface CampaignForm {
   campaignType: CampaignType;
   channel: Channel;
   sendType: SendType;
-  phoneManual: string;
+  manualOrganizationId: string;   // replaces phoneManual
   segmentation: Segment[];
   scheduleType: ScheduleType;
   scheduleDate: string;
@@ -90,7 +99,7 @@ const DEFAULT_FORM: CampaignForm = {
   campaignType: 'no_template',
   channel: 'whatsapp',
   sendType: 'bulk',
-  phoneManual: '',
+  manualOrganizationId: '',
   segmentation: ['all'],
   scheduleType: 'now',
   scheduleDate: '',
@@ -120,6 +129,14 @@ export const MarketingTab: React.FC = () => {
   const [sendSuccess, setSendSuccess] = useState<string | null>(null);
   const [segPreview, setSegPreview] = useState<{ count: number; sample: { name: string; phone: string | null }[] } | null>(null);
   const [segPreviewing, setSegPreviewing] = useState(false);
+
+  // Org picker (manual mode)
+  const [orgs, setOrgs] = useState<OrgOption[]>([]);
+  const [orgsLoading, setOrgsLoading] = useState(false);
+  const [orgSearch, setOrgSearch] = useState('');
+  const [orgPickerOpen, setOrgPickerOpen] = useState(false);
+  const [selectedOrg, setSelectedOrg] = useState<OrgOption | null>(null);
+  const orgPickerRef = useRef<HTMLDivElement>(null);
 
   // History
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
@@ -173,6 +190,31 @@ export const MarketingTab: React.FC = () => {
     } finally {
       setEmailLoading(false);
     }
+  }, []);
+
+  const loadOrgs = useCallback(async (q?: string) => {
+    setOrgsLoading(true);
+    try {
+      const res = await marketingApi.getOrganizations(q);
+      setOrgs(res.data);
+    } catch { setOrgs([]); }
+    finally { setOrgsLoading(false); }
+  }, []);
+
+  // Load orgs when switching to manual mode
+  useEffect(() => {
+    if (form.sendType === 'manual' && orgs.length === 0) loadOrgs();
+  }, [form.sendType, orgs.length, loadOrgs]);
+
+  // Close picker on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (orgPickerRef.current && !orgPickerRef.current.contains(e.target as Node)) {
+        setOrgPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   useEffect(() => {
@@ -250,7 +292,7 @@ export const MarketingTab: React.FC = () => {
         tracking:          form.tracking,
         automationEnabled: form.automationEnabled,
         automationTrigger: form.automationEnabled ? form.automationTrigger : undefined,
-        ...(form.sendType === 'manual' ? { phoneManual: form.phoneManual } : {}),
+        ...(form.sendType === 'manual' ? { manualOrganizationId: form.manualOrganizationId } : {}),
       };
       const res = await marketingApi.send(payload);
       const data = res.data;
@@ -264,6 +306,8 @@ export const MarketingTab: React.FC = () => {
       setForm(DEFAULT_FORM);
       setTemplateApplied(false);
       setSegPreview(null);
+      setSelectedOrg(null);
+      setOrgSearch('');
       loadHistory();
     } catch (err: any) {
       const errData = err?.response?.data;
@@ -318,7 +362,7 @@ export const MarketingTab: React.FC = () => {
     : ({ ALL: 'Toutes', TRIAL: 'Essai', ACTIVE: 'Actif', EXPIRED: 'Expiré', INACTIVE: 'Inactif' } as any)[tg] || tg;
 
   const canSubmit = form.messageContent.trim() &&
-    (form.sendType === 'bulk' || form.phoneManual.trim()) &&
+    (form.sendType === 'bulk' || form.manualOrganizationId) &&
     (form.scheduleType === 'now' || form.scheduleDate);
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -440,14 +484,104 @@ export const MarketingTab: React.FC = () => {
               </div>
 
               {form.sendType === 'manual' && (
-                <div className="mt-4">
-                  <label className={lbl}>{mk('phoneManual')}</label>
-                  <input
-                    className={inp}
-                    placeholder="+212XXXXXXXXX"
-                    value={form.phoneManual}
-                    onChange={e => setForm(f => ({ ...f, phoneManual: e.target.value }))}
-                  />
+                <div className="mt-4" ref={orgPickerRef}>
+                  <label className={lbl}>
+                    {isAr ? 'اختر الجمعية *' : 'Choisir l\'association *'}
+                  </label>
+
+                  {/* Selected org display */}
+                  {selectedOrg ? (
+                    <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
+                          <Users size={12} className="text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{selectedOrg.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                            <Phone size={10} /> {selectedOrg.phone}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { setSelectedOrg(null); setForm(f => ({ ...f, manualOrganizationId: '' })); setOrgPickerOpen(true); }}
+                        className="p-1 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-400 hover:text-indigo-600 flex-shrink-0"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    /* Search input */
+                    <div className="relative">
+                      <div className="relative">
+                        <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <input
+                          className={`${inp} ps-9`}
+                          placeholder={isAr ? 'ابحث باسم الجمعية أو الرقم...' : 'Rechercher par nom ou numéro...'}
+                          value={orgSearch}
+                          onFocus={() => { setOrgPickerOpen(true); if (!orgSearch) loadOrgs(); }}
+                          onChange={e => {
+                            setOrgSearch(e.target.value);
+                            setOrgPickerOpen(true);
+                            loadOrgs(e.target.value);
+                          }}
+                        />
+                        {orgsLoading && (
+                          <RefreshCw size={12} className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin" />
+                        )}
+                      </div>
+
+                      {/* Dropdown */}
+                      {orgPickerOpen && (
+                        <div className="absolute z-50 top-full mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
+                          {orgs.length === 0 ? (
+                            <div className="px-4 py-6 text-center text-sm text-gray-400">
+                              {orgsLoading
+                                ? (isAr ? 'جار البحث...' : 'Recherche...')
+                                : (isAr ? 'لا توجد جمعيات بأرقام هاتف' : 'Aucune association avec numéro')
+                              }
+                            </div>
+                          ) : (
+                            <ul className="max-h-56 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                              {orgs.map(org => (
+                                <li key={org.id}>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedOrg(org);
+                                      setForm(f => ({ ...f, manualOrganizationId: org.id }));
+                                      setOrgPickerOpen(false);
+                                      setOrgSearch('');
+                                    }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-start"
+                                  >
+                                    <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                                      {org.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{org.name}</p>
+                                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                                        <Phone size={10} /> {org.phone}
+                                        {org.subscription?.status && (
+                                          <span className={`ms-2 px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                                            org.subscription.status === 'ACTIVE'  ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                                            org.subscription.status === 'TRIAL'   ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400' :
+                                            org.subscription.status === 'EXPIRED' ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' :
+                                            'bg-gray-100 text-gray-500'
+                                          }`}>
+                                            {org.subscription.status}
+                                          </span>
+                                        )}
+                                      </p>
+                                    </div>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

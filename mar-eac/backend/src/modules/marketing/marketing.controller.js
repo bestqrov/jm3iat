@@ -19,7 +19,7 @@ const send = async (req, res) => {
       scheduleDate,
       channel,
       sendType,
-      phoneManual,
+      manualOrganizationId,   // ID of org selected in manual picker
       tracking,
       automationEnabled,
       automationTrigger,
@@ -38,8 +38,8 @@ const send = async (req, res) => {
     if (scheduleType === 'scheduled' && new Date(scheduleDate) <= new Date()) {
       return res.status(400).json({ message: 'scheduleDate must be in the future' });
     }
-    if (sendType === 'manual' && !phoneManual) {
-      return res.status(400).json({ message: 'phoneManual is required for manual send' });
+    if (sendType === 'manual' && !manualOrganizationId) {
+      return res.status(400).json({ message: 'manualOrganizationId is required for manual send' });
     }
 
     // ── organizationId from token (non-superadmin scoping) ──────────────────
@@ -55,7 +55,7 @@ const send = async (req, res) => {
         messageContent,
         channel,
         sendType,
-        phoneManual,
+        manualOrganizationId: sendType === 'manual' ? manualOrganizationId : null,
         tracking,
         automationEnabled,
         automationTrigger,
@@ -183,4 +183,40 @@ const previewSegment = async (req, res) => {
   }
 };
 
-module.exports = { send, getCampaigns, deleteCampaign, getTemplates, previewSegment };
+// ─── GET /api/marketing/organizations ────────────────────────────────────────
+// Returns all saved organizations that have a phone number — used for manual picker.
+
+const getOrganizations = async (req, res) => {
+  try {
+    const { q } = req.query; // optional search query
+
+    const orgs = await prisma.organization.findMany({
+      where: {
+        phone: { not: null },
+        ...(q ? {
+          OR: [
+            { name:  { contains: q, mode: 'insensitive' } },
+            { phone: { contains: q } },
+            { email: { contains: q, mode: 'insensitive' } },
+          ],
+        } : {}),
+      },
+      select: {
+        id:    true,
+        name:  true,
+        phone: true,
+        email: true,
+        modules: true,
+        subscription: { select: { status: true } },
+      },
+      orderBy: { name: 'asc' },
+      take: 100,
+    });
+
+    return res.json(orgs);
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { send, getCampaigns, deleteCampaign, getTemplates, previewSegment, getOrganizations };

@@ -318,9 +318,10 @@ export const superadminApi = {
 
 // ── Dedicated Marketing API (/api/marketing) ──────────────────────────────────
 export const marketingApi = {
-  send:           (data: any)  => api.post('/marketing/send', data),
-  getCampaigns:   (params?: any) => api.get('/marketing/campaigns', { params }),
-  deleteCampaign: (id: string) => api.delete(`/marketing/campaigns/${id}`),
-  getTemplates:   ()           => api.get('/marketing/templates'),
-  previewSegment: (segmentation: string[]) => api.post('/marketing/preview-segment', { segmentation }),
+  send:              (data: any)           => api.post('/marketing/send', data),
+  getCampaigns:      (params?: any)        => api.get('/marketing/campaigns', { params }),
+  deleteCampaign:    (id: string)          => api.delete(`/marketing/campaigns/${id}`),
+  getTemplates:      ()                    => api.get('/marketing/templates'),
+  previewSegment:    (segmentation: string[]) => api.post('/marketing/preview-segment', { segmentation }),
+  getOrganizations:  (q?: string)          => api.get('/marketing/organizations', { params: q ? { q } : {} }),
 };

@@ -103,19 +103,25 @@ const sendNow = async ({
   messageContent,
   channel,
   sendType,
-  phoneManual,
+  manualOrganizationId,  // ID of a specific org chosen in manual mode
   tracking,
   automationEnabled,
   automationTrigger,
-  organizationId,   // optional: scope to a single org
+  organizationId,        // optional: scope bulk to a single org (superadmin)
 }) => {
   // 1. Resolve target list
   let recipients = [];
-  if (sendType === 'manual' && phoneManual) {
-    recipients = [{ id: null, name: null, phone: phoneManual, email: null }];
+  if (sendType === 'manual' && manualOrganizationId) {
+    // Look up the specific org chosen in the picker
+    const org = await prisma.organization.findUnique({
+      where: { id: manualOrganizationId },
+      select: { id: true, name: true, phone: true, email: true },
+    });
+    if (!org) throw new Error('Organization not found');
+    if (!org.phone) throw new Error('Selected organization has no phone number');
+    recipients = [org];
   } else {
     recipients = await resolveSegmentation(segmentation);
-    // If scoped to one org, filter
     if (organizationId) {
       recipients = recipients.filter(r => r.id === organizationId);
     }
