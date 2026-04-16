@@ -66,6 +66,7 @@ app.use('/api/water', require('./modules/water/water.routes'));
 app.use('/api/reminders', require('./modules/reminders/reminders.routes'));
 app.use('/api/assoc', require('./modules/assoc/assoc.routes'));
 app.use('/api/superadmin', require('./modules/superadmin/superadmin.routes'));
+app.use('/api/marketing',  require('./modules/marketing/marketing.routes'));
 
 // Serve frontend static files (single-service deployment)
 const possibleDists = [
@@ -102,6 +103,17 @@ app.use((err, req, res, next) => {
 // Start cron jobs
 const { scheduleMonthlyReminders } = require('./modules/reminders/reminders.controller');
 scheduleMonthlyReminders();
+
+// Process scheduled marketing campaigns every 5 minutes
+const { processScheduled } = require('./modules/marketing/marketing.service');
+setInterval(async () => {
+  try {
+    const results = await processScheduled();
+    if (results.length) console.log(`[marketing cron] processed ${results.length} scheduled campaign(s)`);
+  } catch (err) {
+    console.error('[marketing cron] error:', err.message);
+  }
+}, 5 * 60 * 1000); // every 5 min
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

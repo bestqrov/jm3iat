@@ -309,9 +309,18 @@ export const superadminApi = {
   getPlatformSettings:  ()                               => api.get('/superadmin/settings'),
   updatePlatformSettings: (data: any)                    => api.put('/superadmin/settings', data),
 
-  // ── Marketing Campaigns (unified) ──────────────────────────────────────────
+  // ── Marketing Campaigns (unified) — superadmin namespace (legacy) ──────────
   getMarketingCampaigns:   ()           => api.get('/superadmin/marketing-campaigns'),
   createMarketingCampaign: (data: any)  => api.post('/superadmin/marketing-campaigns', data),
   deleteMarketingCampaign: (id: string) => api.delete(`/superadmin/marketing-campaigns/${id}`),
   getMarketingTemplates:   ()           => api.get('/superadmin/marketing-templates'),
+};
+
+// ── Dedicated Marketing API (/api/marketing) ──────────────────────────────────
+export const marketingApi = {
+  send:           (data: any)  => api.post('/marketing/send', data),
+  getCampaigns:   (params?: any) => api.get('/marketing/campaigns', { params }),
+  deleteCampaign: (id: string) => api.delete(`/marketing/campaigns/${id}`),
+  getTemplates:   ()           => api.get('/marketing/templates'),
+  previewSegment: (segmentation: string[]) => api.post('/marketing/preview-segment', { segmentation }),
 };

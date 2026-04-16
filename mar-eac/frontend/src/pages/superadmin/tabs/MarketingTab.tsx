@@ -4,7 +4,7 @@ import {
   Zap, Calendar, ToggleLeft, ToggleRight, ChevronDown, BarChart2,
   AlertCircle, RefreshCw,
 } from 'lucide-react';
-import { superadminApi } from '../../../lib/api';
+import { superadminApi, marketingApi } from '../../../lib/api';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { Modal } from '../../../components/ui/Modal';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
@@ -118,6 +118,8 @@ export const MarketingTab: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendSuccess, setSendSuccess] = useState<string | null>(null);
+  const [segPreview, setSegPreview] = useState<{ count: number; sample: { name: string; phone: string | null }[] } | null>(null);
+  const [segPreviewing, setSegPreviewing] = useState(false);
 
   // History
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
@@ -144,7 +146,7 @@ export const MarketingTab: React.FC = () => {
 
   const loadTemplates = useCallback(async () => {
     try {
-      const res = await superadminApi.getMarketingTemplates();
+      const res = await marketingApi.getTemplates();
       setTemplates(res.data);
     } catch { /* silent */ }
   }, []);
@@ -153,10 +155,10 @@ export const MarketingTab: React.FC = () => {
     setHistLoading(true);
     try {
       const [camp, wa] = await Promise.all([
-        superadminApi.getMarketingCampaigns(),
+        marketingApi.getCampaigns(),
         superadminApi.getWhatsAppMessages(),
       ]);
-      setCampaigns(camp.data);
+      setCampaigns(camp.data?.data ?? camp.data);
       setWaMessages(wa.data);
     } finally {
       setHistLoading(false);
@@ -200,15 +202,35 @@ export const MarketingTab: React.FC = () => {
 
   const toggleSegment = (seg: Segment) => {
     setForm(f => {
-      if (seg === 'all') return { ...f, segmentation: ['all'] };
-      const without = f.segmentation.filter(s => s !== 'all');
-      if (without.includes(seg)) {
-        const next = without.filter(s => s !== seg);
-        return { ...f, segmentation: next.length ? next : ['all'] };
+      let next: Segment[];
+      if (seg === 'all') {
+        next = ['all'];
+      } else {
+        const without = f.segmentation.filter(s => s !== 'all');
+        if (without.includes(seg)) {
+          const removed = without.filter(s => s !== seg);
+          next = removed.length ? removed : ['all'];
+        } else {
+          next = [...without, seg];
+        }
       }
-      return { ...f, segmentation: [...without, seg] };
+      // Trigger preview for non-'all' selections
+      setTimeout(() => previewSegment(next), 0);
+      return { ...f, segmentation: next };
     });
   };
+
+  // ── Segment preview ─────────────────────────────────────────────────────────
+
+  const previewSegment = useCallback(async (segs: Segment[]) => {
+    if (segs.includes('all') || segs.length === 0) { setSegPreview(null); return; }
+    setSegPreviewing(true);
+    try {
+      const res = await marketingApi.previewSegment(segs);
+      setSegPreview(res.data);
+    } catch { setSegPreview(null); }
+    finally { setSegPreviewing(false); }
+  }, []);
 
   // ── Submit ──────────────────────────────────────────────────────────────────
 
@@ -230,16 +252,24 @@ export const MarketingTab: React.FC = () => {
         automationTrigger: form.automationEnabled ? form.automationTrigger : undefined,
         ...(form.sendType === 'manual' ? { phoneManual: form.phoneManual } : {}),
       };
-      const res = await superadminApi.createMarketingCampaign(payload);
-      const statusMsg = res.data?.status === 'SCHEDULED'
-        ? (isAr ? 'تمت جدولة الحملة بنجاح' : 'Campagne programmée avec succès')
-        : (isAr ? `تم الإرسال إلى n8n — ${res.data?.recipientCount ?? 0} ${mk('recipients')}` : `Envoyé à n8n — ${res.data?.recipientCount ?? 0} ${mk('recipients')}`);
+      const res = await marketingApi.send(payload);
+      const data = res.data;
+      const isScheduled = data?.campaign?.status === 'SCHEDULED';
+      const statusMsg = isScheduled
+        ? (isAr ? 'تمت جدولة الحملة بنجاح ✓' : 'Campagne programmée avec succès ✓')
+        : (isAr
+            ? `تم الإرسال إلى n8n — ${data?.recipientCount ?? 0} ${mk('recipients')} ✓`
+            : `Envoyé à n8n — ${data?.recipientCount ?? 0} ${mk('recipients')} ✓`);
       setSendSuccess(statusMsg);
       setForm(DEFAULT_FORM);
       setTemplateApplied(false);
+      setSegPreview(null);
       loadHistory();
     } catch (err: any) {
-      const msg = err?.response?.data?.message || (isAr ? 'حدث خطأ' : 'Erreur inconnue');
+      const errData = err?.response?.data;
+      const msg = errData?.n8nError
+        ? (isAr ? `n8n: ${JSON.stringify(errData.n8nError)}` : `n8n: ${JSON.stringify(errData.n8nError)}`)
+        : (errData?.message || (isAr ? 'حدث خطأ' : 'Erreur inconnue'));
       setSendError(msg);
     } finally {
       setSending(false);
@@ -274,7 +304,7 @@ export const MarketingTab: React.FC = () => {
 
   const deleteCampaign = async () => {
     if (!deleteId) return;
-    await superadminApi.deleteMarketingCampaign(deleteId);
+    await marketingApi.deleteCampaign(deleteId);
     setDeleteId(null);
     loadHistory();
   };
@@ -448,6 +478,28 @@ export const MarketingTab: React.FC = () => {
                     );
                   })}
                 </div>
+
+                {/* Live segment preview */}
+                {segPreviewing && (
+                  <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                    <RefreshCw size={11} className="animate-spin" />
+                    {isAr ? 'جار الحساب...' : 'Calcul en cours...'}
+                  </p>
+                )}
+                {!segPreviewing && segPreview && (
+                  <div className="mt-3 flex items-center gap-3 p-2.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
+                    <Users size={13} className="text-indigo-500 flex-shrink-0" />
+                    <span className="text-xs text-indigo-700 dark:text-indigo-300 font-medium">
+                      {segPreview.count} {mk('recipients')}
+                      {segPreview.sample.length > 0 && (
+                        <span className="font-normal text-indigo-500 ms-2">
+                          ({segPreview.sample.map(s => s.name || s.phone).filter(Boolean).join(', ')}
+                          {segPreview.count > segPreview.sample.length ? '…' : ''})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
