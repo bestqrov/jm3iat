@@ -308,4 +308,10 @@ export const superadminApi = {
   // ── Platform Settings ───────────────────────────────────────────────────────
   getPlatformSettings:  ()                               => api.get('/superadmin/settings'),
   updatePlatformSettings: (data: any)                    => api.put('/superadmin/settings', data),
+
+  // ── Marketing Campaigns (unified) ──────────────────────────────────────────
+  getMarketingCampaigns:   ()           => api.get('/superadmin/marketing-campaigns'),
+  createMarketingCampaign: (data: any)  => api.post('/superadmin/marketing-campaigns', data),
+  deleteMarketingCampaign: (id: string) => api.delete(`/superadmin/marketing-campaigns/${id}`),
+  getMarketingTemplates:   ()           => api.get('/superadmin/marketing-templates'),
 };

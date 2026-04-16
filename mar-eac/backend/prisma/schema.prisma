@@ -605,3 +605,25 @@ model PlatformSettings {
   category        String   @default("GENERAL") // GENERAL, BILLING, INTEGRATIONS, NOTIFICATIONS
   updatedAt       DateTime @updatedAt
 }
+
+model MarketingCampaign {
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  campaignType      String    @default("no_template")
+  sendType          String    @default("bulk")           // manual | bulk
+  segmentation      String[]
+  messageContent    String
+  scheduleType      String    @default("now")            // now | scheduled
+  scheduleDate      DateTime?
+  tracking          Json      @default("{\"sent\":false,\"opened\":false,\"clicked\":false}")
+  automationEnabled Boolean   @default(false)
+  automationTrigger String?
+  status            String    @default("DRAFT")          // DRAFT | SENT | SCHEDULED | FAILED
+  sentAt            DateTime?
+  recipientCount    Int       @default(0)
+  n8nJobId          String?
+  channel           String    @default("whatsapp")       // whatsapp | email | both
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("marketing_campaigns")
+}

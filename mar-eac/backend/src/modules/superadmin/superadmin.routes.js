@@ -66,4 +66,10 @@ router.post('/automation/:ruleId/run',                ctrl.runAutomationRule);
 router.get('/settings',                               ctrl.getPlatformSettings);
 router.put('/settings',                               ctrl.updatePlatformSettings);
 
+// ── Marketing Campaigns (unified) ─────────────────────────────────────────────
+router.get('/marketing-campaigns',                    ctrl.getMarketingCampaigns);
+router.post('/marketing-campaigns',                   ctrl.createMarketingCampaign);
+router.delete('/marketing-campaigns/:campaignId',     ctrl.deleteMarketingCampaign);
+router.get('/marketing-templates',                    ctrl.getTemplateMessages);
+
 module.exports = router;

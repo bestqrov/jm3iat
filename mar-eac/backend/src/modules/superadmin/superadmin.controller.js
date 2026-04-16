@@ -1174,6 +1174,159 @@ const getSubscriptions = async (req, res) => {
   }
 };
 
+// ─── Marketing Campaigns (unified) ───────────────────────────────────────────
+
+const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/marketing';
+
+const CAMPAIGN_TEMPLATES = {
+  trial_reminder: {
+    fr: "Bonjour {{name}} ! Votre période d'essai sur Mar E-A.C se termine bientôt. Profitez de toutes les fonctionnalités avant qu'il ne soit trop tard. Souscrivez maintenant 👉",
+    ar: "مرحباً {{name}}! تنتهي فترة تجربتك على Mar E-A.C قريباً. استفد من جميع المميزات قبل فوات الأوان. اشترك الآن 👉",
+  },
+  payment_reminder: {
+    fr: "Bonjour {{name}}, un paiement est en attente sur votre compte Mar E-A.C. Régularisez votre situation pour éviter l'interruption de service.",
+    ar: "مرحباً {{name}}، يوجد مبلغ معلق في حسابك على Mar E-A.C. يرجى تسوية وضعك لتجنب انقطاع الخدمة.",
+  },
+  promo: {
+    fr: "🎉 Offre spéciale ! Profitez de -20% sur l'abonnement annuel Mar E-A.C. Valable jusqu'à la fin du mois. Contactez-nous maintenant !",
+    ar: "🎉 عرض خاص! استفد من خصم 20% على اشتراك Mar E-A.C السنوي. صالح حتى نهاية الشهر. تواصل معنا الآن!",
+  },
+  renewal: {
+    fr: "Bonjour {{name}}, votre abonnement Mar E-A.C expire dans 7 jours. Renouvelez maintenant pour continuer à gérer votre association sans interruption.",
+    ar: "مرحباً {{name}}، ينتهي اشتراكك في Mar E-A.C خلال 7 أيام. جدد الآن لمواصلة إدارة جمعيتك دون انقطاع.",
+  },
+  reactivation: {
+    fr: "Nous avons remarqué votre absence, {{name}} ! Revenez sur Mar E-A.C et découvrez les nouvelles fonctionnalités. Un mois offert pour votre retour 🎁",
+    ar: "لاحظنا غيابك، {{name}}! عد إلى Mar E-A.C واكتشف الميزات الجديدة. شهر مجاني كهدية لعودتك 🎁",
+  },
+};
+
+const buildSegmentWhere = (segmentation = []) => {
+  if (!segmentation.length || segmentation.includes('all')) return {};
+  const ors = [];
+  if (segmentation.includes('water_users'))    ors.push({ modules: { has: 'WATER' } });
+  if (segmentation.includes('productive_orgs')) ors.push({ modules: { has: 'PRODUCTIVE' } });
+  if (segmentation.includes('trial_expired'))  ors.push({ subscription: { status: 'EXPIRED' } });
+  if (segmentation.includes('inactive_users')) ors.push({ subscription: { status: 'CANCELLED' } });
+  return ors.length ? { OR: ors } : {};
+};
+
+const getMarketingCampaigns = async (req, res) => {
+  try {
+    const campaigns = await prisma.marketingCampaign.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    res.json(campaigns);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const createMarketingCampaign = async (req, res) => {
+  try {
+    const {
+      campaignType = 'no_template',
+      sendType = 'bulk',
+      segmentation = [],
+      messageContent,
+      scheduleType = 'now',
+      scheduleDate,
+      tracking = { sent: false, opened: false, clicked: false },
+      automationEnabled = false,
+      automationTrigger,
+      channel = 'whatsapp',
+    } = req.body;
+
+    if (!messageContent || !messageContent.trim()) {
+      return res.status(400).json({ message: 'messageContent is required' });
+    }
+    if (scheduleType === 'scheduled' && !scheduleDate) {
+      return res.status(400).json({ message: 'scheduleDate is required when scheduleType is scheduled' });
+    }
+
+    const status = scheduleType === 'scheduled' ? 'SCHEDULED' : 'DRAFT';
+
+    const campaign = await prisma.marketingCampaign.create({
+      data: {
+        campaignType,
+        sendType,
+        segmentation,
+        messageContent,
+        scheduleType,
+        scheduleDate: scheduleDate ? new Date(scheduleDate) : null,
+        tracking,
+        automationEnabled,
+        automationTrigger: automationEnabled ? (automationTrigger || null) : null,
+        channel,
+        status,
+      },
+    });
+
+    // Fire immediately if scheduleType === 'now'
+    if (scheduleType === 'now') {
+      // Count targets
+      const where = buildSegmentWhere(segmentation);
+      const orgs = await prisma.organization.findMany({ where, select: { id: true, phone: true, email: true, name: true } });
+      const recipientCount = sendType === 'manual' ? 1 : orgs.filter(o => o.phone || o.email).length;
+
+      // POST to n8n asynchronously (don't block the response)
+      const payload = {
+        campaignId: campaign.id,
+        campaignType,
+        sendType,
+        segmentation,
+        messageContent,
+        channel,
+        tracking,
+        automationEnabled,
+        automationTrigger,
+        recipients: orgs.map(o => ({ id: o.id, phone: o.phone, email: o.email, name: o.name })),
+      };
+
+      axios.post(N8N_WEBHOOK_URL, payload, { timeout: 10000 })
+        .then(async () => {
+          await prisma.marketingCampaign.update({
+            where: { id: campaign.id },
+            data: { status: 'SENT', sentAt: new Date(), recipientCount },
+          });
+        })
+        .catch(async (err) => {
+          console.error('[n8n webhook error]', err?.response?.data || err.message);
+          await prisma.marketingCampaign.update({
+            where: { id: campaign.id },
+            data: { status: 'FAILED' },
+          });
+        });
+
+      // Return immediately with SENT optimistically
+      return res.status(201).json({
+        ...campaign,
+        status: 'SENT',
+        recipientCount,
+        _note: 'Dispatched to n8n',
+      });
+    }
+
+    res.status(201).json(campaign);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const deleteMarketingCampaign = async (req, res) => {
+  try {
+    await prisma.marketingCampaign.delete({ where: { id: req.params.campaignId } });
+    res.json({ message: 'Campaign deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const getTemplateMessages = async (req, res) => {
+  res.json(CAMPAIGN_TEMPLATES);
+};
+
 module.exports = {
   getStats, getAnalytics, getFeatureUsage, getAIInsights,
   getOrganizations, getOrganization, updateSubscription, deleteOrganization,
@@ -1186,4 +1339,5 @@ module.exports = {
   getAutomationRules, createAutomationRule, updateAutomationRule, deleteAutomationRule, runAutomationRule,
   getPlatformSettings, updatePlatformSettings,
   getSubscriptions,
+  getMarketingCampaigns, createMarketingCampaign, deleteMarketingCampaign, getTemplateMessages,
 };
