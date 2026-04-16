@@ -70,6 +70,7 @@ export const AutomationTab: React.FC = () => {
   const [editing, setEditing] = useState<AutomationRule | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [runResult, setRunResult] = useState<{ ruleId: string; targetCount: number; results: any[] } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const emptyForm = { name: '', nameAr: '', trigger: 'TRIAL_EXPIRED', actions: ['EMAIL'] };
@@ -135,8 +136,12 @@ export const AutomationTab: React.FC = () => {
 
   const handleRun = async (ruleId: string) => {
     setRunningId(ruleId);
+    setRunResult(null);
     try {
-      await superadminApi.runAutomationRule(ruleId);
+      const res = await superadminApi.runAutomationRule(ruleId);
+      if (res.data?.execution) {
+        setRunResult({ ruleId, ...res.data.execution });
+      }
       await load();
     } finally {
       setRunningId(null);
@@ -338,6 +343,44 @@ export const AutomationTab: React.FC = () => {
           </button>
         </div>
       </Modal>
+
+      {/* Run result panel */}
+      {runResult && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+              <Play size={14} />
+              {isAr
+                ? `تم التنفيذ — ${runResult.targetCount} جمعية مستهدفة`
+                : `Exécution terminée — ${runResult.targetCount} organisation(s) ciblée(s)`}
+            </p>
+            <button onClick={() => setRunResult(null)} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">
+              {isAr ? 'إغلاق' : 'Fermer'}
+            </button>
+          </div>
+          <div className="space-y-1 max-h-48 overflow-y-auto">
+            {runResult.results.length === 0 ? (
+              <p className="text-xs text-gray-400">{isAr ? 'لا توجد جمعيات تطابق هذا المشغل.' : 'Aucune organisation ne correspond à ce déclencheur.'}</p>
+            ) : (
+              runResult.results.map((r, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs">
+                  <span className={`px-1.5 py-0.5 rounded font-mono ${
+                    r.status === 'SENT' || r.status === 'SUSPENDED' || r.status === 'REMINDER_CREATED' || r.status === 'LOGGED'
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                      : r.status === 'SKIPPED'
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                  }`}>{r.status}</span>
+                  <span className="text-gray-500 dark:text-gray-400">[{r.type}]</span>
+                  <span className="text-gray-400 font-mono text-[11px]">{r.orgId}</span>
+                  {r.reason && <span className="text-amber-500 dark:text-amber-400">— {r.reason}</span>}
+                  {r.error  && <span className="text-red-500">— {r.error}</span>}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         isOpen={!!deleteId}

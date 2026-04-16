@@ -1172,20 +1172,209 @@ const deleteAutomationRule = async (req, res) => {
   }
 };
 
+// ─── Automation: resolve target organizations per trigger ─────────────────────
+
+const resolveAutomationTargets = async (trigger) => {
+  const now = new Date();
+
+  const baseInclude = {
+    subscription: true,
+    users: { where: { role: 'ADMIN' }, take: 1, select: { email: true, name: true } },
+  };
+
+  switch (trigger) {
+    case 'TRIAL_EXPIRED': {
+      return prisma.organization.findMany({
+        where: {
+          OR: [
+            { subscription: { status: 'TRIAL', expiresAt: { lt: now } } },
+            { trialEndsAt: { lt: now }, subscription: null },
+          ],
+        },
+        include: baseInclude,
+      });
+    }
+    case 'PAYMENT_OVERDUE': {
+      return prisma.organization.findMany({
+        where: { subscription: { status: 'EXPIRED' } },
+        include: baseInclude,
+      });
+    }
+    case 'INACTIVE_30D': {
+      const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      return prisma.organization.findMany({
+        where: { updatedAt: { lt: cutoff } },
+        include: baseInclude,
+      });
+    }
+    case 'INACTIVE_60D': {
+      const cutoff = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+      return prisma.organization.findMany({
+        where: { updatedAt: { lt: cutoff } },
+        include: baseInclude,
+      });
+    }
+    case 'SUBSCRIPTION_EXPIRING': {
+      const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return prisma.organization.findMany({
+        where: {
+          subscription: {
+            status: { in: ['ACTIVE', 'TRIAL'] },
+            expiresAt: { gt: now, lt: in7days },
+          },
+        },
+        include: baseInclude,
+      });
+    }
+    default:
+      return [];
+  }
+};
+
+// ─── Automation: execute actions for one organization ─────────────────────────
+
+const executeActionsForOrg = async (actions, org, wpConfig) => {
+  const results = [];
+  const phone   = org.phone ? normalizePhone(org.phone) : null;
+  const adminEmail = org.users?.[0]?.email || org.email;
+
+  for (const action of actions) {
+    const type = typeof action === 'string' ? action : action.type;
+
+    try {
+      switch (type) {
+        case 'WHATSAPP': {
+          if (!phone) {
+            results.push({ type, orgId: org.id, status: 'SKIPPED', reason: 'no phone' });
+            break;
+          }
+          if (!wpConfig.apiKey || !wpConfig.phoneId) {
+            results.push({ type, orgId: org.id, status: 'SKIPPED', reason: 'WhatsApp not configured' });
+            break;
+          }
+          const msgBody = buildAutoMessage(action.template || 'default', org, 'fr');
+          await callWhatsAppAPI(wpConfig.apiKey, wpConfig.phoneId, phone, msgBody);
+          results.push({ type, orgId: org.id, status: 'SENT' });
+          break;
+        }
+
+        case 'EMAIL': {
+          // Create an in-app reminder as email notification substitute
+          await prisma.reminder.create({
+            data: {
+              organizationId: org.id,
+              type: 'CUSTOM',
+              title: `[Automation] Action requise — ${org.name}`,
+              message: `Un rappel automatique a été déclenché pour l'organisation ${org.name} (${adminEmail}).`,
+              scheduledFor: new Date(),
+            },
+          });
+          results.push({ type, orgId: org.id, status: 'REMINDER_CREATED' });
+          break;
+        }
+
+        case 'SUSPEND': {
+          if (org.subscription) {
+            await prisma.subscription.update({
+              where: { organizationId: org.id },
+              data: { status: 'SUSPENDED' },
+            });
+          }
+          results.push({ type, orgId: org.id, status: 'SUSPENDED' });
+          break;
+        }
+
+        case 'NOTIFY_ADMIN': {
+          // Log to console — visible in Railway/server logs
+          console.log(`[Automation NOTIFY_ADMIN] Org: ${org.name} | Email: ${adminEmail} | Trigger hit`);
+          results.push({ type, orgId: org.id, status: 'LOGGED' });
+          break;
+        }
+
+        default:
+          results.push({ type, orgId: org.id, status: 'UNKNOWN_ACTION' });
+      }
+    } catch (err) {
+      results.push({ type, orgId: org.id, status: 'ERROR', error: err.message });
+    }
+  }
+
+  return results;
+};
+
+// ─── Automation: build message text per template ──────────────────────────────
+
+const buildAutoMessage = (template, org, lang = 'fr') => {
+  const name = lang === 'ar' ? (org.nameAr || org.name) : org.name;
+  const messages = {
+    trial_expired:      `Bonjour ${name},\nVotre période d'essai a expiré. Abonnez-vous pour continuer à utiliser Mar E-A.C.`,
+    payment_reminder:   `Bonjour ${name},\nVotre paiement est en retard. Merci de régulariser votre situation.`,
+    reactivation:       `Bonjour ${name},\nVous nous manquez ! Reconnectez-vous sur Mar E-A.C pour gérer vos activités.`,
+    subscription_expiring: `Bonjour ${name},\nVotre abonnement expire bientôt. Renouvelez-le pour éviter toute interruption.`,
+    default:            `Bonjour ${name},\nNotification automatique de la plateforme Mar E-A.C.`,
+  };
+  return messages[template] || messages.default;
+};
+
+// ─── Core: execute one rule against its targets ───────────────────────────────
+
+const executeRule = async (rule) => {
+  const targets  = await resolveAutomationTargets(rule.trigger);
+  const wpConfig = await getWhatsAppConfig();
+  const actions  = Array.isArray(rule.actions) ? rule.actions : [];
+
+  const allResults = [];
+  for (const org of targets) {
+    const orgResults = await executeActionsForOrg(actions, org, wpConfig);
+    allResults.push(...orgResults);
+  }
+
+  await prisma.automationRule.update({
+    where: { id: rule.id },
+    data: { lastRun: new Date(), runCount: { increment: 1 } },
+  });
+
+  return { targetCount: targets.length, results: allResults };
+};
+
+// ─── Controller: run rule manually ───────────────────────────────────────────
+
 const runAutomationRule = async (req, res) => {
   try {
     const rule = await prisma.automationRule.findUnique({ where: { id: req.params.ruleId } });
     if (!rule) return res.status(404).json({ message: 'Rule not found' });
 
-    // Simulate running the automation
-    const updated = await prisma.automationRule.update({
-      where: { id: rule.id },
-      data: { lastRun: new Date(), runCount: rule.runCount + 1 },
-    });
+    const { targetCount, results } = await executeRule(rule);
 
-    res.json({ ...updated, message: `Rule "${rule.name}" executed successfully` });
+    const updated = await prisma.automationRule.findUnique({ where: { id: rule.id } });
+    res.json({
+      ...updated,
+      execution: { targetCount, results },
+      message: `Règle "${rule.name}" exécutée sur ${targetCount} organisation(s).`,
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('[runAutomationRule]', err);
+    res.status(500).json({ message: 'Server error', detail: err.message });
+  }
+};
+
+// ─── Cron: process all active automation rules (called daily) ─────────────────
+
+const processAutomationRules = async () => {
+  try {
+    const activeRules = await prisma.automationRule.findMany({ where: { isActive: true } });
+    console.log(`[automation cron] Processing ${activeRules.length} active rule(s)`);
+    for (const rule of activeRules) {
+      try {
+        const { targetCount, results } = await executeRule(rule);
+        const errors = results.filter(r => r.status === 'ERROR').length;
+        console.log(`[automation cron] Rule "${rule.name}" → ${targetCount} targets, ${errors} errors`);
+      } catch (err) {
+        console.error(`[automation cron] Rule "${rule.name}" failed:`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error('[automation cron] Fatal error:', err.message);
   }
 };
 
@@ -1428,6 +1617,7 @@ module.exports = {
   getEmailCampaigns, createEmailCampaign, sendEmailCampaign, deleteEmailCampaign,
   getWhatsAppMessages, sendWhatsAppMessage, sendBulkWhatsApp,
   getAutomationRules, createAutomationRule, updateAutomationRule, deleteAutomationRule, runAutomationRule,
+  processAutomationRules,
   getPlatformSettings, updatePlatformSettings,
   getSubscriptions,
   getMarketingCampaigns, createMarketingCampaign, deleteMarketingCampaign, getTemplateMessages,
