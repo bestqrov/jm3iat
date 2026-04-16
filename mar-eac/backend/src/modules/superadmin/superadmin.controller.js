@@ -1,5 +1,41 @@
 const prisma = require('../../config/database');
 const bcrypt = require('bcryptjs');
+const axios  = require('axios');
+
+// ─── WhatsApp Business API helper ─────────────────────────────────────────────
+
+const getWhatsAppConfig = async () => {
+  const rows = await prisma.platformSettings.findMany({
+    where: { key: { in: ['whatsapp_api_key', 'whatsapp_phone_id'] } },
+  });
+  const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
+  return { apiKey: map.whatsapp_api_key || '', phoneId: map.whatsapp_phone_id || '' };
+};
+
+// Normalize phone: strip spaces/dashes, ensure no leading + (Meta wants "212XXXXXXXXX")
+const normalizePhone = (phone) =>
+  phone.replace(/\s|-/g, '').replace(/^\+/, '');
+
+const callWhatsAppAPI = async (apiKey, phoneId, toPhone, messageText) => {
+  const url = `https://graph.facebook.com/v19.0/${phoneId}/messages`;
+  const resp = await axios.post(
+    url,
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: normalizePhone(toPhone),
+      type: 'text',
+      text: { preview_url: false, body: messageText },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  return resp.data;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -897,7 +933,23 @@ const sendWhatsAppMessage = async (req, res) => {
     const { phone, message, organizationId, trigger } = req.body;
     if (!phone || !message) return res.status(400).json({ message: 'phone and message are required' });
 
-    // In production: integrate with WhatsApp Business API (Meta/Twilio)
+    const { apiKey, phoneId } = await getWhatsAppConfig();
+
+    let status = 'FAILED';
+    let waError = null;
+
+    if (apiKey && phoneId) {
+      try {
+        await callWhatsAppAPI(apiKey, phoneId, phone, message);
+        status = 'SENT';
+      } catch (apiErr) {
+        waError = apiErr?.response?.data || apiErr.message;
+        status = 'FAILED';
+      }
+    } else {
+      waError = 'WhatsApp API not configured (missing api key or phone ID in settings)';
+    }
+
     const msg = await prisma.whatsAppMessage.create({
       data: {
         phone,
@@ -905,14 +957,18 @@ const sendWhatsAppMessage = async (req, res) => {
         organizationId: organizationId || null,
         type: trigger ? 'AUTOMATED' : 'MANUAL',
         trigger: trigger || null,
-        status: 'SENT',
-        sentAt: new Date(),
+        status,
+        sentAt: status === 'SENT' ? new Date() : null,
       },
     });
 
-    res.status(201).json({ ...msg, note: 'Integrated with WhatsApp Business API in production' });
+    if (status === 'FAILED') {
+      return res.status(502).json({ message: 'WhatsApp delivery failed', error: waError, record: msg });
+    }
+
+    res.status(201).json(msg);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -921,35 +977,51 @@ const sendBulkWhatsApp = async (req, res) => {
     const { targetGroup, message, trigger } = req.body;
 
     const where = {};
-    if (targetGroup === 'TRIAL') where.subscription = { status: 'TRIAL' };
+    if (targetGroup === 'TRIAL')   where.subscription = { status: 'TRIAL' };
     if (targetGroup === 'EXPIRED') where.subscription = { status: 'EXPIRED' };
-    if (targetGroup === 'ACTIVE') where.subscription = { status: 'ACTIVE' };
+    if (targetGroup === 'ACTIVE')  where.subscription = { status: 'ACTIVE' };
 
     const orgs = await prisma.organization.findMany({
       where,
-      select: { id: true, phone: true, email: true, name: true },
+      select: { id: true, phone: true, name: true },
     });
 
-    const phones = orgs.filter(o => o.phone).map(o => o.phone);
-    let sent = 0;
+    const targets = orgs.filter(o => o.phone);
+    const { apiKey, phoneId } = await getWhatsAppConfig();
 
-    for (const phone of phones) {
+    let sent = 0;
+    let failed = 0;
+
+    for (const org of targets) {
+      let status = 'FAILED';
+      if (apiKey && phoneId) {
+        try {
+          await callWhatsAppAPI(apiKey, phoneId, org.phone, message);
+          status = 'SENT';
+          sent++;
+        } catch {
+          failed++;
+        }
+      } else {
+        failed++;
+      }
+
       await prisma.whatsAppMessage.create({
         data: {
-          phone,
+          phone: org.phone,
           message,
+          organizationId: org.id,
           type: 'AUTOMATED',
           trigger: trigger || 'PROMOTION',
-          status: 'SENT',
-          sentAt: new Date(),
+          status,
+          sentAt: status === 'SENT' ? new Date() : null,
         },
       });
-      sent++;
     }
 
-    res.json({ sent, total: phones.length, message: `${sent} messages sent` });
+    res.json({ sent, failed, total: targets.length, message: `${sent}/${targets.length} messages sent` });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 

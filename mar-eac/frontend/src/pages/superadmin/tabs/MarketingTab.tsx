@@ -54,6 +54,8 @@ export const MarketingTab: React.FC = () => {
   const [confirmSendId, setConfirmSendId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [waSending, setWaSending] = useState(false);
+  const [waError, setWaError] = useState<string | null>(null);
+  const [waSuccess, setWaSuccess] = useState<string | null>(null);
 
   const emptyCampaign = { title: '', subject: '', body: '', targetGroup: 'ALL', scheduledAt: '' };
   const [campaignForm, setCampaignForm] = useState(emptyCampaign);
@@ -106,14 +108,33 @@ export const MarketingTab: React.FC = () => {
 
   const sendWa = async () => {
     setWaSending(true);
+    setWaError(null);
+    setWaSuccess(null);
     try {
       if (waMode === 'manual') {
-        await superadminApi.sendWhatsApp({ phone: waForm.phone, message: waForm.message, trigger: waForm.trigger || undefined });
+        const res = await superadminApi.sendWhatsApp({ phone: waForm.phone, message: waForm.message, trigger: waForm.trigger || undefined });
+        setWaSuccess(isAr ? `تم الإرسال إلى ${waForm.phone}` : `Message envoyé à ${waForm.phone}`);
+        setWaForm(emptyWa);
       } else {
-        await superadminApi.sendBulkWhatsApp({ targetGroup: waForm.targetGroup, message: waForm.message, trigger: waForm.trigger || 'PROMOTION' });
+        const res = await superadminApi.sendBulkWhatsApp({ targetGroup: waForm.targetGroup, message: waForm.message, trigger: waForm.trigger || 'PROMOTION' });
+        setWaSuccess(isAr ? `تم الإرسال: ${res.data?.sent ?? 0}/${res.data?.total ?? 0}` : `Envoyé : ${res.data?.sent ?? 0}/${res.data?.total ?? 0}`);
+        setWaForm(emptyWa);
       }
-      setWaForm(emptyWa);
       await load();
+    } catch (err: any) {
+      const errData = err?.response?.data;
+      if (errData?.error) {
+        // Meta API error
+        const metaErr = errData.error;
+        const detail = typeof metaErr === 'object'
+          ? (metaErr.error_data?.details || metaErr.message || JSON.stringify(metaErr))
+          : metaErr;
+        setWaError(isAr ? `فشل الإرسال: ${detail}` : `Échec d'envoi : ${detail}`);
+      } else if (errData?.message) {
+        setWaError(errData.message);
+      } else {
+        setWaError(isAr ? 'حدث خطأ غير معروف' : 'Erreur inconnue');
+      }
     } finally {
       setWaSending(false);
     }
@@ -298,6 +319,20 @@ export const MarketingTab: React.FC = () => {
               <textarea rows={4} className={inp} value={waForm.message} onChange={e => setWaForm(f => ({ ...f, message: e.target.value }))}
                 placeholder={isAr ? 'نص الرسالة...' : 'Votre message WhatsApp...'} />
             </div>
+
+            {waError && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-700 dark:text-red-400">
+                <span className="text-red-500 mt-0.5 flex-shrink-0">✕</span>
+                <span>{waError}</span>
+              </div>
+            )}
+
+            {waSuccess && (
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-sm text-emerald-700 dark:text-emerald-400">
+                <CheckCircle size={15} className="flex-shrink-0" />
+                <span>{waSuccess}</span>
+              </div>
+            )}
 
             <button
               onClick={sendWa}
