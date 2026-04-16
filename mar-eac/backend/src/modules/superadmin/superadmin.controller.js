@@ -2,36 +2,39 @@ const prisma = require('../../config/database');
 const bcrypt = require('bcryptjs');
 const axios  = require('axios');
 
-// ─── WhatsApp Business API helper ─────────────────────────────────────────────
+// ─── Evolution API (WhatsApp) helper ─────────────────────────────────────────
 
-const getWhatsAppConfig = async () => {
-  const rows = await prisma.platformSettings.findMany({
-    where: { key: { in: ['whatsapp_api_key', 'whatsapp_phone_id'] } },
-  });
-  const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
-  return { apiKey: map.whatsapp_api_key || '', phoneId: map.whatsapp_phone_id || '' };
-};
+const EVO_URL      = process.env.EVOLUTION_API_URL      || '';
+const EVO_KEY      = process.env.EVOLUTION_API_KEY      || '';
+const EVO_INSTANCE = process.env.EVOLUTION_INSTANCE     || 'main';
 
-// Normalize phone: strip spaces/dashes, ensure no leading + (Meta wants "212XXXXXXXXX")
+// Normalize phone: strip spaces/dashes/+, Evolution expects "212XXXXXXXXX"
 const normalizePhone = (phone) =>
-  phone.replace(/\s|-/g, '').replace(/^\+/, '');
+  phone.replace(/[\s\-\+]/g, '');
 
-const callWhatsAppAPI = async (apiKey, phoneId, toPhone, messageText) => {
-  const url = `https://graph.facebook.com/v19.0/${phoneId}/messages`;
+/**
+ * Send a text message via Evolution API.
+ * Docs: POST {EVO_URL}/message/sendText/{instance}
+ * Headers: { apikey: EVO_KEY }
+ * Body:   { number, textMessage: { text } }
+ */
+const callEvolutionAPI = async (toPhone, messageText) => {
+  if (!EVO_URL || !EVO_KEY) {
+    throw new Error('Evolution API not configured (EVOLUTION_API_URL / EVOLUTION_API_KEY missing)');
+  }
+  const url = `${EVO_URL}/message/sendText/${EVO_INSTANCE}`;
   const resp = await axios.post(
     url,
     {
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to: normalizePhone(toPhone),
-      type: 'text',
-      text: { preview_url: false, body: messageText },
+      number: normalizePhone(toPhone),
+      textMessage: { text: messageText },
     },
     {
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        apikey: EVO_KEY,
         'Content-Type': 'application/json',
       },
+      timeout: 15000,
     }
   );
   return resp.data;
@@ -1024,21 +1027,15 @@ const sendWhatsAppMessage = async (req, res) => {
     const { phone, message, organizationId, trigger } = req.body;
     if (!phone || !message) return res.status(400).json({ message: 'phone and message are required' });
 
-    const { apiKey, phoneId } = await getWhatsAppConfig();
-
     let status = 'FAILED';
     let waError = null;
 
-    if (apiKey && phoneId) {
-      try {
-        await callWhatsAppAPI(apiKey, phoneId, phone, message);
-        status = 'SENT';
-      } catch (apiErr) {
-        waError = apiErr?.response?.data || apiErr.message;
-        status = 'FAILED';
-      }
-    } else {
-      waError = 'WhatsApp API not configured (missing api key or phone ID in settings)';
+    try {
+      await callEvolutionAPI(phone, message);
+      status = 'SENT';
+    } catch (apiErr) {
+      waError = apiErr?.response?.data || apiErr.message;
+      status = 'FAILED';
     }
 
     const msg = await prisma.whatsAppMessage.create({
@@ -1078,22 +1075,17 @@ const sendBulkWhatsApp = async (req, res) => {
     });
 
     const targets = orgs.filter(o => o.phone);
-    const { apiKey, phoneId } = await getWhatsAppConfig();
 
     let sent = 0;
     let failed = 0;
 
     for (const org of targets) {
       let status = 'FAILED';
-      if (apiKey && phoneId) {
-        try {
-          await callWhatsAppAPI(apiKey, phoneId, org.phone, message);
-          status = 'SENT';
-          sent++;
-        } catch {
-          failed++;
-        }
-      } else {
+      try {
+        await callEvolutionAPI(org.phone, message);
+        status = 'SENT';
+        sent++;
+      } catch {
         failed++;
       }
 
@@ -1233,7 +1225,7 @@ const resolveAutomationTargets = async (trigger) => {
 
 // ─── Automation: execute actions for one organization ─────────────────────────
 
-const executeActionsForOrg = async (actions, org, wpConfig) => {
+const executeActionsForOrg = async (actions, org) => {
   const results = [];
   const phone   = org.phone ? normalizePhone(org.phone) : null;
   const adminEmail = org.users?.[0]?.email || org.email;
@@ -1248,12 +1240,12 @@ const executeActionsForOrg = async (actions, org, wpConfig) => {
             results.push({ type, orgId: org.id, status: 'SKIPPED', reason: 'no phone' });
             break;
           }
-          if (!wpConfig.apiKey || !wpConfig.phoneId) {
-            results.push({ type, orgId: org.id, status: 'SKIPPED', reason: 'WhatsApp not configured' });
+          if (!EVO_URL || !EVO_KEY) {
+            results.push({ type, orgId: org.id, status: 'SKIPPED', reason: 'Evolution API not configured' });
             break;
           }
           const msgBody = buildAutoMessage(action.template || 'default', org, 'fr');
-          await callWhatsAppAPI(wpConfig.apiKey, wpConfig.phoneId, phone, msgBody);
+          await callEvolutionAPI(phone, msgBody);
           results.push({ type, orgId: org.id, status: 'SENT' });
           break;
         }
@@ -1319,13 +1311,12 @@ const buildAutoMessage = (template, org, lang = 'fr') => {
 // ─── Core: execute one rule against its targets ───────────────────────────────
 
 const executeRule = async (rule) => {
-  const targets  = await resolveAutomationTargets(rule.trigger);
-  const wpConfig = await getWhatsAppConfig();
-  const actions  = Array.isArray(rule.actions) ? rule.actions : [];
+  const targets = await resolveAutomationTargets(rule.trigger);
+  const actions = Array.isArray(rule.actions) ? rule.actions : [];
 
   const allResults = [];
   for (const org of targets) {
-    const orgResults = await executeActionsForOrg(actions, org, wpConfig);
+    const orgResults = await executeActionsForOrg(actions, org);
     allResults.push(...orgResults);
   }
 
