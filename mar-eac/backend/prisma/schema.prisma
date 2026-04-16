@@ -519,3 +519,89 @@ model Payment {
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
+
+// ── SaaS Management Models ────────────────────────────────────────────────────
+
+model Pack {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  nameAr      String?
+  description String?
+  descriptionAr String?
+  price       Float
+  currency    String   @default("MAD")
+  billingCycle String  @default("MONTHLY") // MONTHLY, YEARLY
+  assocType   String   // REGULAR, PROJECTS, WATER, PRODUCTIVE, PRODUCTIVE_WATER
+  size        String   @default("MEDIUM") // SMALL, MEDIUM, LARGE
+  features    String[] @default([])
+  featuresAr  String[] @default([])
+  limits      Json     @default("{}")
+  isActive    Boolean  @default(true)
+  trialDays   Int      @default(15)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PromoCode {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  code          String    @unique
+  description   String?
+  discountType  String    @default("PERCENTAGE") // PERCENTAGE, FIXED
+  discountValue Float
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  expiresAt     DateTime?
+  isActive      Boolean   @default(true)
+  applicableTo  String[]  @default([]) // assoc types it applies to, empty = all
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model EmailCampaign {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  subject     String
+  body        String
+  targetGroup String   @default("ALL") // ALL, TRIAL, ACTIVE, EXPIRED, INACTIVE
+  status      String   @default("DRAFT") // DRAFT, SENT, SCHEDULED
+  sentAt      DateTime?
+  scheduledAt DateTime?
+  recipientCount Int   @default(0)
+  openCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WhatsAppMessage {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String?  @db.ObjectId
+  phone          String
+  message        String
+  type           String   @default("MANUAL") // MANUAL, AUTOMATED
+  trigger        String?  // TRIAL_EXPIRY, PAYMENT_REMINDER, PROMOTION, INACTIVE
+  status         String   @default("PENDING") // PENDING, SENT, FAILED
+  sentAt         DateTime?
+  createdAt      DateTime @default(now())
+}
+
+model AutomationRule {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  nameAr      String?
+  trigger     String   // TRIAL_EXPIRED, PAYMENT_OVERDUE, INACTIVE_30D, INACTIVE_60D, SUBSCRIPTION_EXPIRING
+  conditions  Json     @default("{}")
+  actions     Json     @default("[]") // [{type: 'EMAIL'|'WHATSAPP', template: '...'}]
+  isActive    Boolean  @default(true)
+  lastRun     DateTime?
+  runCount    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PlatformSettings {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  key             String   @unique
+  value           String
+  category        String   @default("GENERAL") // GENERAL, BILLING, INTEGRATIONS, NOTIFICATIONS
+  updatedAt       DateTime @updatedAt
+}

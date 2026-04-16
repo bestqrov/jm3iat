@@ -6,10 +6,13 @@ import {
   TrendingUp, DollarSign, AlertTriangle, Search, Filter, Plus,
   BarChart2, CreditCard, Calendar, RefreshCw, X, Clock,
   Paperclip, ExternalLink, Upload, FileText,
+  Package, Tag, Mail, Zap, Brain, Settings, Activity,
+  ChevronLeft, ChevronRight, MessageCircle,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, PieChart, Pie, Legend,
+  AreaChart, Area,
 } from 'recharts';
 import { superadminApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -18,10 +21,24 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { formatDate, formatCurrency } from '../../lib/utils';
 
+// ── New Tab Components ────────────────────────────────────────────────────────
+import { PacksTab }        from './tabs/PacksTab';
+import { SubscriptionsTab } from './tabs/SubscriptionsTab';
+import { AnalyticsTab }    from './tabs/AnalyticsTab';
+import { FeatureUsageTab } from './tabs/FeatureUsageTab';
+import { MarketingTab }    from './tabs/MarketingTab';
+import { AutomationTab }   from './tabs/AutomationTab';
+import { PromoCodesTab }   from './tabs/PromoCodesTab';
+import { AIInsightsTab }   from './tabs/AIInsightsTab';
+import { SettingsTab }     from './tabs/SettingsTab';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AssocTypeKey = 'REGULAR' | 'PROJECTS' | 'WATER' | 'PRODUCTIVE' | 'PRODUCTIVE_WATER';
-type ActiveTab    = 'dashboard' | 'orgs' | 'payments' | 'users';
+type ActiveTab =
+  | 'dashboard' | 'orgs' | 'subscriptions' | 'payments' | 'users'
+  | 'packs' | 'analytics' | 'usage' | 'marketing' | 'automation'
+  | 'promos' | 'insights' | 'settings';
 
 // ─── Association type config ──────────────────────────────────────────────────
 
@@ -52,22 +69,63 @@ const AssocTypeBadge: React.FC<{ modules: string[]; isAr: boolean }> = ({ module
   const cfg = ASSOC_TYPES.find(t => t.key === key)!;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.badge}`}>
-      {cfg.icon}
-      {isAr ? cfg.labelAr : cfg.labelFr}
+      {cfg.icon} {isAr ? cfg.labelAr : cfg.labelFr}
     </span>
   );
 };
 
 const SubStatusBadge: React.FC<{ status?: string; isAr: boolean }> = ({ status, isAr }) => {
   const cfg: Record<string, { cls: string; fr: string; ar: string }> = {
-    TRIAL:     { cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', fr: 'Essai', ar: 'تجريبي' },
-    ACTIVE:    { cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', fr: 'Actif', ar: 'نشط' },
-    EXPIRED:   { cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', fr: 'Expiré', ar: 'منتهي' },
-    CANCELLED: { cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400', fr: 'Annulé', ar: 'ملغي' },
+    TRIAL:     { cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     fr: 'Essai',   ar: 'تجريبي' },
+    ACTIVE:    { cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', fr: 'Actif',   ar: 'نشط' },
+    EXPIRED:   { cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',             fr: 'Expiré',  ar: 'منتهي' },
+    CANCELLED: { cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',             fr: 'Annulé',  ar: 'ملغي' },
   };
   const s = cfg[status || ''] || cfg['EXPIRED'];
   return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{isAr ? s.ar : s.fr}</span>;
 };
+
+// ─── Tab navigation config ────────────────────────────────────────────────────
+
+const TAB_GROUPS = [
+  {
+    labelFr: 'Vue d\'ensemble',
+    labelAr: 'نظرة عامة',
+    tabs: [
+      { key: 'dashboard',     iconEl: <BarChart2 size={15} />,     labelFr: 'Tableau de bord',   labelAr: 'لوحة التحكم' },
+      { key: 'analytics',     iconEl: <TrendingUp size={15} />,    labelFr: 'Analytics',         labelAr: 'التحليلات' },
+      { key: 'insights',      iconEl: <Brain size={15} />,         labelFr: 'IA Insights',       labelAr: 'رؤى الذكاء الاصطناعي' },
+      { key: 'usage',         iconEl: <Activity size={15} />,      labelFr: 'Utilisation',       labelAr: 'الاستخدام' },
+    ],
+  },
+  {
+    labelFr: 'Gestion',
+    labelAr: 'الإدارة',
+    tabs: [
+      { key: 'orgs',          iconEl: <Building2 size={15} />,     labelFr: 'Organisations',     labelAr: 'المنظمات' },
+      { key: 'subscriptions', iconEl: <RefreshCw size={15} />,     labelFr: 'Abonnements',       labelAr: 'الاشتراكات' },
+      { key: 'payments',      iconEl: <CreditCard size={15} />,    labelFr: 'Paiements',         labelAr: 'المدفوعات' },
+      { key: 'users',         iconEl: <Users size={15} />,         labelFr: 'Utilisateurs',      labelAr: 'المستخدمون' },
+    ],
+  },
+  {
+    labelFr: 'Offres & Marketing',
+    labelAr: 'الباقات والتسويق',
+    tabs: [
+      { key: 'packs',         iconEl: <Package size={15} />,       labelFr: 'Offres & Tarifs',   labelAr: 'الباقات والأسعار' },
+      { key: 'promos',        iconEl: <Tag size={15} />,           labelFr: 'Codes Promo',       labelAr: 'أكواد الخصم' },
+      { key: 'marketing',     iconEl: <Mail size={15} />,          labelFr: 'Marketing',         labelAr: 'التسويق' },
+      { key: 'automation',    iconEl: <Zap size={15} />,           labelFr: 'Automatisation',    labelAr: 'الأتمتة' },
+    ],
+  },
+  {
+    labelFr: 'Configuration',
+    labelAr: 'الإعدادات',
+    tabs: [
+      { key: 'settings',      iconEl: <Settings size={15} />,      labelFr: 'Paramètres',        labelAr: 'الإعدادات' },
+    ],
+  },
+];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -75,953 +133,718 @@ export const SuperAdminPage: React.FC = () => {
   const { lang } = useLanguage();
   const isAr = lang === 'ar';
 
-  // ── Tab — driven by URL ?tab= so sidebar links work ──
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = useMemo<ActiveTab>(() => {
-    const t = searchParams.get('tab');
-    return (t === 'orgs' || t === 'payments' || t === 'users') ? t : 'dashboard';
+    const t = searchParams.get('tab') as ActiveTab;
+    const valid: ActiveTab[] = ['dashboard','orgs','subscriptions','payments','users','packs','analytics','usage','marketing','automation','promos','insights','settings'];
+    return valid.includes(t) ? t : 'dashboard';
   }, [searchParams]);
-  const setActiveTab = (tab: ActiveTab) => {
-    setSearchParams(tab === 'dashboard' ? {} : { tab }, { replace: true });
-  };
 
-  // ── Data ──
-  const [stats,     setStats]     = useState<any>({});
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [orgs,      setOrgs]      = useState<any[]>([]);
-  const [users,     setUsers]     = useState<any[]>([]);
-  const [payments,  setPayments]  = useState<any[]>([]);
+  const setTab = (tab: ActiveTab) => setSearchParams({ tab });
 
-  // ── Loading ──
-  const [loadingStats,    setLoadingStats]    = useState(true);
-  const [loadingAnalytics,setLoadingAnalytics]= useState(true);
-  const [loadingOrgs,     setLoadingOrgs]     = useState(true);
-  const [loadingPayments, setLoadingPayments] = useState(true);
-  const [loadingUsers,    setLoadingUsers]    = useState(true);
+  // ─── States ────────────────────────────────────────────────────────────────
+  const [stats, setStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
-  // ── Org filters ──
-  const [orgSearch, setOrgSearch]   = useState('');
-  const [orgType,   setOrgType]     = useState('');
-  const [orgStatus, setOrgStatus]   = useState('');
+  // Orgs state
+  const [orgs, setOrgs] = useState<any[]>([]);
+  const [orgsTotal, setOrgsTotal] = useState(0);
+  const [orgsPage, setOrgsPage] = useState(1);
+  const [orgsLoading, setOrgsLoading] = useState(false);
+  const [orgSearch, setOrgSearch] = useState('');
+  const [orgTypeFilter, setOrgTypeFilter] = useState('');
+  const [orgStatusFilter, setOrgStatusFilter] = useState('');
+  const [viewingOrg, setViewingOrg] = useState<any>(null);
+  const [editingOrg, setEditingOrg] = useState<any>(null);
+  const [deletingOrgId, setDeletingOrgId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ assocType: '', status: '', expiresAt: '' });
+  const [editSaving, setEditSaving] = useState(false);
 
-  // ── User search ──
+  // Payments state
+  const [payments, setPayments] = useState<any[]>([]);
+  const [paymentsTotal, setPaymentsTotal] = useState(0);
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ organizationId: '', amount: '', method: 'CASH', reference: '', note: '', paidAt: '' });
+  const [paymentFile, setPaymentFile] = useState<File | null>(null);
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
+
+  // Users state
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersTotal, setUsersTotal] = useState(0);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [userSearch, setUserSearch] = useState('');
+  const [resetResult, setResetResult] = useState<{ tempPassword: string; name: string; email: string } | null>(null);
+  const [copiedPw, setCopiedPw] = useState(false);
 
-  // ── Modals ──
-  const [showSubModal,     setShowSubModal]     = useState(false);
-  const [selectedOrg,      setSelectedOrg]      = useState<any>(null);
-  const [deleteOrgId,      setDeleteOrgId]      = useState<string | null>(null);
-  const [deletePaymentId,  setDeletePaymentId]  = useState<string | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [resetResult,      setResetResult]      = useState<any>(null);
-  const [resetCopied,      setResetCopied]      = useState(false);
+  const ORGS_LIMIT = 15;
+  const PAYMENTS_LIMIT = 20;
+  const USERS_LIMIT = 20;
 
-  // ── Form state ──
-  const [subForm, setSubForm] = useState<{ assocType: AssocTypeKey; status: string; expiresAt: string }>({
-    assocType: 'REGULAR', status: 'ACTIVE', expiresAt: '',
-  });
-  const [paymentForm, setPaymentForm] = useState({
-    organizationId: '', amount: '', method: 'CASH', reference: '', note: '', paidAt: '',
-  });
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
-
-  // ── Operation state ──
-  const [saving,   setSaving]   = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [saveError,setSaveError]= useState<string | null>(null);
-
-  // ─── Loaders ────────────────────────────────────────────────────────────────
-
+  // ─── Loaders ───────────────────────────────────────────────────────────────
   const loadStats = useCallback(async () => {
-    try {
-      setLoadingStats(true);
-      const res = await superadminApi.getStats();
-      setStats(res.data);
-    } finally { setLoadingStats(false); }
-  }, []);
-
-  const loadAnalytics = useCallback(async () => {
-    try {
-      setLoadingAnalytics(true);
-      const res = await superadminApi.getAnalytics();
-      setAnalytics(res.data);
-    } finally { setLoadingAnalytics(false); }
+    setStatsLoading(true);
+    try { const r = await superadminApi.getStats(); setStats(r.data); }
+    finally { setStatsLoading(false); }
   }, []);
 
   const loadOrgs = useCallback(async () => {
+    setOrgsLoading(true);
     try {
-      setLoadingOrgs(true);
-      const params: any = {};
-      if (orgSearch) params.search = orgSearch;
-      if (orgType)   params.type   = orgType;
-      if (orgStatus) params.status = orgStatus;
-      const res = await superadminApi.getOrganizations(params);
-      setOrgs(res.data.data || res.data);
-    } finally { setLoadingOrgs(false); }
-  }, [orgSearch, orgType, orgStatus]);
+      const r = await superadminApi.getOrganizations({
+        page: orgsPage, limit: ORGS_LIMIT,
+        search: orgSearch || undefined,
+        type: orgTypeFilter || undefined,
+        status: orgStatusFilter || undefined,
+      });
+      setOrgs(r.data.data);
+      setOrgsTotal(r.data.total);
+    } finally { setOrgsLoading(false); }
+  }, [orgsPage, orgSearch, orgTypeFilter, orgStatusFilter]);
 
   const loadPayments = useCallback(async () => {
+    setPaymentsLoading(true);
     try {
-      setLoadingPayments(true);
-      const res = await superadminApi.getPayments();
-      setPayments(res.data.data || res.data);
-    } finally { setLoadingPayments(false); }
-  }, []);
+      const r = await superadminApi.getPayments({ page: paymentsPage, limit: PAYMENTS_LIMIT });
+      setPayments(r.data.data);
+      setPaymentsTotal(r.data.total);
+    } finally { setPaymentsLoading(false); }
+  }, [paymentsPage]);
 
   const loadUsers = useCallback(async () => {
+    setUsersLoading(true);
     try {
-      setLoadingUsers(true);
-      const res = await superadminApi.getUsers(userSearch ? { search: userSearch } : {});
-      setUsers(res.data.data || res.data);
-    } finally { setLoadingUsers(false); }
+      const r = await superadminApi.getUsers({ search: userSearch || undefined, limit: USERS_LIMIT });
+      setUsers(r.data.data);
+      setUsersTotal(r.data.total);
+    } finally { setUsersLoading(false); }
   }, [userSearch]);
 
-  useEffect(() => { loadStats(); loadAnalytics(); }, []);
-  useEffect(() => { if (activeTab === 'orgs')     loadOrgs();     }, [activeTab, orgSearch, orgType, orgStatus]);
-  useEffect(() => { if (activeTab === 'payments') loadPayments(); }, [activeTab]);
-  useEffect(() => { if (activeTab === 'users')    loadUsers();    }, [activeTab, userSearch]);
+  useEffect(() => { loadStats(); }, []);
+  useEffect(() => { if (activeTab === 'orgs') loadOrgs(); }, [activeTab, loadOrgs]);
+  useEffect(() => { if (activeTab === 'payments') loadPayments(); }, [activeTab, loadPayments]);
+  useEffect(() => { if (activeTab === 'users') loadUsers(); }, [activeTab, loadUsers]);
 
-  // ─── Handlers ────────────────────────────────────────────────────────────────
+  // ─── Org actions ───────────────────────────────────────────────────────────
+  const openViewOrg = async (id: string) => {
+    const r = await superadminApi.getOrganization(id);
+    setViewingOrg(r.data);
+  };
 
-  const openSubModal = (org: any) => {
-    setSelectedOrg(org);
-    setSubForm({
-      assocType: getAssocType(org.modules || []),
-      status:    org.subscription?.status    || 'ACTIVE',
-      expiresAt: org.subscription?.expiresAt?.split('T')[0] || '',
+  const openEditOrg = (org: any) => {
+    setEditingOrg(org);
+    setEditForm({
+      assocType: getAssocType(org.modules),
+      status: org.subscription?.status || 'TRIAL',
+      expiresAt: org.subscription?.expiresAt ? org.subscription.expiresAt.slice(0, 10) : '',
     });
-    setSaveError(null);
-    setShowSubModal(true);
   };
 
-  const handleSubUpdate = async () => {
-    if (!selectedOrg) return;
-    setSaving(true); setSaveError(null);
+  const saveEditOrg = async () => {
+    if (!editingOrg) return;
+    setEditSaving(true);
     try {
-      await superadminApi.updateSubscription(selectedOrg.id, subForm);
-      setShowSubModal(false);
-      loadOrgs(); loadStats(); loadAnalytics();
-    } catch (err: any) {
-      setSaveError(err?.response?.data?.message || (isAr ? 'خطأ في الحفظ' : 'Erreur lors de la sauvegarde'));
-    } finally { setSaving(false); }
+      await superadminApi.updateSubscription(editingOrg.id, editForm);
+      setEditingOrg(null);
+      await loadOrgs();
+      await loadStats();
+    } finally { setEditSaving(false); }
   };
 
-  const handleDeleteOrg = async () => {
-    if (!deleteOrgId) return;
-    setDeleting(true);
-    try { await superadminApi.deleteOrganization(deleteOrgId); setDeleteOrgId(null); loadOrgs(); loadStats(); loadAnalytics(); }
-    finally { setDeleting(false); }
+  const deleteOrg = async () => {
+    if (!deletingOrgId) return;
+    await superadminApi.deleteOrganization(deletingOrgId);
+    setDeletingOrgId(null);
+    await loadOrgs();
+    await loadStats();
   };
 
-  const handleToggleUser = async (userId: string) => {
-    try { await superadminApi.toggleUser(userId); loadUsers(); } catch {}
-  };
-
-  const handleResetPassword = async (userId: string) => {
-    try { const res = await superadminApi.resetUserPassword(userId); setResetResult(res.data); } catch {}
-  };
-
-  const handleCreatePayment = async () => {
-    if (!paymentForm.organizationId || !paymentForm.amount) return;
-    setSaving(true);
+  // ─── Payment actions ───────────────────────────────────────────────────────
+  const submitPayment = async () => {
+    setPaymentSaving(true);
     try {
       const fd = new FormData();
-      Object.entries(paymentForm).forEach(([k, v]) => { if (v) fd.append(k, v); });
-      if (receiptFile) fd.append('receipt', receiptFile);
+      Object.entries(paymentForm).forEach(([k, v]) => v && fd.append(k, v));
+      if (paymentFile) fd.append('receipt', paymentFile);
       await superadminApi.createPayment(fd);
-      setShowPaymentModal(false);
+      setShowPaymentForm(false);
       setPaymentForm({ organizationId: '', amount: '', method: 'CASH', reference: '', note: '', paidAt: '' });
-      setReceiptFile(null);
-      loadPayments(); loadAnalytics();
-    } finally { setSaving(false); }
+      setPaymentFile(null);
+      await loadPayments();
+    } finally { setPaymentSaving(false); }
   };
 
-  const handleDeletePayment = async () => {
-    if (!deletePaymentId) return;
-    setDeleting(true);
-    try { await superadminApi.deletePayment(deletePaymentId); setDeletePaymentId(null); loadPayments(); loadAnalytics(); }
-    finally { setDeleting(false); }
+  const deletePayment = async () => {
+    if (!deletingPaymentId) return;
+    await superadminApi.deletePayment(deletingPaymentId);
+    setDeletingPaymentId(null);
+    await loadPayments();
   };
 
-  const copyPassword = () => {
+  // ─── User actions ──────────────────────────────────────────────────────────
+  const toggleUserActive = async (userId: string) => {
+    await superadminApi.toggleUser(userId);
+    await loadUsers();
+  };
+
+  const resetPassword = async (userId: string) => {
+    const r = await superadminApi.resetUserPassword(userId);
+    setResetResult(r.data);
+    setCopiedPw(false);
+  };
+
+  const copyPw = () => {
     if (resetResult) {
       navigator.clipboard.writeText(resetResult.tempPassword);
-      setResetCopied(true);
-      setTimeout(() => setResetCopied(false), 2000);
+      setCopiedPw(true);
+      setTimeout(() => setCopiedPw(false), 2000);
     }
   };
 
-  // ─── Derived chart data ───────────────────────────────────────────────────
+  // ─── Shared helpers ────────────────────────────────────────────────────────
+  const inp = 'w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-indigo-500 outline-none';
+  const lbl = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1';
+  const orgPages = Math.ceil(orgsTotal / ORGS_LIMIT);
+  const payPages = Math.ceil(paymentsTotal / PAYMENTS_LIMIT);
 
-  const typeDistribution: Record<string, number> = stats.typeDistribution || {};
-  const totalOrgs = stats.totalOrgs || 0;
-
-  const FRENCH_MONTHS: Record<string, string> = {
-    '01': 'Jan', '02': 'Fév', '03': 'Mar', '04': 'Avr',
-    '05': 'Mai', '06': 'Jun', '07': 'Jul', '08': 'Aoû',
-    '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Déc',
-  };
-  const ARABIC_MONTHS: Record<string, string> = {
-    '01': 'يناير', '02': 'فبراير', '03': 'مارس', '04': 'أبريل',
-    '05': 'مايو', '06': 'يونيو', '07': 'يوليو', '08': 'أغسطس',
-    '09': 'سبتمبر', '10': 'أكتوبر', '11': 'نوفمبر', '12': 'ديسمبر',
-  };
-
-  const signupChartData = (analytics?.monthlySignups || []).map((m: any) => {
-    const mm = m.month.split('-')[1];
-    return { name: isAr ? ARABIC_MONTHS[mm] : FRENCH_MONTHS[mm], count: m.count };
-  });
-
-  const typePieData = ASSOC_TYPES.map(t => ({
-    name: isAr ? t.labelAr : t.labelFr,
-    value: typeDistribution[t.key] || 0,
-    color: t.dot,
-  })).filter(d => d.value > 0);
-
-  const PAYMENT_METHODS = ['CASH', 'TRANSFER', 'CHECK'];
-  const METHOD_LABEL: Record<string, { fr: string; ar: string }> = {
-    CASH:     { fr: 'Espèces',  ar: 'نقداً' },
-    TRANSFER: { fr: 'Virement', ar: 'تحويل' },
-    CHECK:    { fr: 'Chèque',   ar: 'شيك' },
-  };
-
-  // ─── Tabs config ──────────────────────────────────────────────────────────
-
-  const TABS: { key: ActiveTab; labelFr: string; labelAr: string; icon: React.ReactNode }[] = [
-    { key: 'dashboard', labelFr: 'Tableau de bord', labelAr: 'لوحة التحكم', icon: <BarChart2 size={15} /> },
-    { key: 'orgs',      labelFr: 'Associations',    labelAr: 'الجمعيات',    icon: <Building2 size={15} /> },
-    { key: 'payments',  labelFr: 'Paiements',        labelAr: 'المدفوعات',   icon: <CreditCard size={15} /> },
-    { key: 'users',     labelFr: 'Utilisateurs',     labelAr: 'المستخدمون',  icon: <Users size={15} /> },
-  ];
-
-  // ─── Render ───────────────────────────────────────────────────────────────
-
+  // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between">
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isAr ? 'rtl' : 'ltr'}`}>
+      {/* ── Top Header ── */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1e40af, #7c3aed)' }}>
+          <div className="p-2 rounded-xl bg-indigo-600">
             <Shield size={20} className="text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {isAr ? 'لوحة الإدارة العليا' : 'SuperAdmin Panel'}
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {isAr ? 'إدارة شاملة للمنصة' : 'Gestion complète de la plateforme'}
-            </p>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+              {isAr ? 'الإدارة العامة' : 'Super Administration'}
+            </h1>
+            <p className="text-xs text-gray-400">Mar E-A.C · SaaS Management Platform</p>
+          </div>
+          <div className="ms-auto flex items-center gap-3">
+            {/* Stats quick pills */}
+            {!statsLoading && stats && (
+              <div className="hidden md:flex items-center gap-3 text-xs">
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300">
+                  <Building2 size={11} /> {stats.totalOrgs} {isAr ? 'منظمة' : 'org.'}
+                </span>
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-emerald-700 dark:text-emerald-400">
+                  <TrendingUp size={11} /> {stats.mrrEstimate?.toLocaleString()} MAD MRR
+                </span>
+              </div>
+            )}
           </div>
         </div>
-        <button onClick={() => { loadStats(); loadAnalytics(); }}
-          className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title={isAr ? 'تحديث' : 'Actualiser'}>
-          <RefreshCw size={16} />
-        </button>
       </div>
 
-      {/* ── Top KPI Cards (always visible) ── */}
-      <div className="stats-grid">
-        <StatCard title={isAr ? 'إجمالي الجمعيات' : 'Total associations'}
-          value={stats.totalOrgs ?? 0} icon={<Building2 size={20} />}
-          iconBg="bg-blue-100 dark:bg-blue-900/30" iconColor="text-blue-600 dark:text-blue-400" />
-        <StatCard title={isAr ? 'الاشتراكات النشطة' : 'Abonnements actifs'}
-          value={stats.activeOrgs ?? 0} icon={<Check size={20} />}
-          iconBg="bg-emerald-100 dark:bg-emerald-900/30" iconColor="text-emerald-600 dark:text-emerald-400" />
-        <StatCard title={isAr ? 'في فترة التجربة' : 'En période d\'essai'}
-          value={stats.trialOrgs ?? 0} icon={<Clock size={20} />}
-          iconBg="bg-amber-100 dark:bg-amber-900/30" iconColor="text-amber-600 dark:text-amber-400" />
-        <StatCard title={isAr ? 'الإيرادات المتوقعة/شهر' : 'Revenus estimés/mois'}
-          value={analytics ? `${analytics.mrrEstimate} MAD` : '…'}
-          icon={<TrendingUp size={20} />}
-          iconBg="bg-purple-100 dark:bg-purple-900/30" iconColor="text-purple-600 dark:text-purple-400" />
-      </div>
+      <div className="flex">
+        {/* ── Left / Right Sidebar Navigation ── */}
+        <aside className={`w-56 flex-shrink-0 bg-white dark:bg-gray-800 border-e border-gray-200 dark:border-gray-700 min-h-[calc(100vh-64px)] p-3 space-y-4 ${isAr ? 'border-s border-e-0' : ''}`}>
+          {TAB_GROUPS.map(group => (
+            <div key={group.labelFr}>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 px-2 mb-1.5">
+                {isAr ? group.labelAr : group.labelFr}
+              </p>
+              <nav className="space-y-0.5">
+                {group.tabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setTab(tab.key as ActiveTab)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all text-start ${
+                      activeTab === tab.key
+                        ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+                    }`}
+                  >
+                    <span className={activeTab === tab.key ? 'text-indigo-500' : 'text-gray-400'}>
+                      {tab.iconEl}
+                    </span>
+                    {isAr ? tab.labelAr : tab.labelFr}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          ))}
+        </aside>
 
-      {/* ── Tabs ── */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
-        {TABS.map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab.key
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}>
-            {tab.icon}
-            {isAr ? tab.labelAr : tab.labelFr}
-          </button>
-        ))}
-      </div>
+        {/* ── Main Content ── */}
+        <main className="flex-1 p-6 overflow-auto">
 
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/* DASHBOARD TAB                                                        */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {activeTab === 'dashboard' && (
-        <div className="space-y-6">
-
-          {/* Revenue cards row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="card p-4 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
-                <DollarSign size={22} className="text-emerald-600 dark:text-emerald-400" />
-              </div>
+          {/* ════════════ DASHBOARD TAB ════════════ */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{isAr ? 'إجمالي المدفوعات' : 'Total encaissé'}</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">
-                  {analytics ? `${analytics.totalCollected.toFixed(0)} MAD` : '…'}
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {isAr ? 'لوحة التحكم' : 'Tableau de bord'}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                  {isAr ? 'مرحباً — نظرة شاملة على المنصة' : 'Bienvenue — Vue d\'ensemble de la plateforme'}
                 </p>
               </div>
-            </div>
-            <div className="card p-4 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30">
-                <CreditCard size={22} className="text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{isAr ? 'مدفوعات هذا الشهر' : 'Paiements ce mois'}</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">
-                  {analytics ? `${analytics.paymentsThisMonth.toFixed(0)} MAD` : '…'}
-                </p>
-              </div>
-            </div>
-            <div className="card p-4 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/30">
-                <TrendingUp size={22} className="text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{isAr ? 'إمكانية التحويل' : 'Potentiel à convertir'}</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">
-                  {analytics ? `${analytics.potentialMrr} MAD` : '…'}
-                </p>
-              </div>
-            </div>
-          </div>
 
-          {/* Charts row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* Monthly signups bar chart */}
-            <div className="lg:col-span-2 card p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4 text-sm">
-                {isAr ? 'انضمامات الجمعيات (آخر 6 أشهر)' : 'Nouvelles associations (6 derniers mois)'}
-              </h3>
-              {loadingAnalytics ? (
-                <div className="h-[200px] flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>
-              ) : signupChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={signupChartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="count" name={isAr ? 'جمعيات جديدة' : 'Nouvelles'} radius={[4,4,0,0]}>
-                      {signupChartData.map((_: any, i: number) => (
-                        <Cell key={i} fill={`hsl(${220 + i * 15}, 70%, ${55 + i * 3}%)`} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[200px] flex items-center justify-center text-gray-400 text-sm">
-                  {isAr ? 'لا توجد بيانات' : 'Aucune donnée'}
-                </div>
-              )}
-            </div>
-
-            {/* Type distribution pie */}
-            <div className="card p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4 text-sm">
-                {isAr ? 'توزيع الأنواع' : 'Répartition des types'}
-              </h3>
-              {typePieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie data={typePieData} cx="50%" cy="45%" outerRadius={65} dataKey="value"
-                      label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                      {typePieData.map((entry: any, i: number) => <Cell key={i} fill={entry.color} />)}
-                    </Pie>
-                    <Tooltip formatter={(v: any, n: any) => [v, n]} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[200px] flex items-center justify-center text-gray-400 text-sm">
-                  {isAr ? 'لا توجد بيانات' : 'Aucune donnée'}
-                </div>
-              )}
-              {/* Legend */}
-              <div className="mt-2 space-y-1">
-                {ASSOC_TYPES.map(t => {
-                  const count = typeDistribution[t.key] || 0;
-                  const pct   = totalOrgs > 0 ? Math.round((count / totalOrgs) * 100) : 0;
-                  return (
-                    <div key={t.key} className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: t.dot }} />
-                        {isAr ? t.labelAr : t.labelFr}
-                      </span>
-                      <span className="font-medium text-gray-900 dark:text-white">{count} <span className="text-gray-400 font-normal">({pct}%)</span></span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom row: expiring soon + recent payments */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-            {/* Expiring soon */}
-            <div className="card p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm flex items-center gap-2">
-                <AlertTriangle size={15} className="text-amber-500" />
-                {isAr ? 'اشتراكات تنتهي قريباً (30 يوم)' : 'Abonnements expirant bientôt (30j)'}
-              </h3>
-              {loadingAnalytics ? (
-                <div className="flex justify-center py-6"><div className="w-6 h-6 border-3 border-amber-400 border-t-transparent rounded-full animate-spin" /></div>
-              ) : (analytics?.expiringSoon || []).length > 0 ? (
-                <div className="space-y-2">
-                  {(analytics.expiringSoon as any[]).map((org: any) => (
-                    <div key={org.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{org.name}</p>
-                        <p className="text-xs text-gray-500">{org.email}</p>
-                      </div>
-                      <div className="text-end">
-                        <AssocTypeBadge modules={org.modules || []} isAr={isAr} />
-                        <p className={`text-xs mt-1 font-medium ${org.daysLeft <= 7 ? 'text-red-500' : 'text-amber-500'}`}>
-                          {org.daysLeft} {isAr ? 'يوم' : 'j'}
-                        </p>
-                      </div>
-                    </div>
+              {/* KPI Grid */}
+              {statsLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="h-24 bg-gray-100 dark:bg-gray-700 rounded-2xl animate-pulse" />
                   ))}
                 </div>
-              ) : (
-                <div className="py-6 text-center text-sm text-gray-400">
-                  {isAr ? 'لا توجد اشتراكات تنتهي قريباً' : 'Aucun abonnement expirant bientôt'}
-                </div>
-              )}
-            </div>
-
-            {/* Recent payments */}
-            <div className="card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center gap-2">
-                  <CreditCard size={15} className="text-emerald-500" />
-                  {isAr ? 'آخر المدفوعات' : 'Derniers paiements'}
-                </h3>
-                <button onClick={() => setActiveTab('payments')}
-                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
-                  {isAr ? 'عرض الكل' : 'Voir tout'}
-                </button>
-              </div>
-              {loadingAnalytics ? (
-                <div className="flex justify-center py-6"><div className="w-6 h-6 border-3 border-emerald-400 border-t-transparent rounded-full animate-spin" /></div>
-              ) : (analytics?.recentPayments || []).length > 0 ? (
-                <div className="space-y-2">
-                  {(analytics.recentPayments as any[]).map((p: any) => (
-                    <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{p.organization?.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {formatDate(p.paidAt, lang)} · {isAr ? METHOD_LABEL[p.method]?.ar : METHOD_LABEL[p.method]?.fr}
-                          {p.reference && <span className="font-mono ms-1">#{p.reference}</span>}
-                        </p>
+              ) : stats && (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: isAr ? 'إجمالي المنظمات' : 'Total organisations', value: stats.totalOrgs, icon: <Building2 size={20} />, bg: 'bg-indigo-50 dark:bg-indigo-900/20', color: 'text-indigo-600 dark:text-indigo-400' },
+                      { label: isAr ? 'اشتراكات نشطة' : 'Abonnements actifs', value: stats.activeOrgs, icon: <Check size={20} />, bg: 'bg-emerald-50 dark:bg-emerald-900/20', color: 'text-emerald-600 dark:text-emerald-400' },
+                      { label: isAr ? 'فترات تجربة' : 'Essais en cours', value: stats.trialOrgs, icon: <Clock size={20} />, bg: 'bg-amber-50 dark:bg-amber-900/20', color: 'text-amber-600 dark:text-amber-400' },
+                      { label: isAr ? 'منتهية الصلاحية' : 'Abonnements expirés', value: stats.expiredOrgs, icon: <AlertTriangle size={20} />, bg: 'bg-red-50 dark:bg-red-900/20', color: 'text-red-600 dark:text-red-400' },
+                      { label: isAr ? 'الإيراد الشهري (MRR)' : 'MRR estimé', value: `${(stats.mrrEstimate || 0).toLocaleString()} MAD`, icon: <TrendingUp size={20} />, bg: 'bg-purple-50 dark:bg-purple-900/20', color: 'text-purple-600 dark:text-purple-400' },
+                      { label: isAr ? 'إيرادات الشهر' : 'Revenus du mois', value: `${(stats.monthlyRevenue || 0).toLocaleString()} MAD`, icon: <DollarSign size={20} />, bg: 'bg-blue-50 dark:bg-blue-900/20', color: 'text-blue-600 dark:text-blue-400' },
+                      { label: isAr ? 'منظمات جديدة (هذا الشهر)' : 'Nouvelles orgs (mois)', value: stats.newOrgsThisMonth, icon: <Plus size={20} />, bg: 'bg-teal-50 dark:bg-teal-900/20', color: 'text-teal-600 dark:text-teal-400' },
+                      { label: isAr ? 'المستخدمون' : 'Utilisateurs', value: stats.totalUsers, icon: <Users size={20} />, bg: 'bg-gray-50 dark:bg-gray-700/30', color: 'text-gray-600 dark:text-gray-300' },
+                    ].map((kpi, i) => (
+                      <div key={i} className={`rounded-2xl p-4 ${kpi.bg}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{kpi.label}</span>
+                          <span className={kpi.color}>{kpi.icon}</span>
+                        </div>
+                        <div className={`text-2xl font-extrabold ${kpi.color}`}>{kpi.value}</div>
                       </div>
-                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                        +{p.amount.toFixed(0)} MAD
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-6 text-center text-sm text-gray-400">
-                  {isAr ? 'لا توجد مدفوعات بعد' : 'Aucun paiement enregistré'}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/* ORGANIZATIONS TAB                                                    */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {activeTab === 'orgs' && (
-        <div className="space-y-4">
-
-          {/* Filters bar */}
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="relative flex-1 min-w-48">
-              <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                className="input ps-9 text-sm h-9"
-                placeholder={isAr ? 'بحث باسم أو بريد أو مدينة…' : 'Rechercher par nom, email, ville…'}
-                value={orgSearch}
-                onChange={e => setOrgSearch(e.target.value)}
-              />
-              {orgSearch && (
-                <button onClick={() => setOrgSearch('')} className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Filter size={14} className="text-gray-400" />
-              <select className="input text-sm h-9 py-0" value={orgType} onChange={e => setOrgType(e.target.value)}>
-                <option value="">{isAr ? 'كل الأنواع' : 'Tous les types'}</option>
-                {ASSOC_TYPES.map(t => <option key={t.key} value={t.key}>{isAr ? t.labelAr : t.labelFr}</option>)}
-              </select>
-              <select className="input text-sm h-9 py-0" value={orgStatus} onChange={e => setOrgStatus(e.target.value)}>
-                <option value="">{isAr ? 'كل الحالات' : 'Tous les statuts'}</option>
-                {['TRIAL','ACTIVE','EXPIRED','CANCELLED'].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="card">
-            {loadingOrgs ? (
-              <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>
-            ) : (
-              <div className="table-wrap">
-                <table className="table">
-                  <thead><tr>
-                    <th>{isAr ? 'الجمعية' : 'Association'}</th>
-                    <th>{isAr ? 'المدينة' : 'Ville'}</th>
-                    <th>{isAr ? 'النوع' : 'Type'}</th>
-                    <th>{isAr ? 'الاشتراك' : 'Abonnement'}</th>
-                    <th>{isAr ? 'تاريخ الانتهاء' : 'Expiration'}</th>
-                    <th>{isAr ? 'الأعضاء' : 'Membres'}</th>
-                    <th>{isAr ? 'تاريخ الإنشاء' : 'Créé le'}</th>
-                    <th>{isAr ? 'إجراءات' : 'Actions'}</th>
-                  </tr></thead>
-                  <tbody>
-                    {orgs.length === 0 ? (
-                      <tr><td colSpan={8} className="text-center py-10 text-gray-400 text-sm">{isAr ? 'لا توجد نتائج' : 'Aucun résultat'}</td></tr>
-                    ) : orgs.map(org => (
-                      <tr key={org.id}>
-                        <td>
-                          <div className="font-medium text-gray-900 dark:text-white">{org.name}</div>
-                          <div className="text-xs text-gray-500">{org.email}</div>
-                        </td>
-                        <td className="text-sm text-gray-600 dark:text-gray-400">{org.city || '-'}</td>
-                        <td><AssocTypeBadge modules={org.modules || []} isAr={isAr} /></td>
-                        <td><SubStatusBadge status={org.subscription?.status} isAr={isAr} /></td>
-                        <td className="text-sm text-gray-600 dark:text-gray-400">
-                          {org.subscription?.expiresAt ? formatDate(org.subscription.expiresAt, lang) : '-'}
-                        </td>
-                        <td className="text-sm text-center">{org._count?.members ?? 0}</td>
-                        <td className="text-sm text-gray-500">{formatDate(org.createdAt, lang)}</td>
-                        <td>
-                          <div className="flex gap-1">
-                            <button onClick={() => openSubModal(org)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                              title={isAr ? 'تعديل' : 'Modifier'}>
-                              <Pencil size={14} />
-                            </button>
-                            <button onClick={() => setDeleteOrgId(org.id)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                              title={isAr ? 'حذف' : 'Supprimer'}>
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/* PAYMENTS TAB                                                         */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {activeTab === 'payments' && (
-        <div className="space-y-4">
-
-          {/* Summary + add button */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex gap-4 flex-1 flex-wrap">
-              <div className="card p-3 flex items-center gap-3 min-w-40">
-                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                  <DollarSign size={18} className="text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">{isAr ? 'الإجمالي' : 'Total encaissé'}</p>
-                  <p className="text-base font-bold text-gray-900 dark:text-white">
-                    {analytics ? `${analytics.totalCollected.toFixed(0)} MAD` : '…'}
-                  </p>
-                </div>
-              </div>
-              <div className="card p-3 flex items-center gap-3 min-w-40">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <Calendar size={18} className="text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">{isAr ? 'هذا الشهر' : 'Ce mois'}</p>
-                  <p className="text-base font-bold text-gray-900 dark:text-white">
-                    {analytics ? `${analytics.paymentsThisMonth.toFixed(0)} MAD` : '…'}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <button onClick={() => setShowPaymentModal(true)}
-              className="btn-primary flex items-center gap-2 text-sm">
-              <Plus size={16} />
-              {isAr ? 'تسجيل دفع' : 'Enregistrer un paiement'}
-            </button>
-          </div>
-
-          {/* Payments table */}
-          <div className="card">
-            {loadingPayments ? (
-              <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>
-            ) : (
-              <div className="table-wrap">
-                <table className="table">
-                  <thead><tr>
-                    <th>{isAr ? 'الجمعية' : 'Association'}</th>
-                    <th>{isAr ? 'المبلغ' : 'Montant'}</th>
-                    <th>{isAr ? 'طريقة الدفع' : 'Mode'}</th>
-                    <th>{isAr ? 'التاريخ' : 'Date'}</th>
-                    <th>{isAr ? 'ملاحظة' : 'Note'}</th>
-                    <th>{isAr ? 'إجراءات' : 'Actions'}</th>
-                  </tr></thead>
-                  <tbody>
-                    {payments.length === 0 ? (
-                      <tr><td colSpan={6} className="text-center py-10 text-gray-400 text-sm">
-                        {isAr ? 'لا توجد مدفوعات بعد' : 'Aucun paiement enregistré'}
-                      </td></tr>
-                    ) : payments.map(p => (
-                      <tr key={p.id}>
-                        <td>
-                          <div className="font-medium text-gray-900 dark:text-white">{p.organization?.name}</div>
-                        </td>
-                        <td>
-                          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                            {p.amount.toFixed(2)} MAD
-                          </span>
-                        </td>
-                        <td>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                            {isAr ? METHOD_LABEL[p.method]?.ar : METHOD_LABEL[p.method]?.fr}
-                          </span>
-                          {p.reference && (
-                            <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-0.5">{p.reference}</p>
-                          )}
-                        </td>
-                        <td className="text-sm text-gray-600 dark:text-gray-400">{formatDate(p.paidAt, lang)}</td>
-                        <td className="text-sm text-gray-500 max-w-40 truncate">{p.note || '-'}</td>
-                        <td>
-                          <div className="flex items-center gap-1">
-                            {p.receiptUrl && (
-                              <a
-                                href={`${import.meta.env.VITE_API_URL?.replace('/api', '') ?? ''}${p.receiptUrl}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                                title={isAr ? 'عرض الوصل' : 'Voir le reçu'}
-                              >
-                                <Paperclip size={14} />
-                              </a>
-                            )}
-                            <button onClick={() => setDeletePaymentId(p.id)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/* USERS TAB                                                            */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {activeTab === 'users' && (
-        <div className="space-y-4">
-          <div className="relative max-w-xs">
-            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              className="input ps-9 text-sm h-9"
-              placeholder={isAr ? 'بحث باسم أو بريد…' : 'Rechercher par nom ou email…'}
-              value={userSearch}
-              onChange={e => setUserSearch(e.target.value)}
-            />
-          </div>
-
-          <div className="card">
-            {loadingUsers ? (
-              <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>
-            ) : (
-              <div className="table-wrap">
-                <table className="table">
-                  <thead><tr>
-                    <th>{isAr ? 'المستخدم' : 'Utilisateur'}</th>
-                    <th>{isAr ? 'الجمعية' : 'Association'}</th>
-                    <th>{isAr ? 'الدور' : 'Rôle'}</th>
-                    <th>{isAr ? 'الحالة' : 'Statut'}</th>
-                    <th>{isAr ? 'تاريخ الإنشاء' : 'Créé le'}</th>
-                    <th>{isAr ? 'إجراءات' : 'Actions'}</th>
-                  </tr></thead>
-                  <tbody>
-                    {users.length === 0 ? (
-                      <tr><td colSpan={6} className="text-center py-10 text-gray-400 text-sm">{isAr ? 'لا توجد نتائج' : 'Aucun résultat'}</td></tr>
-                    ) : users.map(user => (
-                      <tr key={user.id}>
-                        <td>
-                          <div className="font-medium text-gray-900 dark:text-white">{user.name}</div>
-                          <div className="text-xs text-gray-500">{user.email}</div>
-                        </td>
-                        <td className="text-sm text-gray-600 dark:text-gray-400">{user.organization?.name || '-'}</td>
-                        <td><span className="badge badge-blue text-xs">{user.role}</span></td>
-                        <td>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            user.isActive
-                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                              : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                          }`}>
-                            {user.isActive ? (isAr ? 'نشط' : 'Actif') : (isAr ? 'معطل' : 'Désactivé')}
-                          </span>
-                        </td>
-                        <td className="text-sm text-gray-500">{formatDate(user.createdAt, lang)}</td>
-                        <td>
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => handleToggleUser(user.id)}
-                              className={`p-1.5 rounded-lg transition-colors ${
-                                user.isActive
-                                  ? 'text-emerald-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                  : 'text-red-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                              }`}
-                              title={user.isActive ? (isAr ? 'تعطيل' : 'Désactiver') : (isAr ? 'تفعيل' : 'Activer')}>
-                              {user.isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                            </button>
-                            <button onClick={() => handleResetPassword(user.id)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
-                              title={isAr ? 'إعادة تعيين كلمة المرور' : 'Réinitialiser le mot de passe'}>
-                              <KeyRound size={15} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/* MODALS                                                               */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-
-      {/* Edit subscription modal */}
-      <Modal
-        isOpen={showSubModal}
-        onClose={() => { setShowSubModal(false); setSaveError(null); }}
-        title={isAr ? 'تعديل النوع والاشتراك' : 'Modifier le type et l\'abonnement'}
-        footer={
-          <>
-            <button onClick={() => { setShowSubModal(false); setSaveError(null); }} className="btn-secondary">{isAr ? 'إلغاء' : 'Annuler'}</button>
-            <button onClick={handleSubUpdate} disabled={saving} className="btn-primary">{saving ? '…' : (isAr ? 'حفظ' : 'Enregistrer')}</button>
-          </>
-        }
-      >
-        <div className="space-y-5">
-          {saveError && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">{saveError}</div>}
-          {selectedOrg && <div className="font-medium text-gray-700 dark:text-gray-300 text-sm">{selectedOrg.name}</div>}
-
-          <div>
-            <label className="label mb-2 block">{isAr ? 'نوع الجمعية' : 'Type d\'association'}</label>
-            <div className="space-y-2">
-              {ASSOC_TYPES.map(({ key, labelFr, labelAr, icon, badge, dot, price }) => (
-                <button key={key} type="button"
-                  onClick={() => setSubForm(f => ({ ...f, assocType: key }))}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border-2 text-start transition-all ${
-                    subForm.assocType === key
-                      ? 'border-current ring-1 ring-current ' + badge
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 bg-white dark:bg-gray-800'
-                  }`}
-                  style={subForm.assocType === key ? { borderColor: dot } : {}}>
-                  <span style={{ color: dot }}>{icon}</span>
-                  <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">{isAr ? labelAr : labelFr}</span>
-                  <span className="text-xs text-gray-400">{price} MAD/mois</span>
-                  <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                    style={{ borderColor: subForm.assocType === key ? dot : '#d1d5db', backgroundColor: subForm.assocType === key ? dot : 'transparent' }}>
-                    {subForm.assocType === key && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </div>
-                </button>
-              ))}
-            </div>
-          </div>
 
-          <div>
-            <label className="label">{isAr ? 'حالة الاشتراك' : 'Statut'}</label>
-            <select className="input" value={subForm.status} onChange={e => setSubForm({ ...subForm, status: e.target.value })}>
-              {['TRIAL','ACTIVE','EXPIRED','CANCELLED'].map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
+                  {/* Type Distribution */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                      {isAr ? 'توزيع أنواع الجمعيات' : 'Distribution des types d\'associations'}
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      {ASSOC_TYPES.map(cfg => (
+                        <div key={cfg.key} className="text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/30">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                            {stats.typeDistribution?.[cfg.key] || 0}
+                          </div>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.badge}`}>
+                            {cfg.icon} {isAr ? cfg.labelAr : cfg.labelFr}
+                          </span>
+                          <div className="text-xs text-gray-400 mt-1">{cfg.price} MAD/m</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-          <div>
-            <label className="label">{isAr ? 'تاريخ الانتهاء' : 'Date d\'expiration'}</label>
-            <input className="input" type="date" value={subForm.expiresAt} onChange={e => setSubForm({ ...subForm, expiresAt: e.target.value })} />
-          </div>
-        </div>
-      </Modal>
-
-      {/* Record payment modal */}
-      <Modal
-        isOpen={showPaymentModal}
-        onClose={() => { setShowPaymentModal(false); setReceiptFile(null); }}
-        title={isAr ? 'تسجيل دفعة جديدة' : 'Enregistrer un paiement'}
-        footer={
-          <>
-            <button onClick={() => setShowPaymentModal(false)} className="btn-secondary">{isAr ? 'إلغاء' : 'Annuler'}</button>
-            <button onClick={handleCreatePayment} disabled={saving || !paymentForm.organizationId || !paymentForm.amount} className="btn-primary">
-              {saving ? '…' : (isAr ? 'تسجيل' : 'Enregistrer')}
-            </button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="label">{isAr ? 'الجمعية' : 'Association'}</label>
-            <select className="input" value={paymentForm.organizationId} onChange={e => setPaymentForm({ ...paymentForm, organizationId: e.target.value })}>
-              <option value="">{isAr ? '-- اختر جمعية --' : '-- Choisir une association --'}</option>
-              {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">{isAr ? 'المبلغ (MAD)' : 'Montant (MAD)'}</label>
-              <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
-                value={paymentForm.amount} onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
-            </div>
-            <div>
-              <label className="label">{isAr ? 'طريقة الدفع' : 'Mode de paiement'}</label>
-              <select className="input" value={paymentForm.method} onChange={e => setPaymentForm({ ...paymentForm, method: e.target.value, reference: '' })}>
-                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{isAr ? METHOD_LABEL[m]?.ar : METHOD_LABEL[m]?.fr}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Reference — shown only for CHECK or TRANSFER */}
-          {(paymentForm.method === 'CHECK' || paymentForm.method === 'TRANSFER') && (
-            <div>
-              <label className="label">
-                {paymentForm.method === 'CHECK'
-                  ? (isAr ? 'رقم الشيك' : 'Numéro de chèque')
-                  : (isAr ? 'مرجع التحويل' : 'Référence du virement')}
-              </label>
-              <input
-                className="input font-mono"
-                placeholder={paymentForm.method === 'CHECK'
-                  ? (isAr ? 'مثال: 0012345' : 'ex: 0012345')
-                  : (isAr ? 'مثال: VIR-2024-001' : 'ex: VIR-2024-001')}
-                value={paymentForm.reference}
-                onChange={e => setPaymentForm({ ...paymentForm, reference: e.target.value })}
-              />
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { label: isAr ? 'عرض المنظمات' : 'Voir les organisations', tab: 'orgs', icon: <Building2 size={16} />, color: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40' },
+                      { label: isAr ? 'إدارة الاشتراكات' : 'Gérer abonnements', tab: 'subscriptions', icon: <RefreshCw size={16} />, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40' },
+                      { label: isAr ? 'رؤى الذكاء الاصطناعي' : 'IA Insights', tab: 'insights', icon: <Brain size={16} />, color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40' },
+                      { label: isAr ? 'إرسال حملة' : 'Lancer campagne', tab: 'marketing', icon: <Mail size={16} />, color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40' },
+                    ].map(action => (
+                      <button
+                        key={action.tab}
+                        onClick={() => setTab(action.tab as ActiveTab)}
+                        className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${action.color}`}
+                      >
+                        {action.icon} {action.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
-          <div>
-            <label className="label">{isAr ? 'تاريخ الدفع' : 'Date du paiement'}</label>
-            <input className="input" type="date" value={paymentForm.paidAt} onChange={e => setPaymentForm({ ...paymentForm, paidAt: e.target.value })} />
-          </div>
-          <div>
-            <label className="label">{isAr ? 'ملاحظة (اختياري)' : 'Note (optionnel)'}</label>
-            <input className="input" placeholder={isAr ? 'دفعة شهر أبريل…' : 'Paiement mois d\'avril…'}
-              value={paymentForm.note} onChange={e => setPaymentForm({ ...paymentForm, note: e.target.value })} />
-          </div>
+          {/* ════════════ ORGS TAB ════════════ */}
+          {activeTab === 'orgs' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {isAr ? 'المنظمات' : 'Organisations'} <span className="text-sm font-normal text-gray-400">({orgsTotal})</span>
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      value={orgSearch}
+                      onChange={e => { setOrgSearch(e.target.value); setOrgsPage(1); }}
+                      placeholder={isAr ? 'بحث...' : 'Rechercher...'}
+                      className="ps-8 pe-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 w-48 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  {/* Type filter */}
+                  <select
+                    value={orgTypeFilter}
+                    onChange={e => { setOrgTypeFilter(e.target.value); setOrgsPage(1); }}
+                    className="py-2 ps-3 pe-8 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="">{isAr ? 'جميع الأنواع' : 'Tous les types'}</option>
+                    {ASSOC_TYPES.map(t => <option key={t.key} value={t.key}>{isAr ? t.labelAr : t.labelFr}</option>)}
+                  </select>
+                  {/* Status filter */}
+                  <select
+                    value={orgStatusFilter}
+                    onChange={e => { setOrgStatusFilter(e.target.value); setOrgsPage(1); }}
+                    className="py-2 ps-3 pe-8 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="">{isAr ? 'جميع الحالات' : 'Tous les statuts'}</option>
+                    {['TRIAL','ACTIVE','EXPIRED','CANCELLED'].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
 
-          {/* Receipt upload */}
-          <div>
-            <label className="label">{isAr ? 'وصل الدفع (اختياري)' : 'Reçu de paiement (optionnel)'}</label>
-            {receiptFile ? (
-              <div className="flex items-center gap-3 p-3 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20">
-                <FileText size={18} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                <span className="flex-1 text-sm text-emerald-700 dark:text-emerald-300 truncate">{receiptFile.name}</span>
-                <button type="button" onClick={() => setReceiptFile(null)}
-                  className="p-1 rounded text-emerald-500 hover:text-red-500 transition-colors">
-                  <X size={14} />
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                      <tr>
+                        {[
+                          isAr ? 'المنظمة' : 'Organisation',
+                          isAr ? 'النوع' : 'Type',
+                          isAr ? 'الحالة' : 'Statut',
+                          isAr ? 'الأعضاء' : 'Membres',
+                          isAr ? 'الاشتراك' : 'Abonnement',
+                          isAr ? 'الإجراءات' : 'Actions',
+                        ].map(h => (
+                          <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                      {orgsLoading ? (
+                        <tr><td colSpan={6} className="text-center py-10 text-gray-400">{isAr ? 'جار التحميل...' : 'Chargement...'}</td></tr>
+                      ) : orgs.length === 0 ? (
+                        <tr><td colSpan={6} className="text-center py-10 text-gray-400">{isAr ? 'لا توجد منظمات' : 'Aucune organisation'}</td></tr>
+                      ) : orgs.map(org => (
+                        <tr key={org.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-gray-900 dark:text-white">{org.name}</div>
+                            <div className="text-xs text-gray-400">{org.email}</div>
+                          </td>
+                          <td className="px-4 py-3"><AssocTypeBadge modules={org.modules} isAr={isAr} /></td>
+                          <td className="px-4 py-3"><SubStatusBadge status={org.subscription?.status} isAr={isAr} /></td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{org._count?.members ?? '—'}</td>
+                          <td className="px-4 py-3">
+                            {org.subscription?.expiresAt
+                              ? <span className="text-xs text-gray-400">{formatDate(org.subscription.expiresAt)}</span>
+                              : <span className="text-xs text-gray-300">{isAr ? 'لا شيء' : 'Aucun'}</span>
+                            }
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5">
+                              <button onClick={() => openViewOrg(org.id)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-indigo-600 transition-colors" title={isAr ? 'عرض' : 'Voir'}>
+                                <ExternalLink size={14} />
+                              </button>
+                              <button onClick={() => openEditOrg(org)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-emerald-600 transition-colors" title={isAr ? 'تعديل' : 'Modifier'}>
+                                <Pencil size={14} />
+                              </button>
+                              <button onClick={() => setDeletingOrgId(org.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-600 transition-colors" title={isAr ? 'حذف' : 'Supprimer'}>
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {orgPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-xs text-gray-500">{isAr ? 'صفحة' : 'Page'} {orgsPage} {isAr ? 'من' : 'sur'} {orgPages}</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => setOrgsPage(p => Math.max(1, p - 1))} disabled={orgsPage === 1} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30">
+                        {isAr ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                      </button>
+                      <button onClick={() => setOrgsPage(p => Math.min(orgPages, p + 1))} disabled={orgsPage === orgPages} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30">
+                        {isAr ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════ SUBSCRIPTIONS TAB ════════════ */}
+          {activeTab === 'subscriptions' && <SubscriptionsTab />}
+
+          {/* ════════════ PAYMENTS TAB ════════════ */}
+          {activeTab === 'payments' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {isAr ? 'المدفوعات' : 'Paiements'} <span className="text-sm font-normal text-gray-400">({paymentsTotal})</span>
+                </h2>
+                <button onClick={() => setShowPaymentForm(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors">
+                  <Plus size={15} /> {isAr ? 'تسجيل دفعة' : 'Enregistrer un paiement'}
                 </button>
               </div>
-            ) : (
-              <label className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 cursor-pointer transition-colors group">
-                <Upload size={20} className="text-gray-400 group-hover:text-indigo-500 transition-colors" />
-                <span className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                  {isAr ? 'انقر لرفع الوصل (PDF، صورة)' : 'Cliquer pour uploader le reçu (PDF, image)'}
-                </span>
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  className="hidden"
-                  onChange={e => setReceiptFile(e.target.files?.[0] ?? null)}
-                />
-              </label>
+
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                      <tr>
+                        {[isAr?'المنظمة':'Organisation', isAr?'المبلغ':'Montant', isAr?'طريقة الدفع':'Méthode', isAr?'المرجع':'Référence', isAr?'التاريخ':'Date', isAr?'الوصل':'Reçu', ''].map(h => (
+                          <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                      {paymentsLoading ? (
+                        <tr><td colSpan={7} className="text-center py-10 text-gray-400">{isAr ? 'جار التحميل...' : 'Chargement...'}</td></tr>
+                      ) : payments.length === 0 ? (
+                        <tr><td colSpan={7} className="text-center py-10 text-gray-400">{isAr ? 'لا توجد مدفوعات' : 'Aucun paiement'}</td></tr>
+                      ) : payments.map(p => (
+                        <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                          <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{p.organization?.name}</td>
+                          <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">+{p.amount.toLocaleString()} MAD</td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.method}</td>
+                          <td className="px-4 py-3 text-gray-400 font-mono text-xs">{p.reference || '—'}</td>
+                          <td className="px-4 py-3 text-gray-400 text-xs">{formatDate(p.paidAt)}</td>
+                          <td className="px-4 py-3">
+                            {p.receiptUrl
+                              ? <a href={p.receiptUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"><FileText size={12} /> {isAr ? 'عرض' : 'Voir'}</a>
+                              : <span className="text-xs text-gray-300">—</span>
+                            }
+                          </td>
+                          <td className="px-4 py-3">
+                            <button onClick={() => setDeletingPaymentId(p.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-600 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {payPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-xs text-gray-500">{isAr ? 'صفحة' : 'Page'} {paymentsPage} {isAr ? 'من' : 'sur'} {payPages}</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => setPaymentsPage(p => Math.max(1, p - 1))} disabled={paymentsPage === 1} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30">
+                        {isAr ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                      </button>
+                      <button onClick={() => setPaymentsPage(p => Math.min(payPages, p + 1))} disabled={paymentsPage === payPages} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30">
+                        {isAr ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════ USERS TAB ════════════ */}
+          {activeTab === 'users' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{isAr ? 'المستخدمون' : 'Utilisateurs'} <span className="text-sm font-normal text-gray-400">({usersTotal})</span></h2>
+                <div className="relative">
+                  <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input value={userSearch} onChange={e => setUserSearch(e.target.value)} placeholder={isAr ? 'بحث...' : 'Rechercher...'} className="ps-8 pe-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 w-48 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+              </div>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                      <tr>
+                        {[isAr?'المستخدم':'Utilisateur', isAr?'المنظمة':'Organisation', isAr?'الدور':'Rôle', isAr?'الحالة':'Statut', isAr?'الإجراءات':'Actions'].map(h => (
+                          <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                      {usersLoading ? (
+                        <tr><td colSpan={5} className="text-center py-10 text-gray-400">{isAr ? 'جار التحميل...' : 'Chargement...'}</td></tr>
+                      ) : users.map(user => (
+                        <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-gray-900 dark:text-white">{user.name}</div>
+                            <div className="text-xs text-gray-400">{user.email}</div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{user.organization?.name || '—'}</td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">{user.role}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${user.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
+                              {user.isActive ? (isAr ? 'نشط' : 'Actif') : (isAr ? 'غير نشط' : 'Inactif')}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5">
+                              <button onClick={() => toggleUserActive(user.id)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-emerald-600 transition-colors">
+                                {user.isActive ? <ToggleRight size={16} className="text-emerald-500" /> : <ToggleLeft size={16} />}
+                              </button>
+                              <button onClick={() => resetPassword(user.id)} className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-gray-400 hover:text-amber-600 transition-colors">
+                                <KeyRound size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════════ NEW FEATURE TABS ════════════ */}
+          {activeTab === 'packs'        && <PacksTab />}
+          {activeTab === 'analytics'    && <AnalyticsTab />}
+          {activeTab === 'usage'        && <FeatureUsageTab />}
+          {activeTab === 'marketing'    && <MarketingTab />}
+          {activeTab === 'automation'   && <AutomationTab />}
+          {activeTab === 'promos'       && <PromoCodesTab />}
+          {activeTab === 'insights'     && <AIInsightsTab />}
+          {activeTab === 'settings'     && <SettingsTab />}
+
+        </main>
+      </div>
+
+      {/* ════════════ MODALS ════════════ */}
+
+      {/* View Org Modal */}
+      {viewingOrg && (
+        <Modal isOpen={!!viewingOrg} onClose={() => setViewingOrg(null)} title={viewingOrg.name} size="lg">
+          <div className="space-y-4 text-sm">
+            <div className="grid grid-cols-2 gap-4">
+              <div><span className="text-gray-400">{isAr ? 'البريد' : 'Email'}</span><p className="font-medium text-gray-900 dark:text-white mt-0.5">{viewingOrg.email}</p></div>
+              <div><span className="text-gray-400">{isAr ? 'الهاتف' : 'Tél.'}</span><p className="font-medium text-gray-900 dark:text-white mt-0.5">{viewingOrg.phone || '—'}</p></div>
+              <div><span className="text-gray-400">{isAr ? 'المدينة' : 'Ville'}</span><p className="font-medium text-gray-900 dark:text-white mt-0.5">{viewingOrg.city || '—'}</p></div>
+              <div><span className="text-gray-400">{isAr ? 'الجهة' : 'Région'}</span><p className="font-medium text-gray-900 dark:text-white mt-0.5">{viewingOrg.region || '—'}</p></div>
+              <div><span className="text-gray-400">{isAr ? 'النوع' : 'Type'}</span><div className="mt-0.5"><AssocTypeBadge modules={viewingOrg.modules} isAr={isAr} /></div></div>
+              <div><span className="text-gray-400">{isAr ? 'الاشتراك' : 'Abonnement'}</span><div className="mt-0.5"><SubStatusBadge status={viewingOrg.subscription?.status} isAr={isAr} /></div></div>
+            </div>
+            <div className="grid grid-cols-4 gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+              {[
+                { label: isAr ? 'أعضاء' : 'Membres', val: viewingOrg._count?.members },
+                { label: isAr ? 'اجتماعات' : 'Réunions', val: viewingOrg._count?.meetings },
+                { label: isAr ? 'مشاريع' : 'Projets', val: viewingOrg._count?.projects },
+                { label: isAr ? 'معاملات' : 'Transactions', val: viewingOrg._count?.transactions },
+              ].map(s => (
+                <div key={s.label} className="text-center p-3 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
+                  <div className="text-xl font-bold text-gray-900 dark:text-white">{s.val ?? 0}</div>
+                  <div className="text-xs text-gray-400">{s.label}</div>
+                </div>
+              ))}
+            </div>
+            {viewingOrg.payments?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{isAr ? 'آخر المدفوعات' : 'Derniers paiements'}</p>
+                <div className="space-y-1">
+                  {viewingOrg.payments.slice(0, 3).map((p: any) => (
+                    <div key={p.id} className="flex justify-between text-xs py-1 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-gray-500">{formatDate(p.paidAt)}</span>
+                      <span className="font-semibold text-emerald-600">+{p.amount} MAD</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
+        </Modal>
+      )}
+
+      {/* Edit Subscription Modal */}
+      {editingOrg && (
+        <Modal isOpen={!!editingOrg} onClose={() => setEditingOrg(null)} title={isAr ? `تعديل اشتراك: ${editingOrg.name}` : `Modifier abonnement : ${editingOrg.name}`}>
+          <div className="space-y-4">
+            <div>
+              <label className={lbl}>{isAr ? 'نوع الجمعية' : 'Type d\'association'}</label>
+              <select className={inp} value={editForm.assocType} onChange={e => setEditForm(f => ({ ...f, assocType: e.target.value }))}>
+                {ASSOC_TYPES.map(t => <option key={t.key} value={t.key}>{isAr ? t.labelAr : t.labelFr}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={lbl}>{isAr ? 'الحالة' : 'Statut'}</label>
+              <select className={inp} value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}>
+                {['TRIAL','ACTIVE','EXPIRED','CANCELLED'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={lbl}>{isAr ? 'تاريخ الانتهاء' : 'Date d\'expiration'}</label>
+              <input type="date" className={inp} value={editForm.expiresAt} onChange={e => setEditForm(f => ({ ...f, expiresAt: e.target.value }))} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button onClick={() => setEditingOrg(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">{isAr ? 'إلغاء' : 'Annuler'}</button>
+            <button onClick={saveEditOrg} disabled={editSaving} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+              {editSaving ? (isAr ? 'جار الحفظ...' : 'Enregistrement...') : (isAr ? 'حفظ' : 'Enregistrer')}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Create Payment Modal */}
+      <Modal isOpen={showPaymentForm} onClose={() => setShowPaymentForm(false)} title={isAr ? 'تسجيل دفعة' : 'Enregistrer un paiement'}>
+        <div className="space-y-4">
+          <div>
+            <label className={lbl}>{isAr ? 'المنظمة (ID)' : 'Organisation (ID)'} *</label>
+            <input className={inp} value={paymentForm.organizationId} onChange={e => setPaymentForm(f => ({ ...f, organizationId: e.target.value }))} placeholder="..." />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={lbl}>{isAr ? 'المبلغ (MAD)' : 'Montant (MAD)'} *</label>
+              <input type="number" className={inp} value={paymentForm.amount} onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))} />
+            </div>
+            <div>
+              <label className={lbl}>{isAr ? 'الطريقة' : 'Méthode'}</label>
+              <select className={inp} value={paymentForm.method} onChange={e => setPaymentForm(f => ({ ...f, method: e.target.value }))}>
+                {['CASH','BANK_TRANSFER','CHEQUE','CARD'].map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className={lbl}>{isAr ? 'المرجع' : 'Référence'}</label>
+            <input className={inp} value={paymentForm.reference} onChange={e => setPaymentForm(f => ({ ...f, reference: e.target.value }))} />
+          </div>
+          <div>
+            <label className={lbl}>{isAr ? 'ملاحظة' : 'Note'}</label>
+            <input className={inp} value={paymentForm.note} onChange={e => setPaymentForm(f => ({ ...f, note: e.target.value }))} />
+          </div>
+          <div>
+            <label className={lbl}>{isAr ? 'التاريخ' : 'Date'}</label>
+            <input type="date" className={inp} value={paymentForm.paidAt} onChange={e => setPaymentForm(f => ({ ...f, paidAt: e.target.value }))} />
+          </div>
+          <div>
+            <label className={lbl}>{isAr ? 'الوصل (اختياري)' : 'Reçu (optionnel)'}</label>
+            <input type="file" accept="image/*,application/pdf" onChange={e => setPaymentFile(e.target.files?.[0] || null)} className="text-sm text-gray-600 dark:text-gray-300" />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setShowPaymentForm(false)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">{isAr ? 'إلغاء' : 'Annuler'}</button>
+          <button onClick={submitPayment} disabled={paymentSaving || !paymentForm.organizationId || !paymentForm.amount} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+            {paymentSaving ? '...' : (isAr ? 'تسجيل' : 'Enregistrer')}
+          </button>
         </div>
       </Modal>
 
-      {/* Confirm delete org */}
-      <ConfirmDialog
-        isOpen={!!deleteOrgId} onClose={() => setDeleteOrgId(null)} onConfirm={handleDeleteOrg}
-        title={isAr ? 'حذف الجمعية' : 'Supprimer l\'association'}
-        message={isAr ? 'سيتم حذف الجمعية وجميع بياناتها نهائياً. هل أنت متأكد؟' : 'Cette association et toutes ses données seront supprimées définitivement. Confirmer ?'}
-        loading={deleting}
-      />
-
-      {/* Confirm delete payment */}
-      <ConfirmDialog
-        isOpen={!!deletePaymentId} onClose={() => setDeletePaymentId(null)} onConfirm={handleDeletePayment}
-        title={isAr ? 'حذف الدفعة' : 'Supprimer le paiement'}
-        message={isAr ? 'هل تريد حذف هذه الدفعة؟' : 'Voulez-vous supprimer ce paiement ?'}
-        loading={deleting}
-      />
-
-      {/* Reset password result */}
-      <Modal
-        isOpen={!!resetResult}
-        onClose={() => { setResetResult(null); setResetCopied(false); }}
-        title={isAr ? 'كلمة المرور الجديدة' : 'Nouveau mot de passe'}
-        footer={<button onClick={() => { setResetResult(null); setResetCopied(false); }} className="btn-primary">{isAr ? 'تم' : 'Fermer'}</button>}
-      >
-        {resetResult && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {isAr ? `تم إعادة تعيين كلمة مرور ${resetResult.name}` : `Mot de passe de ${resetResult.name} réinitialisé`}
-            </p>
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
-              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mb-2">
-                {isAr ? 'كلمة المرور المؤقتة' : 'Mot de passe temporaire'}
-              </p>
-              <div className="flex items-center gap-3">
-                <span className="flex-1 font-mono text-xl font-bold tracking-widest text-gray-900 dark:text-white">
-                  {resetResult.tempPassword}
-                </span>
-                <button onClick={copyPassword}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50">
-                  {resetCopied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                  {resetCopied ? (isAr ? 'تم' : 'Copié') : (isAr ? 'نسخ' : 'Copier')}
-                </button>
-              </div>
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                {isAr ? '⚠️ شارك هذه الكلمة مع المستخدم وأخبره بتغييرها فوراً' : '⚠️ Communiquez ce mot de passe à l\'utilisateur et demandez-lui de le changer'}
-              </p>
+      {/* Reset Password Result */}
+      {resetResult && (
+        <Modal isOpen={!!resetResult} onClose={() => setResetResult(null)} title={isAr ? 'كلمة المرور المؤقتة' : 'Mot de passe temporaire'}>
+          <div className="space-y-3 text-center">
+            <p className="text-sm text-gray-500">{resetResult.name} — {resetResult.email}</p>
+            <div className="flex items-center justify-center gap-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl px-6 py-4">
+              <span className="font-mono text-xl font-bold text-indigo-600 dark:text-indigo-400 tracking-widest">{resetResult.tempPassword}</span>
+              <button onClick={copyPw} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                {copiedPw ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} className="text-gray-400" />}
+              </button>
             </div>
+            <p className="text-xs text-amber-600 dark:text-amber-400">{isAr ? 'احتفظ بهذه الكلمة. لن تظهر مرة أخرى.' : 'Conservez ce mot de passe. Il ne sera plus affiché.'}</p>
           </div>
-        )}
-      </Modal>
+        </Modal>
+      )}
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog isOpen={!!deletingOrgId} onClose={() => setDeletingOrgId(null)} onConfirm={deleteOrg} title={isAr ? 'حذف المنظمة؟' : 'Supprimer l\'organisation ?'} message={isAr ? 'ستُحذف جميع البيانات المرتبطة. هذا الإجراء لا يمكن التراجع عنه.' : 'Toutes les données associées seront supprimées. Cette action est irréversible.'} variant="danger" />
+      <ConfirmDialog isOpen={!!deletingPaymentId} onClose={() => setDeletingPaymentId(null)} onConfirm={deletePayment} title={isAr ? 'حذف هذه الدفعة؟' : 'Supprimer ce paiement ?'} message={isAr ? 'هذا الإجراء لا يمكن التراجع عنه.' : 'Cette action est irréversible.'} variant="danger" />
     </div>
   );
 };

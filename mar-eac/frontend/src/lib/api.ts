@@ -245,21 +245,67 @@ export const assocApi = {
 
 // ---- Super Admin ----
 export const superadminApi = {
-  getStats:            ()                        => api.get('/superadmin/stats'),
-  getAnalytics:        ()                        => api.get('/superadmin/analytics'),
-  getOrganizations:    (params?: any)            => api.get('/superadmin/organizations', { params }),
-  getOrganization:     (id: string)              => api.get(`/superadmin/organizations/${id}`),
-  updateSubscription:  (id: string, data: any)   => api.put(`/superadmin/organizations/${id}/subscription`, data),
-  deleteOrganization:  (id: string)              => api.delete(`/superadmin/organizations/${id}`),
-  getPayments:              (params?: any)            => api.get('/superadmin/payments', { params }),
-  createPayment:            (fd: FormData)            => api.post('/superadmin/payments', fd),
-  uploadPaymentReceipt:     (paymentId: string, file: File) => {
+  // ── Core Stats & Analytics ──────────────────────────────────────────────────
+  getStats:             ()                               => api.get('/superadmin/stats'),
+  getAnalytics:         ()                               => api.get('/superadmin/analytics'),
+  getFeatureUsage:      ()                               => api.get('/superadmin/feature-usage'),
+  getAIInsights:        ()                               => api.get('/superadmin/ai-insights'),
+
+  // ── Organizations ───────────────────────────────────────────────────────────
+  getOrganizations:     (params?: any)                   => api.get('/superadmin/organizations', { params }),
+  getOrganization:      (id: string)                     => api.get(`/superadmin/organizations/${id}`),
+  updateSubscription:   (id: string, data: any)          => api.put(`/superadmin/organizations/${id}/subscription`, data),
+  deleteOrganization:   (id: string)                     => api.delete(`/superadmin/organizations/${id}`),
+
+  // ── Subscriptions ───────────────────────────────────────────────────────────
+  getSubscriptions:     (params?: any)                   => api.get('/superadmin/subscriptions', { params }),
+
+  // ── Payments ────────────────────────────────────────────────────────────────
+  getPayments:          (params?: any)                   => api.get('/superadmin/payments', { params }),
+  createPayment:        (fd: FormData)                   => api.post('/superadmin/payments', fd),
+  uploadPaymentReceipt: (paymentId: string, file: File)  => {
     const fd = new FormData();
     fd.append('receipt', file);
     return api.post(`/superadmin/payments/${paymentId}/receipt`, fd);
   },
-  deletePayment:            (paymentId: string)       => api.delete(`/superadmin/payments/${paymentId}`),
-  getUsers:            (params?: any)            => api.get('/superadmin/users', { params }),
-  toggleUser:          (userId: string)          => api.put(`/superadmin/users/${userId}/toggle`),
-  resetUserPassword:   (userId: string)          => api.post(`/superadmin/users/${userId}/reset-password`),
+  deletePayment:        (paymentId: string)              => api.delete(`/superadmin/payments/${paymentId}`),
+
+  // ── Users ───────────────────────────────────────────────────────────────────
+  getUsers:             (params?: any)                   => api.get('/superadmin/users', { params }),
+  toggleUser:           (userId: string)                 => api.put(`/superadmin/users/${userId}/toggle`),
+  resetUserPassword:    (userId: string)                 => api.post(`/superadmin/users/${userId}/reset-password`),
+
+  // ── Packs ───────────────────────────────────────────────────────────────────
+  getPacks:             ()                               => api.get('/superadmin/packs'),
+  createPack:           (data: any)                      => api.post('/superadmin/packs', data),
+  updatePack:           (packId: string, data: any)      => api.put(`/superadmin/packs/${packId}`, data),
+  deletePack:           (packId: string)                 => api.delete(`/superadmin/packs/${packId}`),
+
+  // ── Promo Codes ─────────────────────────────────────────────────────────────
+  getPromoCodes:        ()                               => api.get('/superadmin/promo-codes'),
+  createPromoCode:      (data: any)                      => api.post('/superadmin/promo-codes', data),
+  updatePromoCode:      (promoId: string, data: any)     => api.put(`/superadmin/promo-codes/${promoId}`, data),
+  deletePromoCode:      (promoId: string)                => api.delete(`/superadmin/promo-codes/${promoId}`),
+
+  // ── Email Campaigns ─────────────────────────────────────────────────────────
+  getEmailCampaigns:    ()                               => api.get('/superadmin/campaigns'),
+  createEmailCampaign:  (data: any)                      => api.post('/superadmin/campaigns', data),
+  sendEmailCampaign:    (campaignId: string)             => api.post(`/superadmin/campaigns/${campaignId}/send`),
+  deleteEmailCampaign:  (campaignId: string)             => api.delete(`/superadmin/campaigns/${campaignId}`),
+
+  // ── WhatsApp ────────────────────────────────────────────────────────────────
+  getWhatsAppMessages:  ()                               => api.get('/superadmin/whatsapp'),
+  sendWhatsApp:         (data: any)                      => api.post('/superadmin/whatsapp/send', data),
+  sendBulkWhatsApp:     (data: any)                      => api.post('/superadmin/whatsapp/bulk', data),
+
+  // ── Automation ──────────────────────────────────────────────────────────────
+  getAutomationRules:   ()                               => api.get('/superadmin/automation'),
+  createAutomationRule: (data: any)                      => api.post('/superadmin/automation', data),
+  updateAutomationRule: (ruleId: string, data: any)      => api.put(`/superadmin/automation/${ruleId}`, data),
+  deleteAutomationRule: (ruleId: string)                 => api.delete(`/superadmin/automation/${ruleId}`),
+  runAutomationRule:    (ruleId: string)                 => api.post(`/superadmin/automation/${ruleId}/run`),
+
+  // ── Platform Settings ───────────────────────────────────────────────────────
+  getPlatformSettings:  ()                               => api.get('/superadmin/settings'),
+  updatePlatformSettings: (data: any)                    => api.put('/superadmin/settings', data),
 };
