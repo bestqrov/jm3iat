@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   Shield, Building2, Users, Pencil, Trash2, ToggleLeft, ToggleRight,
   KeyRound, Copy, Check, Droplets, ShoppingBag, FolderKanban, Layers,
-  TrendingUp, DollarSign, AlertTriangle, Search, Filter, Plus,
-  BarChart2, CreditCard, Calendar, RefreshCw, X, Clock,
-  Paperclip, ExternalLink, Upload, FileText,
+  TrendingUp, DollarSign, AlertTriangle, Search, Plus,
+  BarChart2, CreditCard, RefreshCw, Clock,
+  ExternalLink, FileText,
   Package, Tag, Mail, Zap, Brain, Settings, Activity,
-  ChevronLeft, ChevronRight, MessageCircle,
+  ChevronLeft, ChevronRight,
+  LogOut, Globe, Sun, Moon, X,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -16,10 +17,11 @@ import {
 } from 'recharts';
 import { superadminApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { StatCard } from '../../components/ui/StatCard';
-import { formatDate, formatCurrency } from '../../lib/utils';
+import { formatDate } from '../../lib/utils';
 
 // ── New Tab Components ────────────────────────────────────────────────────────
 import { PacksTab }        from './tabs/PacksTab';
@@ -130,8 +132,22 @@ const TAB_GROUPS = [
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const SuperAdminPage: React.FC = () => {
-  const { lang } = useLanguage();
+  const { lang, setLang } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
+  const { user, logout, isAuthenticated, isSuperAdmin, isLoading } = useAuth();
+  const navigate = useNavigate();
   const isAr = lang === 'ar';
+
+  // Auth guard — redirect to login if not authenticated
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
+    </div>
+  );
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isSuperAdmin)    return <Navigate to="/dashboard" replace />;
+
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = useMemo<ActiveTab>(() => {
@@ -311,44 +327,59 @@ export const SuperAdminPage: React.FC = () => {
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isAr ? 'rtl' : 'ltr'}`}>
-      {/* ── Top Header ── */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-indigo-600">
-            <Shield size={20} className="text-white" />
+    <div className={`flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 ${isAr ? 'rtl' : 'ltr'}`}>
+
+      {/* ════════════ SINGLE SIDEBAR ════════════ */}
+      <aside className={`
+        w-60 flex-shrink-0 flex flex-col h-full overflow-hidden
+        bg-white dark:bg-gray-800
+        border-gray-200 dark:border-gray-700
+        ${isAr ? 'border-s' : 'border-e'}
+      `}>
+        {/* Colored top stripe */}
+        <div className="h-1 w-full bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-400 flex-shrink-0" />
+
+        {/* Logo + Title */}
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-sm flex-shrink-0">
+            <Shield size={18} className="text-white" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-              {isAr ? 'الإدارة العامة' : 'Super Administration'}
-            </h1>
-            <p className="text-xs text-gray-400">Mar E-A.C · SaaS Management Platform</p>
-          </div>
-          <div className="ms-auto flex items-center gap-3">
-            {/* Stats quick pills */}
-            {!statsLoading && stats && (
-              <div className="hidden md:flex items-center gap-3 text-xs">
-                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300">
-                  <Building2 size={11} /> {stats.totalOrgs} {isAr ? 'منظمة' : 'org.'}
-                </span>
-                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-emerald-700 dark:text-emerald-400">
-                  <TrendingUp size={11} /> {stats.mrrEstimate?.toLocaleString()} MAD MRR
-                </span>
-              </div>
-            )}
+          <div className="min-w-0">
+            <div className="font-bold text-gray-900 dark:text-white text-sm leading-tight">Mar E-A.C</div>
+            <div className="text-xs text-indigo-500 dark:text-indigo-400 font-medium">
+              {isAr ? 'مدير النظام' : 'Super Admin'}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex">
-        {/* ── Left / Right Sidebar Navigation ── */}
-        <aside className={`w-56 flex-shrink-0 bg-white dark:bg-gray-800 border-e border-gray-200 dark:border-gray-700 min-h-[calc(100vh-64px)] p-3 space-y-4 ${isAr ? 'border-s border-e-0' : ''}`}>
+        {/* Stats quick pills */}
+        {!statsLoading && stats && (
+          <div className="flex flex-col gap-1.5 px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                <Building2 size={11} /> {isAr ? 'منظمة' : 'Orgs'}
+              </span>
+              <span className="font-bold text-gray-900 dark:text-white">{stats.totalOrgs}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <TrendingUp size={11} /> MRR
+              </span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                {(stats.mrrEstimate || 0).toLocaleString()} MAD
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation — scrollable */}
+        <nav className="flex-1 overflow-y-auto p-3 space-y-4">
           {TAB_GROUPS.map(group => (
             <div key={group.labelFr}>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 px-2 mb-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 px-2 mb-1">
                 {isAr ? group.labelAr : group.labelFr}
               </p>
-              <nav className="space-y-0.5">
+              <div className="space-y-0.5">
                 {group.tabs.map(tab => (
                   <button
                     key={tab.key}
@@ -358,6 +389,9 @@ export const SuperAdminPage: React.FC = () => {
                         ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
                     }`}
+                    style={activeTab === tab.key
+                      ? { borderInlineEnd: '3px solid #4f46e5' }
+                      : {}}
                   >
                     <span className={activeTab === tab.key ? 'text-indigo-500' : 'text-gray-400'}>
                       {tab.iconEl}
@@ -365,13 +399,67 @@ export const SuperAdminPage: React.FC = () => {
                     {isAr ? tab.labelAr : tab.labelFr}
                   </button>
                 ))}
-              </nav>
+              </div>
             </div>
           ))}
-        </aside>
+        </nav>
 
-        {/* ── Main Content ── */}
-        <main className="flex-1 p-6 overflow-auto">
+        {/* Footer controls — language, theme, user, logout */}
+        <div className="border-t border-gray-200 dark:border-gray-700 p-3 space-y-2 flex-shrink-0">
+          {/* Lang + Theme toggles */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setLang(lang === 'ar' ? 'fr' : 'ar')}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              <Globe size={13} />
+              {lang === 'ar' ? 'FR' : 'عر'}
+            </button>
+            <button
+              onClick={toggleTheme}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+              {theme === 'dark' ? (isAr ? 'فاتح' : 'Clair') : (isAr ? 'داكن' : 'Sombre')}
+            </button>
+          </div>
+
+          {/* User info + logout */}
+          <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+              <span className="text-xs font-bold text-white">
+                {user?.name?.charAt(0).toUpperCase() ?? 'A'}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-gray-900 dark:text-white truncate">{user?.name}</div>
+              <div className="text-xs text-gray-400 truncate">{user?.email}</div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+              title={isAr ? 'تسجيل الخروج' : 'Déconnexion'}
+            >
+              <LogOut size={15} />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* ════════════ MAIN CONTENT AREA ════════════ */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top bar */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center gap-3 flex-shrink-0">
+          <div>
+            <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+              {TAB_GROUPS.flatMap(g => g.tabs).find(t => t.key === activeTab)?.[isAr ? 'labelAr' : 'labelFr'] ?? ''}
+            </h1>
+            <p className="text-xs text-gray-400">Mar E-A.C · SaaS Management Platform</p>
+          </div>
+        </div>
+
+        {/* Scrollable page content */}
+        <main className="flex-1 overflow-y-auto p-6">
 
           {/* ════════════ DASHBOARD TAB ════════════ */}
           {activeTab === 'dashboard' && (

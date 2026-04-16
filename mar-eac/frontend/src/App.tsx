@@ -46,7 +46,12 @@ const App: React.FC = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-              {/* Protected routes */}
+              {/* SuperAdmin — standalone layout (no global sidebar) */}
+              <Route path="/superadmin" element={
+                <SuperAdminRoute><SuperAdminPage /></SuperAdminRoute>
+              } />
+
+              {/* Protected routes — with global sidebar + header */}
               <Route element={<Layout />}>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<WaterReaderRoute><DashboardPage /></WaterReaderRoute>} />
@@ -64,9 +69,6 @@ const App: React.FC = () => {
                 <Route path="/requests" element={<WaterReaderRoute><RequestsPage /></WaterReaderRoute>} />
                 <Route path="/reminders" element={<WaterReaderRoute><RemindersPage /></WaterReaderRoute>} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/superadmin" element={
-                  <SuperAdminRoute><SuperAdminPage /></SuperAdminRoute>
-                } />
               </Route>
 
               {/* Catch all */}
