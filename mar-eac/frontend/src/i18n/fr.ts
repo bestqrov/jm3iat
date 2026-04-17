@@ -55,6 +55,7 @@ const fr = {
       WATER:            { label: 'Association de l\'eau', desc: 'Modules de base + gestion du réseau d\'eau' },
       PRODUCTIVE:       { label: 'Association productive', desc: 'Modules de base + production, ventes, clients, événements' },
       PRODUCTIVE_WATER: { label: 'Association productive + eau', desc: 'Tous les modules : production, eau, projets' },
+      TRANSPORT:        { label: 'Transport scolaire', desc: 'Membres + finances + véhicules, élèves, abonnements et paiements de transport' },
     },
   },
   dashboard: {

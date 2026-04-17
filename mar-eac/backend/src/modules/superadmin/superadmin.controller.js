@@ -44,13 +44,15 @@ const callEvolutionAPI = async (toPhone, messageText) => {
 
 const getAssocTypeKey = (modules) => {
   const m = Array.isArray(modules) ? modules : [];
-  const hasProd  = m.includes('PRODUCTIVE');
-  const hasWater = m.includes('WATER');
-  const hasProj  = m.includes('PROJECTS');
+  const hasProd      = m.includes('PRODUCTIVE');
+  const hasWater     = m.includes('WATER');
+  const hasProj      = m.includes('PROJECTS');
+  const hasTransport = m.includes('TRANSPORT');
   if (hasProd && hasWater) return 'PRODUCTIVE_WATER';
-  if (hasProd)  return 'PRODUCTIVE';
-  if (hasWater) return 'WATER';
-  if (hasProj)  return 'PROJECTS';
+  if (hasProd)      return 'PRODUCTIVE';
+  if (hasWater)     return 'WATER';
+  if (hasProj)      return 'PROJECTS';
+  if (hasTransport) return 'TRANSPORT';
   return 'REGULAR';
 };
 
@@ -60,6 +62,7 @@ const ASSOC_TYPE_PLAN = {
   WATER:            'PREMIUM',
   PRODUCTIVE:       'PREMIUM',
   PRODUCTIVE_WATER: 'PREMIUM',
+  TRANSPORT:        'STANDARD',
 };
 
 const ASSOC_TYPE_MODULES = {
@@ -68,6 +71,7 @@ const ASSOC_TYPE_MODULES = {
   WATER:            ['WATER'],
   PRODUCTIVE:       ['PRODUCTIVE'],
   PRODUCTIVE_WATER: ['PRODUCTIVE', 'WATER'],
+  TRANSPORT:        ['TRANSPORT'],
 };
 
 const TYPE_PRICES = {
@@ -76,6 +80,7 @@ const TYPE_PRICES = {
   WATER:            199,
   PRODUCTIVE:       199,
   PRODUCTIVE_WATER: 299,
+  TRANSPORT:        179,
 };
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
@@ -263,10 +268,11 @@ const getAnalytics = async (req, res) => {
 
 const getFeatureUsage = async (req, res) => {
   try {
-    const [waterOrgs, productiveOrgs, projectOrgs, meetingCounts, waterInstallations, productions, meetings] = await Promise.all([
+    const [waterOrgs, productiveOrgs, projectOrgs, transportOrgs, meetingCounts, waterInstallations, productions, meetings] = await Promise.all([
       prisma.organization.count({ where: { modules: { has: 'WATER' } } }),
       prisma.organization.count({ where: { modules: { has: 'PRODUCTIVE' } } }),
       prisma.organization.count({ where: { modules: { has: 'PROJECTS' } } }),
+      prisma.organization.count({ where: { modules: { has: 'TRANSPORT' } } }),
       prisma.meeting.groupBy({ by: ['organizationId'], _count: { id: true } }),
       prisma.waterInstallation.count(),
       prisma.assocProduction.count(),
@@ -292,9 +298,10 @@ const getFeatureUsage = async (req, res) => {
 
     // Module distribution
     const moduleUsage = [
-      { module: 'WATER', count: waterOrgs, label: 'Eau', labelAr: 'الماء' },
+      { module: 'WATER',      count: waterOrgs,      label: 'Eau',       labelAr: 'الماء' },
       { module: 'PRODUCTIVE', count: productiveOrgs, label: 'Productif', labelAr: 'الإنتاجي' },
-      { module: 'PROJECTS', count: projectOrgs, label: 'Projets', labelAr: 'المشاريع' },
+      { module: 'PROJECTS',   count: projectOrgs,    label: 'Projets',   labelAr: 'المشاريع' },
+      { module: 'TRANSPORT',  count: transportOrgs,  label: 'Transport', labelAr: 'النقل المدرسي' },
     ];
 
     res.json({

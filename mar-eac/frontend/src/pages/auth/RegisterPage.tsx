@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Eye, EyeOff, CheckCircle, Building2, FolderKanban,
-  Droplets, ShoppingBag, Layers, ChevronRight, ChevronLeft,
+  Droplets, ShoppingBag, Layers, ChevronRight, ChevronLeft, Bus,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -10,7 +10,7 @@ import { translations } from '../../i18n';
 
 // ─── Association type definitions ────────────────────────────────────────────
 
-type AssocTypeKey = 'REGULAR' | 'PROJECTS' | 'WATER' | 'PRODUCTIVE' | 'PRODUCTIVE_WATER';
+type AssocTypeKey = 'REGULAR' | 'PROJECTS' | 'WATER' | 'PRODUCTIVE' | 'PRODUCTIVE_WATER' | 'TRANSPORT';
 
 const ASSOC_TYPE_MODULES: Record<AssocTypeKey, string[]> = {
   REGULAR:          [],
@@ -18,6 +18,7 @@ const ASSOC_TYPE_MODULES: Record<AssocTypeKey, string[]> = {
   WATER:            ['WATER'],
   PRODUCTIVE:       ['PRODUCTIVE'],
   PRODUCTIVE_WATER: ['PRODUCTIVE', 'WATER'],
+  TRANSPORT:        ['TRANSPORT'],
 };
 
 // Prices in MAD / month
@@ -27,6 +28,7 @@ const ASSOC_TYPE_PRICES: Record<AssocTypeKey, { monthly: number; setup: number }
   WATER:            { monthly: 199, setup: 0 },
   PRODUCTIVE:       { monthly: 199, setup: 0 },
   PRODUCTIVE_WATER: { monthly: 299, setup: 0 },
+  TRANSPORT:        { monthly: 179, setup: 0 },
 };
 
 const ASSOC_ICONS: Record<AssocTypeKey, React.ReactNode> = {
@@ -35,6 +37,7 @@ const ASSOC_ICONS: Record<AssocTypeKey, React.ReactNode> = {
   WATER:            <Droplets size={22} />,
   PRODUCTIVE:       <ShoppingBag size={22} />,
   PRODUCTIVE_WATER: <Layers size={22} />,
+  TRANSPORT:        <Bus size={22} />,
 };
 
 const ASSOC_COLORS: Record<AssocTypeKey, string> = {
@@ -43,6 +46,7 @@ const ASSOC_COLORS: Record<AssocTypeKey, string> = {
   WATER:            'border-cyan-300 text-cyan-600 bg-cyan-50 dark:border-cyan-700 dark:text-cyan-400 dark:bg-cyan-900/20',
   PRODUCTIVE:       'border-emerald-300 text-emerald-600 bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-900/20',
   PRODUCTIVE_WATER: 'border-purple-300 text-purple-600 bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:bg-purple-900/20',
+  TRANSPORT:        'border-orange-300 text-orange-600 bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:bg-orange-900/20',
 };
 
 const ASSOC_SELECTED_COLORS: Record<AssocTypeKey, string> = {
@@ -51,6 +55,7 @@ const ASSOC_SELECTED_COLORS: Record<AssocTypeKey, string> = {
   WATER:            'border-cyan-500 ring-cyan-400 bg-cyan-100 dark:bg-cyan-900/40',
   PRODUCTIVE:       'border-emerald-500 ring-emerald-400 bg-emerald-100 dark:bg-emerald-900/40',
   PRODUCTIVE_WATER: 'border-purple-500 ring-purple-400 bg-purple-100 dark:bg-purple-900/40',
+  TRANSPORT:        'border-orange-500 ring-orange-400 bg-orange-100 dark:bg-orange-900/40',
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
