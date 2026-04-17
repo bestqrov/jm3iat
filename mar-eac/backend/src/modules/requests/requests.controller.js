@@ -220,10 +220,15 @@ const generateLetterPdf = async (req, res) => {
 
     const org = await prisma.organization.findUnique({ where: { id: req.organization.id } });
 
-    await generateRequestLetterPdf(org, request, tpl, lang, res);
+    const buf = await generateRequestLetterPdf(org, request, tpl, lang);
+    const fname = `lettre-${request.id}-${Date.now()}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fname}"`);
+    res.setHeader('Content-Length', buf.length);
+    res.send(buf);
   } catch (err) {
     console.error('[generateLetterPdf]', err);
-    if (!res.headersSent) res.status(500).json({ message: 'PDF generation failed' });
+    if (!res.headersSent) res.status(500).json({ message: err.message || 'PDF generation failed' });
   }
 };
 

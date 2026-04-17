@@ -355,35 +355,40 @@ const generateArLetter = (doc, org, request, template) => {
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
-const generateRequestLetterPdf = async (org, request, template, lang, res) => {
-  const doc = new PDFDocument({ size: 'A4', margin: 0, info: {
-    Title: lang === 'fr' ? template.nameFr : template.nameAr,
-    Author: org?.name || 'Mar E-A.C',
-  }});
+const generateRequestLetterPdf = (org, request, template, lang) => {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'A4', margin: 0, info: {
+      Title: lang === 'fr' ? template.nameFr : template.nameAr,
+      Author: org?.name || 'Mar E-A.C',
+    }});
 
-  // Register Arabic fonts (with fallback)
-  const fontsExist = fs.existsSync(FONT_AR) && fs.existsSync(FONT_BOLD);
-  if (fontsExist) {
-    doc.registerFont('AR',      FONT_AR);
-    doc.registerFont('AR-Bold', FONT_BOLD);
-  } else {
-    console.warn('[PDF] Arabic fonts missing at', FONT_DIR, '— using Helvetica fallback');
-    doc.registerFont('AR',      'Helvetica');
-    doc.registerFont('AR-Bold', 'Helvetica-Bold');
-  }
+    // Register Arabic fonts (with fallback)
+    const fontsExist = fs.existsSync(FONT_AR) && fs.existsSync(FONT_BOLD);
+    if (fontsExist) {
+      doc.registerFont('AR',      FONT_AR);
+      doc.registerFont('AR-Bold', FONT_BOLD);
+    } else {
+      console.warn('[PDF] Arabic fonts missing at', FONT_DIR, '— using Helvetica fallback');
+      doc.registerFont('AR',      'Helvetica');
+      doc.registerFont('AR-Bold', 'Helvetica-Bold');
+    }
 
-  const fname = `lettre-${request.id}-${Date.now()}.pdf`;
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${fname}"`);
-  doc.pipe(res);
+    const chunks = [];
+    doc.on('data',  chunk => chunks.push(chunk));
+    doc.on('end',   ()    => resolve(Buffer.concat(chunks)));
+    doc.on('error', err   => reject(err));
 
-  if (lang === 'fr') {
-    generateFrLetter(doc, org, request, template);
-  } else {
-    generateArLetter(doc, org, request, template);
-  }
-
-  doc.end();
+    try {
+      if (lang === 'fr') {
+        generateFrLetter(doc, org, request, template);
+      } else {
+        generateArLetter(doc, org, request, template);
+      }
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
 };
 
 module.exports = { generateRequestLetterPdf };
