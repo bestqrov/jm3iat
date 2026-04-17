@@ -4,6 +4,7 @@ import {
   Users, Calendar, DollarSign, Briefcase, TrendingUp, TrendingDown,
   Bell, Droplets, ShoppingBag, Layers, Building2, FolderKanban,
   AlertCircle, CheckCircle, Wrench, Package, RefreshCw, Activity, Globe,
+  Bus, MapPin, CreditCard, UserCheck,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -14,7 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import {
   membersApi, meetingsApi, financeApi, projectsApi,
-  remindersApi, waterApi, assocApi,
+  remindersApi, waterApi, assocApi, transportApi,
 } from '../../lib/api';
 import { StatCard } from '../../components/ui/StatCard';
 import { formatCurrency, formatDate, getTrialDaysRemaining } from '../../lib/utils';
@@ -95,6 +96,7 @@ export const DashboardPage: React.FC = () => {
   const hasWater     = hasModule('WATER');
   const hasProd      = hasModule('PRODUCTIVE');
   const hasProj      = hasModule('PROJECTS');
+  const hasTransport = hasModule('TRANSPORT');
   const hasFinance   = mods.length > 0 || (sub?.plan && sub.plan !== 'BASIC');
 
   const trialDays = organization?.trialEndsAt ? getTrialDaysRemaining(organization.trialEndsAt) : null;
@@ -110,6 +112,7 @@ export const DashboardPage: React.FC = () => {
   const [reminders,          setReminders]           = useState<any[]>([]);
   const [waterSummary,       setWaterSummary]        = useState<any>(null);
   const [assocStats,         setAssocStats]          = useState<any>(null);
+  const [transportStats,     setTransportStats]      = useState<any>(null);
   const [loading,            setLoading]             = useState(true);
 
   useEffect(() => {
@@ -155,6 +158,12 @@ export const DashboardPage: React.FC = () => {
         if (hasProd) {
           const as = await assocApi.getStats().catch(() => null);
           if (as) setAssocStats(as.data);
+        }
+
+        // Transport module
+        if (hasTransport) {
+          const ts = await transportApi.getStats().catch(() => null);
+          if (ts) setTransportStats(ts.data);
         }
       } finally {
         setLoading(false);
@@ -304,6 +313,18 @@ export const DashboardPage: React.FC = () => {
             subtitle={assocStats ? formatCurrency(assocStats.revenueThisMonth ?? 0, lang) : ''}
           />
         )}
+
+        {/* Transport module stat */}
+        {hasTransport && (
+          <StatCard
+            title={isAr ? 'تلاميذ النقل' : 'Élèves transportés'}
+            value={transportStats?.totalStudents ?? '-'}
+            icon={<Bus size={22} />}
+            iconBg="bg-orange-100 dark:bg-orange-900/30"
+            iconColor="text-orange-600 dark:text-orange-400"
+            subtitle={transportStats ? (isAr ? `${transportStats.unpaidSubs ?? 0} غير مدفوع` : `${transportStats.unpaidSubs ?? 0} impayé(s)`) : ''}
+          />
+        )}
       </div>
 
       {/* ── Module-specific sections ── */}
@@ -361,6 +382,57 @@ export const DashboardPage: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Transport module section ── */}
+      {hasTransport && (
+        <div>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <Bus size={18} className="text-orange-500" />
+            {isAr ? 'ملخص النقل المدرسي' : 'Résumé transport scolaire'}
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { label: isAr ? 'التلاميذ' : 'Élèves',          value: transportStats?.totalStudents  ?? '-', icon: <Users size={18} />,     color: '#ea580c' },
+              { label: isAr ? 'الحافلات' : 'Véhicules',        value: transportStats?.totalVehicles  ?? '-', icon: <Bus size={18} />,       color: '#ea580c' },
+              { label: isAr ? 'الخطوط' : 'Itinéraires',        value: transportStats?.totalRoutes    ?? '-', icon: <MapPin size={18} />,    color: '#ea580c' },
+              { label: isAr ? 'غير مدفوع' : 'Abonnements impayés', value: transportStats?.unpaidSubs ?? '-', icon: <CreditCard size={18} />, color: '#dc2626' },
+            ].map((card, i) => (
+              <Link key={i} to="/transport" className="card p-3 flex items-center gap-3 hover:shadow-md transition-shadow">
+                <div className="p-2 rounded-lg" style={{ background: `${card.color}18` }}>
+                  <span style={{ color: card.color }}>{card.icon}</span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{card.label}</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{card.value}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+          {/* Revenue summary */}
+          {transportStats && (transportStats.monthRevenue > 0 || transportStats.totalRevenue > 0) && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="card p-3 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                  <TrendingUp size={16} className="text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">{isAr ? 'إيرادات هذا الشهر' : 'Revenus ce mois'}</p>
+                  <p className="text-sm font-bold text-emerald-600">{formatCurrency(transportStats.monthRevenue ?? 0, lang)}</p>
+                </div>
+              </div>
+              <div className="card p-3 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                  <UserCheck size={16} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">{isAr ? 'اشتراكات مدفوعة' : 'Abonnements payés'}</p>
+                  <p className="text-sm font-bold text-blue-600">{transportStats.paidSubs ?? '-'}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
