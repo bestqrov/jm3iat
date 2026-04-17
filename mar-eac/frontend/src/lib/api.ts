@@ -153,12 +153,17 @@ export const fundingApi = {
 
 // ---- Requests ----
 export const requestsApi = {
-  getAll: (params?: any) => api.get('/requests', { params }),
-  getById: (id: string) => api.get(`/requests/${id}`),
-  create: (data: any) => api.post('/requests', data),
-  update: (id: string, data: any) => api.put(`/requests/${id}`, data),
-  delete: (id: string) => api.delete(`/requests/${id}`),
-  getStats: () => api.get('/requests/stats'),
+  getAll:        (params?: any)                              => api.get('/requests', { params }),
+  getById:       (id: string)                               => api.get(`/requests/${id}`),
+  create:        (data: any)                                => api.post('/requests', data),
+  update:        (id: string, data: any)                    => api.put(`/requests/${id}`, data),
+  delete:        (id: string)                               => api.delete(`/requests/${id}`),
+  getStats:      ()                                         => api.get('/requests/stats'),
+  getTemplates:  ()                                         => api.get('/requests/templates'),
+  downloadPdf:   (id: string, templateId: string, lang: string) =>
+    api.get(`/requests/${id}/pdf`, { params: { templateId, lang }, responseType: 'blob' }),
+  sendLetter:    (id: string, data: { templateId: string; channel: string; lang: string }) =>
+    api.post(`/requests/${id}/send`, data),
 };
 
 // ---- Water ----
