@@ -70,6 +70,12 @@ app.use('/api/marketing',  require('./modules/marketing/marketing.routes'));
 app.use('/api/whatsapp',   require('./modules/whatsapp/whatsapp.routes'));
 app.use('/api/transport',  require('./modules/transport/transport.routes'));
 app.use('/api/settings/staff', require('./modules/settings/staff.routes'));
+app.use('/api/activity',       require('./modules/activity/activity.routes'));
+app.use('/api/notifications',  require('./modules/notifications/notifications.routes'));
+app.use('/api/recurring',      require('./modules/recurring/recurring.routes'));
+app.use('/api/export',         require('./modules/export/export.routes'));
+app.use('/api/calendar',       require('./modules/calendar/calendar.routes'));
+app.use('/api/public',         require('./modules/public/public.routes'));
 
 // Serve frontend static files (single-service deployment)
 const possibleDists = [
@@ -114,6 +120,12 @@ const cron = require('node-cron');
 cron.schedule('0 9 * * *', async () => {
   try { await processAutomationRules(); } catch (err) { console.error('[automation cron] error:', err.message); }
   try { await sendTrialExpiryReminders(); } catch (err) { console.error('[trial-reminder cron] error:', err.message); }
+});
+
+// Process recurring payments daily at 08:00
+const { processDue: processRecurring } = require('./modules/recurring/recurring.controller');
+cron.schedule('0 8 * * *', async () => {
+  try { await processRecurring(); } catch (err) { console.error('[recurring cron] error:', err.message); }
 });
 
 // Process scheduled marketing campaigns every 5 minutes

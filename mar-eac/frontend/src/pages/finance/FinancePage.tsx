@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus, TrendingUp, TrendingDown, Wallet, Download, Pencil, Trash2, Paperclip, ExternalLink } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Wallet, Download, Pencil, Trash2, Paperclip, ExternalLink, FileSpreadsheet, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { financeApi } from '../../lib/api';
+import { financeApi, exportApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -200,6 +200,7 @@ export const FinancePage: React.FC = () => {
             ))}
           </select>
           <button onClick={handleExport} className="btn-secondary"><Download size={16} />{t('finance.export')}</button>
+          <button onClick={() => exportApi.finance()} className="btn-secondary" title={lang === 'ar' ? 'تصدير Excel' : 'Export Excel'}><FileSpreadsheet size={16} />Excel</button>
           <button onClick={openAdd} className="btn-primary"><Plus size={16} />{t('finance.addTransaction')}</button>
         </div>
       </div>
@@ -275,6 +276,7 @@ export const FinancePage: React.FC = () => {
                             <Paperclip size={14} />
                           </a>
                         )}
+                        <button onClick={() => exportApi.invoice(tx.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" title={lang === 'ar' ? 'تحميل الوصل' : 'Télécharger le reçu'}><FileText size={14} /></button>
                         <button onClick={() => openEdit(tx)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20"><Pencil size={14} /></button>
                         <button onClick={() => setDeleteId(tx.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
                       </div>

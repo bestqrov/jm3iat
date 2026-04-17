@@ -2,6 +2,7 @@ const prisma = require('../../config/database');
 const path = require('path');
 const fs = require('fs');
 const { generateFinancialPDF } = require('../../utils/financePdf');
+const { generateInvoicePdf } = require('../../utils/invoicePdf');
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
 
@@ -221,8 +222,24 @@ const exportPDF = (req, res) => generateFinancialPDF(req, res).catch((err) => {
   if (!res.headersSent) res.status(500).json({ message: 'Error generating PDF' });
 });
 
+const exportInvoice = async (req, res) => {
+  try {
+    const tx = await prisma.transaction.findFirst({
+      where: { id: req.params.id, organizationId: req.organization.id },
+    });
+    if (!tx) return res.status(404).json({ message: 'Transaction not found' });
+    const org = req.organization;
+    const buf = await generateInvoicePdf({ org, transaction: tx });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="recu_${tx.id.slice(-6)}.pdf"`);
+    res.send(buf);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getTransactions, getById, create, update, remove,
   getSummary, getMonthlySummary, getCategories, exportPDF,
-  uploadReceipt,
+  uploadReceipt, exportInvoice,
 };

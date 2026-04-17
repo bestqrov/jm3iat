@@ -24,6 +24,10 @@ import { SuperAdminPage } from './pages/superadmin/SuperAdminPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import AssocPage from './pages/assoc/AssocPage';
 import { TransportPage } from './pages/transport/TransportPage';
+import { CalendarPage } from './pages/calendar/CalendarPage';
+import { ActivityPage } from './pages/activity/ActivityPage';
+import { RecurringPage } from './pages/recurring/RecurringPage';
+import { PublicProfilePage } from './pages/public/PublicProfilePage';
 
 const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSuperAdmin } = useAuth();
@@ -46,6 +50,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/p/:slug" element={<PublicProfilePage />} />
 
               {/* SuperAdmin — standalone layout (no global sidebar) */}
               <Route path="/superadmin" element={
@@ -70,6 +75,9 @@ const App: React.FC = () => {
                 <Route path="/reports" element={<WaterReaderRoute><ReportsPage /></WaterReaderRoute>} />
                 <Route path="/requests" element={<WaterReaderRoute><RequestsPage /></WaterReaderRoute>} />
                 <Route path="/reminders" element={<WaterReaderRoute><RemindersPage /></WaterReaderRoute>} />
+                <Route path="/calendar" element={<WaterReaderRoute><CalendarPage /></WaterReaderRoute>} />
+                <Route path="/activity" element={<WaterReaderRoute><ActivityPage /></WaterReaderRoute>} />
+                <Route path="/recurring" element={<WaterReaderRoute><RecurringPage /></WaterReaderRoute>} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
 

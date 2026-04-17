@@ -5,6 +5,7 @@ import {
   Briefcase, Droplets, BarChart2, Bell, Shield, Settings,
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
   Building2, FolderKanban, Layers, CreditCard, Bus,
+  Activity, RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -190,6 +191,9 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
       items: [
         ...(canAccess('reports')  ? [{ to: '/reports',   icon: <BarChart2 size={18} />, label: t('nav.reports'),   plan: 'STANDARD' }] : []),
         ...(isFullAccess          ? [{ to: '/reminders', icon: <Bell size={18} />,      label: t('nav.reminders'), plan: 'PREMIUM' }]   : []),
+        { to: '/calendar',  icon: <Calendar size={18} />,   label: isAr ? 'التقويم' : 'Calendrier' },
+        ...(canAccess('finance')  ? [{ to: '/recurring', icon: <RefreshCw size={18} />, label: isAr ? 'الدفعات المتكررة' : 'Récurrents' }] : []),
+        ...(isFullAccess          ? [{ to: '/activity',  icon: <Activity size={18} />,  label: isAr ? 'سجل النشاطات' : 'Activité' }]   : []),
         ...(isFullAccess          ? [{ to: '/settings',  icon: <Settings size={18} />,  label: t('nav.settings') }]                     : []),
       ],
     },

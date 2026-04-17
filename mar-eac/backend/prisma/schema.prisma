@@ -72,6 +72,10 @@ model Organization {
   transportPayments      TransportPayment[]
   transportAttendances   TransportAttendance[]
   transportExpenses      TransportExpense[]
+  // Pro features
+  activityLogs       ActivityLog[]
+  notifications      Notification[]
+  recurringPayments  RecurringPayment[]
 }
 
 model Subscription {
@@ -763,6 +767,65 @@ model TransportExpense {
   description    String?
   transactionId  String?  @db.ObjectId
   createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// ── Activity Log ──────────────────────────────────────────────────────────────
+model ActivityLog {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  userId         String?  @db.ObjectId
+  userName       String?
+  userRole       String?
+  action         String
+  entity         String
+  entityId       String?
+  description    String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([organizationId, createdAt])
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+model Notification {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  userId         String?  @db.ObjectId
+  type           String   @default("INFO")
+  title          String
+  titleAr        String?
+  body           String?
+  bodyAr         String?
+  link           String?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([organizationId, isRead, createdAt])
+}
+
+// ── Recurring Payments ────────────────────────────────────────────────────────
+model RecurringPayment {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  description    String
+  amount         Float
+  category       String
+  type           String   @default("INCOME")
+  frequency      String   @default("MONTHLY")
+  startDate      DateTime
+  nextDueDate    DateTime
+  lastRunDate    DateTime?
+  isActive       Boolean  @default(true)
+  autoCreate     Boolean  @default(true)
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

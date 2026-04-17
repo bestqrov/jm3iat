@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Pencil, Trash2, Users, UserCheck } from 'lucide-react';
-import { membersApi } from '../../lib/api';
+import { Plus, Search, Pencil, Trash2, Users, UserCheck, FileSpreadsheet } from 'lucide-react';
+import { membersApi, exportApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -89,6 +89,9 @@ export const MembersPage: React.FC = () => {
             {lang === 'ar' ? 'قائمة منخرطي الجمعية' : 'Liste des adhérents de l\'association'}
           </p>
         </div>
+        <button onClick={() => exportApi.members()} className="btn-secondary" title={lang === 'ar' ? 'تصدير Excel' : 'Export Excel'}>
+          <FileSpreadsheet size={16} />Excel
+        </button>
         <button onClick={openAdd} className="btn-primary">
           <Plus size={16} />{t('members.addMember')}
         </button>

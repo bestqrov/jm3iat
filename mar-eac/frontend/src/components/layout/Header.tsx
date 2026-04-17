@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { remindersApi } from '../../lib/api';
 import { AssocCard } from '../AssocCard';
+import { NotificationsBell } from './NotificationsBell';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -83,6 +84,9 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             )}
           </Link>
         )}
+
+        {/* In-app notifications bell */}
+        {organization && <NotificationsBell />}
 
         {/* User */}
         <div className="flex items-center gap-2">

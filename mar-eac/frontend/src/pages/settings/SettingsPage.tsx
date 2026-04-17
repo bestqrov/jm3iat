@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera, Share2, MessageCircle, Wifi, WifiOff, RefreshCw, Unlink } from 'lucide-react';
+import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera, Share2, MessageCircle, Wifi, WifiOff, RefreshCw, Unlink, ExternalLink } from 'lucide-react';
 
 const MOROCCO_REGIONS = [
   { fr: 'Tanger-Tétouan-Al Hoceïma',       ar: 'طنجة-تطوان-الحسيمة' },
@@ -245,9 +245,45 @@ export const SettingsPage: React.FC = () => {
     </button>
   );
 
+  const publicSlug = org?.email?.split('@')[0] || '';
+  const publicUrl = `${window.location.origin}/p/${publicSlug}`;
+
   return (
     <div className="space-y-6 max-w-2xl">
       <h2 className="page-title">{t('settings.title')}</h2>
+
+      {/* ── Public Profile Card ── */}
+      {publicSlug && (
+        <div className="card p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-700">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Globe size={18} className="text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{lang === 'ar' ? 'صفحتك العامة' : 'Votre page publique'}</p>
+                <p className="text-xs text-gray-500 truncate max-w-xs">{publicUrl}</p>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => { navigator.clipboard.writeText(publicUrl); }}
+                className="text-xs px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-600 hover:bg-indigo-50 transition-colors"
+              >
+                {lang === 'ar' ? 'نسخ' : 'Copier'}
+              </button>
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+              >
+                {lang === 'ar' ? 'عرض' : 'Voir'}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── 1. Organization Profile ── */}
       <div className="card p-5">

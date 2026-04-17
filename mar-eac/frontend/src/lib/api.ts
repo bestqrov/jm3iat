@@ -383,3 +383,48 @@ export const transportApi = {
   createExpense: (data: any)               => api.post('/transport/expenses', data),
   deleteExpense: (id: string)              => api.delete(`/transport/expenses/${id}`),
 };
+
+// ---- Activity Log ----
+export const activityApi = {
+  getLogs: (params?: any) => api.get('/activity', { params }),
+};
+
+// ---- Notifications ----
+export const notificationsApi = {
+  getAll:   ()           => api.get('/notifications'),
+  markRead: (id: string) => api.put(`/notifications/${id}/read`),
+  markAllRead: ()        => api.put('/notifications/all/read'),
+  remove:   (id: string) => api.delete(`/notifications/${id}`),
+};
+
+// ---- Recurring Payments ----
+export const recurringApi = {
+  getAll:  ()              => api.get('/recurring'),
+  create:  (data: any)     => api.post('/recurring', data),
+  update:  (id: string, data: any) => api.put(`/recurring/${id}`, data),
+  remove:  (id: string)    => api.delete(`/recurring/${id}`),
+};
+
+// ---- Export ----
+export const exportApi = {
+  members:           () => { window.open('/api/export/members', '_blank'); },
+  finance:           (from?: string, to?: string) => {
+    const q = new URLSearchParams();
+    if (from) q.set('from', from);
+    if (to) q.set('to', to);
+    window.open(`/api/export/finance?${q}`, '_blank');
+  },
+  transportStudents: () => { window.open('/api/export/transport/students', '_blank'); },
+  invoice:           (txId: string) => { window.open(`/api/finance/${txId}/invoice`, '_blank'); },
+};
+
+// ---- Calendar ----
+export const calendarApi = {
+  getEvents: (from?: string, to?: string) => api.get('/calendar', { params: { from, to } }),
+};
+
+// ---- Public ----
+export const publicApi = {
+  getProfile:  (slug: string)              => api.get(`/public/${slug}`),
+  submitJoin:  (slug: string, data: any)   => api.post(`/public/${slug}/join`, data),
+};

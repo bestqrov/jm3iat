@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import {
   Users, Calendar, DollarSign, Briefcase, TrendingUp, TrendingDown,
   Bell, Droplets, ShoppingBag, Layers, Building2, FolderKanban,
-  AlertCircle, CheckCircle, Wrench, Package,
+  AlertCircle, CheckCircle, Wrench, Package, RefreshCw, Activity, Globe,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  LineChart, Line, AreaChart, Area,
 } from 'recharts';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -218,6 +219,24 @@ export const DashboardPage: React.FC = () => {
             <span className="font-bold text-white text-sm">MA</span>
           </div>
         </div>
+      </div>
+
+      {/* ── Quick actions ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { to: '/calendar',  icon: <Calendar size={18} />,   label: isAr ? 'التقويم' : 'Calendrier',        color: 'indigo' },
+          { to: '/recurring', icon: <RefreshCw size={18} />,  label: isAr ? 'الدفعات المتكررة' : 'Récurrents', color: 'blue' },
+          { to: '/activity',  icon: <Activity size={18} />,   label: isAr ? 'سجل النشاطات' : 'Activité',    color: 'purple' },
+          { to: '/settings',  icon: <Globe size={18} />,      label: isAr ? 'الصفحة العامة' : 'Page publique', color: 'emerald' },
+        ].map(qa => (
+          <Link key={qa.to} to={qa.to}
+            className={`card p-3 flex items-center gap-2 hover:shadow-md transition-shadow group`}>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${qa.color}-100 dark:bg-${qa.color}-900/30 text-${qa.color}-600 dark:text-${qa.color}-400 group-hover:scale-110 transition-transform`}>
+              {qa.icon}
+            </div>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{qa.label}</span>
+          </Link>
+        ))}
       </div>
 
       {/* ── Stat cards — base (all types) ── */}

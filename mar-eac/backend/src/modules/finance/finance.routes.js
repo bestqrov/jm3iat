@@ -18,5 +18,6 @@ router.post('/', ctrl.create);
 router.put('/:id', ctrl.update);
 router.delete('/:id', ctrl.remove);
 router.post('/:id/receipt', upload.single('receipt'), ctrl.uploadReceipt);
+router.get('/:id/invoice', ctrl.exportInvoice);
 
 module.exports = router;
