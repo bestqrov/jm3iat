@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera, Share2 } from 'lucide-react';
+import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera, Share2, MessageCircle, Wifi, WifiOff, RefreshCw, Unlink } from 'lucide-react';
 
 const MOROCCO_REGIONS = [
   { fr: 'Tanger-Tétouan-Al Hoceïma',       ar: 'طنجة-تطوان-الحسيمة' },
@@ -18,7 +18,7 @@ const MOROCCO_REGIONS = [
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { authApi } from '../../lib/api';
+import { authApi, whatsappApi } from '../../lib/api';
 import { formatDate } from '../../lib/utils';
 
 export const SettingsPage: React.FC = () => {
@@ -96,11 +96,20 @@ export const SettingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [upgradingSub, setUpgradingSub] = useState(false);
 
+  // WhatsApp instance
+  const [waStatus,       setWaStatus]       = useState<'idle' | 'loading' | 'connected' | 'disconnected'>('idle');
+  const [waQr,           setWaQr]           = useState<string | null>(null);
+  const [waPolling,      setWaPolling]      = useState(false);
+  const [waError,        setWaError]        = useState<string | null>(null);
+  const [waDisconnecting,setWaDisconnecting]= useState(false);
+
   const showSuccess = (key: string) => {
     setSuccess(key);
     setError(null);
     setTimeout(() => setSuccess(null), 2500);
   };
+
+  React.useEffect(() => { loadWaStatus(); }, []);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -169,6 +178,59 @@ export const SettingsPage: React.FC = () => {
       await refreshUser();
       showSuccess('profile');
     } catch { setError('profile'); } finally { setSaving(null); }
+  };
+
+  // WhatsApp connect flow
+  const loadWaStatus = async () => {
+    setWaStatus('loading'); setWaError(null);
+    try {
+      const r = await whatsappApi.getStatus();
+      setWaStatus(r.data.connected ? 'connected' : 'disconnected');
+    } catch { setWaStatus('disconnected'); }
+  };
+
+  const handleWaConnect = async () => {
+    setWaStatus('loading'); setWaQr(null); setWaError(null);
+    try {
+      const r = await whatsappApi.getQr();
+      if (r.data.base64) {
+        setWaQr(r.data.base64);
+        setWaStatus('disconnected');
+        // Poll for connection every 3s for up to 2 min
+        setWaPolling(true);
+        let tries = 0;
+        const iv = setInterval(async () => {
+          tries++;
+          if (tries > 40) { clearInterval(iv); setWaPolling(false); return; }
+          try {
+            const c = await whatsappApi.confirm();
+            if (c.data.success) {
+              clearInterval(iv);
+              setWaPolling(false);
+              setWaQr(null);
+              setWaStatus('connected');
+              await refreshUser();
+            }
+          } catch { /* still waiting */ }
+        }, 3000);
+      } else {
+        setWaError(lang === 'ar' ? 'لم يتم توليد QR بعد، حاول مجدداً' : 'QR not ready, retry in 2s');
+        setWaStatus('disconnected');
+      }
+    } catch (err: any) {
+      setWaError(err?.response?.data?.message || 'Error');
+      setWaStatus('disconnected');
+    }
+  };
+
+  const handleWaDisconnect = async () => {
+    setWaDisconnecting(true);
+    try {
+      await whatsappApi.disconnect();
+      setWaStatus('disconnected');
+      setWaQr(null);
+      await refreshUser();
+    } catch { } finally { setWaDisconnecting(false); }
   };
 
   const sub = org?.subscription;
@@ -440,6 +502,91 @@ export const SettingsPage: React.FC = () => {
             {success === 'social' && <span className="ms-1">✓</span>}
           </button>
         </div>
+      </div>
+
+      {/* ── 4. WhatsApp Instance ── */}
+      <div className="card p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+            <MessageCircle size={18} className="text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              {lang === 'ar' ? 'ربط واتساب الجمعية' : 'Connexion WhatsApp'}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {lang === 'ar'
+                ? 'ربط رقم الجمعية لإرسال الرسائل والمراسلات منها مباشرة'
+                : 'Connectez le numéro de l\'association pour envoyer directement depuis lui'}
+            </p>
+          </div>
+        </div>
+
+        {waError && (
+          <div className="mb-3 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
+            ⚠ {waError}
+          </div>
+        )}
+
+        {waStatus === 'connected' || org?.evolutionInstance ? (
+          <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700">
+            <div className="flex items-center gap-3">
+              <Wifi size={20} className="text-emerald-600 dark:text-emerald-400" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  {lang === 'ar' ? 'الواتساب متصل ✓' : 'WhatsApp connecté ✓'}
+                </p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
+                  {org?.evolutionInstance || ''}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleWaDisconnect}
+              disabled={waDisconnecting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              {waDisconnecting ? <RefreshCw size={14} className="animate-spin" /> : <Unlink size={14} />}
+              {lang === 'ar' ? 'قطع الاتصال' : 'Déconnecter'}
+            </button>
+          </div>
+        ) : waQr ? (
+          <div className="flex flex-col items-center gap-4 py-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+              {lang === 'ar'
+                ? 'افتح واتساب ← المزيد ← الأجهزة المرتبطة ← ربط جهاز ← امسح الكود'
+                : 'Ouvrez WhatsApp → Plus → Appareils liés → Lier un appareil → Scannez'}
+            </p>
+            <img src={waQr} alt="QR Code" className="w-52 h-52 rounded-xl border-4 border-emerald-400 shadow-lg" />
+            {waPolling && (
+              <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                <RefreshCw size={14} className="animate-spin" />
+                {lang === 'ar' ? 'في انتظار المسح...' : 'En attente du scan...'}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+              <WifiOff size={28} className="text-gray-400" />
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+              {lang === 'ar'
+                ? 'الواتساب غير متصل — اضغط لربط رقم الجمعية'
+                : 'WhatsApp non connecté — cliquez pour lier le numéro de l\'association'}
+            </p>
+            <button
+              onClick={handleWaConnect}
+              disabled={waStatus === 'loading'}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+            >
+              {waStatus === 'loading' ? <RefreshCw size={15} className="animate-spin" /> : <MessageCircle size={15} />}
+              {waStatus === 'loading'
+                ? (lang === 'ar' ? 'جارٍ التحميل...' : 'Chargement...')
+                : (lang === 'ar' ? 'ربط واتساب الجمعية' : 'Connecter WhatsApp')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── 5. Association Info ── */}

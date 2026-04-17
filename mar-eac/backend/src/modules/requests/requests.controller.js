@@ -4,13 +4,14 @@ const nodemailer    = require('nodemailer');
 const { generateRequestLetterPdf } = require('../../utils/requestLetterPdf');
 
 // ─── Evolution API (WhatsApp) ─────────────────────────────────────────────────
-const sendWA = async (phone, text) => {
-  const evoUrl      = process.env.EVOLUTION_API_URL  || '';
-  const evoKey      = process.env.EVOLUTION_API_KEY  || '';
-  const evoInstance = process.env.EVOLUTION_INSTANCE || 'main';
+const sendWA = async (phone, text, orgInstance) => {
+  const evoUrl = process.env.EVOLUTION_API_URL || '';
+  const evoKey = process.env.EVOLUTION_API_KEY || '';
   if (!evoUrl) throw new Error('EVOLUTION_API_URL not set in environment');
   if (!evoKey) throw new Error('EVOLUTION_API_KEY not set in environment');
-  const url = `${evoUrl}/message/sendText/${evoInstance}`;
+  // Use org's own instance if connected, otherwise fall back to platform default
+  const instance = orgInstance || process.env.EVOLUTION_INSTANCE || 'main';
+  const url = `${evoUrl}/message/sendText/${instance}`;
   return axios.post(url, { number: phone.replace(/[\s\-\+]/g, ''), textMessage: { text } },
     { headers: { apikey: evoKey, 'Content-Type': 'application/json' }, timeout: 15000 });
 };
@@ -249,7 +250,7 @@ const sendLetter = async (req, res) => {
         ? `*${tpl.nameFr}*\n\nAssociation : ${orgName}\nObjet : ${request.title}${request.recipient ? `\nDestinataire : ${request.recipient}` : ''}${request.amount ? `\nMontant : ${Number(request.amount).toLocaleString('fr-MA')} MAD` : ''}\n\n${tpl.descFr}`
         : `*${tpl.nameAr}*\n\nالجمعية: ${orgName}\nالموضوع: ${request.title}${request.recipient ? `\nإلى: ${request.recipient}` : ''}${request.amount ? `\nالمبلغ: ${Number(request.amount).toLocaleString('fr-MA')} درهم` : ''}\n\n${tpl.descAr}`;
 
-      await sendWA(phone, msg);
+      await sendWA(phone, msg, org?.evolutionInstance);
       return res.json({ success: true, channel: 'whatsapp', phone });
     }
 

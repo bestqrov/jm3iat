@@ -27,6 +27,7 @@ interface Organization {
   foundingDate?: string;
   activities?: string;
   activitiesAr?: string;
+  evolutionInstance?: string | null;
   // Social media
   whatsapp?: string;
   facebook?: string;

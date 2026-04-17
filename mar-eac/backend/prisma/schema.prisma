@@ -35,6 +35,8 @@ model Organization {
   instagram String?
   tiktok    String?
   youtube   String?
+  // ── WhatsApp instance (Evolution API) ───────────
+  evolutionInstance String?
   // ── Bank (shared) ───────────────────────────────
   bankName     String?
   bankAccount  String?

@@ -322,6 +322,14 @@ export const superadminApi = {
   getMarketingTemplates:   ()           => api.get('/superadmin/marketing-templates'),
 };
 
+// ── WhatsApp Instance ─────────────────────────────────────────────────────────
+export const whatsappApi = {
+  getStatus:    () => api.get('/whatsapp/status'),
+  getQr:        () => api.get('/whatsapp/qr'),
+  confirm:      () => api.post('/whatsapp/confirm'),
+  disconnect:   () => api.delete('/whatsapp/disconnect'),
+};
+
 // ── Dedicated Marketing API (/api/marketing) ──────────────────────────────────
 export const marketingApi = {
   send:              (data: any)           => api.post('/marketing/send', data),
