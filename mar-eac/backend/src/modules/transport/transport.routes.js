@@ -2,7 +2,7 @@ const router = require('express').Router();
 const ctrl   = require('./transport.controller');
 const auth   = require('../../middleware/auth');
 const tenant = require('../../middleware/tenant');
-const requireModule = require('../../middleware/module');
+const { requireModule } = require('../../middleware/module');
 
 router.use(auth, tenant, requireModule('TRANSPORT'));
 
