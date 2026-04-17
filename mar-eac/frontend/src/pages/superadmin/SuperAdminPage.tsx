@@ -8,7 +8,7 @@ import {
   ExternalLink, FileText,
   Package, Tag, Mail, Zap, Brain, Settings, Activity,
   ChevronLeft, ChevronRight,
-  LogOut, Globe, Sun, Moon, X,
+  LogOut, Globe, Sun, Moon, X, Bus,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -36,7 +36,7 @@ import { SettingsTab }     from './tabs/SettingsTab';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type AssocTypeKey = 'REGULAR' | 'PROJECTS' | 'WATER' | 'PRODUCTIVE' | 'PRODUCTIVE_WATER';
+type AssocTypeKey = 'REGULAR' | 'PROJECTS' | 'WATER' | 'PRODUCTIVE' | 'PRODUCTIVE_WATER' | 'TRANSPORT';
 type ActiveTab =
   | 'dashboard' | 'orgs' | 'subscriptions' | 'payments' | 'users'
   | 'packs' | 'analytics' | 'usage' | 'marketing' | 'automation'
@@ -53,16 +53,19 @@ const ASSOC_TYPES: {
   { key: 'WATER',            price: 199, labelFr: 'Gestion de l\'eau',        labelAr: 'جمعية الماء',       icon: <Droplets size={13} />,    badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',           dot: '#0891b2' },
   { key: 'PRODUCTIVE',       price: 199, labelFr: 'Association productive',   labelAr: 'جمعية إنتاجية',     icon: <ShoppingBag size={13} />, badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', dot: '#059669' },
   { key: 'PRODUCTIVE_WATER', price: 299, labelFr: 'Productive + Eau',         labelAr: 'إنتاجية + ماء',     icon: <Layers size={13} />,      badge: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',   dot: '#7c3aed' },
+  { key: 'TRANSPORT',        price: 179, labelFr: 'Transport scolaire',        labelAr: 'النقل المدرسي',     icon: <Bus size={13} />,         badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',   dot: '#ea580c' },
 ];
 
 const getAssocType = (modules: string[] = []): AssocTypeKey => {
-  const hasProd  = modules.includes('PRODUCTIVE');
-  const hasWater = modules.includes('WATER');
-  const hasProj  = modules.includes('PROJECTS');
+  const hasProd      = modules.includes('PRODUCTIVE');
+  const hasWater     = modules.includes('WATER');
+  const hasProj      = modules.includes('PROJECTS');
+  const hasTransport = modules.includes('TRANSPORT');
   if (hasProd && hasWater) return 'PRODUCTIVE_WATER';
-  if (hasProd)  return 'PRODUCTIVE';
-  if (hasWater) return 'WATER';
-  if (hasProj)  return 'PROJECTS';
+  if (hasProd)      return 'PRODUCTIVE';
+  if (hasWater)     return 'WATER';
+  if (hasProj)      return 'PROJECTS';
+  if (hasTransport) return 'TRANSPORT';
   return 'REGULAR';
 };
 
