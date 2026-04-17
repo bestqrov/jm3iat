@@ -113,7 +113,7 @@ export const documentsApi = {
 export const reportsApi = {
   getLiterary: () => api.get('/reports/literary'),
   getFinancial: () => api.get('/reports/financial'),
-  exportLiterary: () => api.get('/reports/literary/export', { responseType: 'blob' }),
+  exportLiterary: (year?: number, lang?: string) => api.get('/reports/literary/export', { responseType: 'blob', params: { ...(year ? { year } : {}), ...(lang ? { lang } : {}) } }),
   exportFinancial: (year?: number, lang?: string) => api.get('/reports/financial/export', { responseType: 'blob', params: { ...(year ? { year } : {}), ...(lang ? { lang } : {}) } }),
   // Association reports
   getAssocLiterary: (params?: any) => api.get('/reports/assoc/literary', { params }),

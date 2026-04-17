@@ -1,6 +1,6 @@
 const prisma = require('../../config/database');
-const PDFDocument = require('pdfkit');
 const { generateFinancialPDF } = require('../../utils/financePdf');
+const { generateLiteraryReportPdf } = require('../../utils/literaryReportPdf');
 
 const getLiteraryReport = async (req, res) => {
   try {
@@ -114,65 +114,67 @@ const getFinancialReport = async (req, res) => {
 const exportLiteraryPDF = async (req, res) => {
   try {
     const orgId = req.organization.id;
-    const org = req.organization;
+    const lang  = req.query.lang  || 'ar';
+    const year  = parseInt(req.query.year) || new Date().getFullYear();
 
-    const [totalMembers, activeMembers, totalMeetings, completedMeetings, totalProjects] =
-      await Promise.all([
-        prisma.member.count({ where: { organizationId: orgId } }),
-        prisma.member.count({ where: { organizationId: orgId, isActive: true } }),
-        prisma.meeting.count({ where: { organizationId: orgId } }),
-        prisma.meeting.count({ where: { organizationId: orgId, status: 'COMPLETED' } }),
-        prisma.project.count({ where: { organizationId: orgId } }).catch(() => 0),
-      ]);
+    const yearStart = new Date(year, 0, 1);
+    const yearEnd   = new Date(year, 11, 31, 23, 59, 59);
 
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="rapport_litteraire.pdf"');
-    doc.pipe(res);
+    const [
+      totalMembers, activeMembers, boardMembers, newThisYear,
+      totalMeetings, completedMeetings, scheduledMeetings,
+      totalDecisions, recentMeetings,
+      totalProjects, completedProjects, inProgressProjects,
+      incomeAgg, expensesAgg,
+      totalRequests,
+      orgFull,
+    ] = await Promise.all([
+      prisma.member.count({ where: { organizationId: orgId } }),
+      prisma.member.count({ where: { organizationId: orgId, isActive: true } }),
+      prisma.member.count({ where: { organizationId: orgId, role: { not: 'MEMBER' } } }),
+      prisma.member.count({ where: { organizationId: orgId, createdAt: { gte: yearStart, lte: yearEnd } } }),
+      prisma.meeting.count({ where: { organizationId: orgId } }),
+      prisma.meeting.count({ where: { organizationId: orgId, status: 'COMPLETED' } }),
+      prisma.meeting.count({ where: { organizationId: orgId, status: 'SCHEDULED' } }),
+      prisma.decision.count({ where: { meeting: { organizationId: orgId } } }).catch(() => 0),
+      prisma.meeting.findMany({
+        where: { organizationId: orgId },
+        orderBy: { date: 'desc' }, take: 5,
+        include: { _count: { select: { attendances: true } } },
+      }),
+      prisma.project.count({ where: { organizationId: orgId } }).catch(() => 0),
+      prisma.project.count({ where: { organizationId: orgId, status: 'COMPLETED' } }).catch(() => 0),
+      prisma.project.count({ where: { organizationId: orgId, status: 'IN_PROGRESS' } }).catch(() => 0),
+      prisma.transaction.aggregate({
+        where: { organizationId: orgId, type: 'INCOME',
+          date: { gte: yearStart, lte: yearEnd } },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.aggregate({
+        where: { organizationId: orgId, type: 'EXPENSE',
+          date: { gte: yearStart, lte: yearEnd } },
+        _sum: { amount: true },
+      }),
+      prisma.request.count({ where: { organizationId: orgId } }).catch(() => 0),
+      prisma.organization.findUnique({ where: { id: orgId } }),
+    ]);
 
-    // Title
-    doc.fontSize(20).text(org.name, { align: 'center' });
-    doc.fontSize(16).text('التقرير الأدبي / Rapport Littéraire', { align: 'center' });
-    doc.fontSize(11).text(`Date: ${new Date().toLocaleDateString('fr-MA')}`, { align: 'center' });
-    doc.moveDown(1.5);
+    const data = {
+      org: orgFull || req.organization,
+      members:  { total: totalMembers, active: activeMembers, board: boardMembers, newThisYear },
+      meetings: { total: totalMeetings, completed: completedMeetings,
+                  scheduled: scheduledMeetings, decisions: totalDecisions,
+                  recent: recentMeetings },
+      finance:  { totalIncome: incomeAgg._sum.amount || 0,
+                  totalExpenses: expensesAgg._sum.amount || 0 },
+      projects: { total: totalProjects, completed: completedProjects, inProgress: inProgressProjects },
+      requests: { total: totalRequests },
+    };
 
-    // Organization info
-    doc.fontSize(14).text('معلومات الجمعية / Informations sur l\'Association', { underline: true });
-    doc.fontSize(11)
-      .text(`Nom / الاسم: ${org.name}`)
-      .text(`Ville / المدينة: ${org.city || '-'}`)
-      .text(`Région / الجهة: ${org.region || '-'}`);
-    doc.moveDown();
-
-    // Members section
-    doc.fontSize(14).text('الأعضاء / Membres', { underline: true });
-    doc.fontSize(11)
-      .text(`Nombre total d'adhérents / عدد الأعضاء الكلي: ${totalMembers}`)
-      .text(`Adhérents actifs / الأعضاء النشطون: ${activeMembers}`);
-    doc.moveDown();
-
-    // Meetings section
-    doc.fontSize(14).text('الاجتماعات / Réunions', { underline: true });
-    doc.fontSize(11)
-      .text(`Total réunions / مجموع الاجتماعات: ${totalMeetings}`)
-      .text(`Réunions tenues / الاجتماعات المنعقدة: ${completedMeetings}`);
-    doc.moveDown();
-
-    // Projects section
-    if (totalProjects > 0) {
-      doc.fontSize(14).text('المشاريع / Projets', { underline: true });
-      doc.fontSize(11).text(`Total projets / عدد المشاريع: ${totalProjects}`);
-      doc.moveDown();
-    }
-
-    doc.moveDown(2);
-    doc.fontSize(11).text('Cachet et signature / الختم والتوقيع:', { underline: true });
-    doc.moveDown(0.5);
-    doc.text('Président(e): ____________________');
-
-    doc.end();
+    generateLiteraryReportPdf(data, lang, year, res);
   } catch (err) {
-    res.status(500).json({ message: 'Error generating PDF' });
+    console.error('[exportLiteraryPDF]', err);
+    if (!res.headersSent) res.status(500).json({ message: 'Error generating PDF' });
   }
 };
 
