@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, CreditCard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { remindersApi } from '../../lib/api';
+import { AssocCard } from '../AssocCard';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -28,7 +29,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { user, organization } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount,  setUnreadCount]  = useState(0);
+  const [showCard,     setShowCard]     = useState(false);
 
   const pageKey = Object.keys(pageTitles).find((k) => location.pathname.startsWith(k));
   const pageTitle = pageKey ? t(pageTitles[pageKey]) : '';
@@ -41,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   }, [organization, location.pathname]);
 
   return (
+    <>
     <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-4 sticky top-0 z-30">
       {/* Mobile menu button */}
       <button
@@ -55,6 +58,17 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
+        {/* Electronic card button */}
+        {organization && (
+          <button
+            onClick={() => setShowCard(true)}
+            className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            title={t('nav.card') || 'Carte électronique'}
+          >
+            <CreditCard size={20} />
+          </button>
+        )}
+
         {/* Reminders bell */}
         {organization && (
           <Link
@@ -86,5 +100,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         </div>
       </div>
     </header>
+
+    {showCard && <AssocCard onClose={() => setShowCard(false)} />}
+    </>
   );
 };

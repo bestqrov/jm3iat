@@ -12,9 +12,31 @@ interface User {
 interface Organization {
   id: string;
   name: string;
+  nameAr?: string;
   email: string;
+  phone?: string;
+  logo?: string;
+  address?: string;
+  addressAr?: string;
   city?: string;
+  cityAr?: string;
   region?: string;
+  regionAr?: string;
+  description?: string;
+  descriptionAr?: string;
+  foundingDate?: string;
+  activities?: string;
+  activitiesAr?: string;
+  // Social media
+  whatsapp?: string;
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
+  youtube?: string;
+  // Bank
+  bankName?: string;
+  bankAccount?: string;
+  bankRib?: string;
   trialEndsAt?: string;
   modules?: string[];
   subscription?: {
