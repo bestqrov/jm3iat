@@ -461,8 +461,18 @@ const frContent = (doc, data, year, lp) => {
     { value: requests?.total ?? 0,      label: 'Courriers envoyes', bg: C.purpleL, color: C.purple },
   ]);
 
-  // ══ 6. PERSPECTIVES ══════════════════════════════════════════════════════════
-  sec('6. PERSPECTIVES & ORIENTATIONS', C.purple);
+  // ══ 6. TRANSPORT SCOLAIRE (if data exists) ═══════════════════════════════════
+  if (data.transport && (data.transport.totalStudents > 0 || data.transport.totalVehicles > 0)) {
+    sec('6. TRANSPORT SCOLAIRE', C.teal);
+    statRow([
+      { value: data.transport.totalStudents ?? 0, label: 'Élèves transportés', bg: C.blueL,   color: C.blue },
+      { value: data.transport.totalVehicles  ?? 0, label: 'Bus / Véhicules',   bg: C.tealL,   color: C.teal },
+      { value: data.transport.totalRoutes    ?? 0, label: 'Itinéraires',       bg: C.purpleL, color: C.purple },
+    ]);
+  }
+
+  // ══ 7. PERSPECTIVES ══════════════════════════════════════════════════════════
+  sec('7. PERSPECTIVES & ORIENTATIONS', C.purple);
   [
     'Renforcement des capacites institutionnelles de l\'association.',
     'Poursuite des projets de developpement local et communautaire.',
@@ -668,8 +678,18 @@ const arContent = (doc, data, year, lp) => {
     { value: requests?.total ?? 0,      label: 'المراسلات',         bg: C.purpleL, color: C.purple },
   ]);
 
-  // ══ 6. التوجهات ══════════════════════════════════════════════════════════════
-  sec('6. التوجهات والافاق', C.purple);
+  // ══ 6. النقل المدرسي (if data exists) ════════════════════════════════════════
+  if (data.transport && (data.transport.totalStudents > 0 || data.transport.totalVehicles > 0)) {
+    sec('6. النقل المدرسي', C.teal);
+    statRow([
+      { value: data.transport.totalStudents ?? 0, label: 'الطلاب المنقولون',  bg: C.blueL,   color: C.blue },
+      { value: data.transport.totalVehicles  ?? 0, label: 'الحافلات',          bg: C.tealL,   color: C.teal },
+      { value: data.transport.totalRoutes    ?? 0, label: 'المسارات',          bg: C.purpleL, color: C.purple },
+    ]);
+  }
+
+  // ══ 7. التوجهات ══════════════════════════════════════════════════════════════
+  sec('7. التوجهات والافاق', C.purple);
   [
     'تعزيز القدرات المؤسسية للجمعية وتطوير هياكلها التنظيمية.',
     'مواصلة تنفيذ مشاريع التنمية المحلية وخدمة المجتمع.',

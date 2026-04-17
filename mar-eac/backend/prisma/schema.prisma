@@ -64,6 +64,14 @@ model Organization {
   assocClients       AssocClient[]
   assocEvents        AssocEvent[]
   payments           Payment[]
+  // Transport module
+  transportVehicles      TransportVehicle[]
+  transportStudents      TransportStudent[]
+  transportRoutes        TransportRoute[]
+  transportSubscriptions TransportSubscription[]
+  transportPayments      TransportPayment[]
+  transportAttendances   TransportAttendance[]
+  transportExpenses      TransportExpense[]
 }
 
 model Subscription {
@@ -634,4 +642,127 @@ model MarketingCampaign {
   updatedAt         DateTime  @updatedAt
 
   @@map("marketing_campaigns")
+}
+
+// ── School Transport Module ───────────────────────────────────────────────────
+
+model TransportVehicle {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  name           String
+  plateNumber    String
+  capacity       Int      @default(20)
+  driverName     String?
+  driverPhone    String?
+  status         String   @default("ACTIVE") // ACTIVE | MAINTENANCE
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  students     TransportStudent[]
+  routes       TransportRoute[]
+}
+
+model TransportStudent {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId    String   @db.ObjectId
+  fullName          String
+  school            String?
+  address           String?
+  phone             String?
+  parentName        String?
+  parentPhone       String?
+  assignedVehicleId String?  @db.ObjectId
+  routeId           String?  @db.ObjectId
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehicle        TransportVehicle?      @relation(fields: [assignedVehicleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  route          TransportRoute?        @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subscriptions  TransportSubscription[]
+  payments       TransportPayment[]
+  attendances    TransportAttendance[]
+}
+
+model TransportRoute {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId    String   @db.ObjectId
+  routeName         String
+  stops             String[] @default([])
+  assignedVehicleId String?  @db.ObjectId
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehicle      TransportVehicle?  @relation(fields: [assignedVehicleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  students     TransportStudent[]
+}
+
+model TransportSubscription {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  studentId      String   @db.ObjectId
+  monthlyFee     Float
+  month          Int
+  year           Int
+  status         String   @default("UNPAID") // PAID | UNPAID
+  startDate      DateTime @default(now())
+  paidAt         DateTime?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student      TransportStudent @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([studentId, month, year])
+}
+
+model TransportPayment {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  studentId      String   @db.ObjectId
+  amount         Float
+  date           DateTime @default(now())
+  method         String   @default("CASH") // CASH | TRANSFER | CHECK
+  status         String   @default("PAID") // PAID | PENDING
+  transactionId  String?  @db.ObjectId
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student      TransportStudent @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model TransportAttendance {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  studentId      String   @db.ObjectId
+  date           DateTime
+  status         String   @default("PRESENT") // PRESENT | ABSENT
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student      TransportStudent @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([studentId, date])
+}
+
+model TransportExpense {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  vehicleId      String?  @db.ObjectId
+  category       String   // FUEL | MAINTENANCE | INSURANCE | OTHER
+  amount         Float
+  date           DateTime @default(now())
+  description    String?
+  transactionId  String?  @db.ObjectId
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

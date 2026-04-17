@@ -68,6 +68,7 @@ app.use('/api/assoc', require('./modules/assoc/assoc.routes'));
 app.use('/api/superadmin', require('./modules/superadmin/superadmin.routes'));
 app.use('/api/marketing',  require('./modules/marketing/marketing.routes'));
 app.use('/api/whatsapp',   require('./modules/whatsapp/whatsapp.routes'));
+app.use('/api/transport',  require('./modules/transport/transport.routes'));
 
 // Serve frontend static files (single-service deployment)
 const possibleDists = [

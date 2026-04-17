@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Calendar, DollarSign, FileText,
   Briefcase, Droplets, BarChart2, Bell, Shield, Settings,
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
-  Building2, FolderKanban, Layers, CreditCard,
+  Building2, FolderKanban, Layers, CreditCard, Bus,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -181,7 +181,8 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
         ...(hasModule('PROJECTS')   ? [{ to: '/projects', icon: <Briefcase size={18} />,    label: t('nav.projects') }] : []),
         { to: '/requests',            icon: <FileText size={18} />,    label: t('nav.requests') },
         ...(hasModule('WATER')      ? [{ to: '/water',    icon: <Droplets size={18} />,     label: t('nav.water') }]    : []),
-        ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',    icon: <ShoppingBag size={18} />,  label: t('nav.assoc') }]    : []),
+        ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',      icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]      : []),
+        ...(hasModule('TRANSPORT') ? [{ to: '/transport',  icon: <Bus size={18} />,         label: t('nav.transport') }]  : []),
       ],
     },
     {

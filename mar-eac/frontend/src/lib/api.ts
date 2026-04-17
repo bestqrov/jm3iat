@@ -339,3 +339,39 @@ export const marketingApi = {
   previewSegment:    (segmentation: string[]) => api.post('/marketing/preview-segment', { segmentation }),
   getOrganizations:  (q?: string)          => api.get('/marketing/organizations', { params: q ? { q } : {} }),
 };
+
+// ── Transport Module ──────────────────────────────────────────────────────────
+export const transportApi = {
+  getStats:    ()                          => api.get('/transport/stats'),
+  // Vehicles
+  getVehicles: ()                          => api.get('/transport/vehicles'),
+  createVehicle: (data: any)               => api.post('/transport/vehicles', data),
+  updateVehicle: (id: string, data: any)   => api.put(`/transport/vehicles/${id}`, data),
+  deleteVehicle: (id: string)              => api.delete(`/transport/vehicles/${id}`),
+  // Students
+  getStudents: (params?: any)              => api.get('/transport/students', { params }),
+  createStudent: (data: any)               => api.post('/transport/students', data),
+  updateStudent: (id: string, data: any)   => api.put(`/transport/students/${id}`, data),
+  deleteStudent: (id: string)              => api.delete(`/transport/students/${id}`),
+  // Routes
+  getRoutes:   ()                          => api.get('/transport/routes'),
+  createRoute: (data: any)                 => api.post('/transport/routes', data),
+  updateRoute: (id: string, data: any)     => api.put(`/transport/routes/${id}`, data),
+  deleteRoute: (id: string)                => api.delete(`/transport/routes/${id}`),
+  // Subscriptions
+  getSubscriptions: (params?: any)         => api.get('/transport/subscriptions', { params }),
+  bulkCreateSubscriptions: (data: any)     => api.post('/transport/subscriptions/bulk', data),
+  updateSubscription: (id: string, data: any) => api.put(`/transport/subscriptions/${id}`, data),
+  // Payments
+  getPayments: (params?: any)              => api.get('/transport/payments', { params }),
+  createPayment: (data: any)               => api.post('/transport/payments', data),
+  deletePayment: (id: string)              => api.delete(`/transport/payments/${id}`),
+  // Attendance
+  getAttendance: (params?: any)            => api.get('/transport/attendance', { params }),
+  markAttendance: (data: any)              => api.post('/transport/attendance', data),
+  bulkMarkAttendance: (data: any)          => api.post('/transport/attendance/bulk', data),
+  // Expenses
+  getExpenses: ()                          => api.get('/transport/expenses'),
+  createExpense: (data: any)               => api.post('/transport/expenses', data),
+  deleteExpense: (id: string)              => api.delete(`/transport/expenses/${id}`),
+};

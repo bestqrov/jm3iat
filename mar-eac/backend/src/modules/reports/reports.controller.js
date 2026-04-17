@@ -128,6 +128,7 @@ const exportLiteraryPDF = async (req, res) => {
       incomeAgg, expensesAgg,
       totalRequests,
       orgFull,
+      totalTransportStudents, totalTransportVehicles, totalTransportRoutes,
     ] = await Promise.all([
       prisma.member.count({ where: { organizationId: orgId } }),
       prisma.member.count({ where: { organizationId: orgId, isActive: true } }),
@@ -157,6 +158,10 @@ const exportLiteraryPDF = async (req, res) => {
       }),
       prisma.request.count({ where: { organizationId: orgId } }).catch(() => 0),
       prisma.organization.findUnique({ where: { id: orgId } }),
+      // Transport
+      prisma.transportStudent.count({ where: { organizationId: orgId } }).catch(() => 0),
+      prisma.transportVehicle.count({ where: { organizationId: orgId } }).catch(() => 0),
+      prisma.transportRoute.count({ where: { organizationId: orgId } }).catch(() => 0),
     ]);
 
     const data = {
@@ -169,6 +174,7 @@ const exportLiteraryPDF = async (req, res) => {
                   totalExpenses: expensesAgg._sum.amount || 0 },
       projects: { total: totalProjects, completed: completedProjects, inProgress: inProgressProjects },
       requests: { total: totalRequests },
+      transport: { totalStudents: totalTransportStudents, totalVehicles: totalTransportVehicles, totalRoutes: totalTransportRoutes },
     };
 
     generateLiteraryReportPdf(data, lang, year, res);
