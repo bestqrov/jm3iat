@@ -186,6 +186,7 @@ const updateOrganization = async (req, res) => {
       name, email, phone, address, city, region, description, foundingDate, activities, adminHistory,
       nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
       bankName, bankAccount, bankRib,
+      whatsapp, facebook, instagram, tiktok, youtube,
     } = req.body;
     const orgId = req.user.organizationId;
 
@@ -200,6 +201,7 @@ const updateOrganization = async (req, res) => {
         name, phone, address, city, region, description, activities, adminHistory,
         nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
         bankName, bankAccount, bankRib,
+        whatsapp, facebook, instagram, tiktok, youtube,
         ...(email ? { email } : {}),
         foundingDate: foundingDate ? new Date(foundingDate) : undefined,
       },

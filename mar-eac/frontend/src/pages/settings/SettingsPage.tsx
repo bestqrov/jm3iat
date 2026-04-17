@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera } from 'lucide-react';
+import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera, Share2 } from 'lucide-react';
 
 const MOROCCO_REGIONS = [
   { fr: 'Tanger-Tétouan-Al Hoceïma',       ar: 'طنجة-تطوان-الحسيمة' },
@@ -64,6 +64,22 @@ export const SettingsPage: React.FC = () => {
     bankAccount: org?.bankAccount || '',
     bankRib: org?.bankRib || '',
   });
+
+  const [socialForm, setSocialForm] = useState({
+    whatsapp:  org?.whatsapp  || '',
+    facebook:  org?.facebook  || '',
+    instagram: org?.instagram || '',
+    tiktok:    org?.tiktok    || '',
+    youtube:   org?.youtube   || '',
+  });
+
+  const handleSaveSocial = async () => {
+    setSaving('social');
+    try {
+      await authApi.updateOrganization(socialForm);
+      showSuccess('social');
+    } catch { setError('social'); } finally { setSaving(null); }
+  };
 
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '',
@@ -381,7 +397,52 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 3. Association Info ── */}
+      {/* ── 3. Social Media ── */}
+      <div className="card p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 bg-pink-100 dark:bg-pink-900/30 rounded-xl flex items-center justify-center">
+            <Share2 size={18} className="text-pink-600 dark:text-pink-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              {lang === 'ar' ? 'وسائل التواصل الاجتماعي' : 'Réseaux sociaux'}
+            </h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {lang === 'ar'
+                ? 'تُستخدم في التسويق والأتمتة والوثائق'
+                : 'Utilisés dans le marketing, automatisations et documents'}
+            </p>
+          </div>
+        </div>
+        <div className="space-y-3" {...(lang === 'ar' ? { dir: 'rtl' } : {})}>
+          {([
+            { key: 'whatsapp',  label: 'WhatsApp',  labelAr: 'واتساب',   placeholder: '+212600000000',              color: 'text-emerald-500' },
+            { key: 'facebook',  label: 'Facebook',  labelAr: 'فيسبوك',   placeholder: 'facebook.com/your-page',     color: 'text-blue-600'   },
+            { key: 'instagram', label: 'Instagram', labelAr: 'إنستغرام', placeholder: 'instagram.com/your-handle',  color: 'text-pink-500'   },
+            { key: 'tiktok',    label: 'TikTok',    labelAr: 'تيك توك',  placeholder: 'tiktok.com/@your-handle',   color: 'text-gray-800 dark:text-gray-200' },
+            { key: 'youtube',   label: 'YouTube',   labelAr: 'يوتيوب',   placeholder: 'youtube.com/@your-channel', color: 'text-red-500'    },
+          ] as const).map(({ key, label, labelAr, placeholder, color }) => (
+            <div key={key}>
+              <label className={`label flex items-center gap-1.5 ${lang === 'ar' ? 'justify-end' : ''}`}>
+                <span className={`text-xs font-bold ${color}`}>{lang === 'ar' ? labelAr : label}</span>
+              </label>
+              <input
+                className={`input ${lang === 'ar' ? 'text-right' : ''}`}
+                type={key === 'whatsapp' ? 'tel' : 'url'}
+                value={socialForm[key]}
+                onChange={(e) => setSocialForm({ ...socialForm, [key]: e.target.value })}
+                placeholder={placeholder}
+              />
+            </div>
+          ))}
+          <button onClick={handleSaveSocial} disabled={saving === 'social'} className="btn-primary mt-2">
+            {saving === 'social' ? t('common.loading') : t('common.save')}
+            {success === 'social' && <span className="ms-1">✓</span>}
+          </button>
+        </div>
+      </div>
+
+      {/* ── 5. Association Info ── */}
       <div className="card p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 bg-teal-100 dark:bg-teal-900/30 rounded-xl flex items-center justify-center">

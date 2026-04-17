@@ -29,6 +29,12 @@ model Organization {
   descriptionAr  String?
   activitiesAr   String?
   adminHistoryAr String?
+  // ── Social media ────────────────────────────────
+  whatsapp  String?
+  facebook  String?
+  instagram String?
+  tiktok    String?
+  youtube   String?
   // ── Bank (shared) ───────────────────────────────
   bankName     String?
   bankAccount  String?
