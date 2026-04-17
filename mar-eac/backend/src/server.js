@@ -104,15 +104,14 @@ app.use((err, req, res, next) => {
 const { scheduleMonthlyReminders } = require('./modules/reminders/reminders.controller');
 scheduleMonthlyReminders();
 
-// Process automation rules every 24 hours
-const { processAutomationRules } = require('./modules/superadmin/superadmin.controller');
-setInterval(async () => {
-  try {
-    await processAutomationRules();
-  } catch (err) {
-    console.error('[automation cron] error:', err.message);
-  }
-}, 24 * 60 * 60 * 1000); // every 24h
+// Process automation rules + trial expiry reminders every day at 09:00
+const { processAutomationRules, sendTrialExpiryReminders } = require('./modules/superadmin/superadmin.controller');
+const cron = require('node-cron');
+
+cron.schedule('0 9 * * *', async () => {
+  try { await processAutomationRules(); } catch (err) { console.error('[automation cron] error:', err.message); }
+  try { await sendTrialExpiryReminders(); } catch (err) { console.error('[trial-reminder cron] error:', err.message); }
+});
 
 // Process scheduled marketing campaigns every 5 minutes
 const { processScheduled } = require('./modules/marketing/marketing.service');

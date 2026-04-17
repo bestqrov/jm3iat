@@ -1369,6 +1369,73 @@ const processAutomationRules = async () => {
   }
 };
 
+// ─── Cron: send daily WhatsApp reminders to orgs with ≤5 trial days left ──────
+
+const sendTrialExpiryReminders = async () => {
+  try {
+    const now   = new Date();
+    const in5   = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd   = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+
+    const orgs = await prisma.organization.findMany({
+      where: {
+        trialEndsAt: { gte: now, lte: in5 },
+        subscription: { status: 'TRIAL' },
+      },
+      select: { id: true, name: true, nameAr: true, phone: true, trialEndsAt: true },
+    });
+
+    console.log(`[trial-reminder cron] Found ${orgs.length} org(s) with ≤5 trial days`);
+
+    for (const org of orgs) {
+      try {
+        if (!org.phone) continue;
+
+        // Skip if we already sent a reminder today for this org
+        const alreadySent = await prisma.whatsAppMessage.findFirst({
+          where: {
+            organizationId: org.id,
+            trigger: 'TRIAL_EXPIRY',
+            createdAt: { gte: todayStart, lt: todayEnd },
+          },
+        });
+        if (alreadySent) continue;
+
+        const daysLeft = Math.ceil((new Date(org.trialEndsAt) - now) / (1000 * 60 * 60 * 24));
+        const name = org.nameAr || org.name;
+        const msg = `مرحباً ${name}،\nتنتهي فترتك التجريبية خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\nاشترك الآن لمواصلة استخدام منصة Mar E-A.C وتجنب فقدان بياناتك.`;
+
+        let status = 'SENT';
+        try {
+          await callEvolutionAPI(org.phone, msg);
+        } catch (waErr) {
+          console.error(`[trial-reminder cron] WhatsApp failed for ${org.name}:`, waErr.message);
+          status = 'FAILED';
+        }
+
+        await prisma.whatsAppMessage.create({
+          data: {
+            organizationId: org.id,
+            phone: org.phone,
+            message: msg,
+            type: 'AUTOMATED',
+            trigger: 'TRIAL_EXPIRY',
+            status,
+            sentAt: status === 'SENT' ? new Date() : null,
+          },
+        });
+
+        console.log(`[trial-reminder cron] ${status} → ${org.name} (${daysLeft}d left)`);
+      } catch (err) {
+        console.error(`[trial-reminder cron] Error for org ${org.name}:`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error('[trial-reminder cron] Fatal error:', err.message);
+  }
+};
+
 // ─── Platform Settings ────────────────────────────────────────────────────────
 
 const getPlatformSettings = async (req, res) => {
@@ -1608,7 +1675,7 @@ module.exports = {
   getEmailCampaigns, createEmailCampaign, sendEmailCampaign, deleteEmailCampaign,
   getWhatsAppMessages, sendWhatsAppMessage, sendBulkWhatsApp,
   getAutomationRules, createAutomationRule, updateAutomationRule, deleteAutomationRule, runAutomationRule,
-  processAutomationRules,
+  processAutomationRules, sendTrialExpiryReminders,
   getPlatformSettings, updatePlatformSettings,
   getSubscriptions,
   getMarketingCampaigns, createMarketingCampaign, deleteMarketingCampaign, getTemplateMessages,
