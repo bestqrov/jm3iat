@@ -1,5 +1,6 @@
-const prisma  = require('../../config/database');
-const axios   = require('axios');
+const prisma        = require('../../config/database');
+const axios         = require('axios');
+const nodemailer    = require('nodemailer');
 const { generateRequestLetterPdf } = require('../../utils/requestLetterPdf');
 
 // ─── Evolution API (WhatsApp) ─────────────────────────────────────────────────
@@ -7,10 +8,23 @@ const sendWA = async (phone, text) => {
   const evoUrl      = process.env.EVOLUTION_API_URL  || '';
   const evoKey      = process.env.EVOLUTION_API_KEY  || '';
   const evoInstance = process.env.EVOLUTION_INSTANCE || 'main';
-  if (!evoUrl || !evoKey) throw new Error('WhatsApp not configured');
+  if (!evoUrl) throw new Error('EVOLUTION_API_URL not set in environment');
+  if (!evoKey) throw new Error('EVOLUTION_API_KEY not set in environment');
   const url = `${evoUrl}/message/sendText/${evoInstance}`;
   return axios.post(url, { number: phone.replace(/[\s\-\+]/g, ''), textMessage: { text } },
     { headers: { apikey: evoKey, 'Content-Type': 'application/json' }, timeout: 15000 });
+};
+
+// ─── Email (SMTP via nodemailer) ──────────────────────────────────────────────
+const sendEmail = async (to, subject, html) => {
+  const host = process.env.SMTP_HOST || '';
+  const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  const user = process.env.SMTP_USER || '';
+  const pass = process.env.SMTP_PASS || '';
+  const from = process.env.SMTP_FROM || user;
+  if (!host || !user || !pass) throw new Error('Email not configured (SMTP_HOST / SMTP_USER / SMTP_PASS missing)');
+  const transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+  return transporter.sendMail({ from, to, subject, html });
 };
 
 // ─── Letter templates ─────────────────────────────────────────────────────────
@@ -240,8 +254,19 @@ const sendLetter = async (req, res) => {
     }
 
     if (channel === 'email') {
-      // Email sending placeholder — will integrate nodemailer/sendgrid when configured
-      return res.json({ success: true, channel: 'email', note: 'Email service not yet configured — PDF downloaded instead.' });
+      const email = toEmail || org?.email;
+      if (!email) return res.status(400).json({ message: 'No email address available' });
+
+      const orgName = org?.nameAr || org?.name || '';
+      const subject = lang === 'fr'
+        ? `${tpl.nameFr} — ${request.title}`
+        : `${tpl.nameAr} — ${request.title}`;
+      const html = lang === 'fr'
+        ? `<div dir="ltr"><h2>${tpl.nameFr}</h2><p><b>Association :</b> ${orgName}</p><p><b>Objet :</b> ${request.title}</p>${request.recipient ? `<p><b>Destinataire :</b> ${request.recipient}</p>` : ''}${request.amount ? `<p><b>Montant :</b> ${Number(request.amount).toLocaleString('fr-MA')} MAD</p>` : ''}${request.description ? `<p>${request.description}</p>` : ''}<hr/><p style="color:#555">${tpl.descFr}</p></div>`
+        : `<div dir="rtl"><h2>${tpl.nameAr}</h2><p><b>الجمعية:</b> ${orgName}</p><p><b>الموضوع:</b> ${request.title}</p>${request.recipient ? `<p><b>إلى:</b> ${request.recipient}</p>` : ''}${request.amount ? `<p><b>المبلغ:</b> ${Number(request.amount).toLocaleString('fr-MA')} درهم</p>` : ''}${request.description ? `<p>${request.description}</p>` : ''}<hr/><p style="color:#555">${tpl.descAr}</p></div>`;
+
+      await sendEmail(email, subject, html);
+      return res.json({ success: true, channel: 'email', email });
     }
 
     res.status(400).json({ message: 'Invalid channel' });
