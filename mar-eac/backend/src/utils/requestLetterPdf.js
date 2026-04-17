@@ -53,8 +53,15 @@ const arBlock = (doc, text, x, y, w, opts = {}) => {
 
 const generateRequestLetterPdf = async (org, request, template, lang, res) => {
   const doc = new PDFDocument({ size: 'A4', margin: 0, info: { Title: template.nameAr } });
-  doc.registerFont('AR',      FONT_AR);
-  doc.registerFont('AR-Bold', FONT_BOLD);
+  const fontsExist = fs.existsSync(FONT_AR) && fs.existsSync(FONT_BOLD);
+  if (fontsExist) {
+    doc.registerFont('AR',      FONT_AR);
+    doc.registerFont('AR-Bold', FONT_BOLD);
+  } else {
+    console.warn('[PDF] Arabic fonts not found at', FONT_DIR, '— falling back to Helvetica');
+    doc.registerFont('AR',      'Helvetica');
+    doc.registerFont('AR-Bold', 'Helvetica-Bold');
+  }
 
   const fname = `letter-${request.id}-${Date.now()}.pdf`;
   res.setHeader('Content-Type', 'application/pdf');

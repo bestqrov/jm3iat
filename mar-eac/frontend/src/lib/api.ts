@@ -162,7 +162,7 @@ export const requestsApi = {
   getTemplates:  ()                                         => api.get('/requests/templates'),
   downloadPdf:   (id: string, templateId: string, lang: string) =>
     api.get(`/requests/${id}/pdf`, { params: { templateId, lang }, responseType: 'blob' }),
-  sendLetter:    (id: string, data: { templateId: string; channel: string; lang: string }) =>
+  sendLetter:    (id: string, data: { templateId: string; channel: string; lang: string; toPhone?: string; toEmail?: string }) =>
     api.post(`/requests/${id}/send`, data),
 };
 

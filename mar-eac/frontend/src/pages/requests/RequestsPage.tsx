@@ -40,6 +40,8 @@ export const RequestsPage: React.FC = () => {
   const [letterLang,    setLetterLang]    = useState<'ar' | 'fr'>('ar');
   const [sendAction,    setSendAction]    = useState<string | null>(null); // 'pdf' | 'whatsapp' | 'email'
   const [sendResult,    setSendResult]    = useState<{ ok: boolean; msg: string } | null>(null);
+  const [toPhone,       setToPhone]       = useState('');
+  const [toEmail,       setToEmail]       = useState('');
 
   // shared
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -108,6 +110,8 @@ export const RequestsPage: React.FC = () => {
     setSelectedTpl('');
     setSendResult(null);
     setSendAction(null);
+    setToPhone('');
+    setToEmail('');
     setShowSendModal(true);
   };
 
@@ -132,7 +136,7 @@ export const RequestsPage: React.FC = () => {
     if (!sendReq || !selectedTpl) return;
     setSendAction(channel);
     try {
-      await requestsApi.sendLetter(sendReq.id, { templateId: selectedTpl, channel, lang: letterLang });
+      await requestsApi.sendLetter(sendReq.id, { templateId: selectedTpl, channel, lang: letterLang, toPhone: toPhone || undefined, toEmail: toEmail || undefined });
       setSendResult({ ok: true, msg: t('requests.sentSuccess') });
     } catch (err: any) {
       const msg = err?.response?.data?.message || (isAr ? 'فشل الإرسال' : 'Échec de l\'envoi');
@@ -322,6 +326,30 @@ export const RequestsPage: React.FC = () => {
                   </div>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Recipient inputs */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">{isAr ? 'رقم واتساب المستلم' : 'WhatsApp destinataire'}</label>
+              <input
+                className="input"
+                type="tel"
+                placeholder={isAr ? '+212xxxxxxxxx' : '+212xxxxxxxxx'}
+                value={toPhone}
+                onChange={(e) => setToPhone(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label">{isAr ? 'البريد الإلكتروني' : 'Email destinataire'}</label>
+              <input
+                className="input"
+                type="email"
+                placeholder="exemple@mail.com"
+                value={toEmail}
+                onChange={(e) => setToEmail(e.target.value)}
+              />
             </div>
           </div>
 

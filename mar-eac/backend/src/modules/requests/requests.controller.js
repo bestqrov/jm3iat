@@ -3,14 +3,14 @@ const axios   = require('axios');
 const { generateRequestLetterPdf } = require('../../utils/requestLetterPdf');
 
 // ─── Evolution API (WhatsApp) ─────────────────────────────────────────────────
-const EVO_URL      = process.env.EVOLUTION_API_URL  || '';
-const EVO_KEY      = process.env.EVOLUTION_API_KEY  || '';
-const EVO_INSTANCE = process.env.EVOLUTION_INSTANCE || 'main';
-
 const sendWA = async (phone, text) => {
-  const url = `${EVO_URL}/message/sendText/${EVO_INSTANCE}`;
+  const evoUrl      = process.env.EVOLUTION_API_URL  || '';
+  const evoKey      = process.env.EVOLUTION_API_KEY  || '';
+  const evoInstance = process.env.EVOLUTION_INSTANCE || 'main';
+  if (!evoUrl || !evoKey) throw new Error('WhatsApp not configured');
+  const url = `${evoUrl}/message/sendText/${evoInstance}`;
   return axios.post(url, { number: phone.replace(/[\s\-\+]/g, ''), textMessage: { text } },
-    { headers: { apikey: EVO_KEY, 'Content-Type': 'application/json' }, timeout: 15000 });
+    { headers: { apikey: evoKey, 'Content-Type': 'application/json' }, timeout: 15000 });
 };
 
 // ─── Letter templates ─────────────────────────────────────────────────────────
@@ -215,7 +215,7 @@ const generateLetterPdf = async (req, res) => {
 // ─── POST /requests/:id/send ──────────────────────────────────────────────────
 const sendLetter = async (req, res) => {
   try {
-    const { templateId = 'financial_support', channel = 'whatsapp', lang = 'ar' } = req.body;
+    const { templateId = 'financial_support', channel = 'whatsapp', lang = 'ar', toPhone, toEmail } = req.body;
     const tpl = LETTER_TEMPLATES.find(t => t.id === templateId);
     if (!tpl) return res.status(400).json({ message: 'Unknown template' });
 
@@ -227,8 +227,7 @@ const sendLetter = async (req, res) => {
     const org = await prisma.organization.findUnique({ where: { id: req.organization.id } });
 
     if (channel === 'whatsapp') {
-      if (!EVO_URL || !EVO_KEY) return res.status(502).json({ message: 'WhatsApp not configured' });
-      const phone = request.recipient?.match(/^\+?[\d\s\-]{8,}$/) ? request.recipient : org?.phone;
+      const phone = toPhone || (request.recipient?.match(/^\+?[\d\s\-]{8,}$/) ? request.recipient : null) || org?.phone;
       if (!phone) return res.status(400).json({ message: 'No phone number available' });
 
       const orgName = org?.nameAr || org?.name || '';
