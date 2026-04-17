@@ -103,7 +103,7 @@ const getOrgTheme = (modules: string[]): OrgTheme => {
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const { user, organization, logout, isSuperAdmin, isWaterReader, hasModule } = useAuth();
+  const { user, organization, logout, isSuperAdmin, isWaterReader, hasModule, canAccess, isFullAccess } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { t, lang, setLang } = useLanguage();
   const navigate = useNavigate();
@@ -168,29 +168,29 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     {
       label: t('nav.management'),
       items: [
-        { to: '/administratifs', icon: <UserCog size={18} />,    label: t('nav.administratifs') },
-        { to: '/members',        icon: <Users size={18} />,      label: t('nav.members') },
-        { to: '/meetings',       icon: <Calendar size={18} />,   label: t('nav.meetings') },
-        { to: '/finance',        icon: <DollarSign size={18} />, label: t('nav.finance'), plan: 'STANDARD' },
-        { to: '/documents',      icon: <FileText size={18} />,   label: t('nav.documents') },
+        ...(isFullAccess            ? [{ to: '/administratifs', icon: <UserCog size={18} />,    label: t('nav.administratifs') }] : []),
+        ...(isFullAccess            ? [{ to: '/members',        icon: <Users size={18} />,      label: t('nav.members') }]        : []),
+        ...(canAccess('meetings')   ? [{ to: '/meetings',       icon: <Calendar size={18} />,   label: t('nav.meetings') }]       : []),
+        ...(canAccess('finance')    ? [{ to: '/finance',        icon: <DollarSign size={18} />, label: t('nav.finance'), plan: 'STANDARD' }] : []),
+        ...(canAccess('documents')  ? [{ to: '/documents',      icon: <FileText size={18} />,   label: t('nav.documents') }]      : []),
       ],
     },
     {
       label: t('nav.ruralProjects'),
       items: [
-        ...(hasModule('PROJECTS')   ? [{ to: '/projects', icon: <Briefcase size={18} />,    label: t('nav.projects') }] : []),
-        { to: '/requests',            icon: <FileText size={18} />,    label: t('nav.requests') },
-        ...(hasModule('WATER')      ? [{ to: '/water',    icon: <Droplets size={18} />,     label: t('nav.water') }]    : []),
-        ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',      icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]      : []),
-        ...(hasModule('TRANSPORT') ? [{ to: '/transport',  icon: <Bus size={18} />,         label: t('nav.transport') }]  : []),
+        ...(isFullAccess && hasModule('PROJECTS')   ? [{ to: '/projects',  icon: <Briefcase size={18} />,   label: t('nav.projects') }]  : []),
+        ...(canAccess('requests')                   ? [{ to: '/requests',  icon: <FileText size={18} />,    label: t('nav.requests') }]  : []),
+        ...(isFullAccess && hasModule('WATER')      ? [{ to: '/water',     icon: <Droplets size={18} />,    label: t('nav.water') }]     : []),
+        ...(isFullAccess && hasModule('PRODUCTIVE') ? [{ to: '/assoc',     icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]     : []),
+        ...(isFullAccess && hasModule('TRANSPORT')  ? [{ to: '/transport', icon: <Bus size={18} />,         label: t('nav.transport') }] : []),
       ],
     },
     {
       label: '',
       items: [
-        { to: '/reports',   icon: <BarChart2 size={18} />, label: t('nav.reports'),   plan: 'STANDARD' },
-        { to: '/reminders', icon: <Bell size={18} />,      label: t('nav.reminders'), plan: 'PREMIUM' },
-        { to: '/settings',  icon: <Settings size={18} />,  label: t('nav.settings') },
+        ...(canAccess('reports')  ? [{ to: '/reports',   icon: <BarChart2 size={18} />, label: t('nav.reports'),   plan: 'STANDARD' }] : []),
+        ...(isFullAccess          ? [{ to: '/reminders', icon: <Bell size={18} />,      label: t('nav.reminders'), plan: 'PREMIUM' }]   : []),
+        ...(isFullAccess          ? [{ to: '/settings',  icon: <Settings size={18} />,  label: t('nav.settings') }]                     : []),
       ],
     },
   ];
@@ -231,6 +231,18 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
             <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
               <Shield size={11} />
               {isAr ? 'مدير النظام' : 'Super Admin'}
+            </span>
+          ) : user?.role === 'PRESIDENT' ? (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+              {isAr ? 'الرئيس' : 'Président'}
+            </span>
+          ) : user?.role === 'TREASURER' ? (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+              {isAr ? 'أمين المال' : 'Trésorier'}
+            </span>
+          ) : user?.role === 'SECRETARY' ? (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+              {isAr ? 'الكاتب' : 'Secrétaire'}
             </span>
           ) : (
             <>

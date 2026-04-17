@@ -3,9 +3,10 @@ const ctrl = require('./finance.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
 const { requirePlan } = require('../../middleware/subscription');
+const { requireOrgRole } = require('../../middleware/permission');
 const upload = require('../../utils/multer');
 
-router.use(auth, tenant, requirePlan('STANDARD'));
+router.use(auth, tenant, requirePlan('STANDARD'), requireOrgRole('TREASURER'));
 
 router.get('/summary', ctrl.getSummary);
 router.get('/monthly', ctrl.getMonthlySummary);

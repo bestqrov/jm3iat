@@ -2,9 +2,10 @@ const router = require('express').Router();
 const ctrl = require('./meetings.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
+const { requireOrgRole } = require('../../middleware/permission');
 const upload = require('../../utils/multer');
 
-router.use(auth, tenant);
+router.use(auth, tenant, requireOrgRole('SECRETARY'));
 
 router.get('/stats', ctrl.getStats);
 router.get('/', ctrl.getAll);

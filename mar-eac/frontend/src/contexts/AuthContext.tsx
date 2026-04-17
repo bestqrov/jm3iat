@@ -1,11 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authApi } from '../lib/api';
 
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'PRESIDENT' | 'TREASURER' | 'SECRETARY' | 'MANAGER' | 'WATER_READER';
+
+// Modules each restricted role can access
+const ROLE_ACCESS: Record<string, string[]> = {
+  TREASURER: ['finance', 'reports'],
+  SECRETARY: ['documents', 'reports', 'requests', 'meetings'],
+};
+
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'WATER_READER';
+  role: UserRole;
   organizationId: string | null;
 }
 
@@ -54,7 +62,13 @@ interface AuthContextType {
   isLoading: boolean;
   isSuperAdmin: boolean;
   isWaterReader: boolean;
+  isAdmin: boolean;
+  isPresident: boolean;
+  isTreasurer: boolean;
+  isSecretary: boolean;
+  isFullAccess: boolean;
   hasModule: (mod: string) => boolean;
+  canAccess: (module: string) => boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
@@ -80,7 +94,13 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isSuperAdmin: false,
   isWaterReader: false,
+  isAdmin: false,
+  isPresident: false,
+  isTreasurer: false,
+  isSecretary: false,
+  isFullAccess: false,
   hasModule: () => false,
+  canAccess: () => false,
   login: async () => {},
   register: async () => {},
   logout: () => {},
@@ -161,15 +181,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return (LEGACY[mod] ?? []).includes(sub.plan);
   };
 
+  // canAccess: SUPER_ADMIN/ADMIN/PRESIDENT bypass all; restricted roles checked against ROLE_ACCESS
+  const canAccess = (module: string): boolean => {
+    const role = user?.role;
+    if (!role) return false;
+    if (['SUPER_ADMIN', 'ADMIN', 'PRESIDENT'].includes(role)) return true;
+    return (ROLE_ACCESS[role] ?? []).includes(module);
+  };
+
+  const role = user?.role;
+
   return (
     <AuthContext.Provider value={{
       user,
       organization,
       isAuthenticated: !!user,
       isLoading,
-      isSuperAdmin: user?.role === 'SUPER_ADMIN',
-      isWaterReader: user?.role === 'WATER_READER',
+      isSuperAdmin:  role === 'SUPER_ADMIN',
+      isWaterReader: role === 'WATER_READER',
+      isAdmin:       role === 'ADMIN',
+      isPresident:   role === 'PRESIDENT',
+      isTreasurer:   role === 'TREASURER',
+      isSecretary:   role === 'SECRETARY',
+      isFullAccess:  ['SUPER_ADMIN', 'ADMIN', 'PRESIDENT'].includes(role ?? ''),
       hasModule,
+      canAccess,
       login,
       register,
       logout,

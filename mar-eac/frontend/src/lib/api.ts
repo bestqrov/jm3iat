@@ -340,6 +340,14 @@ export const marketingApi = {
   getOrganizations:  (q?: string)          => api.get('/marketing/organizations', { params: q ? { q } : {} }),
 };
 
+// ── Staff Accounts (Settings) ─────────────────────────────────────────────────
+export const staffApi = {
+  getAll:  ()                          => api.get('/settings/staff'),
+  create:  (data: any)                 => api.post('/settings/staff', data),
+  update:  (id: string, data: any)     => api.put(`/settings/staff/${id}`, data),
+  remove:  (id: string)                => api.delete(`/settings/staff/${id}`),
+};
+
 // ── Transport Module ──────────────────────────────────────────────────────────
 export const transportApi = {
   getStats:    ()                          => api.get('/transport/stats'),

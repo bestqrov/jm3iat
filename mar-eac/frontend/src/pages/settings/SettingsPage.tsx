@@ -16,6 +16,7 @@ const MOROCCO_REGIONS = [
   { fr: 'Dakhla-Oued Ed-Dahab',             ar: 'الداخلة-وادي الذهب' },
 ];
 import { useAuth } from '../../contexts/AuthContext';
+import { StaffAccounts } from '../../components/settings/StaffAccounts';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { authApi, whatsappApi } from '../../lib/api';
@@ -862,7 +863,10 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 6. Appearance ── */}
+      {/* ── 6. Staff Accounts ── */}
+      <StaffAccounts />
+
+      {/* ── 7. Appearance ── */}
       <div className="card p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">

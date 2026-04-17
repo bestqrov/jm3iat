@@ -2,8 +2,9 @@ const router = require('express').Router();
 const ctrl = require('./requests.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
+const { requireOrgRole } = require('../../middleware/permission');
 
-router.use(auth, tenant);
+router.use(auth, tenant, requireOrgRole('SECRETARY'));
 
 router.get('/stats',           ctrl.getStats);
 router.get('/templates',       ctrl.getTemplates);

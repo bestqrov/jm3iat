@@ -4,8 +4,9 @@ const assocCtrl = require('./assoc-reports.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
 const { requirePlan } = require('../../middleware/subscription');
+const { requireOrgRole } = require('../../middleware/permission');
 
-router.use(auth, tenant, requirePlan('STANDARD'));
+router.use(auth, tenant, requirePlan('STANDARD'), requireOrgRole('TREASURER', 'SECRETARY'));
 
 router.get('/literary', ctrl.getLiteraryReport);
 router.get('/financial', ctrl.getFinancialReport);
