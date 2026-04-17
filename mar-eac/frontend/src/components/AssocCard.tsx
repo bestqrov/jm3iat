@@ -3,6 +3,7 @@ import QRCode from 'react-qr-code';
 import {
   X, Building2, Droplets, ShoppingBag, FolderKanban, Layers,
   Phone, Mail, Copy, Check, Printer, MessageCircle, Landmark, CreditCard,
+  type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -15,7 +16,7 @@ type ThemeDef = {
   glowB: string;
   badge: string;
   badgeAr: string;
-  Icon: React.FC<{ size?: number; className?: string }>;
+  Icon: LucideIcon;
   qrFg: string;
   qrBg: string;
 };
