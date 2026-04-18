@@ -99,7 +99,6 @@ export const SettingsPage: React.FC = () => {
 
   // Backup extra
   const [backupRecords,   setBackupRecords]   = useState<any[]>([]);
-  const [backupLoading,   setBackupLoading]   = useState(false);
   const [backupToggling,  setBackupToggling]  = useState(false);
   const [backupCreating,  setBackupCreating]  = useState(false);
 

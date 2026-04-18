@@ -5,6 +5,7 @@ const { tenant } = require('../../middleware/tenant');
 
 router.use(auth, tenant);
 router.get('/', ctrl.getAll);
+router.put('/all/read', ctrl.markRead);   // must be before /:id/read
 router.put('/:id/read', ctrl.markRead);
 router.delete('/:id', ctrl.remove);
 
