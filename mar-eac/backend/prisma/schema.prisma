@@ -65,6 +65,7 @@ model Organization {
   assocEvents        AssocEvent[]
   payments           Payment[]
   // Transport module
+  transportDrivers       TransportDriver[]
   transportVehicles      TransportVehicle[]
   transportStudents      TransportStudent[]
   transportRoutes        TransportRoute[]
@@ -650,13 +651,34 @@ model MarketingCampaign {
 
 // ── School Transport Module ───────────────────────────────────────────────────
 
+model TransportDriver {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  fullName       String
+  phone          String?
+  cinNumber      String?  // National ID
+  licenseNumber  String?
+  licenseExpiry  DateTime?
+  address        String?
+  status         String   @default("ACTIVE") // ACTIVE | INACTIVE | ON_LEAVE
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehicles     TransportVehicle[]
+
+  @@index([organizationId])
+}
+
 model TransportVehicle {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   organizationId String   @db.ObjectId
   name           String
   plateNumber    String
   capacity       Int      @default(20)
-  driverName     String?
+  driverId       String?  @db.ObjectId
+  driverName     String?  // kept for backward-compat / quick display
   driverPhone    String?
   status         String   @default("ACTIVE") // ACTIVE | MAINTENANCE
   notes          String?
@@ -664,6 +686,7 @@ model TransportVehicle {
   updatedAt      DateTime @updatedAt
 
   organization Organization      @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  driver       TransportDriver?  @relation(fields: [driverId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   students     TransportStudent[]
   routes       TransportRoute[]
 }

@@ -9,6 +9,12 @@ router.use(auth, tenant, requireModule('TRANSPORT'));
 // Stats
 router.get('/stats', ctrl.getStats);
 
+// Drivers
+router.get   ('/drivers',     ctrl.getDrivers);
+router.post  ('/drivers',     ctrl.createDriver);
+router.put   ('/drivers/:id', ctrl.updateDriver);
+router.delete('/drivers/:id', ctrl.deleteDriver);
+
 // Vehicles
 router.get   ('/vehicles',     ctrl.getVehicles);
 router.post  ('/vehicles',     ctrl.createVehicle);

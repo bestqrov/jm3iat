@@ -59,6 +59,171 @@ const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string |
   );
 };
 
+// ── DRIVERS TAB ───────────────────────────────────────────────────────────────
+
+const STATUS_COLORS: Record<string, string> = {
+  ACTIVE:   'green',
+  INACTIVE: 'gray',
+  ON_LEAVE: 'amber',
+};
+
+const DriversTab: React.FC<{ lang: string; t: (k: string) => string }> = ({ lang, t }) => {
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal]     = useState<'add' | 'edit' | null>(null);
+  const [editing, setEditing] = useState<any>(null);
+  const emptyForm = { fullName: '', phone: '', cinNumber: '', licenseNumber: '', licenseExpiry: '', address: '', status: 'ACTIVE', notes: '' };
+  const [form, setForm]       = useState(emptyForm);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    transportApi.getDrivers().then(r => setDrivers(r.data)).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const openAdd  = () => { setForm(emptyForm); setEditing(null); setModal('add'); };
+  const openEdit = (d: any) => {
+    setForm({
+      fullName:      d.fullName,
+      phone:         d.phone         || '',
+      cinNumber:     d.cinNumber     || '',
+      licenseNumber: d.licenseNumber || '',
+      licenseExpiry: d.licenseExpiry ? d.licenseExpiry.slice(0, 10) : '',
+      address:       d.address       || '',
+      status:        d.status,
+      notes:         d.notes         || '',
+    });
+    setEditing(d);
+    setModal('edit');
+  };
+
+  const submit = async () => {
+    try {
+      if (editing) await transportApi.updateDriver(editing.id, form);
+      else         await transportApi.createDriver(form);
+      setModal(null); load();
+    } catch {}
+  };
+
+  const del = async (id: string) => {
+    if (!confirm(lang === 'ar' ? 'هل أنت متأكد من الحذف؟' : 'Supprimer ce conducteur ?')) return;
+    await transportApi.deleteDriver(id); load();
+  };
+
+  const isExpiringSoon = (expiry: string | null) => {
+    if (!expiry) return false;
+    const days = (new Date(expiry).getTime() - Date.now()) / 86400000;
+    return days > 0 && days < 30;
+  };
+  const isExpired = (expiry: string | null) => expiry ? new Date(expiry) < new Date() : false;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-gray-900 dark:text-white">
+          {lang === 'ar' ? 'السائقون' : 'Conducteurs'}
+        </h3>
+        <button onClick={openAdd} className="btn-primary text-sm gap-1.5">
+          <Plus size={15} />{lang === 'ar' ? 'إضافة سائق' : 'Ajouter un conducteur'}
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-10"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+      ) : drivers.length === 0 ? (
+        <div className="card p-10 text-center text-gray-400">
+          <User size={40} className="mx-auto mb-3 opacity-30" />
+          {lang === 'ar' ? 'لا يوجد سائقون حتى الآن' : 'Aucun conducteur enregistré'}
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
+              <tr className="text-left rtl:text-right">
+                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">{lang === 'ar' ? 'الاسم' : 'Nom'}</th>
+                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">{lang === 'ar' ? 'الهاتف' : 'Téléphone'}</th>
+                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">{lang === 'ar' ? 'رقم الرخصة' : 'N° Permis'}</th>
+                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">{lang === 'ar' ? 'صلاحية الرخصة' : 'Expiry Permis'}</th>
+                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">{lang === 'ar' ? 'الحافلات' : 'Véhicules'}</th>
+                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">{lang === 'ar' ? 'الحالة' : 'Statut'}</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {drivers.map(d => (
+                <tr key={d.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                        {d.fullName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div>{d.fullName}</div>
+                        {d.cinNumber && <div className="text-xs text-gray-400">{d.cinNumber}</div>}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{d.phone || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{d.licenseNumber || '—'}</td>
+                  <td className="px-4 py-3">
+                    {d.licenseExpiry ? (
+                      <span className={`text-xs font-medium ${isExpired(d.licenseExpiry) ? 'text-red-500' : isExpiringSoon(d.licenseExpiry) ? 'text-amber-500' : 'text-gray-600 dark:text-gray-400'}`}>
+                        {isExpired(d.licenseExpiry) && '⚠ '}
+                        {new Date(d.licenseExpiry).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-MA')}
+                      </span>
+                    ) : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{d._count?.vehicles ?? 0}</td>
+                  <td className="px-4 py-3"><Badge color={STATUS_COLORS[d.status] || 'gray'}>{d.status}</Badge></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => openEdit(d)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"><Pencil size={14} /></button>
+                      <button onClick={() => del(d.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {modal && (
+        <Modal
+          title={modal === 'add' ? (lang === 'ar' ? 'إضافة سائق' : 'Ajouter un conducteur') : (lang === 'ar' ? 'تعديل السائق' : 'Modifier le conducteur')}
+          onClose={() => setModal(null)}
+        >
+          <div className="space-y-3">
+            <div><label className="label">{lang === 'ar' ? 'الاسم الكامل' : 'Nom complet'} *</label><input className="input" value={form.fullName} onChange={e => setForm(p => ({...p, fullName: e.target.value}))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="label">{lang === 'ar' ? 'الهاتف' : 'Téléphone'}</label><input className="input" value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))} /></div>
+              <div><label className="label">{lang === 'ar' ? 'رقم البطاقة الوطنية' : 'N° CIN'}</label><input className="input" value={form.cinNumber} onChange={e => setForm(p => ({...p, cinNumber: e.target.value}))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="label">{lang === 'ar' ? 'رقم رخصة القيادة' : 'N° Permis'}</label><input className="input" value={form.licenseNumber} onChange={e => setForm(p => ({...p, licenseNumber: e.target.value}))} /></div>
+              <div><label className="label">{lang === 'ar' ? 'تاريخ انتهاء الرخصة' : 'Expiry Permis'}</label><input className="input" type="date" value={form.licenseExpiry} onChange={e => setForm(p => ({...p, licenseExpiry: e.target.value}))} /></div>
+            </div>
+            <div><label className="label">{lang === 'ar' ? 'العنوان' : 'Adresse'}</label><input className="input" value={form.address} onChange={e => setForm(p => ({...p, address: e.target.value}))} /></div>
+            <div>
+              <label className="label">{lang === 'ar' ? 'الحالة' : 'Statut'}</label>
+              <select className="input" value={form.status} onChange={e => setForm(p => ({...p, status: e.target.value}))}>
+                <option value="ACTIVE">{lang === 'ar' ? 'نشط' : 'Actif'}</option>
+                <option value="INACTIVE">{lang === 'ar' ? 'غير نشط' : 'Inactif'}</option>
+                <option value="ON_LEAVE">{lang === 'ar' ? 'في إجازة' : 'En congé'}</option>
+              </select>
+            </div>
+            <div><label className="label">{lang === 'ar' ? 'ملاحظات' : 'Notes'}</label><textarea className="input" rows={2} value={form.notes} onChange={e => setForm(p => ({...p, notes: e.target.value}))} /></div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={submit} className="btn-primary flex-1">{lang === 'ar' ? 'حفظ' : 'Enregistrer'}</button>
+              <button onClick={() => setModal(null)} className="btn-secondary flex-1">{lang === 'ar' ? 'إلغاء' : 'Annuler'}</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
 // ── VEHICLES TAB ──────────────────────────────────────────────────────────────
 
 const VehiclesTab: React.FC<{ lang: string; t: (k: string) => string }> = ({ lang, t }) => {
@@ -888,7 +1053,7 @@ const ExpensesTab: React.FC<{ lang: string; t: (k: string) => string }> = ({ lan
 
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'vehicles' | 'students' | 'routes' | 'subscriptions' | 'payments' | 'attendance' | 'expenses';
+type Tab = 'overview' | 'drivers' | 'vehicles' | 'students' | 'routes' | 'subscriptions' | 'payments' | 'attendance' | 'expenses';
 
 export const TransportPage: React.FC = () => {
   const { t, lang } = useLanguage();
@@ -916,6 +1081,7 @@ export const TransportPage: React.FC = () => {
 
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview',      label: t('transport.tabs.overview'),      icon: <TrendingUp size={15} /> },
+    { id: 'drivers',       label: lang === 'ar' ? 'السائقون' : 'Conducteurs', icon: <User size={15} /> },
     { id: 'vehicles',      label: t('transport.tabs.vehicles'),      icon: <Bus size={15} /> },
     { id: 'students',      label: t('transport.tabs.students'),      icon: <Users size={15} /> },
     { id: 'routes',        label: t('transport.tabs.routes'),        icon: <MapPin size={15} /> },
@@ -946,6 +1112,7 @@ export const TransportPage: React.FC = () => {
           <StatCard icon={<TrendingUp size={18} />} label={t('transport.stats.monthRevenue')}   value={`${(stats.monthRevenue || 0).toLocaleString()} MAD`} color="amber" />
           <StatCard icon={<TrendingDown size={18} />} label={t('transport.stats.activeVehicles')} value={stats.activeVehicles}  color="teal" />
           <StatCard icon={<Users size={18} />}      label={t('transport.stats.activeStudents')} value={stats.activeStudents} color="blue" />
+          <StatCard icon={<User size={18} />}       label={lang === 'ar' ? 'السائقون النشطون' : 'Conducteurs actifs'} value={stats.totalDrivers ?? 0} color="purple" />
         </div>
       )}
 
@@ -980,6 +1147,7 @@ export const TransportPage: React.FC = () => {
             </div>
           </div>
         )}
+        {tab === 'drivers'       && <DriversTab       lang={lang} t={t} />}
         {tab === 'vehicles'      && <VehiclesTab      lang={lang} t={t} />}
         {tab === 'students'      && <StudentsTab      lang={lang} t={t} />}
         {tab === 'routes'        && <RoutesTab        lang={lang} t={t} />}

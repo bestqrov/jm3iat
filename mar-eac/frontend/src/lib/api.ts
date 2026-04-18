@@ -351,6 +351,11 @@ export const staffApi = {
 // ── Transport Module ──────────────────────────────────────────────────────────
 export const transportApi = {
   getStats:    ()                          => api.get('/transport/stats'),
+  // Drivers
+  getDrivers:  ()                          => api.get('/transport/drivers'),
+  createDriver: (data: any)               => api.post('/transport/drivers', data),
+  updateDriver: (id: string, data: any)   => api.put(`/transport/drivers/${id}`, data),
+  deleteDriver: (id: string)              => api.delete(`/transport/drivers/${id}`),
   // Vehicles
   getVehicles: ()                          => api.get('/transport/vehicles'),
   createVehicle: (data: any)               => api.post('/transport/vehicles', data),

@@ -13,7 +13,7 @@ const getStats = async (req, res) => {
 
     const [
       totalStudents, activeStudents, totalVehicles, activeVehicles,
-      totalRoutes, paidSubs, unpaidSubs, monthRevenue,
+      totalRoutes, paidSubs, unpaidSubs, monthRevenue, totalDrivers,
     ] = await Promise.all([
       prisma.transportStudent.count({ where: { organizationId: id } }),
       prisma.transportStudent.count({ where: { organizationId: id, isActive: true } }),
@@ -26,16 +26,85 @@ const getStats = async (req, res) => {
         where: { organizationId: id, date: { gte: new Date(year, month - 1, 1) } },
         _sum: { amount: true },
       }),
+      prisma.transportDriver.count({ where: { organizationId: id, status: 'ACTIVE' } }),
     ]);
 
     res.json({
       totalStudents, activeStudents, totalVehicles, activeVehicles,
-      totalRoutes, paidSubs, unpaidSubs,
+      totalRoutes, paidSubs, unpaidSubs, totalDrivers,
       monthRevenue: monthRevenue._sum.amount || 0,
       currentMonth: month, currentYear: year,
     });
   } catch (err) {
     console.error('[transport/stats]', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── Drivers ───────────────────────────────────────────────────────────────────
+
+const getDrivers = async (req, res) => {
+  try {
+    const drivers = await prisma.transportDriver.findMany({
+      where: { organizationId: orgId(req) },
+      include: { _count: { select: { vehicles: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json(drivers);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const createDriver = async (req, res) => {
+  try {
+    const { fullName, phone, cinNumber, licenseNumber, licenseExpiry, address, status, notes } = req.body;
+    if (!fullName) return res.status(400).json({ message: 'Full name required' });
+    const driver = await prisma.transportDriver.create({
+      data: {
+        organizationId: orgId(req),
+        fullName, phone, cinNumber, licenseNumber,
+        licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
+        address, status: status || 'ACTIVE', notes,
+      },
+    });
+    res.status(201).json(driver);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const updateDriver = async (req, res) => {
+  try {
+    const { fullName, phone, cinNumber, licenseNumber, licenseExpiry, address, status, notes } = req.body;
+    const result = await prisma.transportDriver.updateMany({
+      where: { id: req.params.id, organizationId: orgId(req) },
+      data: {
+        fullName, phone, cinNumber, licenseNumber,
+        licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
+        address, status, notes,
+      },
+    });
+    if (!result.count) return res.status(404).json({ message: 'Not found' });
+    const updated = await prisma.transportDriver.findUnique({ where: { id: req.params.id } });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const deleteDriver = async (req, res) => {
+  try {
+    // Unlink any vehicles assigned to this driver first
+    await prisma.transportVehicle.updateMany({
+      where: { driverId: req.params.id, organizationId: orgId(req) },
+      data: { driverId: null },
+    });
+    await prisma.transportDriver.deleteMany({
+      where: { id: req.params.id, organizationId: orgId(req) },
+    });
+    res.json({ success: true });
+  } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -564,6 +633,7 @@ const deleteExpense = async (req, res) => {
 
 module.exports = {
   getStats,
+  getDrivers, createDriver, updateDriver, deleteDriver,
   getVehicles, createVehicle, updateVehicle, deleteVehicle,
   getStudents, createStudent, updateStudent, deleteStudent,
   getRoutes,   createRoute,  updateRoute,  deleteRoute,
