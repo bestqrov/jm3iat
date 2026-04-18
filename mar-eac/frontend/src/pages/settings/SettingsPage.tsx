@@ -148,18 +148,47 @@ export const SettingsPage: React.FC = () => {
     } catch { setError('info'); } finally { setSaving(null); }
   };
 
+  const [downgradeTarget, setDowngradeTarget] = useState<string | null>(null);
+
+  const PLAN_LEVELS: Record<string, number> = { BASIC: 1, STANDARD: 2, PREMIUM: 3 };
+
+  // Features lost per plan downgrade
+  const DOWNGRADE_LOSSES: Record<string, { icon: string; fr: string; ar: string }[]> = {
+    BASIC: [
+      { icon: '💰', fr: 'Gestion financière (recettes & dépenses)', ar: 'إدارة المالية (إيرادات ومصاريف)' },
+      { icon: '📊', fr: 'Rapports & statistiques avancées', ar: 'التقارير والإحصاءات المتقدمة' },
+      { icon: '💧', fr: 'Module eau (si activé)', ar: 'وحدة الماء (إن كانت مفعلة)' },
+      { icon: '🏗️', fr: 'Projets & demandes de financement', ar: 'المشاريع وطلبات التمويل' },
+      { icon: '🔔', fr: 'Rappels & notifications automatiques', ar: 'التذكيرات والإشعارات التلقائية' },
+      { icon: '🚌', fr: 'Transport scolaire (si activé)', ar: 'النقل المدرسي (إن كان مفعلاً)' },
+    ],
+    STANDARD: [
+      { icon: '💧', fr: 'Module eau (si activé)', ar: 'وحدة الماء (إن كانت مفعلة)' },
+      { icon: '🏗️', fr: 'Projets & demandes de financement', ar: 'المشاريع وطلبات التمويل' },
+      { icon: '🔔', fr: 'Rappels & notifications automatiques', ar: 'التذكيرات والإشعارات التلقائية' },
+      { icon: '🚌', fr: 'Transport scolaire (si activé)', ar: 'النقل المدرسي (إن كان مفعلاً)' },
+    ],
+  };
+
   const handleUpgrade = async (plan: string) => {
-    if (!window.confirm(
-      lang === 'ar'
-        ? `هل تريد الترقية إلى الباقة ${plan}؟ سيتم تفعيل الاشتراك لمدة سنة.`
-        : `Activer le plan ${plan} pour 1 an ?`
-    )) return;
+    const currentLevel = PLAN_LEVELS[sub?.plan || 'BASIC'];
+    const targetLevel  = PLAN_LEVELS[plan];
+    const isDowngrade  = targetLevel < currentLevel && sub?.status !== 'TRIAL';
+
+    if (isDowngrade) {
+      setDowngradeTarget(plan);
+      return;
+    }
+    await doUpgrade(plan);
+  };
+
+  const doUpgrade = async (plan: string) => {
     setUpgradingSub(true);
     try {
       await authApi.upgradeSubscription(plan);
       await refreshUser();
       showSuccess('sub');
-    } catch { } finally { setUpgradingSub(false); }
+    } catch { } finally { setUpgradingSub(false); setDowngradeTarget(null); }
   };
 
   const handleSaveContact = async () => {
@@ -754,8 +783,8 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       {/* ── 5. Subscription & Upgrade ── */}
-      <div className="card p-5">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="card p-5 space-y-5">
+        <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
             <Zap size={18} className="text-emerald-600 dark:text-emerald-400" />
           </div>
@@ -769,33 +798,78 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Current status bar */}
-        {sub && (
-          <div className="flex flex-wrap items-center gap-3 mb-5 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2">
-              <CreditCard size={14} className="text-gray-400" />
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                {lang === 'ar' ? 'الباقة الحالية:' : 'Plan actuel :'}
-              </span>
-              <span className={planBadge[sub.plan]}>{t(`settings.plans.${sub.plan}`)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={statusBadge[sub.status]}>{t(`subscription.${sub.status.toLowerCase()}`)}</span>
-            </div>
-            {sub.expiresAt && (
-              <div className="text-xs text-gray-400">
-                {lang === 'ar' ? 'تنتهي: ' : 'Expire le : '}{formatDate(sub.expiresAt, lang)}
-              </div>
-            )}
-            {success === 'sub' && (
-              <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                <CheckCircle2 size={13} />{lang === 'ar' ? 'تم التفعيل' : 'Activé avec succès'}
-              </span>
-            )}
-          </div>
-        )}
+        {/* ── Current pack card ── */}
+        {sub && (() => {
+          const modules: string[] = (org as any)?.modules ?? [];
+          const MODULE_LABELS: Record<string, { fr: string; ar: string; icon: string; color: string }> = {
+            FINANCE:          { fr: 'Finance',           ar: 'المالية',          icon: '💰', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+            PROJECTS:         { fr: 'Projets',           ar: 'المشاريع',         icon: '🏗️', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+            WATER:            { fr: 'Eau',               ar: 'الماء',            icon: '💧', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300' },
+            PRODUCTIVE:       { fr: 'Production',        ar: 'الإنتاج',          icon: '🏭', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+            TRANSPORT:        { fr: 'Transport scolaire',ar: 'النقل المدرسي',    icon: '🚌', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+            REPORTS:          { fr: 'Rapports',          ar: 'التقارير',         icon: '📊', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
+            REMINDERS:        { fr: 'Rappels',           ar: 'التذكيرات',        icon: '🔔', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
+          };
+          const ASSOC_TYPE_LABEL: Record<string, { fr: string; ar: string; icon: string }> = {
+            TRANSPORT:        { fr: 'Transport scolaire', ar: 'النقل المدرسي',   icon: '🚌' },
+            WATER:            { fr: 'Eau potable',        ar: 'الماء الشروب',    icon: '💧' },
+            PROJECTS:         { fr: 'Projets',            ar: 'مشاريع',          icon: '🏗️' },
+            PRODUCTIVE:       { fr: 'Coopérative',        ar: 'تعاونية إنتاجية', icon: '🏭' },
+            PRODUCTIVE_WATER: { fr: 'Eau & Production',   ar: 'ماء وإنتاج',      icon: '🌿' },
+            REGULAR:          { fr: 'Association classique', ar: 'جمعية عامة',   icon: '🏛️' },
+          };
+          // Derive assoc type from modules
+          const assocType = modules.includes('TRANSPORT') ? 'TRANSPORT'
+            : modules.includes('WATER') && modules.includes('PRODUCTIVE') ? 'PRODUCTIVE_WATER'
+            : modules.includes('WATER') ? 'WATER'
+            : modules.includes('PRODUCTIVE') ? 'PRODUCTIVE'
+            : modules.includes('PROJECTS') ? 'PROJECTS'
+            : 'REGULAR';
+          const typeInfo = ASSOC_TYPE_LABEL[assocType];
 
-        {/* Plan cards */}
+          return (
+            <div className="rounded-xl border-2 border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/10 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">{typeInfo.icon}</span>
+                    <span className="font-bold text-gray-900 dark:text-white text-base">
+                      {lang === 'ar' ? typeInfo.ar : typeInfo.fr}
+                    </span>
+                    <span className={planBadge[sub.plan]}>{t(`settings.plans.${sub.plan}`)}</span>
+                    <span className={statusBadge[sub.status]}>{t(`subscription.${sub.status.toLowerCase()}`)}</span>
+                  </div>
+                  {sub.expiresAt && (
+                    <p className="text-xs text-gray-400 mb-2">
+                      {lang === 'ar' ? 'تنتهي: ' : 'Expire le : '}{formatDate(sub.expiresAt, lang)}
+                    </p>
+                  )}
+                  {/* Active modules */}
+                  {modules.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {modules.map(m => {
+                        const info = MODULE_LABELS[m];
+                        if (!info) return null;
+                        return (
+                          <span key={m} className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${info.color}`}>
+                            {info.icon} {lang === 'ar' ? info.ar : info.fr}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {success === 'sub' && (
+                  <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                    <CheckCircle2 size={13} />{lang === 'ar' ? 'تم التحديث' : 'Mis à jour'}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Plan cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             {
@@ -807,6 +881,7 @@ export const SettingsPage: React.FC = () => {
                 { icon: '👥', label: lang === 'ar' ? 'إدارة الأعضاء' : 'Gestion des membres' },
                 { icon: '📅', label: lang === 'ar' ? 'الاجتماعات' : 'Réunions' },
                 { icon: '📄', label: lang === 'ar' ? 'الوثائق' : 'Documents' },
+                { icon: '🗳️', label: lang === 'ar' ? 'التصويت والقرارات' : 'Votes & décisions' },
               ],
             },
             {
@@ -817,7 +892,8 @@ export const SettingsPage: React.FC = () => {
               features: [
                 { icon: '✅', label: lang === 'ar' ? 'كل ما في الأساسي' : 'Tout le Basic' },
                 { icon: '💰', label: lang === 'ar' ? 'إدارة المالية' : 'Finances' },
-                { icon: '📊', label: lang === 'ar' ? 'التقارير' : 'Rapports' },
+                { icon: '📊', label: lang === 'ar' ? 'التقارير والإحصاءات' : 'Rapports & stats' },
+                { icon: '🏗️', label: lang === 'ar' ? 'المشاريع والتمويل' : 'Projets & financement' },
               ],
             },
             {
@@ -828,20 +904,18 @@ export const SettingsPage: React.FC = () => {
               features: [
                 { icon: '✅', label: lang === 'ar' ? 'كل ما في المعياري' : 'Tout le Standard' },
                 { icon: '💧', label: lang === 'ar' ? 'إدارة الماء' : 'Gestion eau' },
-                { icon: '🏗️', label: lang === 'ar' ? 'المشاريع والتمويل' : 'Projets & financement' },
+                { icon: '🚌', label: lang === 'ar' ? 'النقل المدرسي' : 'Transport scolaire' },
                 { icon: '🔔', label: lang === 'ar' ? 'التذكيرات الذكية' : 'Rappels intelligents' },
               ],
             },
           ].map(({ key, color, headerBg, price, features }) => {
             const isCurrent = sub?.plan === key && sub?.status === 'ACTIVE';
-            const isTrial = sub?.status === 'TRIAL';
-            const PLAN_LEVELS: Record<string, number> = { BASIC: 1, STANDARD: 2, PREMIUM: 3 };
-            const isUpgrade = PLAN_LEVELS[key] > PLAN_LEVELS[sub?.plan || 'BASIC'] || isTrial;
+            const isTrial   = sub?.status === 'TRIAL';
+            const isUpgrade   = PLAN_LEVELS[key] > PLAN_LEVELS[sub?.plan || 'BASIC'] || isTrial;
             const isDowngrade = PLAN_LEVELS[key] < PLAN_LEVELS[sub?.plan || 'BASIC'] && !isTrial;
 
             return (
-              <div key={key} className={`rounded-xl border-2 overflow-hidden flex flex-col ${isCurrent ? 'border-emerald-500 shadow-lg' : color}`}>
-                {/* Header */}
+              <div key={key} className={`rounded-xl border-2 overflow-hidden flex flex-col transition-shadow ${isCurrent ? 'border-emerald-500 shadow-lg' : color}`}>
                 <div className={`p-4 ${headerBg}`}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-bold text-gray-900 dark:text-white">{t(`settings.plans.${key}`)}</span>
@@ -855,11 +929,14 @@ export const SettingsPage: React.FC = () => {
                         {lang === 'ar' ? 'الأفضل' : 'Meilleur'}
                       </span>
                     )}
+                    {isDowngrade && (
+                      <span className="text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded-full font-medium">
+                        {lang === 'ar' ? 'تخفيض' : 'Rétrog.'}
+                      </span>
+                    )}
                   </div>
                   <div className="text-lg font-bold text-primary-600 dark:text-primary-400">{price}</div>
                 </div>
-
-                {/* Features */}
                 <div className="p-4 flex-1 space-y-2">
                   {features.map((f, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -867,29 +944,29 @@ export const SettingsPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-
-                {/* Action */}
                 <div className="p-4 pt-0">
                   {isCurrent ? (
                     <div className="w-full text-center text-sm text-emerald-600 dark:text-emerald-400 font-medium py-2">
-                      {lang === 'ar' ? '✓ مفعّل' : '✓ Plan actuel'}
+                      {lang === 'ar' ? '✓ مفعّل حالياً' : '✓ Plan actuel'}
                     </div>
                   ) : (
                     <button
                       onClick={() => handleUpgrade(key)}
                       disabled={upgradingSub}
                       className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isUpgrade
-                          ? 'bg-primary-600 hover:bg-primary-700 text-white'
-                          : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+                        isDowngrade
+                          ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800'
+                          : 'bg-primary-600 hover:bg-primary-700 text-white'
                       }`}
                     >
-                      <ArrowUpCircle size={14} />
+                      <ArrowUpCircle size={14} className={isDowngrade ? 'rotate-180' : ''} />
                       {upgradingSub
                         ? (lang === 'ar' ? 'جاري...' : 'En cours...')
-                        : isUpgrade
-                          ? (lang === 'ar' ? `ترقية إلى ${key}` : `Passer au ${key}`)
-                          : (lang === 'ar' ? `تفعيل ${key}` : `Activer ${key}`)}
+                        : isDowngrade
+                          ? (lang === 'ar' ? `تخفيض إلى ${key}` : `Rétrograder en ${key}`)
+                          : isUpgrade
+                            ? (lang === 'ar' ? `ترقية إلى ${key}` : `Passer au ${key}`)
+                            : (lang === 'ar' ? `تفعيل ${key}` : `Activer ${key}`)}
                     </button>
                   )}
                 </div>
@@ -898,6 +975,74 @@ export const SettingsPage: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* ── Downgrade confirmation dialog ── */}
+      {downgradeTarget && (() => {
+        const losses = DOWNGRADE_LOSSES[downgradeTarget] || [];
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md">
+              {/* Header */}
+              <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl">⚠️</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 dark:text-white">
+                      {lang === 'ar' ? 'تأكيد تخفيض الباقة' : 'Confirmer la rétrogradation'}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {lang === 'ar'
+                        ? `سيتم الانتقال إلى الباقة ${downgradeTarget}`
+                        : `Passage au plan ${downgradeTarget}`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 space-y-4">
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                  {lang === 'ar' ? '⚠️ ستفقد الوصول إلى هذه الميزات فوراً:' : '⚠️ Vous perdrez immédiatement l\'accès à :'}
+                </p>
+                <ul className="space-y-2">
+                  {losses.map((l, i) => (
+                    <li key={i} className="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 bg-red-50 dark:bg-red-900/10 rounded-lg px-3 py-2">
+                      <span className="text-base flex-shrink-0">{l.icon}</span>
+                      <span>{lang === 'ar' ? l.ar : l.fr}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-700/40 rounded-lg px-3 py-2">
+                  {lang === 'ar'
+                    ? '💡 ستظل بياناتك محفوظة. يمكنك الترقية مجدداً في أي وقت لاستعادة الوصول.'
+                    : '💡 Vos données restent conservées. Vous pouvez rétrograder à tout moment pour récupérer l\'accès.'}
+                </p>
+              </div>
+
+              {/* Footer */}
+              <div className="p-5 pt-0 flex gap-3">
+                <button
+                  onClick={() => setDowngradeTarget(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  {lang === 'ar' ? 'إلغاء' : 'Annuler'}
+                </button>
+                <button
+                  onClick={() => doUpgrade(downgradeTarget)}
+                  disabled={upgradingSub}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {upgradingSub
+                    ? (lang === 'ar' ? 'جاري...' : 'En cours...')
+                    : (lang === 'ar' ? 'تأكيد التخفيض' : 'Confirmer la rétrogradation')}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── 6. Staff Accounts ── */}
       <StaffAccounts />
