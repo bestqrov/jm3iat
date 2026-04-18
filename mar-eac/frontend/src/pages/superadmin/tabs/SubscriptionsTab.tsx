@@ -28,11 +28,21 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 const getAssocType = (modules: string[]) => {
-  if (modules.includes('PRODUCTIVE') && modules.includes('WATER')) return 'PRODUCTIVE_WATER';
-  if (modules.includes('PRODUCTIVE')) return 'PRODUCTIVE';
-  if (modules.includes('WATER')) return 'WATER';
-  if (modules.includes('PROJECTS')) return 'PROJECTS';
+  if (modules.includes('TRANSPORT'))                                   return 'TRANSPORT';
+  if (modules.includes('PRODUCTIVE') && modules.includes('WATER'))    return 'PRODUCTIVE_WATER';
+  if (modules.includes('PRODUCTIVE'))                                  return 'PRODUCTIVE';
+  if (modules.includes('WATER'))                                       return 'WATER';
+  if (modules.includes('PROJECTS'))                                    return 'PROJECTS';
   return 'REGULAR';
+};
+
+const TYPE_LABELS: Record<string, { fr: string; ar: string; style: string }> = {
+  TRANSPORT:        { fr: 'Scolaire',      ar: 'نقل مدرسي',    style: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  PRODUCTIVE_WATER: { fr: 'Eau+Prod',      ar: 'ماء+إنتاج',    style: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' },
+  PRODUCTIVE:       { fr: 'Coopérative',   ar: 'تعاونية',       style: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  WATER:            { fr: 'Eau potable',   ar: 'ماء شروب',      style: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  PROJECTS:         { fr: 'Projets',       ar: 'مشاريع',        style: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  REGULAR:          { fr: 'Classique',     ar: 'عامة',          style: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' },
 };
 
 export const SubscriptionsTab: React.FC = () => {
@@ -157,9 +167,15 @@ export const SubscriptionsTab: React.FC = () => {
                     <div className="text-xs text-gray-400">{sub.organization.email}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                      {getAssocType(sub.organization.modules)}
-                    </span>
+                    {(() => {
+                      const type = getAssocType(sub.organization.modules);
+                      const info = TYPE_LABELS[type];
+                      return (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${info.style}`}>
+                          {isAr ? info.ar : info.fr}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[sub.status] || STATUS_STYLES.EXPIRED}`}>
