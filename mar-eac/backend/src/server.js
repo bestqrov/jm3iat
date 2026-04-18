@@ -76,6 +76,7 @@ app.use('/api/recurring',      require('./modules/recurring/recurring.routes'));
 app.use('/api/export',         require('./modules/export/export.routes'));
 app.use('/api/calendar',       require('./modules/calendar/calendar.routes'));
 app.use('/api/public',         require('./modules/public/public.routes'));
+app.use('/api/backup',         require('./modules/backup/backup.routes'));
 
 // Serve frontend static files (single-service deployment)
 const possibleDists = [

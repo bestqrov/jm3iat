@@ -433,3 +433,10 @@ export const publicApi = {
   getProfile:  (slug: string)              => api.get(`/public/${slug}`),
   submitJoin:  (slug: string, data: any)   => api.post(`/public/${slug}/join`, data),
 };
+
+// ---- Backup ----
+export const backupApi = {
+  toggle:  ()  => api.post('/backup/toggle'),
+  list:    ()  => api.get('/backup'),
+  create:  ()  => { window.open('/api/backup/create', '_blank'); },
+};

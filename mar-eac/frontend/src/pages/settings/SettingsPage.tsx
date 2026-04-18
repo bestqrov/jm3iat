@@ -19,7 +19,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { StaffAccounts } from '../../components/settings/StaffAccounts';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { authApi, whatsappApi } from '../../lib/api';
+import { authApi, whatsappApi, backupApi } from '../../lib/api';
 import { formatDate } from '../../lib/utils';
 
 export const SettingsPage: React.FC = () => {
@@ -96,6 +96,41 @@ export const SettingsPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [upgradingSub, setUpgradingSub] = useState(false);
+
+  // Backup extra
+  const [backupRecords,   setBackupRecords]   = useState<any[]>([]);
+  const [backupLoading,   setBackupLoading]   = useState(false);
+  const [backupToggling,  setBackupToggling]  = useState(false);
+  const [backupCreating,  setBackupCreating]  = useState(false);
+
+  const hasBackup = ((org as any)?.modules ?? []).includes('BACKUP');
+
+  const loadBackups = async () => {
+    if (!hasBackup) return;
+    try {
+      const r = await backupApi.list();
+      setBackupRecords(r.data);
+    } catch {}
+  };
+
+  React.useEffect(() => { loadBackups(); }, [hasBackup]);
+
+  const handleToggleBackup = async () => {
+    setBackupToggling(true);
+    try {
+      await backupApi.toggle();
+      await refreshUser();
+    } catch {} finally { setBackupToggling(false); }
+  };
+
+  const handleCreateBackup = async () => {
+    setBackupCreating(true);
+    try {
+      backupApi.create();
+      await new Promise(r => setTimeout(r, 1500));
+      await loadBackups();
+    } catch {} finally { setBackupCreating(false); }
+  };
 
   // WhatsApp instance
   const [waStatus,       setWaStatus]       = useState<'idle' | 'loading' | 'connected' | 'disconnected'>('idle');
@@ -1044,7 +1079,119 @@ export const SettingsPage: React.FC = () => {
         );
       })()}
 
-      {/* ── 6. Staff Accounts ── */}
+      {/* ── 6. Options extras ── */}
+      <div className="card p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
+            <span className="text-lg">⚙️</span>
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              {lang === 'ar' ? 'خيارات إضافية' : 'Options supplémentaires'}
+            </h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {lang === 'ar' ? 'خدمات إضافية تُضاف على اشتراكك الحالي' : 'Services additionnels ajoutés à votre abonnement actuel'}
+            </p>
+          </div>
+        </div>
+
+        {/* ── BACKUP extra card ── */}
+        <div className={`rounded-xl border-2 p-4 transition-colors ${hasBackup ? 'border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10' : 'border-gray-200 dark:border-gray-700'}`}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${hasBackup ? 'bg-indigo-100 dark:bg-indigo-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                <span className="text-xl">💾</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {lang === 'ar' ? 'الحفظ الاحتياطي التلقائي' : 'Sauvegarde & Backups'}
+                  </span>
+                  <span className="text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">
+                    +29 MAD/mois
+                  </span>
+                  {hasBackup && (
+                    <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      <CheckCircle2 size={11} />{lang === 'ar' ? 'مفعّل' : 'Actif'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
+                  {lang === 'ar'
+                    ? 'تصدير كامل لبيانات جمعيتك (أعضاء، مالية، اجتماعات، وثائق…) بصيغة JSON قابلة للاستيراد'
+                    : 'Export complet de vos données (membres, finances, réunions, documents…) au format JSON importable'}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {['👥 Membres', '💰 Finances', '📅 Réunions', '📄 Documents', '🚌 Transport'].map(f => (
+                    <span key={f} className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{f}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {/* Toggle switch */}
+            <button
+              onClick={handleToggleBackup}
+              disabled={backupToggling}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${hasBackup ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-600'}`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${hasBackup ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+          {/* Backup management (visible when enabled) */}
+          {hasBackup && (
+            <div className="mt-4 pt-4 border-t border-indigo-200 dark:border-indigo-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {lang === 'ar' ? `${backupRecords.length} نسخة احتياطية` : `${backupRecords.length} sauvegarde(s)`}
+                </span>
+                <button
+                  onClick={handleCreateBackup}
+                  disabled={backupCreating}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition-colors disabled:opacity-60"
+                >
+                  {backupCreating ? (
+                    <>{lang === 'ar' ? 'جاري التصدير...' : 'Exportation...'}</>
+                  ) : (
+                    <>{lang === 'ar' ? '⬇️ إنشاء نسخة الآن' : '⬇️ Créer une sauvegarde'}</>
+                  )}
+                </button>
+              </div>
+
+              {backupRecords.length > 0 ? (
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {backupRecords.map((rec: any) => (
+                    <div key={rec.id} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg px-3 py-2 text-xs border border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-500">✓</span>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">
+                          {new Date(rec.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-MA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-gray-400">
+                        {rec.createdByName && <span>{rec.createdByName}</span>}
+                        <span>{rec.sizeKb} KB</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 text-center py-3">
+                  {lang === 'ar' ? 'لا توجد نسخ احتياطية بعد — اضغط إنشاء نسخة' : 'Aucune sauvegarde encore — cliquez sur Créer'}
+                </p>
+              )}
+
+              <p className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-700/40 rounded-lg px-3 py-2">
+                💡 {lang === 'ar'
+                  ? 'النسخة الاحتياطية تُنزَّل فوراً كملف JSON. احتفظ بها في مكان آمن.'
+                  : 'La sauvegarde est téléchargée immédiatement en JSON. Conservez-la dans un endroit sûr.'}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── 7. Staff Accounts ── */}
       <StaffAccounts />
 
       {/* ── 7. Appearance ── */}
