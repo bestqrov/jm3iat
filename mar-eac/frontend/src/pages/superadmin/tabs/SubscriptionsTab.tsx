@@ -187,7 +187,9 @@ export const SubscriptionsTab: React.FC = () => {
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{sub.plan}</td>
                   <td className="px-4 py-3 text-gray-500">
-                    {sub.expiresAt ? formatDate(sub.expiresAt) : <span className="text-gray-300">{sh('never')}</span>}
+                    {sub.status === 'ACTIVE'
+                      ? <span className="text-gray-300">—</span>
+                      : sub.expiresAt ? formatDate(sub.expiresAt) : <span className="text-gray-300">{sh('never')}</span>}
                   </td>
                   <td className="px-4 py-3">
                     <button
