@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Mail, MessageCircle, Send, Trash2, Plus, Users, CheckCircle, Clock,
   Zap, Calendar, ToggleLeft, ToggleRight, ChevronDown, BarChart2,
-  AlertCircle, RefreshCw, Search, X, Phone,
+  AlertCircle, RefreshCw, Search, X, Phone, FileText,
 } from 'lucide-react';
 import { superadminApi, marketingApi } from '../../../lib/api';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -372,6 +372,15 @@ export const MarketingTab: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">{mk('title')}</h2>
+        <a
+          href="/brochure-ar.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+        >
+          <FileText size={15} />
+          {isAr ? 'بروشور جمعيتي' : 'Brochure جمعيتي'}
+        </a>
       </div>
 
       {/* Sub-tabs */}
