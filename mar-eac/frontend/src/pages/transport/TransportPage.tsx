@@ -228,19 +228,32 @@ const DriversTab: React.FC<{ lang: string; t: (k: string) => string }> = ({ lang
 
 const VehiclesTab: React.FC<{ lang: string; t: (k: string) => string }> = ({ lang, t }) => {
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [drivers,  setDrivers]  = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
   const [modal, setModal]       = useState<'add' | 'edit' | null>(null);
   const [editing, setEditing]   = useState<any>(null);
-  const [form, setForm]         = useState({ name: '', plateNumber: '', capacity: '20', driverName: '', driverPhone: '', status: 'ACTIVE', notes: '' });
+  const [form, setForm]         = useState({ name: '', plateNumber: '', capacity: '20', driverId: '', driverName: '', driverPhone: '', status: 'ACTIVE', notes: '' });
 
   const load = useCallback(() => {
     setLoading(true);
-    transportApi.getVehicles().then(r => setVehicles(r.data)).catch(() => {}).finally(() => setLoading(false));
+    Promise.all([
+      transportApi.getVehicles(),
+      transportApi.getDrivers(),
+    ]).then(([vr, dr]) => { setVehicles(vr.data); setDrivers(dr.data); }).catch(() => {}).finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const openAdd  = () => { setForm({ name: '', plateNumber: '', capacity: '20', driverName: '', driverPhone: '', status: 'ACTIVE', notes: '' }); setEditing(null); setModal('add'); };
-  const openEdit = (v: any) => { setForm({ name: v.name, plateNumber: v.plateNumber, capacity: String(v.capacity), driverName: v.driverName || '', driverPhone: v.driverPhone || '', status: v.status, notes: v.notes || '' }); setEditing(v); setModal('edit'); };
+  const emptyForm = { name: '', plateNumber: '', capacity: '20', driverId: '', driverName: '', driverPhone: '', status: 'ACTIVE', notes: '' };
+  const openAdd  = () => { setForm(emptyForm); setEditing(null); setModal('add'); };
+  const openEdit = (v: any) => {
+    setForm({ name: v.name, plateNumber: v.plateNumber, capacity: String(v.capacity), driverId: v.driverId || '', driverName: v.driverName || '', driverPhone: v.driverPhone || '', status: v.status, notes: v.notes || '' });
+    setEditing(v); setModal('edit');
+  };
+
+  const handleDriverChange = (driverId: string) => {
+    const d = drivers.find(dr => dr.id === driverId);
+    setForm(p => ({ ...p, driverId, driverName: d ? d.fullName : '', driverPhone: d ? (d.phone || '') : '' }));
+  };
 
   const submit = async () => {
     try {
@@ -317,9 +330,19 @@ const VehiclesTab: React.FC<{ lang: string; t: (k: string) => string }> = ({ lan
               <div><label className="label">{t('transport.vehicles.plateNumber')} *</label><input className="input" value={form.plateNumber} onChange={e => setForm(p => ({...p, plateNumber: e.target.value}))} /></div>
             </div>
             <div><label className="label">{t('transport.vehicles.capacity')}</label><input className="input" type="number" min="1" value={form.capacity} onChange={e => setForm(p => ({...p, capacity: e.target.value}))} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="label">{t('transport.vehicles.driverName')}</label><input className="input" value={form.driverName} onChange={e => setForm(p => ({...p, driverName: e.target.value}))} /></div>
-              <div><label className="label">{t('transport.vehicles.driverPhone')}</label><input className="input" value={form.driverPhone} onChange={e => setForm(p => ({...p, driverPhone: e.target.value}))} /></div>
+            <div>
+              <label className="label">{t('transport.vehicles.driverName')}</label>
+              <select className="input" value={form.driverId} onChange={e => handleDriverChange(e.target.value)}>
+                <option value="">{lang === 'ar' ? '— بدون سائق —' : '— Aucun conducteur —'}</option>
+                {drivers.filter(d => d.status === 'ACTIVE').map(d => (
+                  <option key={d.id} value={d.id}>{d.fullName}{d.phone ? ` — ${d.phone}` : ''}</option>
+                ))}
+              </select>
+              {form.driverId && (
+                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                  <Phone size={11} />{form.driverPhone || (lang === 'ar' ? 'لا يوجد هاتف' : 'Pas de téléphone')}
+                </p>
+              )}
             </div>
             <div>
               <label className="label">{t('transport.vehicles.status')}</label>
