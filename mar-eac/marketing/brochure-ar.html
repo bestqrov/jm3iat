@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>مار إي-إي-سي — منصة إدارة الجمعيات المغربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary:   #2563eb;
+    --primary-d: #1d4ed8;
+    --accent:    #f59e0b;
+    --dark:      #0f172a;
+    --gray:      #64748b;
+    --light:     #f8fafc;
+    --green:     #10b981;
+    --purple:    #7c3aed;
+    --orange:    #ea580c;
+    --cyan:      #0891b2;
+  }
+
+  body {
+    font-family: 'Cairo', 'Arial', sans-serif;
+    background: #fff;
+    color: var(--dark);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  /* ── PAGE SETUP ── */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  @media print {
+    body { margin: 0; }
+    .page { margin: 0; page-break-after: always; }
+    .no-print { display: none !important; }
+  }
+
+  /* ── UTILITIES ── */
+  .flex      { display: flex; }
+  .flex-col  { flex-direction: column; }
+  .items-c   { align-items: center; }
+  .justify-b { justify-content: space-between; }
+  .justify-c { justify-content: center; }
+  .gap-1     { gap: 6px; }
+  .gap-2     { gap: 12px; }
+  .gap-3     { gap: 18px; }
+  .gap-4     { gap: 24px; }
+  .grid-2    { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3    { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4    { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+  .text-c    { text-align: center; }
+  .text-r    { text-align: right; }
+  .bold      { font-weight: 700; }
+  .w-full    { width: 100%; }
+
+  /* ── PRINT BUTTON ── */
+  .print-btn {
+    position: fixed; top: 16px; left: 16px; z-index: 999;
+    background: var(--primary); color: #fff; border: none; cursor: pointer;
+    padding: 10px 20px; border-radius: 8px; font-family: 'Cairo', sans-serif;
+    font-size: 14px; font-weight: 700; box-shadow: 0 4px 12px rgba(37,99,235,.4);
+  }
+  .print-btn:hover { background: var(--primary-d); }
+
+  /* ═══════════════════════════════════════════
+     PAGE 1 — COVER
+  ═══════════════════════════════════════════ */
+  .cover {
+    background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 60%, #1d4ed8 100%);
+    min-height: 297mm;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cover-top-bar {
+    background: rgba(255,255,255,.06);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+
+  .logo-text {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .logo-text span { color: var(--accent); }
+
+  .cover-badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .cover-hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 40px 30px;
+    text-align: center;
+  }
+
+  .cover-icon-ring {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.1);
+    border: 2px solid rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 42px;
+    margin-bottom: 28px;
+    box-shadow: 0 0 40px rgba(96,165,250,.3);
+  }
+
+  .cover-title {
+    font-size: 38px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .cover-title .hl { color: var(--accent); }
+
+  .cover-subtitle {
+    font-size: 16px;
+    color: rgba(255,255,255,.75);
+    margin-bottom: 36px;
+    max-width: 480px;
+  }
+
+  .cover-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 560px;
+    margin-bottom: 36px;
+  }
+
+  .cover-stat {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px;
+    padding: 14px 8px;
+    text-align: center;
+  }
+  .cover-stat .num { font-size: 22px; font-weight: 900; color: #fff; line-height: 1; }
+  .cover-stat .lbl { font-size: 10px; color: rgba(255,255,255,.65); margin-top: 3px; }
+
+  .cover-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    padding: 14px 36px;
+    border-radius: 50px;
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(245,158,11,.4);
+    margin-bottom: 30px;
+  }
+
+  .cover-modules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    max-width: 540px;
+  }
+
+  .mod-pill {
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    color: rgba(255,255,255,.9);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+  }
+
+  .cover-footer {
+    background: rgba(0,0,0,.3);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cover-footer-txt { font-size: 11px; color: rgba(255,255,255,.5); }
+  .cover-footer-url { font-size: 12px; color: var(--accent); font-weight: 700; }
+
+  /* ═══════════════════════════════════════════
+     PAGES 2-4 — CONTENT PAGES
+  ═══════════════════════════════════════════ */
+  .content-page { padding: 36px 36px 28px; min-height: 297mm; display: flex; flex-direction: column; }
+
+  /* Section header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--primary);
+  }
+  .section-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .section-title { font-size: 20px; font-weight: 900; color: var(--dark); }
+  .section-sub   { font-size: 12px; color: var(--gray); margin-top: 2px; }
+
+  /* Page header strip */
+  .page-strip {
+    background: linear-gradient(90deg, var(--primary) 0%, #1e40af 100%);
+    margin: -36px -36px 28px;
+    padding: 16px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .page-strip-title { font-size: 15px; font-weight: 800; color: #fff; }
+  .page-strip-logo  { font-size: 14px; font-weight: 900; color: rgba(255,255,255,.7); }
+  .page-strip-logo span { color: var(--accent); }
+
+  /* Feature cards */
+  .feat-card {
+    background: var(--light);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: box-shadow .2s;
+  }
+  .feat-card-icon {
+    font-size: 26px;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .feat-card-title { font-size: 13px; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
+  .feat-card-desc  { font-size: 11px; color: var(--gray); line-height: 1.6; }
+
+  /* Module badges */
+  .mod-card {
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .mod-card-icon { font-size: 22px; flex-shrink: 0; }
+  .mod-card-name { font-size: 12px; font-weight: 800; color: var(--dark); }
+  .mod-card-desc { font-size: 10.5px; color: var(--gray); margin-top: 2px; }
+
+  /* Plan cards */
+  .plan-card {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+  }
+  .plan-card.featured { border-color: var(--primary); box-shadow: 0 4px 20px rgba(37,99,235,.2); }
+  .plan-header { padding: 16px; }
+  .plan-name  { font-size: 15px; font-weight: 900; color: var(--dark); }
+  .plan-price { font-size: 22px; font-weight: 900; color: var(--primary); line-height: 1; margin-top: 4px; }
+  .plan-price span { font-size: 11px; font-weight: 400; color: var(--gray); }
+  .plan-body  { padding: 12px 16px; flex: 1; }
+  .plan-feat  { font-size: 11px; color: var(--gray); padding: 4px 0; border-bottom: 1px dashed #e2e8f0; display: flex; align-items: center; gap: 6px; }
+  .plan-feat:last-child { border-bottom: none; }
+  .plan-feat .ck { color: var(--green); font-size: 13px; }
+  .plan-footer { padding: 12px 16px; }
+  .plan-btn {
+    display: block; width: 100%; text-align: center;
+    padding: 10px; border-radius: 8px; font-size: 12px; font-weight: 800;
+    font-family: 'Cairo', sans-serif; cursor: pointer; border: none;
+  }
+  .plan-btn-primary { background: var(--primary); color: #fff; }
+  .plan-btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+
+  /* Step cards */
+  .step { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+  .step-num {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    font-size: 14px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-title { font-size: 13px; font-weight: 800; color: var(--dark); }
+  .step-desc  { font-size: 11px; color: var(--gray); margin-top: 3px; }
+
+  /* Highlight box */
+  .highlight-box {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    padding: 20px 24px;
+  }
+  .highlight-box-title { font-size: 15px; font-weight: 900; color: var(--primary-d); margin-bottom: 8px; }
+  .highlight-box-text  { font-size: 12px; color: #1e40af; line-height: 1.7; }
+
+  /* Quote / testimonial */
+  .quote-box {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 14px;
+    padding: 20px 24px;
+    position: relative;
+  }
+  .quote-mark { font-size: 48px; color: var(--accent); line-height: 0.5; margin-bottom: 10px; display: block; }
+  .quote-text { font-size: 13px; color: #92400e; font-weight: 600; line-height: 1.7; font-style: italic; }
+  .quote-author { font-size: 11px; color: #b45309; font-weight: 700; margin-top: 10px; }
+
+  /* Info row */
+  .info-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-right: 3px solid var(--primary);
+    margin-bottom: 8px;
+  }
+  .info-row-icon { font-size: 18px; flex-shrink: 0; }
+  .info-row-text { font-size: 12px; color: var(--dark); }
+  .info-row-text b { color: var(--primary); }
+
+  /* Section divider */
+  .divider { border: none; border-top: 1px dashed #cbd5e1; margin: 20px 0; }
+
+  /* Tag */
+  .tag {
+    display: inline-block;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 10px; font-weight: 700;
+  }
+  .tag-blue   { background: #dbeafe; color: #1d4ed8; }
+  .tag-green  { background: #d1fae5; color: #065f46; }
+  .tag-amber  { background: #fef3c7; color: #92400e; }
+  .tag-purple { background: #ede9fe; color: #5b21b6; }
+  .tag-orange { background: #ffedd5; color: #9a3412; }
+  .tag-cyan   { background: #cffafe; color: #0e7490; }
+
+  /* Page footer */
+  .page-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .page-footer-brand { font-size: 11px; font-weight: 700; color: var(--primary); }
+  .page-footer-brand span { color: var(--accent); }
+  .page-footer-info  { font-size: 10px; color: var(--gray); }
+
+  /* Big number callout */
+  .callout-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .callout {
+    text-align: center;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 8px;
+  }
+  .callout-num { font-size: 28px; font-weight: 900; color: var(--primary); line-height: 1; }
+  .callout-lbl { font-size: 10.5px; color: var(--gray); margin-top: 4px; }
+
+  /* colored left-border list */
+  .cb-list { list-style: none; }
+  .cb-list li {
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Final CTA page */
+  .cta-page {
+    background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 60%, #1d4ed8 100%);
+    min-height: 297mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-page::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 60% 40%, rgba(96,165,250,.15) 0%, transparent 60%);
+  }
+  .cta-page > * { position: relative; z-index: 1; }
+  .cta-big-icon { font-size: 64px; margin-bottom: 20px; }
+  .cta-title { font-size: 34px; font-weight: 900; color: #fff; line-height: 1.25; margin-bottom: 16px; }
+  .cta-title .hl { color: var(--accent); }
+  .cta-desc { font-size: 15px; color: rgba(255,255,255,.75); max-width: 480px; margin: 0 auto 32px; line-height: 1.7; }
+  .cta-boxes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; width: 100%; max-width: 520px; margin-bottom: 36px; }
+  .cta-box {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px;
+    padding: 16px 10px;
+  }
+  .cta-box-icon { font-size: 24px; margin-bottom: 6px; }
+  .cta-box-lbl  { font-size: 11px; color: rgba(255,255,255,.85); font-weight: 600; }
+  .cta-big-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--accent); color: #fff;
+    font-size: 17px; font-weight: 900;
+    padding: 16px 44px; border-radius: 50px;
+    font-family: 'Cairo', sans-serif;
+    box-shadow: 0 8px 32px rgba(245,158,11,.5);
+    margin-bottom: 28px;
+  }
+  .cta-contact-row {
+    display: flex; align-items: center; gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cta-contact-item { font-size: 13px; color: rgba(255,255,255,.75); display: flex; align-items: center; gap: 6px; }
+  .cta-contact-item b { color: #fff; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ طباعة / حفظ كـ PDF</button>
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE 1 — COVER
+═══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="cover">
+
+    <!-- Top bar -->
+    <div class="cover-top-bar">
+      <div class="logo-text">مار <span>إي-إي-سي</span></div>
+      <div class="cover-badge">منصة إدارة الجمعيات المغربية</div>
+    </div>
+
+    <!-- Hero -->
+    <div class="cover-hero">
+      <div class="cover-icon-ring">🏛️</div>
+
+      <h1 class="cover-title">
+        أدِر جمعيتك بذكاء<br/>
+        <span class="hl">كل شيء في مكان واحد</span>
+      </h1>
+      <p class="cover-subtitle">
+        منصة رقمية متكاملة صُمِّمت خصيصاً للجمعيات المغربية —
+        إدارة الأعضاء، المالية، الاجتماعات، المشاريع، النقل المدرسي، وأكثر.
+      </p>
+
+      <!-- Stats -->
+      <div class="cover-stats">
+        <div class="cover-stat">
+          <div class="num">+15</div>
+          <div class="lbl">وحدة إدارية</div>
+        </div>
+        <div class="cover-stat">
+          <div class="num">٣</div>
+          <div class="lbl">خطط تسعيرية</div>
+        </div>
+        <div class="cover-stat">
+          <div class="num">١٥</div>
+          <div class="lbl">يوماً مجاناً</div>
+        </div>
+        <div class="cover-stat">
+          <div class="num">٢٤/٧</div>
+          <div class="lbl">وصول من أي مكان</div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <a href="#" class="cover-cta">🚀 ابدأ تجربتك المجانية الآن</a>
+
+      <!-- Module pills -->
+      <div class="cover-modules">
+        <span class="mod-pill">👥 إدارة الأعضاء</span>
+        <span class="mod-pill">💰 المالية</span>
+        <span class="mod-pill">📅 الاجتماعات</span>
+        <span class="mod-pill">🏗️ المشاريع</span>
+        <span class="mod-pill">💧 الماء الشروب</span>
+        <span class="mod-pill">🚌 النقل المدرسي</span>
+        <span class="mod-pill">📊 التقارير</span>
+        <span class="mod-pill">💬 واتساب</span>
+        <span class="mod-pill">💾 النسخ الاحتياطي</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="cover-footer">
+      <span class="cover-footer-txt">© 2025 مار إي-إي-سي — جميع الحقوق محفوظة</span>
+      <span class="cover-footer-url">www.mareac.ma</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE 2 — WHY US + CORE FEATURES
+═══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="content-page">
+
+    <div class="page-strip">
+      <span class="page-strip-title">لماذا مار إي-إي-سي؟</span>
+      <span class="page-strip-logo">مار <span>إي-إي-سي</span></span>
+    </div>
+
+    <!-- Pain points highlight -->
+    <div class="highlight-box" style="margin-bottom:22px;">
+      <div class="highlight-box-title">🎯 المشكلة التي نحلّها</div>
+      <div class="highlight-box-text">
+        أكثر من <strong>95%</strong> من الجمعيات المغربية لا تزال تعتمد على الأوراق والملفات المبعثرة لإدارة أعضائها ومواردها المالية.
+        نتيجةً لذلك: ضياع الوقت، أخطاء في البيانات، وصعوبة في الامتثال للمتطلبات الإدارية.
+        <strong>مار إي-إي-سي</strong> يُنهي هذه المعاناة بحل رقمي شامل ومُصمَّم خصيصاً للسياق المغربي.
+      </div>
+    </div>
+
+    <!-- Core features grid -->
+    <div class="section-header">
+      <div class="section-icon" style="background:#eff6ff;">🛠️</div>
+      <div>
+        <div class="section-title">الوحدات الأساسية</div>
+        <div class="section-sub">أدوات متكاملة لكل احتياجات جمعيتك</div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:22px;">
+      <div class="feat-card">
+        <span class="feat-card-icon">👥</span>
+        <div class="feat-card-title">إدارة الأعضاء</div>
+        <div class="feat-card-desc">سجل كامل للأعضاء مع صور، أدوار، تاريخ الانخراط، ومتابعة حضور الاجتماعات.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-card-icon">📅</span>
+        <div class="feat-card-title">الاجتماعات والتصويت</div>
+        <div class="feat-card-desc">جدولة الاجتماعات، تسجيل الحضور، إنشاء محاضر آلية، وجلسات تصويت ديمقراطية.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-card-icon">💰</span>
+        <div class="feat-card-title">المالية والمحاسبة</div>
+        <div class="feat-card-desc">متابعة الإيرادات والمصاريف، تصدير فواتير PDF، تقارير مالية شهرية تلقائية.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-card-icon">📄</span>
+        <div class="feat-card-title">إدارة الوثائق</div>
+        <div class="feat-card-desc">رفع وتنظيم جميع وثائق الجمعية بأمان — العقود، القرارات، التقارير والمحاضر.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-card-icon">🏗️</span>
+        <div class="feat-card-title">المشاريع والتمويل</div>
+        <div class="feat-card-desc">متابعة المشاريع بالمراحل والمهام، وإعداد طلبات الدعم المالي بتوليد PDF رسمي.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-card-icon">📊</span>
+        <div class="feat-card-title">التقارير والإحصاءات</div>
+        <div class="feat-card-desc">لوحة قيادة تفاعلية مع رسوم بيانية، وتصدير التقارير بصيغة Excel و PDF.</div>
+      </div>
+    </div>
+
+    <!-- Quote -->
+    <div class="quote-box">
+      <span class="quote-mark">"</span>
+      <p class="quote-text">
+        منصة مار إي-إي-سي حوّلت طريقة عمل جمعيتنا تماماً — ما كان يأخذ منا أسابيع من العمل الورقي
+        بات يتم في دقائق، وبدقة متناهية.
+      </p>
+      <p class="quote-author">— مسؤول جمعية تنموية، الرباط</p>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-brand">مار <span>إي-إي-سي</span></span>
+      <span class="page-footer-info">الصفحة ٢ من ٤ — سري وخاص بالجمعيات المغربية</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE 3 — SPECIALIZED MODULES + TECH FEATURES
+═══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="content-page">
+
+    <div class="page-strip">
+      <span class="page-strip-title">وحدات متخصصة لكل نوع جمعية</span>
+      <span class="page-strip-logo">مار <span>إي-إي-سي</span></span>
+    </div>
+
+    <!-- Specialized modules -->
+    <div class="section-header" style="margin-bottom:16px;">
+      <div class="section-icon" style="background:#f0fdf4;">🧩</div>
+      <div>
+        <div class="section-title">حلول متخصصة</div>
+        <div class="section-sub">وحدات قابلة للتفعيل حسب نوع نشاط جمعيتك</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="mod-card" style="background:#eff6ff; border:1px solid #bfdbfe;">
+        <div class="mod-card-icon">💧</div>
+        <div>
+          <div class="mod-card-name">وحدة الماء الشروب</div>
+          <div class="mod-card-desc">إدارة الاشتراكات، قراءة العدادات، الفواتير الشهرية، متابعة الأعطال والصيانة، وتعريفات المياه المتدرجة.</div>
+        </div>
+      </div>
+      <div class="mod-card" style="background:#fff7ed; border:1px solid #fed7aa;">
+        <div class="mod-card-icon">🚌</div>
+        <div>
+          <div class="mod-card-name">النقل المدرسي</div>
+          <div class="mod-card-desc">إدارة السائقين والحافلات والمسارات، اشتراكات التلاميذ، الحضور اليومي، والمصاريف.</div>
+        </div>
+      </div>
+      <div class="mod-card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
+        <div class="mod-card-icon">🏭</div>
+        <div>
+          <div class="mod-card-name">التعاونيات الإنتاجية</div>
+          <div class="mod-card-desc">إدارة المنتجات والمخزون، سجل العملاء، تتبع المبيعات وسجلات الإنتاج.</div>
+        </div>
+      </div>
+      <div class="mod-card" style="background:#faf5ff; border:1px solid #ddd6fe;">
+        <div class="mod-card-icon">🔔</div>
+        <div>
+          <div class="mod-card-name">التذكيرات الذكية</div>
+          <div class="mod-card-desc">تذكيرات تلقائية للاجتماعات، تجديد الاشتراكات، والمواعيد المهمة عبر البريد والواتساب.</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Tech features -->
+    <div class="section-header" style="margin-bottom:16px;">
+      <div class="section-icon" style="background:#fef3c7;">⚡</div>
+      <div>
+        <div class="section-title">ميزات تقنية احترافية</div>
+        <div class="section-sub">أدوات تجعلك في الطليعة</div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:18px;">
+      <div class="info-row" style="margin:0; border-radius:10px; padding:12px;">
+        <span style="font-size:22px;">💬</span>
+        <div>
+          <div style="font-size:12px; font-weight:800; color:var(--dark);">تكامل واتساب</div>
+          <div style="font-size:10.5px; color:var(--gray);">إرسال إشعارات ورسائل جماعية مباشرة من المنصة</div>
+        </div>
+      </div>
+      <div class="info-row" style="margin:0; border-radius:10px; padding:12px;">
+        <span style="font-size:22px;">📱</span>
+        <div>
+          <div style="font-size:12px; font-weight:800; color:var(--dark);">تطبيق PWA</div>
+          <div style="font-size:10.5px; color:var(--gray);">يعمل على الهاتف كتطبيق أصلي دون تنزيل</div>
+        </div>
+      </div>
+      <div class="info-row" style="margin:0; border-radius:10px; padding:12px;">
+        <span style="font-size:22px;">💾</span>
+        <div>
+          <div style="font-size:12px; font-weight:800; color:var(--dark);">نسخ احتياطي</div>
+          <div style="font-size:10.5px; color:var(--gray);">تصدير كامل لبيانات جمعيتك متى شئت</div>
+        </div>
+      </div>
+      <div class="info-row" style="margin:0; border-radius:10px; padding:12px;">
+        <span style="font-size:22px;">🤖</span>
+        <div>
+          <div style="font-size:12px; font-weight:800; color:var(--dark);">أتمتة القرارات</div>
+          <div style="font-size:10.5px; color:var(--gray);">قواعد تلقائية: تعليق الأعضاء، إرسال تنبيهات</div>
+        </div>
+      </div>
+      <div class="info-row" style="margin:0; border-radius:10px; padding:12px;">
+        <span style="font-size:22px;">📋</span>
+        <div>
+          <div style="font-size:12px; font-weight:800; color:var(--dark);">تصدير Excel/PDF</div>
+          <div style="font-size:10.5px; color:var(--gray);">تقارير الأعضاء، المالية، والفواتير الرسمية</div>
+        </div>
+      </div>
+      <div class="info-row" style="margin:0; border-radius:10px; padding:12px;">
+        <span style="font-size:22px;">🔒</span>
+        <div>
+          <div style="font-size:12px; font-weight:800; color:var(--dark);">أدوار وصلاحيات</div>
+          <div style="font-size:10.5px; color:var(--gray);">مدير، رئيس، أمين المال، كاتب — كل دور بصلاحياته</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Callouts -->
+    <div class="callout-grid">
+      <div class="callout">
+        <div class="callout-num" style="color:var(--green);">✓</div>
+        <div class="callout-lbl">ثنائي اللغة<br/>عربي / فرنسي</div>
+      </div>
+      <div class="callout">
+        <div class="callout-num" style="color:var(--primary);">☁️</div>
+        <div class="callout-lbl">سحابي آمن<br/>بدون تثبيت</div>
+      </div>
+      <div class="callout">
+        <div class="callout-num" style="color:var(--accent);">🇲🇦</div>
+        <div class="callout-lbl">مصمَّم للسياق<br/>المغربي</div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-brand">مار <span>إي-إي-سي</span></span>
+      <span class="page-footer-info">الصفحة ٣ من ٤</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE 4 — PRICING + HOW TO START
+═══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="content-page">
+
+    <div class="page-strip">
+      <span class="page-strip-title">الخطط والأسعار — ابدأ مجاناً</span>
+      <span class="page-strip-logo">مار <span>إي-إي-سي</span></span>
+    </div>
+
+    <!-- Trial banner -->
+    <div style="background:linear-gradient(90deg,#d1fae5,#a7f3d0); border:1px solid #6ee7b7; border-radius:12px; padding:14px 20px; display:flex; align-items:center; gap:14px; margin-bottom:20px;">
+      <span style="font-size:28px;">🎁</span>
+      <div>
+        <div style="font-size:14px; font-weight:900; color:#065f46;">15 يوماً مجاناً — بدون بطاقة بنكية</div>
+        <div style="font-size:11.5px; color:#047857;">جرِّب جميع ميزات الباقة الكاملة مجاناً وبدون أي التزام. سجَّل وابدأ خلال دقيقتين.</div>
+      </div>
+    </div>
+
+    <!-- Pricing -->
+    <div class="section-header" style="margin-bottom:16px;">
+      <div class="section-icon" style="background:#fef3c7;">💳</div>
+      <div>
+        <div class="section-title">الخطط والأسعار</div>
+        <div class="section-sub">اختر الخطة المناسبة لحجم ونشاط جمعيتك</div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:14px;">
+      <!-- BASIC -->
+      <div class="plan-card">
+        <div class="plan-header" style="background:#f8fafc;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="plan-name">الأساسي</div>
+            <span class="tag tag-blue">BASIC</span>
+          </div>
+          <div class="plan-price">50 درهم <span>/ شهر</span></div>
+        </div>
+        <div class="plan-body">
+          <div class="plan-feat"><span class="ck">✓</span> إدارة الأعضاء</div>
+          <div class="plan-feat"><span class="ck">✓</span> الاجتماعات والتصويت</div>
+          <div class="plan-feat"><span class="ck">✓</span> إدارة الوثائق</div>
+          <div class="plan-feat"><span class="ck">✓</span> التقويم والتذكيرات</div>
+          <div class="plan-feat" style="color:#cbd5e1;"><span>—</span> المالية والتقارير</div>
+          <div class="plan-feat" style="color:#cbd5e1;"><span>—</span> الوحدات المتخصصة</div>
+        </div>
+        <div class="plan-footer">
+          <button class="plan-btn plan-btn-outline">اختر الأساسي</button>
+        </div>
+      </div>
+
+      <!-- STANDARD (featured) -->
+      <div class="plan-card featured">
+        <div class="plan-header" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="plan-name" style="color:var(--primary);">المعياري</div>
+            <span class="tag tag-blue" style="background:var(--primary);color:#fff;">الأشهر</span>
+          </div>
+          <div class="plan-price">150 درهم <span>/ شهر</span></div>
+        </div>
+        <div class="plan-body">
+          <div class="plan-feat"><span class="ck">✓</span> كل ما في الأساسي</div>
+          <div class="plan-feat"><span class="ck">✓</span> المالية الكاملة</div>
+          <div class="plan-feat"><span class="ck">✓</span> التقارير والإحصاءات</div>
+          <div class="plan-feat"><span class="ck">✓</span> المشاريع والتمويل</div>
+          <div class="plan-feat"><span class="ck">✓</span> حسابات الفريق</div>
+          <div class="plan-feat" style="color:#cbd5e1;"><span>—</span> الوحدات المتخصصة</div>
+        </div>
+        <div class="plan-footer">
+          <button class="plan-btn plan-btn-primary">اختر المعياري</button>
+        </div>
+      </div>
+
+      <!-- PREMIUM -->
+      <div class="plan-card" style="border-color:var(--purple);">
+        <div class="plan-header" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="plan-name" style="color:var(--purple);">المتكامل</div>
+            <span class="tag tag-purple">PREMIUM</span>
+          </div>
+          <div class="plan-price" style="color:var(--purple);">249 درهم <span>/ شهر</span></div>
+        </div>
+        <div class="plan-body">
+          <div class="plan-feat"><span class="ck">✓</span> كل ما في المعياري</div>
+          <div class="plan-feat"><span class="ck">✓</span> وحدة الماء الشروب</div>
+          <div class="plan-feat"><span class="ck">✓</span> النقل المدرسي</div>
+          <div class="plan-feat"><span class="ck">✓</span> التعاونيات الإنتاجية</div>
+          <div class="plan-feat"><span class="ck">✓</span> تكامل واتساب</div>
+          <div class="plan-feat"><span class="ck">✓</span> أتمتة كاملة</div>
+        </div>
+        <div class="plan-footer">
+          <button class="plan-btn" style="background:var(--purple);color:#fff;">اختر المتكامل</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transport special -->
+    <div style="background:linear-gradient(90deg,#fff7ed,#ffedd5); border:1px solid #fed7aa; border-radius:10px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">🚌</span>
+        <div>
+          <span style="font-size:12px;font-weight:800;color:#9a3412;">باقة النقل المدرسي — خاصة</span>
+          <div style="font-size:10.5px;color:#c2410c;">حل متخصص كامل لجمعيات النقل المدرسي</div>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:18px;font-weight:900;color:#ea580c;">179 درهم<span style="font-size:11px;font-weight:400;color:#9a3412;">/شهر</span></div>
+      </div>
+    </div>
+
+    <!-- How to start -->
+    <div class="section-header" style="margin-bottom:14px;">
+      <div class="section-icon" style="background:#f0fdf4;">🚀</div>
+      <div>
+        <div class="section-title">كيف تبدأ؟</div>
+        <div class="section-sub">٣ خطوات بسيطة</div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <div class="step" style="flex:1; margin:0; background:#f8fafc; border-radius:10px; padding:12px;">
+        <div class="step-num">١</div>
+        <div>
+          <div class="step-title">سجِّل جمعيتك</div>
+          <div class="step-desc">أدخل اسم الجمعية والبريد الإلكتروني — يستغرق التسجيل دقيقتين فقط</div>
+        </div>
+      </div>
+      <div class="step" style="flex:1; margin:0; background:#f8fafc; border-radius:10px; padding:12px;">
+        <div class="step-num">٢</div>
+        <div>
+          <div class="step-title">استكشف ١٥ يوماً</div>
+          <div class="step-desc">جرِّب جميع الوحدات بحرية تامة خلال الفترة التجريبية المجانية</div>
+        </div>
+      </div>
+      <div class="step" style="flex:1; margin:0; background:#f8fafc; border-radius:10px; padding:12px;">
+        <div class="step-num">٣</div>
+        <div>
+          <div class="step-title">اشترك واستمر</div>
+          <div class="step-desc">اختر الخطة المناسبة وتابع إدارة جمعيتك بكفاءة عالية</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-brand">مار <span>إي-إي-سي</span></span>
+      <span class="page-footer-info">الصفحة ٤ من ٤</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE 5 — FINAL CTA
+═══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="cta-page">
+
+    <div class="cta-big-icon">🏛️</div>
+
+    <h2 class="cta-title">
+      جمعيتك تستحق<br/>
+      <span class="hl">الأفضل</span>
+    </h2>
+
+    <p class="cta-desc">
+      انضم إلى الجمعيات المغربية التي اختارت الرقمنة الذكية.
+      ابدأ تجربتك المجانية اليوم وشاهد الفرق بنفسك.
+    </p>
+
+    <div class="cta-boxes">
+      <div class="cta-box">
+        <div class="cta-box-icon">⚡</div>
+        <div class="cta-box-lbl">إعداد فوري<br/>في دقيقتين</div>
+      </div>
+      <div class="cta-box">
+        <div class="cta-box-icon">🔒</div>
+        <div class="cta-box-lbl">بياناتك آمنة<br/>ومشفّرة</div>
+      </div>
+      <div class="cta-box">
+        <div class="cta-box-icon">💬</div>
+        <div class="cta-box-lbl">دعم فني<br/>باللغة العربية</div>
+      </div>
+    </div>
+
+    <div class="cta-big-btn">
+      🚀 ابدأ تجربتك المجانية — مجاناً لمدة ١٥ يوماً
+    </div>
+
+    <div class="cta-contact-row">
+      <div class="cta-contact-item">🌐 <b>www.mareac.ma</b></div>
+      <div class="cta-contact-item">📧 <b>contact@mareac.ma</b></div>
+      <div class="cta-contact-item">💬 <b>واتساب: 06XXXXXXXX</b></div>
+    </div>
+
+    <div style="margin-top:32px; font-size:11px; color:rgba(255,255,255,.4);">
+      © 2025 مار إي-إي-سي — منصة إدارة الجمعيات المغربية — جميع الحقوق محفوظة
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
