@@ -121,6 +121,14 @@ const cron = require('node-cron');
 cron.schedule('0 9 * * *', async () => {
   try { await processAutomationRules(); } catch (err) { console.error('[automation cron] error:', err.message); }
   try { await sendTrialExpiryReminders(); } catch (err) { console.error('[trial-reminder cron] error:', err.message); }
+  // Auto-expire TRIAL subscriptions whose expiresAt has passed
+  try {
+    const { count } = await prisma.subscription.updateMany({
+      where: { status: 'TRIAL', expiresAt: { lt: new Date() } },
+      data:  { status: 'EXPIRED' },
+    });
+    if (count) console.log(`[trial-expire] expired ${count} trial(s)`);
+  } catch (err) { console.error('[trial-expire cron] error:', err.message); }
 });
 
 // Process recurring payments daily at 08:00

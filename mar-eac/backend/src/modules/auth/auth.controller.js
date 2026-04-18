@@ -131,6 +131,14 @@ const login = async (req, res) => {
 
 const getMe = async (req, res) => {
   try {
+    // Auto-expire trial if past due
+    if (req.user.organizationId) {
+      await prisma.subscription.updateMany({
+        where: { organizationId: req.user.organizationId, status: 'TRIAL', expiresAt: { lt: new Date() } },
+        data:  { status: 'EXPIRED' },
+      });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: {
