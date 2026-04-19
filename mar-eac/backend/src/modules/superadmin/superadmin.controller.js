@@ -741,7 +741,7 @@ const DEFAULT_PACKS = [
     price: 99,  currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'REGULAR', size: 'SMALL',
     features:   ['Gestion des membres (50 max)', 'Réunions illimitées', 'Documents (1 Go)', 'Rappels automatiques', 'Support email'],
     featuresAr: ['إدارة الأعضاء (50 كحد أقصى)', 'اجتماعات غير محدودة', 'مستندات (1 جيجا)', 'تذكيرات تلقائية', 'دعم بريدي'],
-    limits: { members: 50, storage: 1 }, trialDays: 15, isActive: true,
+    limits: { members: 50, storage: 1 }, trialDays: 60, isActive: true,
   },
   {
     name: 'Pro — Association classique', nameAr: 'برو — جمعية عادية',
@@ -750,7 +750,7 @@ const DEFAULT_PACKS = [
     price: 199, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'REGULAR', size: 'MEDIUM',
     features:   ['Membres illimités', 'Réunions illimitées', 'Documents (5 Go)', 'Rapports avancés', 'Rappels WhatsApp', 'Support prioritaire'],
     featuresAr: ['أعضاء غير محدودين', 'اجتماعات غير محدودة', 'مستندات (5 جيجا)', 'تقارير متقدمة', 'تذكيرات واتساب', 'دعم ذو أولوية'],
-    limits: { members: -1, storage: 5 }, trialDays: 15, isActive: true,
+    limits: { members: -1, storage: 5 }, trialDays: 60, isActive: true,
   },
   {
     name: 'Starter — Gestion de l\'eau', nameAr: 'ستارتر — جمعية الماء',
@@ -759,7 +759,7 @@ const DEFAULT_PACKS = [
     price: 249, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'WATER', size: 'SMALL',
     features:   ['Suivi des compteurs', 'Facturation eau', 'Gestion des installations', 'Rapports de consommation', 'Membres (100 max)'],
     featuresAr: ['متابعة العدادات', 'فواتير الماء', 'إدارة المنشآت', 'تقارير الاستهلاك', 'أعضاء (100 كحد أقصى)'],
-    limits: { members: 100, storage: 2 }, trialDays: 15, isActive: true,
+    limits: { members: 100, storage: 2 }, trialDays: 60, isActive: true,
   },
   {
     name: 'Pro — Gestion de l\'eau', nameAr: 'برو — جمعية الماء',
@@ -768,7 +768,7 @@ const DEFAULT_PACKS = [
     price: 399, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'WATER', size: 'LARGE',
     features:   ['Membres illimités', 'Suivi compteurs avancé', 'Facturation automatique', 'Alertes de fuite', 'API d\'intégration', 'Support dédié'],
     featuresAr: ['أعضاء غير محدودين', 'متابعة عدادات متقدمة', 'فوترة تلقائية', 'تنبيهات التسرب', 'API للتكامل', 'دعم مخصص'],
-    limits: { members: -1, storage: 20 }, trialDays: 15, isActive: true,
+    limits: { members: -1, storage: 20 }, trialDays: 60, isActive: true,
   },
   {
     name: 'Starter — Association productive', nameAr: 'ستارتر — جمعية إنتاجية',
@@ -777,7 +777,7 @@ const DEFAULT_PACKS = [
     price: 249, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'PRODUCTIVE', size: 'SMALL',
     features:   ['Gestion des productions', 'Suivi des stocks', 'Projets illimités', 'Rapports financiers', 'Membres (80 max)'],
     featuresAr: ['إدارة الإنتاج', 'متابعة المخزون', 'مشاريع غير محدودة', 'تقارير مالية', 'أعضاء (80 كحد أقصى)'],
-    limits: { members: 80, storage: 3 }, trialDays: 15, isActive: true,
+    limits: { members: 80, storage: 3 }, trialDays: 60, isActive: true,
   },
   {
     name: 'Pro — Association productive', nameAr: 'برو — جمعية إنتاجية',
@@ -786,7 +786,7 @@ const DEFAULT_PACKS = [
     price: 449, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'PRODUCTIVE', size: 'LARGE',
     features:   ['Membres illimités', 'Productions illimitées', 'Gestion des ventes', 'Intégration comptable', 'Rapports BI', 'Support dédié'],
     featuresAr: ['أعضاء غير محدودين', 'إنتاج غير محدود', 'إدارة المبيعات', 'تكامل محاسبي', 'تقارير BI', 'دعم مخصص'],
-    limits: { members: -1, storage: 20 }, trialDays: 15, isActive: true,
+    limits: { members: -1, storage: 20 }, trialDays: 60, isActive: true,
   },
   {
     name: 'Pro — Productive + Eau', nameAr: 'برو — إنتاجية + ماء',
@@ -795,7 +795,7 @@ const DEFAULT_PACKS = [
     price: 599, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'PRODUCTIVE_WATER', size: 'LARGE',
     features:   ['Toutes les fonctionnalités Eau', 'Toutes les fonctionnalités Productives', 'Membres illimités', 'Tableau de bord unifié', 'Support dédié 24/7'],
     featuresAr: ['جميع مزايا الماء', 'جميع مزايا الإنتاج', 'أعضاء غير محدودين', 'لوحة تحكم موحدة', 'دعم مخصص 24/7'],
-    limits: { members: -1, storage: 50 }, trialDays: 15, isActive: true,
+    limits: { members: -1, storage: 50 }, trialDays: 60, isActive: true,
   },
   {
     name: 'Starter — Association avec projets', nameAr: 'ستارتر — جمعية مع مشاريع',
@@ -804,7 +804,7 @@ const DEFAULT_PACKS = [
     price: 149, currency: 'MAD', billingCycle: 'MONTHLY', assocType: 'PROJECTS', size: 'SMALL',
     features:   ['Gestion de projets', 'Suivi des tâches', 'Rapports d\'avancement', 'Documents projets', 'Membres (60 max)'],
     featuresAr: ['إدارة المشاريع', 'متابعة المهام', 'تقارير التقدم', 'مستندات المشاريع', 'أعضاء (60 كحد أقصى)'],
-    limits: { members: 60, storage: 2 }, trialDays: 15, isActive: true,
+    limits: { members: 60, storage: 2 }, trialDays: 60, isActive: true,
   },
 ];
 
@@ -849,7 +849,7 @@ const createPack = async (req, res) => {
         features: features || [],
         featuresAr: featuresAr || [],
         limits: limits || {},
-        trialDays: parseInt(trialDays) || 15,
+        trialDays: parseInt(trialDays) || 60,
       },
     });
     res.status(201).json(pack);
@@ -1456,7 +1456,7 @@ const getPlatformSettings = async (req, res) => {
     // Return defaults if not set
     const defaults = {
       platform_name: { value: 'Mar E-A.C', category: 'GENERAL' },
-      trial_duration_days: { value: '15', category: 'GENERAL' },
+      trial_duration_days: { value: '60', category: 'GENERAL' },
       default_currency: { value: 'MAD', category: 'BILLING' },
       support_email: { value: 'support@mar-eac.ma', category: 'GENERAL' },
       whatsapp_api_key: { value: '', category: 'INTEGRATIONS' },

@@ -25,7 +25,7 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 15);
+    trialEndsAt.setDate(trialEndsAt.getDate() + 60);
 
     const result = await prisma.$transaction(async (tx) => {
       const org = await tx.organization.create({
