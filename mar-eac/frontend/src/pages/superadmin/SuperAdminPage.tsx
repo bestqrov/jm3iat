@@ -162,6 +162,7 @@ export const SuperAdminPage: React.FC = () => {
   const setTab = (tab: ActiveTab) => setSearchParams({ tab });
 
   // ─── States ────────────────────────────────────────────────────────────────
+  const [downgradeCount, setDowngradeCount] = useState(0);
   const [stats, setStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -241,7 +242,14 @@ export const SuperAdminPage: React.FC = () => {
     } finally { setUsersLoading(false); }
   }, [userSearch]);
 
-  useEffect(() => { loadStats(); }, []);
+  const loadDowngradeCount = useCallback(async () => {
+    try {
+      const r = await superadminApi.getDowngradeRequests();
+      setDowngradeCount(r.data.length);
+    } catch {}
+  }, []);
+
+  useEffect(() => { loadStats(); loadDowngradeCount(); }, []);
   useEffect(() => { if (activeTab === 'orgs') loadOrgs(); }, [activeTab, loadOrgs]);
   useEffect(() => { if (activeTab === 'payments') loadPayments(); }, [activeTab, loadPayments]);
   useEffect(() => { if (activeTab === 'users') loadUsers(); }, [activeTab, loadUsers]);
@@ -452,13 +460,26 @@ export const SuperAdminPage: React.FC = () => {
       {/* ════════════ MAIN CONTENT AREA ════════════ */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center gap-3 flex-shrink-0">
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center justify-between gap-3 flex-shrink-0">
           <div>
             <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
               {TAB_GROUPS.flatMap(g => g.tabs).find(t => t.key === activeTab)?.[isAr ? 'labelAr' : 'labelFr'] ?? ''}
             </h1>
             <p className="text-xs text-gray-400">Mar E-A.C · SaaS Management Platform</p>
           </div>
+          {downgradeCount > 0 && (
+            <button
+              onClick={() => setTab('subscriptions')}
+              className="relative flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded-xl transition-colors text-sm font-medium"
+              title={isAr ? 'طلبات تخفيض الباقة' : 'Demandes de rétrogradation'}
+            >
+              <Mail size={16} />
+              {isAr ? `${downgradeCount} طلب تخفيض` : `${downgradeCount} demande${downgradeCount > 1 ? 's' : ''} de rétrogradation`}
+              <span className="absolute -top-1.5 -end-1.5 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {downgradeCount}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Scrollable page content */}
