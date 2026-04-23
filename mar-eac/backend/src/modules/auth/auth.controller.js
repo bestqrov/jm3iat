@@ -251,6 +251,17 @@ const upgradeSubscription = async (req, res) => {
     }
     const orgId = req.user.organizationId;
 
+    // Modules allowed per plan level — strip any that exceed the new plan
+    const PLAN_ALLOWED_MODULES: Record<string, string[]> = {
+      BASIC:    [],
+      STANDARD: ['PROJECTS', 'TRANSPORT', 'PRODUCTIVE'],
+      PREMIUM:  ['PROJECTS', 'TRANSPORT', 'PRODUCTIVE', 'WATER'],
+    };
+    const allowed = PLAN_ALLOWED_MODULES[plan];
+    const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { modules: true } });
+    const newModules = (org?.modules ?? []).filter((m: string) => allowed.includes(m));
+    await prisma.organization.update({ where: { id: orgId }, data: { modules: newModules } });
+
     // Set expiry 1 year from now for paid activations
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
