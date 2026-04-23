@@ -62,4 +62,20 @@ const submitJoinRequest = async (req, res) => {
   }
 };
 
-module.exports = { getPublicProfile, submitJoinRequest };
+const getSupportContact = async (req, res) => {
+  try {
+    const settings = await prisma.platformSettings.findMany({
+      where: { key: { in: ['support_email', 'support_whatsapp'] } },
+    });
+    const obj = { email: 'support@mar-eac.ma', whatsapp: '' };
+    for (const s of settings) {
+      if (s.key === 'support_email')    obj.email     = s.value;
+      if (s.key === 'support_whatsapp') obj.whatsapp  = s.value;
+    }
+    res.json(obj);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getPublicProfile, submitJoinRequest, getSupportContact };

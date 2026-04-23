@@ -19,7 +19,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { StaffAccounts } from '../../components/settings/StaffAccounts';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { authApi, whatsappApi, backupApi } from '../../lib/api';
+import { authApi, whatsappApi, backupApi, publicApi } from '../../lib/api';
 import { formatDate } from '../../lib/utils';
 
 export const SettingsPage: React.FC = () => {
@@ -96,6 +96,11 @@ export const SettingsPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [upgradingSub, setUpgradingSub] = useState(false);
+
+  const [supportContact, setSupportContact] = useState<{ email: string; whatsapp: string }>({ email: 'support@mar-eac.ma', whatsapp: '' });
+  React.useEffect(() => {
+    publicApi.getSupportContact().then(r => setSupportContact(r.data)).catch(() => {});
+  }, []);
 
   // Backup extra
   const [backupRecords,   setBackupRecords]   = useState<any[]>([]);
@@ -939,115 +944,160 @@ export const SettingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Plan cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            {
-              key: 'BASIC',
-              color: 'border-gray-300 dark:border-gray-600',
-              headerBg: 'bg-gray-100 dark:bg-gray-700',
-              price: lang === 'ar' ? '50 درهم/شهر' : '50 MAD/mois',
-              features: [
-                { icon: '👥', label: lang === 'ar' ? 'إدارة الأعضاء' : 'Gestion des membres' },
-                { icon: '📅', label: lang === 'ar' ? 'الاجتماعات' : 'Réunions' },
-                { icon: '📄', label: lang === 'ar' ? 'الوثائق' : 'Documents' },
-                { icon: '🗳️', label: lang === 'ar' ? 'التصويت والقرارات' : 'Votes & décisions' },
-              ],
-            },
-            {
-              key: 'STANDARD',
-              color: 'border-blue-400 dark:border-blue-500',
-              headerBg: 'bg-blue-50 dark:bg-blue-900/30',
-              price: lang === 'ar' ? '150 درهم/شهر' : '150 MAD/mois',
-              features: [
-                { icon: '✅', label: lang === 'ar' ? 'كل ما في الأساسي' : 'Tout le Basic' },
-                { icon: '💰', label: lang === 'ar' ? 'إدارة المالية' : 'Finances' },
-                { icon: '📊', label: lang === 'ar' ? 'التقارير والإحصاءات' : 'Rapports & stats' },
-                { icon: '🏗️', label: lang === 'ar' ? 'المشاريع والتمويل' : 'Projets & financement' },
-              ],
-            },
-            {
-              key: 'PREMIUM',
-              color: 'border-purple-500 dark:border-purple-400',
-              headerBg: 'bg-purple-50 dark:bg-purple-900/30',
-              price: lang === 'ar' ? '249 درهم/شهر' : '249 MAD/mois',
-              features: [
-                { icon: '✅', label: lang === 'ar' ? 'كل ما في المعياري' : 'Tout le Standard' },
-                { icon: '💧', label: lang === 'ar' ? 'إدارة الماء' : 'Gestion eau' },
-                { icon: '🚌', label: lang === 'ar' ? 'النقل المدرسي' : 'Transport scolaire' },
-                { icon: '🔔', label: lang === 'ar' ? 'التذكيرات الذكية' : 'Rappels intelligents' },
-              ],
-            },
-          ].map(({ key, color, headerBg, price, features }) => {
-            const isCurrent = sub?.plan === key && sub?.status === 'ACTIVE';
-            const isTrial   = sub?.status === 'TRIAL';
-            const isUpgrade   = PLAN_LEVELS[key] > PLAN_LEVELS[sub?.plan || 'BASIC'] || isTrial;
-            const isDowngrade = PLAN_LEVELS[key] < PLAN_LEVELS[sub?.plan || 'BASIC'] && !isTrial;
+        {/* ── Plan section: contact banner for REGULAR, cards for specialized packs ── */}
+        {(() => {
+          const modules: string[] = (org as any)?.modules ?? [];
+          const isRegular = modules.length === 0;
 
+          if (isRegular) {
             return (
-              <div key={key} className={`rounded-xl border-2 overflow-hidden flex flex-col transition-shadow ${isCurrent ? 'border-emerald-500 shadow-lg' : color}`}>
-                <div className={`p-4 ${headerBg}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-gray-900 dark:text-white">{t(`settings.plans.${key}`)}</span>
-                    {isCurrent && (
-                      <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                        <CheckCircle2 size={13} />{lang === 'ar' ? 'الحالي' : 'Actif'}
-                      </span>
-                    )}
-                    {key === 'PREMIUM' && !isCurrent && (
-                      <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-medium">
-                        {lang === 'ar' ? 'الأفضل' : 'Meilleur'}
-                      </span>
-                    )}
-                    {isDowngrade && (
-                      <span className="text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded-full font-medium">
-                        {lang === 'ar' ? 'تخفيض' : 'Rétrog.'}
-                      </span>
-                    )}
+              <div className="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 p-5 flex flex-col gap-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">🚀</span>
+                  <div>
+                    <p className="font-semibold text-indigo-800 dark:text-indigo-300 text-sm">
+                      {lang === 'ar'
+                        ? 'هل تريد الترقية إلى باقة أعلى؟'
+                        : 'Vous souhaitez passer à un plan supérieur ?'}
+                    </p>
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                      {lang === 'ar'
+                        ? 'لتفعيل وحدات إضافية (الماء، الإنتاج، النقل المدرسي...)، تواصل معنا عبر البريد الإلكتروني أو واتساب وسنختار معك الباقة المناسبة.'
+                        : 'Pour activer des modules supplémentaires (eau, production, transport scolaire...), contactez-nous par e-mail ou WhatsApp et nous choisirons ensemble le plan adapté.'}
+                    </p>
                   </div>
-                  <div className="text-lg font-bold text-primary-600 dark:text-primary-400">{price}</div>
                 </div>
-                <div className="p-4 flex-1 space-y-2">
-                  {features.map((f, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <span>{f.icon}</span>{f.label}
-                    </div>
-                  ))}
-                </div>
-                <div className="p-4 pt-0">
-                  {isCurrent ? (
-                    <div className="w-full text-center text-sm text-emerald-600 dark:text-emerald-400 font-medium py-2">
-                      {lang === 'ar' ? '✓ مفعّل حالياً' : '✓ Plan actuel'}
-                    </div>
-                  ) : sub?.pendingPlan === key ? (
-                    <div className="w-full text-center text-xs text-amber-600 dark:text-amber-400 font-medium py-2 flex items-center justify-center gap-1">
-                      ⏳ {lang === 'ar' ? 'في انتظار الموافقة' : 'En attente d\'approbation'}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleUpgrade(key)}
-                      disabled={upgradingSub || !!sub?.pendingPlan}
-                      className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-                        isDowngrade
-                          ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800'
-                          : 'bg-primary-600 hover:bg-primary-700 text-white'
-                      }`}
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href={`mailto:${supportContact.email}`}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
+                  >
+                    <Mail size={15} />
+                    {supportContact.email}
+                  </a>
+                  {supportContact.whatsapp && (
+                    <a
+                      href={`https://wa.me/${supportContact.whatsapp.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
                     >
-                      <ArrowUpCircle size={14} className={isDowngrade ? 'rotate-180' : ''} />
-                      {upgradingSub
-                        ? (lang === 'ar' ? 'جاري...' : 'En cours...')
-                        : isDowngrade
-                          ? (lang === 'ar' ? `طلب تخفيض إلى ${key}` : `Demander ${key}`)
-                          : isUpgrade
-                            ? (lang === 'ar' ? `ترقية إلى ${key}` : `Passer au ${key}`)
-                            : (lang === 'ar' ? `تفعيل ${key}` : `Activer ${key}`)}
-                    </button>
+                      <MessageCircle size={15} />
+                      WhatsApp
+                    </a>
                   )}
                 </div>
               </div>
             );
-          })}
-        </div>
+          }
+
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                {
+                  key: 'BASIC',
+                  color: 'border-gray-300 dark:border-gray-600',
+                  headerBg: 'bg-gray-100 dark:bg-gray-700',
+                  price: lang === 'ar' ? '50 درهم/شهر' : '50 MAD/mois',
+                  features: [
+                    { icon: '👥', label: lang === 'ar' ? 'إدارة الأعضاء' : 'Gestion des membres' },
+                    { icon: '📅', label: lang === 'ar' ? 'الاجتماعات' : 'Réunions' },
+                    { icon: '📄', label: lang === 'ar' ? 'الوثائق' : 'Documents' },
+                    { icon: '🗳️', label: lang === 'ar' ? 'التصويت والقرارات' : 'Votes & décisions' },
+                  ],
+                },
+                {
+                  key: 'STANDARD',
+                  color: 'border-blue-400 dark:border-blue-500',
+                  headerBg: 'bg-blue-50 dark:bg-blue-900/30',
+                  price: lang === 'ar' ? '150 درهم/شهر' : '150 MAD/mois',
+                  features: [
+                    { icon: '✅', label: lang === 'ar' ? 'كل ما في الأساسي' : 'Tout le Basic' },
+                    { icon: '💰', label: lang === 'ar' ? 'إدارة المالية' : 'Finances' },
+                    { icon: '📊', label: lang === 'ar' ? 'التقارير والإحصاءات' : 'Rapports & stats' },
+                    { icon: '🏗️', label: lang === 'ar' ? 'المشاريع والتمويل' : 'Projets & financement' },
+                  ],
+                },
+                {
+                  key: 'PREMIUM',
+                  color: 'border-purple-500 dark:border-purple-400',
+                  headerBg: 'bg-purple-50 dark:bg-purple-900/30',
+                  price: lang === 'ar' ? '249 درهم/شهر' : '249 MAD/mois',
+                  features: [
+                    { icon: '✅', label: lang === 'ar' ? 'كل ما في المعياري' : 'Tout le Standard' },
+                    { icon: '💧', label: lang === 'ar' ? 'إدارة الماء' : 'Gestion eau' },
+                    { icon: '🚌', label: lang === 'ar' ? 'النقل المدرسي' : 'Transport scolaire' },
+                    { icon: '🔔', label: lang === 'ar' ? 'التذكيرات الذكية' : 'Rappels intelligents' },
+                  ],
+                },
+              ].map(({ key, color, headerBg, price, features }) => {
+                const isCurrent  = sub?.plan === key && sub?.status === 'ACTIVE';
+                const isTrial    = sub?.status === 'TRIAL';
+                const isUpgrade  = PLAN_LEVELS[key] > PLAN_LEVELS[sub?.plan || 'BASIC'] || isTrial;
+                const isDowngrade = PLAN_LEVELS[key] < PLAN_LEVELS[sub?.plan || 'BASIC'] && !isTrial;
+
+                return (
+                  <div key={key} className={`rounded-xl border-2 overflow-hidden flex flex-col transition-shadow ${isCurrent ? 'border-emerald-500 shadow-lg' : color}`}>
+                    <div className={`p-4 ${headerBg}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-gray-900 dark:text-white">{t(`settings.plans.${key}`)}</span>
+                        {isCurrent && (
+                          <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                            <CheckCircle2 size={13} />{lang === 'ar' ? 'الحالي' : 'Actif'}
+                          </span>
+                        )}
+                        {key === 'PREMIUM' && !isCurrent && (
+                          <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-medium">
+                            {lang === 'ar' ? 'الأفضل' : 'Meilleur'}
+                          </span>
+                        )}
+                        {isDowngrade && (
+                          <span className="text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded-full font-medium">
+                            {lang === 'ar' ? 'تخفيض' : 'Rétrog.'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-lg font-bold text-primary-600 dark:text-primary-400">{price}</div>
+                    </div>
+                    <div className="p-4 flex-1 space-y-2">
+                      {features.map((f, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                          <span>{f.icon}</span>{f.label}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="p-4 pt-0">
+                      {isCurrent ? (
+                        <div className="w-full text-center text-sm text-emerald-600 dark:text-emerald-400 font-medium py-2">
+                          {lang === 'ar' ? '✓ مفعّل حالياً' : '✓ Plan actuel'}
+                        </div>
+                      ) : sub?.pendingPlan === key ? (
+                        <div className="w-full text-center text-xs text-amber-600 dark:text-amber-400 font-medium py-2 flex items-center justify-center gap-1">
+                          ⏳ {lang === 'ar' ? 'في انتظار الموافقة' : "En attente d'approbation"}
+                        </div>
+                      ) : isUpgrade ? (
+                        <div className="w-full text-center text-xs text-gray-400 dark:text-gray-500 py-2">
+                          {lang === 'ar' ? 'تواصل معنا للترقية' : 'Contactez-nous pour upgrader'}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleUpgrade(key)}
+                          disabled={upgradingSub || !!sub?.pendingPlan}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800"
+                        >
+                          <ArrowUpCircle size={14} className="rotate-180" />
+                          {upgradingSub
+                            ? (lang === 'ar' ? 'جاري...' : 'En cours...')
+                            : (lang === 'ar' ? `طلب تخفيض إلى ${key}` : `Demander ${key}`)}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Downgrade confirmation dialog ── */}

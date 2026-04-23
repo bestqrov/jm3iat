@@ -436,8 +436,9 @@ export const calendarApi = {
 
 // ---- Public ----
 export const publicApi = {
-  getProfile:  (slug: string)              => api.get(`/public/${slug}`),
-  submitJoin:  (slug: string, data: any)   => api.post(`/public/${slug}/join`, data),
+  getProfile:      (slug: string)            => api.get(`/public/${slug}`),
+  submitJoin:      (slug: string, data: any) => api.post(`/public/${slug}/join`, data),
+  getSupportContact: ()                      => api.get('/public/contact'),
 };
 
 // ---- Backup ----
