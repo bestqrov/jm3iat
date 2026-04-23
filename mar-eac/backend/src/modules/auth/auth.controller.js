@@ -254,7 +254,7 @@ const upgradeSubscription = async (req, res) => {
     // Modules allowed per plan level — strip any that exceed the new plan
     const PLAN_ALLOWED_MODULES = {
       BASIC:    [],
-      STANDARD: ['PROJECTS', 'TRANSPORT', 'PRODUCTIVE'],
+      STANDARD: ['PROJECTS', 'TRANSPORT'],
       PREMIUM:  ['PROJECTS', 'TRANSPORT', 'PRODUCTIVE', 'WATER'],
     };
     const allowed = PLAN_ALLOWED_MODULES[plan];

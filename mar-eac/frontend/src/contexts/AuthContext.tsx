@@ -172,11 +172,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const modules = organization?.modules ?? [];
     if (!sub || sub.status === 'EXPIRED' || sub.status === 'CANCELLED') return false;
     if (modules.length > 0) return modules.includes(mod);
-    // Legacy fallback: plan-based
+    // Legacy fallback: plan-based (matches actual pack catalogue)
     const LEGACY: Record<string, string[]> = {
       WATER:      ['PREMIUM'],
-      PROJECTS:   ['PREMIUM'],
-      PRODUCTIVE: ['STANDARD', 'PREMIUM'],
+      PROJECTS:   ['STANDARD', 'PREMIUM'],
+      PRODUCTIVE: ['PREMIUM'],
+      TRANSPORT:  ['STANDARD', 'PREMIUM'],
     };
     return (LEGACY[mod] ?? []).includes(sub.plan);
   };

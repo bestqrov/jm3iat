@@ -4,8 +4,9 @@
 
 const LEGACY_PLAN_GRANTS = {
   WATER:      ['PREMIUM'],
-  PROJECTS:   ['PREMIUM'],
-  PRODUCTIVE: ['STANDARD', 'PREMIUM'],
+  PROJECTS:   ['STANDARD', 'PREMIUM'],
+  PRODUCTIVE: ['PREMIUM'],
+  TRANSPORT:  ['STANDARD', 'PREMIUM'],
 };
 
 const requireModule = (mod) => (req, res, next) => {
