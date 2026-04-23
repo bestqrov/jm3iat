@@ -837,10 +837,10 @@ export const SettingsPage: React.FC = () => {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">
-              {lang === 'ar' ? 'الاشتراك والترقية' : 'Abonnement & Activation'}
+              {lang === 'ar' ? 'الاشتراك' : 'Abonnement'}
             </h3>
             <p className="text-xs text-gray-400 mt-0.5">
-              {lang === 'ar' ? 'اختر الباقة المناسبة لجمعيتك' : 'Choisissez le plan adapté à votre association'}
+              {lang === 'ar' ? 'باقتك الحالية وخيارات التعديل' : 'Votre abonnement actuel et options de modification'}
             </p>
           </div>
         </div>
@@ -991,110 +991,82 @@ export const SettingsPage: React.FC = () => {
             );
           }
 
-          return (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                {
-                  key: 'BASIC',
-                  color: 'border-gray-300 dark:border-gray-600',
-                  headerBg: 'bg-gray-100 dark:bg-gray-700',
-                  price: lang === 'ar' ? '50 درهم/شهر' : '50 MAD/mois',
-                  features: [
-                    { icon: '👥', label: lang === 'ar' ? 'إدارة الأعضاء' : 'Gestion des membres' },
-                    { icon: '📅', label: lang === 'ar' ? 'الاجتماعات' : 'Réunions' },
-                    { icon: '📄', label: lang === 'ar' ? 'الوثائق' : 'Documents' },
-                    { icon: '🗳️', label: lang === 'ar' ? 'التصويت والقرارات' : 'Votes & décisions' },
-                  ],
-                },
-                {
-                  key: 'STANDARD',
-                  color: 'border-blue-400 dark:border-blue-500',
-                  headerBg: 'bg-blue-50 dark:bg-blue-900/30',
-                  price: lang === 'ar' ? '150 درهم/شهر' : '150 MAD/mois',
-                  features: [
-                    { icon: '✅', label: lang === 'ar' ? 'كل ما في الأساسي' : 'Tout le Basic' },
-                    { icon: '💰', label: lang === 'ar' ? 'إدارة المالية' : 'Finances' },
-                    { icon: '📊', label: lang === 'ar' ? 'التقارير والإحصاءات' : 'Rapports & stats' },
-                    { icon: '🏗️', label: lang === 'ar' ? 'المشاريع والتمويل' : 'Projets & financement' },
-                  ],
-                },
-                {
-                  key: 'PREMIUM',
-                  color: 'border-purple-500 dark:border-purple-400',
-                  headerBg: 'bg-purple-50 dark:bg-purple-900/30',
-                  price: lang === 'ar' ? '249 درهم/شهر' : '249 MAD/mois',
-                  features: [
-                    { icon: '✅', label: lang === 'ar' ? 'كل ما في المعياري' : 'Tout le Standard' },
-                    { icon: '💧', label: lang === 'ar' ? 'إدارة الماء' : 'Gestion eau' },
-                    { icon: '🚌', label: lang === 'ar' ? 'النقل المدرسي' : 'Transport scolaire' },
-                    { icon: '🔔', label: lang === 'ar' ? 'التذكيرات الذكية' : 'Rappels intelligents' },
-                  ],
-                },
-              ].map(({ key, color, headerBg, price, features }) => {
-                const isCurrent  = sub?.plan === key && sub?.status === 'ACTIVE';
-                const isTrial    = sub?.status === 'TRIAL';
-                const isUpgrade  = PLAN_LEVELS[key] > PLAN_LEVELS[sub?.plan || 'BASIC'] || isTrial;
-                const isDowngrade = PLAN_LEVELS[key] < PLAN_LEVELS[sub?.plan || 'BASIC'] && !isTrial;
+          // Downgrade rows — only lower plans shown
+          const PLAN_LABELS: Record<string, { ar: string; fr: string; price: string }> = {
+            BASIC:    { ar: 'الأساسية',  fr: 'Basic',    price: '50 MAD/mois' },
+            STANDARD: { ar: 'القياسية',  fr: 'Standard', price: '150 MAD/mois' },
+          };
+          const currentLevel = PLAN_LEVELS[sub?.plan || 'BASIC'];
+          const downgradePlans = Object.entries(PLAN_LABELS).filter(
+            ([key]) => PLAN_LEVELS[key] < currentLevel
+          );
 
-                return (
-                  <div key={key} className={`rounded-xl border-2 overflow-hidden flex flex-col transition-shadow ${isCurrent ? 'border-emerald-500 shadow-lg' : color}`}>
-                    <div className={`p-4 ${headerBg}`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-gray-900 dark:text-white">{t(`settings.plans.${key}`)}</span>
-                        {isCurrent && (
-                          <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                            <CheckCircle2 size={13} />{lang === 'ar' ? 'الحالي' : 'Actif'}
-                          </span>
-                        )}
-                        {key === 'PREMIUM' && !isCurrent && (
-                          <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-medium">
-                            {lang === 'ar' ? 'الأفضل' : 'Meilleur'}
-                          </span>
-                        )}
-                        {isDowngrade && (
-                          <span className="text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded-full font-medium">
-                            {lang === 'ar' ? 'تخفيض' : 'Rétrog.'}
-                          </span>
-                        )}
+          return (
+            <div className="space-y-3">
+              {/* Downgrade options */}
+              {downgradePlans.length > 0 && (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+                  <p className="px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    {lang === 'ar' ? 'خيارات التخفيض' : 'Options de rétrogradation'}
+                  </p>
+                  {downgradePlans.map(([key, info]) => (
+                    <div key={key} className="flex items-center justify-between px-4 py-3 gap-3">
+                      <div>
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                          {lang === 'ar' ? info.ar : info.fr}
+                        </span>
+                        <span className="text-xs text-gray-400 ms-2">{info.price}</span>
                       </div>
-                      <div className="text-lg font-bold text-primary-600 dark:text-primary-400">{price}</div>
-                    </div>
-                    <div className="p-4 flex-1 space-y-2">
-                      {features.map((f, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <span>{f.icon}</span>{f.label}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-4 pt-0">
-                      {isCurrent ? (
-                        <div className="w-full text-center text-sm text-emerald-600 dark:text-emerald-400 font-medium py-2">
-                          {lang === 'ar' ? '✓ مفعّل حالياً' : '✓ Plan actuel'}
-                        </div>
-                      ) : sub?.pendingPlan === key ? (
-                        <div className="w-full text-center text-xs text-amber-600 dark:text-amber-400 font-medium py-2 flex items-center justify-center gap-1">
+                      {sub?.pendingPlan === key ? (
+                        <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
                           ⏳ {lang === 'ar' ? 'في انتظار الموافقة' : "En attente d'approbation"}
-                        </div>
-                      ) : isUpgrade ? (
-                        <div className="w-full text-center text-xs text-gray-400 dark:text-gray-500 py-2">
-                          {lang === 'ar' ? 'تواصل معنا للترقية' : 'Contactez-nous pour upgrader'}
-                        </div>
+                        </span>
                       ) : (
                         <button
                           onClick={() => handleUpgrade(key)}
                           disabled={upgradingSub || !!sub?.pendingPlan}
-                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 transition-colors disabled:opacity-50"
                         >
-                          <ArrowUpCircle size={14} className="rotate-180" />
+                          <ArrowUpCircle size={12} className="rotate-180" />
                           {upgradingSub
                             ? (lang === 'ar' ? 'جاري...' : 'En cours...')
-                            : (lang === 'ar' ? `طلب تخفيض إلى ${key}` : `Demander ${key}`)}
+                            : (lang === 'ar' ? `طلب تخفيض` : `Demander`)}
                         </button>
                       )}
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              )}
+
+              {/* Contact banner for pack type change */}
+              <div className="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 p-4 flex flex-col gap-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg">🚀</span>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-300">
+                    {lang === 'ar'
+                      ? 'لتغيير نوع الباقة (ماء، إنتاج، نقل...) أو الترقية، تواصل معنا:'
+                      : 'Pour changer de type de pack ou upgrader, contactez-nous :'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={`mailto:${supportContact.email}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition-colors"
+                  >
+                    <Mail size={13} /> {supportContact.email}
+                  </a>
+                  {supportContact.whatsapp && (
+                    <a
+                      href={`https://wa.me/${supportContact.whatsapp.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
+                    >
+                      <MessageCircle size={13} /> WhatsApp
+                    </a>
+                  )}
+                </div>
+              </div>
             </div>
           );
         })()}
