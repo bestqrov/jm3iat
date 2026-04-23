@@ -33,7 +33,8 @@ export const authApi = {
     fd.append('logo', file);
     return api.post('/auth/organization/logo', fd);
   },
-  upgradeSubscription: (plan: string) => api.post('/auth/subscription/upgrade', { plan }),
+  upgradeSubscription:  (plan: string) => api.post('/auth/subscription/upgrade', { plan }),
+  cancelDowngrade:      ()             => api.post('/auth/subscription/cancel-downgrade'),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
 };
 
@@ -264,6 +265,11 @@ export const superadminApi = {
 
   // ── Subscriptions ───────────────────────────────────────────────────────────
   getSubscriptions:     (params?: any)                   => api.get('/superadmin/subscriptions', { params }),
+
+  // ── Downgrade Requests ──────────────────────────────────────────────────────
+  getDowngradeRequests: ()                               => api.get('/superadmin/downgrade-requests'),
+  approveDowngrade:     (orgId: string)                  => api.post(`/superadmin/downgrade-requests/${orgId}/approve`),
+  rejectDowngrade:      (orgId: string)                  => api.post(`/superadmin/downgrade-requests/${orgId}/reject`),
 
   // ── Payments ────────────────────────────────────────────────────────────────
   getPayments:          (params?: any)                   => api.get('/superadmin/payments', { params }),

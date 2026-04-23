@@ -21,6 +21,11 @@ router.delete('/organizations/:id',                   ctrl.deleteOrganization);
 // ── Subscriptions ──────────────────────────────────────────────────────────────
 router.get('/subscriptions',                          ctrl.getSubscriptions);
 
+// ── Downgrade Requests (pending superadmin approval) ──────────────────────────
+router.get('/downgrade-requests',                             ctrl.getDowngradeRequests);
+router.post('/downgrade-requests/:orgId/approve',             ctrl.approveDowngrade);
+router.post('/downgrade-requests/:orgId/reject',              ctrl.rejectDowngrade);
+
 // ── Payments ──────────────────────────────────────────────────────────────────
 router.get('/payments',                               ctrl.getPayments);
 router.post('/payments',  upload.single('receipt'),   ctrl.createPayment);

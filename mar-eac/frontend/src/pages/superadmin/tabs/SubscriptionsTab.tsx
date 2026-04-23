@@ -59,6 +59,9 @@ export const SubscriptionsTab: React.FC = () => {
   const [managing, setManaging] = useState<Subscription | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  const [downgradeReqs, setDowngradeReqs] = useState<any[]>([]);
+  const [drLoading, setDrLoading] = useState(false);
+
   const limit = 15;
   const pages = Math.ceil(total / limit);
 
@@ -73,7 +76,15 @@ export const SubscriptionsTab: React.FC = () => {
     }
   };
 
+  const loadDowngradeReqs = async () => {
+    try {
+      const res = await superadminApi.getDowngradeRequests();
+      setDowngradeReqs(res.data);
+    } catch { }
+  };
+
   useEffect(() => { load(); }, [statusFilter, page]);
+  useEffect(() => { loadDowngradeReqs(); }, []);
 
   const statusLabels: Record<string, { fr: string; ar: string }> = {
     '': { fr: 'Tous', ar: 'الكل' },
@@ -81,6 +92,17 @@ export const SubscriptionsTab: React.FC = () => {
     ACTIVE: { fr: 'Actif', ar: 'نشط' },
     EXPIRED: { fr: 'Expiré', ar: 'منتهي' },
     CANCELLED: { fr: 'Annulé', ar: 'ملغي' },
+  };
+
+  const handleDowngradeAction = async (orgId: string, action: 'approve' | 'reject') => {
+    setDrLoading(true);
+    try {
+      if (action === 'approve') await superadminApi.approveDowngrade(orgId);
+      else await superadminApi.rejectDowngrade(orgId);
+      await Promise.all([loadDowngradeReqs(), load()]);
+    } finally {
+      setDrLoading(false);
+    }
   };
 
   const doAction = async (action: string) => {
@@ -113,6 +135,47 @@ export const SubscriptionsTab: React.FC = () => {
 
   return (
     <div className="space-y-5">
+
+      {/* ── Pending Downgrade Requests ── */}
+      {downgradeReqs.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4">
+          <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-3 flex items-center gap-2">
+            ⏳ {isAr ? `طلبات تخفيض الباقة (${downgradeReqs.length})` : `Demandes de rétrogradation (${downgradeReqs.length})`}
+          </h3>
+          <div className="space-y-2">
+            {downgradeReqs.map(req => (
+              <div key={req.id} className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-800 rounded-xl px-4 py-3 border border-amber-100 dark:border-amber-800">
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{req.organization.name}</p>
+                  <p className="text-xs text-gray-400">{req.organization.email}</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                    {isAr
+                      ? `${req.plan} ← ${req.pendingPlan} طلب التحويل إلى`
+                      : `${req.plan} → demande de passage à ${req.pendingPlan}`}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleDowngradeAction(req.organization.id, 'approve')}
+                    disabled={drLoading}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700 transition-colors disabled:opacity-50"
+                  >
+                    <CheckCircle size={12} /> {isAr ? 'موافقة' : 'Approuver'}
+                  </button>
+                  <button
+                    onClick={() => handleDowngradeAction(req.organization.id, 'reject')}
+                    disabled={drLoading}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-700 transition-colors disabled:opacity-50"
+                  >
+                    <Ban size={12} /> {isAr ? 'رفض' : 'Refuser'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Header + Filters */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

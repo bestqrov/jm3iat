@@ -52,6 +52,7 @@ interface Organization {
     plan: 'BASIC' | 'STANDARD' | 'PREMIUM';
     status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
     expiresAt?: string;
+    pendingPlan?: string | null;
   };
 }
 

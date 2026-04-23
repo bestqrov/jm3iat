@@ -242,6 +242,31 @@ const uploadLogo = async (req, res) => {
   }
 };
 
+const PLAN_LEVELS = { BASIC: 1, STANDARD: 2, PREMIUM: 3 };
+
+const PLAN_ALLOWED_MODULES = {
+  BASIC:    [],
+  STANDARD: ['PROJECTS', 'TRANSPORT'],
+  PREMIUM:  ['PROJECTS', 'TRANSPORT', 'PRODUCTIVE', 'WATER'],
+};
+
+// Apply a plan change: clear excess modules + update subscription
+const applyPlanChange = async (orgId, plan) => {
+  const allowed = PLAN_ALLOWED_MODULES[plan];
+  const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { modules: true } });
+  const newModules = (org?.modules ?? []).filter((m) => allowed.includes(m));
+  await prisma.organization.update({ where: { id: orgId }, data: { modules: newModules } });
+
+  const expiresAt = new Date();
+  expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+  return prisma.subscription.upsert({
+    where: { organizationId: orgId },
+    update: { plan, status: 'ACTIVE', expiresAt, pendingPlan: null },
+    create: { organizationId: orgId, plan, status: 'ACTIVE', expiresAt },
+  });
+};
+
 const upgradeSubscription = async (req, res) => {
   try {
     const { plan } = req.body;
@@ -251,32 +276,42 @@ const upgradeSubscription = async (req, res) => {
     }
     const orgId = req.user.organizationId;
 
-    // Modules allowed per plan level — strip any that exceed the new plan
-    const PLAN_ALLOWED_MODULES = {
-      BASIC:    [],
-      STANDARD: ['PROJECTS', 'TRANSPORT'],
-      PREMIUM:  ['PROJECTS', 'TRANSPORT', 'PRODUCTIVE', 'WATER'],
-    };
-    const allowed = PLAN_ALLOWED_MODULES[plan];
-    const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { modules: true } });
-    const newModules = (org?.modules ?? []).filter((m) => allowed.includes(m));
-    await prisma.organization.update({ where: { id: orgId }, data: { modules: newModules } });
+    const current = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+    const currentLevel = PLAN_LEVELS[current?.plan || 'BASIC'];
+    const targetLevel  = PLAN_LEVELS[plan];
 
-    // Set expiry 1 year from now for paid activations
-    const expiresAt = new Date();
-    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    // Downgrade: set pending — requires superadmin approval
+    if (targetLevel < currentLevel) {
+      const sub = await prisma.subscription.upsert({
+        where:  { organizationId: orgId },
+        update: { pendingPlan: plan },
+        create: { organizationId: orgId, plan: current?.plan || 'BASIC', pendingPlan: plan },
+      });
+      return res.json({ pending: true, sub });
+    }
 
-    const sub = await prisma.subscription.upsert({
+    // Upgrade or same level: apply immediately
+    const sub = await applyPlanChange(orgId, plan);
+    res.json({ pending: false, sub });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const cancelDowngrade = async (req, res) => {
+  try {
+    const orgId = req.user.organizationId;
+    const sub = await prisma.subscription.update({
       where: { organizationId: orgId },
-      update: { plan, status: 'ACTIVE', expiresAt },
-      create: { organizationId: orgId, plan, status: 'ACTIVE', expiresAt },
+      data:  { pendingPlan: null },
     });
-
     res.json(sub);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+module.exports.applyPlanChange = applyPlanChange;
 
 const forgotPassword = async (req, res) => {
   try {
@@ -301,4 +336,4 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, updateOrganization, uploadLogo, upgradeSubscription, forgotPassword };
+module.exports = { register, login, getMe, updateProfile, updateOrganization, uploadLogo, upgradeSubscription, cancelDowngrade, applyPlanChange, forgotPassword };

@@ -12,5 +12,6 @@ router.put('/profile', auth, ctrl.updateProfile);
 router.put('/organization', auth, tenant, ctrl.updateOrganization);
 router.post('/organization/logo', auth, tenant, upload.single('logo'), ctrl.uploadLogo);
 router.post('/subscription/upgrade', auth, ctrl.upgradeSubscription);
+router.post('/subscription/cancel-downgrade', auth, ctrl.cancelDowngrade);
 
 module.exports = router;

@@ -85,6 +85,7 @@ model Subscription {
   organizationId String   @unique @db.ObjectId
   plan           String   @default("BASIC")
   status         String   @default("TRIAL")
+  pendingPlan    String?
   startsAt       DateTime @default(now())
   expiresAt      DateTime?
   createdAt      DateTime @default(now())

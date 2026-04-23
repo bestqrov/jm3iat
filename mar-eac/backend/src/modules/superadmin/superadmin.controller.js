@@ -1672,6 +1672,51 @@ const getTemplateMessages = async (req, res) => {
   res.json(CAMPAIGN_TEMPLATES);
 };
 
+// ─── Downgrade Requests ───────────────────────────────────────────────────────
+
+const { applyPlanChange } = require('../auth/auth.controller');
+
+const getDowngradeRequests = async (req, res) => {
+  try {
+    const subs = await prisma.subscription.findMany({
+      where: { pendingPlan: { not: null } },
+      include: {
+        organization: { select: { id: true, name: true, email: true, modules: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    res.json(subs);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const approveDowngrade = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const sub = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+    if (!sub?.pendingPlan) return res.status(400).json({ message: 'No pending downgrade' });
+
+    const updated = await applyPlanChange(orgId, sub.pendingPlan);
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const rejectDowngrade = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const sub = await prisma.subscription.update({
+      where: { organizationId: orgId },
+      data:  { pendingPlan: null },
+    });
+    res.json(sub);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getStats, getAnalytics, getFeatureUsage, getAIInsights,
   getOrganizations, getOrganization, updateSubscription, deleteOrganization,
@@ -1685,5 +1730,6 @@ module.exports = {
   processAutomationRules, sendTrialExpiryReminders,
   getPlatformSettings, updatePlatformSettings,
   getSubscriptions,
+  getDowngradeRequests, approveDowngrade, rejectDowngrade,
   getMarketingCampaigns, createMarketingCampaign, deleteMarketingCampaign, getTemplateMessages,
 };
