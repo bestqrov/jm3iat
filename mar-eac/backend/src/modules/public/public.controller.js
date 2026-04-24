@@ -45,12 +45,13 @@ const submitJoinRequest = async (req, res) => {
     });
     if (!org) return res.status(404).json({ message: 'Association not found' });
 
-    // Create member request as a pending member
     await prisma.member.create({
       data: {
-        organizationId: org.id, fullName, phone,
-        email: email || null, cin: cin || null, city: city || null,
-        status: 'PENDING', notes: message || null,
+        organizationId: org.id,
+        name: fullName,
+        phone,
+        email: email || null,
+        isActive: false,
       },
     });
 
