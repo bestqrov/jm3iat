@@ -5,7 +5,7 @@ import {
   Facebook, Instagram, Youtube, Send, CheckCircle2, Loader2,
   Building2, Globe, Star, Heart, Award, TrendingUp,
   FileText, Share2, Copy, Check, Droplets, ShoppingBag, Bus,
-  ChevronRight, UserPlus, MessageSquare, Clock,
+  ChevronRight, UserPlus, MessageSquare, Clock, Printer,
 } from 'lucide-react';
 import { publicApi } from '../../lib/api';
 
@@ -70,6 +70,37 @@ export const PublicProfilePage: React.FC = () => {
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const printCard = () => {
+    if (!cardRef.current || !org) return;
+    const cardHtml = cardRef.current.outerHTML;
+    const logoUrl = org.logo ? `${window.location.origin}/uploads/${org.logo.split('/').pop()}` : '';
+    const win = window.open('', '_blank', 'width=700,height=500');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8"/>
+  <title>البطاقة الإلكترونية - ${org.name}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+    body { font-family: 'Cairo', sans-serif; background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    @media print {
+      body { background: white; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div style="width:480px">
+    ${cardHtml.replace(/src="\/uploads\//g, `src="${window.location.origin}/uploads/`)}
+  </div>
+  <script>setTimeout(() => { window.print(); window.close(); }, 600);<\/script>
+</body>
+</html>`);
+    win.document.close();
   };
 
   const getModuleLabel = (mod: string) => {
@@ -496,6 +527,14 @@ export const PublicProfilePage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Print button */}
+            <div className="max-w-lg mx-auto">
+              <button onClick={printCard}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl transition-colors shadow-sm text-sm">
+                <Printer size={16} /> طباعة / حفظ PDF
+              </button>
             </div>
 
             {/* Share card */}
