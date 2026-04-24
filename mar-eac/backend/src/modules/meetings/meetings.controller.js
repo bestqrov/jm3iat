@@ -44,13 +44,28 @@ const create = async (req, res) => {
     const { title, date, location, agenda } = req.body;
     if (!title || !date) return res.status(400).json({ message: 'Title and date required' });
 
+    const meetingDate = new Date(date);
+
     const meeting = await prisma.meeting.create({
       data: {
         organizationId: req.organization.id,
         title,
-        date: new Date(date),
+        date: meetingDate,
         location: location || null,
         agenda: agenda || null,
+      },
+    });
+
+    const dateStr = meetingDate.toLocaleDateString('fr-MA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = meetingDate.toLocaleTimeString('fr-MA', { hour: '2-digit', minute: '2-digit' });
+    await prisma.reminder.create({
+      data: {
+        organizationId: req.organization.id,
+        type: 'MEETING',
+        title: `اجتماع: ${title}`,
+        message: `${dateStr} ${timeStr}${location ? ` — ${location}` : ''}`,
+        scheduledFor: meetingDate,
+        isRead: false,
       },
     });
 
