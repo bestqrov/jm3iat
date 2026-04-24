@@ -88,13 +88,20 @@ export const NotificationsBell: React.FC = () => {
     <div className="relative" ref={ref}>
       <button
         onClick={() => { setOpen(v => !v); if (!open) load(); }}
-        className="relative p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className={`relative p-2 rounded-lg transition-colors ${
+          unread > 0
+            ? 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 ring-2 ring-red-400 dark:ring-red-500 hover:bg-red-100 dark:hover:bg-red-900/30'
+            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+        }`}
       >
         <Bell size={18} />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
-            {unread > 9 ? '9+' : unread}
-          </span>
+          <>
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+              {unread > 9 ? '9+' : unread}
+            </span>
+            <span className="absolute inset-0 rounded-lg ring-2 ring-red-400 animate-ping opacity-60 pointer-events-none" />
+          </>
         )}
       </button>
 
