@@ -7,6 +7,7 @@ import {
   FileText, Share2, Copy, Check, Droplets, ShoppingBag, Bus,
   ChevronRight, UserPlus, MessageSquare, Clock, Printer,
 } from 'lucide-react';
+import QRCode from 'react-qr-code';
 import { publicApi } from '../../lib/api';
 
 interface OrgProfile {
@@ -511,19 +512,17 @@ export const PublicProfilePage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Bottom: ID + QR placeholder */}
+                {/* Bottom: ID + QR code */}
                 <div className="mt-5 flex items-end justify-between relative">
                   <div>
                     <p className="text-[9px] text-indigo-300 mb-0.5 tracking-widest uppercase">رقم التعريف</p>
                     <p className="font-mono text-xs text-indigo-200 tracking-wider">
                       {org.id.slice(-8).toUpperCase()}
                     </p>
+                    <p className="text-[9px] text-indigo-300 mt-1">امسح للملف الرقمي</p>
                   </div>
-                  {/* QR-like grid placeholder */}
-                  <div className="w-12 h-12 bg-white/10 rounded-xl grid grid-cols-4 gap-0.5 p-1.5 flex-shrink-0">
-                    {Array.from({ length: 16 }, (_, i) => (
-                      <div key={i} className={`rounded-[1px] ${Math.random() > 0.4 ? 'bg-white/70' : 'bg-transparent'}`} />
-                    ))}
+                  <div className="bg-white p-1.5 rounded-xl flex-shrink-0">
+                    <QRCode value={shareUrl} size={52} fgColor="#312e81" bgColor="#ffffff" />
                   </div>
                 </div>
               </div>
@@ -538,35 +537,74 @@ export const PublicProfilePage: React.FC = () => {
             </div>
 
             {/* Share card */}
-            <div className="max-w-lg mx-auto bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h4 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2">
+            <div className="max-w-lg mx-auto bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+              <h4 className="font-bold text-gray-900 text-sm flex items-center gap-2">
                 <Share2 size={15} className="text-indigo-500" /> شارك البطاقة
               </h4>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-xs text-gray-500 font-mono truncate border border-gray-100">
-                  {shareUrl}
+
+              {/* Profile link */}
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">رابط الملف الرقمي</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-xs text-gray-500 font-mono truncate border border-gray-100">
+                    {shareUrl}
+                  </div>
+                  <button onClick={copyLink}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition-colors flex-shrink-0">
+                    {copied ? <Check size={13} /> : <Copy size={13} />}
+                    {copied ? 'تم النسخ' : 'نسخ'}
+                  </button>
                 </div>
-                <button onClick={copyLink}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition-colors flex-shrink-0">
-                  {copied ? <Check size={13} /> : <Copy size={13} />}
-                  {copied ? 'تم' : 'نسخ'}
-                </button>
               </div>
-              <div className="mt-3 flex gap-2">
-                {org.whatsapp && (
-                  <a href={`https://wa.me/?text=${encodeURIComponent('شاهد صفحة الجمعية: ' + shareUrl)}`}
+
+              {/* Social links */}
+              {(org.whatsapp || org.facebook || org.instagram || org.tiktok || org.youtube) && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">روابط التواصل الاجتماعي</p>
+                  <div className="flex flex-wrap gap-2">
+                    {org.whatsapp && (
+                      <a href={`https://wa.me/${org.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium hover:bg-emerald-100 transition-colors">
+                        <Send size={12} /> واتساب
+                      </a>
+                    )}
+                    {org.facebook && (
+                      <a href={org.facebook.startsWith('http') ? org.facebook : `https://${org.facebook}`} target="_blank" rel="noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-xs font-medium hover:bg-blue-100 transition-colors">
+                        <Facebook size={12} /> فيسبوك
+                      </a>
+                    )}
+                    {org.instagram && (
+                      <a href={org.instagram.startsWith('http') ? org.instagram : `https://${org.instagram}`} target="_blank" rel="noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 text-pink-700 rounded-xl text-xs font-medium hover:bg-pink-100 transition-colors">
+                        <Instagram size={12} /> إنستغرام
+                      </a>
+                    )}
+                    {org.youtube && (
+                      <a href={org.youtube.startsWith('http') ? org.youtube : `https://${org.youtube}`} target="_blank" rel="noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-xl text-xs font-medium hover:bg-red-100 transition-colors">
+                        <Youtube size={12} /> يوتيوب
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Share via */}
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">شارك عبر</p>
+                <div className="flex gap-2">
+                  <a href={`https://wa.me/?text=${encodeURIComponent(`🏢 ${org.nameAr || org.name}\n📍 ${[org.cityAr || org.city, org.regionAr || org.region].filter(Boolean).join(' · ')}\n\n🔗 الملف الرقمي: ${shareUrl}`)}`}
                     target="_blank" rel="noreferrer"
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium hover:bg-emerald-100 transition-colors">
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors">
                     <Send size={13} /> واتساب
                   </a>
-                )}
-                {org.facebook && (
                   <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
                     target="_blank" rel="noreferrer"
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-medium hover:bg-blue-100 transition-colors">
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors">
                     <Facebook size={13} /> فيسبوك
                   </a>
-                )}
+                </div>
               </div>
             </div>
           </div>
