@@ -7,8 +7,7 @@ const getPublicProfile = async (req, res) => {
     const org = await prisma.organization.findFirst({
       where: {
         OR: [
-          { email: { startsWith: slug } },
-          { id: { endsWith: slug } },
+          { email: { startsWith: slug, mode: 'insensitive' } },
           { name: { equals: slug, mode: 'insensitive' } },
         ],
       },
@@ -39,8 +38,7 @@ const submitJoinRequest = async (req, res) => {
     const org = await prisma.organization.findFirst({
       where: {
         OR: [
-          { email: { startsWith: slug } },
-          { id: { endsWith: slug } },
+          { email: { startsWith: slug, mode: 'insensitive' } },
           { name: { equals: slug, mode: 'insensitive' } },
         ],
       },
