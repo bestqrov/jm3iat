@@ -4,15 +4,16 @@ const ms = require('./milestones.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
 const { requireModule } = require('../../middleware/module');
+const { logActivity } = require('../activity/activity.controller');
 
 router.use(auth, tenant, requireModule('PROJECTS'));
 
 router.get('/stats', ctrl.getStats);
 router.get('/', ctrl.getAll);
 router.get('/:id', ctrl.getById);
-router.post('/', ctrl.create);
-router.put('/:id', ctrl.update);
-router.delete('/:id', ctrl.remove);
+router.post('/',      logActivity('CREATE', 'PROJECT', (req, b) => `إنشاء مشروع: ${b?.name || b?.title || ''}`), ctrl.create);
+router.put('/:id',    logActivity('UPDATE', 'PROJECT', (req, b) => `تعديل مشروع: ${b?.name || b?.title || ''}`), ctrl.update);
+router.delete('/:id', logActivity('DELETE', 'PROJECT', () => `حذف مشروع`), ctrl.remove);
 
 // Milestones
 router.get('/:id/milestones', ms.getMilestones);
