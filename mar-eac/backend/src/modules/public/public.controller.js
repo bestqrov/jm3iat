@@ -1,4 +1,5 @@
 const prisma = require('../../config/database');
+const { push: pushNotification } = require('../notifications/notifications.controller');
 
 const getPublicProfile = async (req, res) => {
   try {
@@ -53,6 +54,16 @@ const submitJoinRequest = async (req, res) => {
         email: email || null,
         isActive: false,
       },
+    });
+
+    await pushNotification({
+      organizationId: org.id,
+      type: 'INFO',
+      title: `New join request: ${fullName}`,
+      titleAr: `طلب انضمام جديد: ${fullName}`,
+      body: `${phone}${email ? ' — ' + email : ''}`,
+      bodyAr: `${phone}${email ? ' — ' + email : ''}`,
+      link: '/members',
     });
 
     res.json({ ok: true, message: 'Demande envoyée avec succès' });
