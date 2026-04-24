@@ -50,7 +50,7 @@ export const ActivityPage: React.FC = () => {
 
   const fmtDate = (d: string) => new Date(d).toLocaleString(lang === 'ar' ? 'ar-MA' : 'fr-MA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-  const ENTITIES = ['member', 'meeting', 'transaction', 'document', 'request', 'recurring', 'export'];
+  const ENTITIES = ['MEMBER', 'MEETING', 'TRANSACTION', 'PROJECT', 'DECISION', 'DOCUMENT', 'REQUEST'];
 
   return (
     <div className="space-y-4 max-w-4xl">
