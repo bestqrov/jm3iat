@@ -109,8 +109,15 @@ const addAttendees = async (req, res) => {
       return res.status(400).json({ message: 'memberIds array required' });
     }
 
-    const data = memberIds.map((memberId) => ({ meetingId, memberId, present: false }));
-    await prisma.meetingAttendance.createMany({ data, skipDuplicates: true });
+    await Promise.all(
+      memberIds.map((memberId) =>
+        prisma.meetingAttendance.upsert({
+          where: { meetingId_memberId: { meetingId, memberId } },
+          update: {},
+          create: { meetingId, memberId, present: false },
+        })
+      )
+    );
 
     const attendances = await prisma.meetingAttendance.findMany({
       where: { meetingId },
@@ -119,7 +126,8 @@ const addAttendees = async (req, res) => {
 
     res.json(attendances);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('[addAttendees]', err);
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };
 
