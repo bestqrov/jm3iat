@@ -49,14 +49,15 @@ const create = async (req, res) => {
         organizationId: req.organization.id,
         title,
         date: new Date(date),
-        location,
-        agenda,
+        location: location || null,
+        agenda: agenda || null,
       },
     });
 
     res.status(201).json(meeting);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('[create meeting]', err);
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };
 
