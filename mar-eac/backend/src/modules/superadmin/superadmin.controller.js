@@ -1460,6 +1460,8 @@ const getPlatformSettings = async (req, res) => {
       default_currency: { value: 'MAD', category: 'BILLING' },
       support_email:     { value: 'support@mar-eac.ma', category: 'GENERAL' },
       support_whatsapp:  { value: '', category: 'GENERAL' },
+      evolution_api_url: { value: process.env.EVOLUTION_API_URL || '', category: 'INTEGRATIONS' },
+      evolution_api_key: { value: process.env.EVOLUTION_API_KEY || '', category: 'INTEGRATIONS' },
       whatsapp_api_key: { value: '', category: 'INTEGRATIONS' },
       whatsapp_phone_id: { value: '', category: 'INTEGRATIONS' },
       sendgrid_api_key: { value: '', category: 'INTEGRATIONS' },

@@ -74,7 +74,9 @@ export const SettingsTab: React.FC = () => {
     trial_duration_days: { label: 'Durée d\'essai (jours)', labelAr: 'مدة التجربة (أيام)', type: 'number' },
     default_currency:    { label: 'Devise par défaut', labelAr: 'العملة الافتراضية', type: 'text', placeholder: 'MAD' },
     support_email:       { label: 'Email de support', labelAr: 'بريد الدعم', type: 'email' },
-    whatsapp_api_key:    { label: 'Clé API WhatsApp Business', labelAr: 'مفتاح API واتساب', type: 'password' },
+    evolution_api_url:   { label: 'Evolution API URL', labelAr: 'رابط Evolution API', type: 'text', placeholder: 'https://evo.yourdomain.com' },
+    evolution_api_key:   { label: 'Evolution API Key', labelAr: 'مفتاح Evolution API', type: 'password' },
+    whatsapp_api_key:    { label: 'Clé API WhatsApp Business', labelAr: 'مفتاح API واتساب (Meta)', type: 'password' },
     whatsapp_phone_id:   { label: 'Phone ID (Meta)', labelAr: 'Phone ID (ميتا)', type: 'text' },
     sendgrid_api_key:    { label: 'Clé API SendGrid', labelAr: 'مفتاح API SendGrid', type: 'password' },
     email_from:          { label: 'Email expéditeur', labelAr: 'بريد المُرسِل', type: 'email' },
@@ -178,7 +180,8 @@ export const SettingsTab: React.FC = () => {
                 {isAr ? 'حالة التكاملات' : 'Statut des intégrations'}
               </p>
               {[
-                { name: 'WhatsApp', key: 'whatsapp_api_key', color: 'bg-emerald-500' },
+                { name: 'Evolution API', key: 'evolution_api_key', color: 'bg-emerald-500' },
+                { name: 'WhatsApp (Meta)', key: 'whatsapp_api_key', color: 'bg-green-500' },
                 { name: 'SendGrid', key: 'sendgrid_api_key', color: 'bg-blue-500' },
               ].map(integration => {
                 const configured = !!(form[integration.key] && form[integration.key].length > 5);
@@ -240,8 +243,10 @@ export const SettingsTab: React.FC = () => {
                   <Link2 size={14} /> {isAr ? 'كيفية الاتصال' : 'Comment se connecter'}
                 </h3>
                 <ul className="space-y-1.5 text-xs text-blue-700 dark:text-blue-300">
-                  <li>• <strong>WhatsApp Business API</strong>: {isAr ? 'احصل على مفتاح API من Meta for Developers' : 'Obtenez votre clé depuis Meta for Developers'}</li>
-                  <li>• <strong>SendGrid</strong>: {isAr ? 'أنشئ مفتاح API من لوحة تحكم SendGrid' : 'Créez une clé API depuis le tableau de bord SendGrid'}</li>
+                  <li>• <strong>Evolution API URL</strong>: {isAr ? 'رابط سيرفر Evolution API الخاص بك — مثال: https://evo.domain.com' : 'URL de votre serveur Evolution API — ex: https://evo.domain.com'}</li>
+                  <li>• <strong>Evolution API Key</strong>: {isAr ? 'مفتاح AUTHENTICATION_API_KEY من إعدادات Evolution API' : 'Clé AUTHENTICATION_API_KEY depuis la config Evolution API'}</li>
+                  <li>• <strong>WhatsApp Business API</strong>: {isAr ? 'مفتاح API من Meta for Developers (اختياري)' : 'Clé API Meta for Developers (optionnel)'}</li>
+                  <li>• <strong>SendGrid</strong>: {isAr ? 'مفتاح API من لوحة تحكم SendGrid' : 'Clé API depuis le tableau de bord SendGrid'}</li>
                 </ul>
               </div>
             )}
