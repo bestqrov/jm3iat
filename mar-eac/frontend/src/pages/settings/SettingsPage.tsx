@@ -88,9 +88,10 @@ export const SettingsPage: React.FC = () => {
     newPassword: '',
   });
 
-  const [logoPreview, setLogoPreview] = useState<string | null>(org?.logo || null);
+  const [logoLocalPreview, setLogoLocalPreview] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const logoSrc = logoLocalPreview || org?.logo || null;
 
   const [saving, setSaving] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -154,12 +155,13 @@ export const SettingsPage: React.FC = () => {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setLogoPreview(URL.createObjectURL(file));
+    setLogoLocalPreview(URL.createObjectURL(file));
     setUploadingLogo(true);
     try {
       await authApi.uploadLogo(file);
       await refreshUser();
-    } catch { setLogoPreview(org?.logo || null); }
+      setLogoLocalPreview(null);
+    } catch { setLogoLocalPreview(null); }
     finally { setUploadingLogo(false); }
   };
 
@@ -384,8 +386,8 @@ export const SettingsPage: React.FC = () => {
               className="relative flex-shrink-0 w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-500 overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-blue-500"
               title={lang === 'ar' ? 'تحميل الشعار' : 'Télécharger le logo'}
             >
-              {logoPreview ? (
-                <img src={logoPreview} alt="logo" className="w-full h-full object-contain p-1" />
+              {logoSrc ? (
+                <img src={logoSrc} alt="logo" className="w-full h-full object-contain p-1" />
               ) : (
                 <Building2 size={22} className="text-gray-300 dark:text-gray-600" />
               )}
@@ -411,7 +413,7 @@ export const SettingsPage: React.FC = () => {
               </p>
               {!uploadingLogo && (
                 <button type="button" onClick={() => logoInputRef.current?.click()} className="mt-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                  {logoPreview ? (lang === 'ar' ? 'تغيير الشعار' : 'Changer le logo') : (lang === 'ar' ? 'إضافة شعار' : 'Ajouter un logo')}
+                  {logoSrc ? (lang === 'ar' ? 'تغيير الشعار' : 'Changer le logo') : (lang === 'ar' ? 'إضافة شعار' : 'Ajouter un logo')}
                 </button>
               )}
             </div>
