@@ -214,12 +214,28 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
-          {/* Themed logo */}
+          {/* Association logo or themed placeholder */}
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
-            style={{ background: orgTheme.logoBg }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden"
+            style={{ background: organization?.logo ? 'transparent' : orgTheme.logoBg }}
           >
-            <span className="font-bold text-sm text-white">MA</span>
+            {organization?.logo ? (
+              <img
+                src={organization.logo}
+                alt="logo"
+                className="w-full h-full object-contain p-0.5"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  (e.currentTarget.parentElement as HTMLElement).style.background = orgTheme.logoBg;
+                  const span = document.createElement('span');
+                  span.className = 'font-bold text-sm text-white';
+                  span.textContent = 'MA';
+                  e.currentTarget.parentElement?.appendChild(span);
+                }}
+              />
+            ) : (
+              <span className="font-bold text-sm text-white">MA</span>
+            )}
           </div>
           <div className="min-w-0">
             <div className="font-bold text-gray-900 dark:text-white text-sm">Mar E-A.C</div>

@@ -387,7 +387,12 @@ export const SettingsPage: React.FC = () => {
               title={lang === 'ar' ? 'تحميل الشعار' : 'Télécharger le logo'}
             >
               {logoSrc ? (
-                <img src={logoSrc} alt="logo" className="w-full h-full object-contain p-1" />
+                <img
+                  src={logoSrc}
+                  alt="logo"
+                  className="w-full h-full object-contain p-1"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
               ) : (
                 <Building2 size={22} className="text-gray-300 dark:text-gray-600" />
               )}
