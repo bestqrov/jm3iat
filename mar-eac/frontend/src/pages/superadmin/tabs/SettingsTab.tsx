@@ -78,8 +78,12 @@ export const SettingsTab: React.FC = () => {
     evolution_api_key:   { label: 'Evolution API Key', labelAr: 'مفتاح Evolution API', type: 'password' },
     whatsapp_api_key:    { label: 'Clé API WhatsApp Business', labelAr: 'مفتاح API واتساب (Meta)', type: 'password' },
     whatsapp_phone_id:   { label: 'Phone ID (Meta)', labelAr: 'Phone ID (ميتا)', type: 'text' },
-    sendgrid_api_key:    { label: 'Clé API SendGrid', labelAr: 'مفتاح API SendGrid', type: 'password' },
-    email_from:          { label: 'Email expéditeur', labelAr: 'بريد المُرسِل', type: 'email' },
+    smtp_host:           { label: 'Serveur SMTP (Gmail: smtp.gmail.com)', labelAr: 'خادم SMTP (جيميل: smtp.gmail.com)', type: 'text', placeholder: 'smtp.gmail.com' },
+    smtp_port:           { label: 'Port SMTP (587 = TLS, 465 = SSL)', labelAr: 'منفذ SMTP (587 أو 465)', type: 'number', placeholder: '587' },
+    smtp_user:           { label: 'Adresse Gmail', labelAr: 'بريد Gmail', type: 'email', placeholder: 'votre@gmail.com' },
+    smtp_pass:           { label: 'Mot de passe d\'application Gmail', labelAr: 'كلمة مرور تطبيق Gmail', type: 'password' },
+    smtp_from:           { label: 'Nom expéditeur (affiché)', labelAr: 'اسم المُرسِل (يظهر للمستلم)', type: 'text', placeholder: 'Mar E-A.C' },
+    email_from:          { label: 'Email expéditeur (fallback)', labelAr: 'بريد المُرسِل (احتياطي)', type: 'email' },
     auto_trial_reminder: { label: 'Rappel automatique fin d\'essai', labelAr: 'تذكير تلقائي بنهاية التجربة', type: 'boolean' },
     trial_reminder_days: { label: 'Rappel avant expiration (jours)', labelAr: 'التذكير قبل الانتهاء (أيام)', type: 'number' },
   };
@@ -182,7 +186,7 @@ export const SettingsTab: React.FC = () => {
               {[
                 { name: 'Evolution API', key: 'evolution_api_key', color: 'bg-emerald-500' },
                 { name: 'WhatsApp (Meta)', key: 'whatsapp_api_key', color: 'bg-green-500' },
-                { name: 'SendGrid', key: 'sendgrid_api_key', color: 'bg-blue-500' },
+                { name: 'Gmail SMTP', key: 'smtp_pass', color: 'bg-red-500' },
               ].map(integration => {
                 const configured = !!(form[integration.key] && form[integration.key].length > 5);
                 return (
@@ -246,7 +250,7 @@ export const SettingsTab: React.FC = () => {
                   <li>• <strong>Evolution API URL</strong>: {isAr ? 'رابط سيرفر Evolution API الخاص بك — مثال: https://evo.domain.com' : 'URL de votre serveur Evolution API — ex: https://evo.domain.com'}</li>
                   <li>• <strong>Evolution API Key</strong>: {isAr ? 'مفتاح AUTHENTICATION_API_KEY من إعدادات Evolution API' : 'Clé AUTHENTICATION_API_KEY depuis la config Evolution API'}</li>
                   <li>• <strong>WhatsApp Business API</strong>: {isAr ? 'مفتاح API من Meta for Developers (اختياري)' : 'Clé API Meta for Developers (optionnel)'}</li>
-                  <li>• <strong>SendGrid</strong>: {isAr ? 'مفتاح API من لوحة تحكم SendGrid' : 'Clé API depuis le tableau de bord SendGrid'}</li>
+                  <li>• <strong>Gmail SMTP</strong>: {isAr ? 'فعّل المصادقة الثنائية في Google ثم أنشئ "كلمة مرور التطبيق" من myaccount.google.com/apppasswords' : 'Activez la 2FA sur Google puis créez un "mot de passe d\'application" sur myaccount.google.com/apppasswords'}</li>
                 </ul>
               </div>
             )}
