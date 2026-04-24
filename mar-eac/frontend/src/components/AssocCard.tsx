@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import QRCode from 'react-qr-code';
 import {
   X, Building2, Droplets, ShoppingBag, FolderKanban, Layers,
@@ -91,6 +91,7 @@ export const AssocCard: React.FC<AssocCardProps> = ({ onClose }) => {
 
   const [tab,    setTab]    = useState<Tab>('card');
   const [copied, setCopied] = useState(false);
+  const cardVisualRef = useRef<HTMLDivElement>(null);
 
   const modules  = org.modules ?? [];
   const themeKey = getThemeKey(modules);
@@ -133,6 +134,34 @@ export const AssocCard: React.FC<AssocCardProps> = ({ onClose }) => {
     navigator.clipboard.writeText(txt).then(() => {
       setCopied(true); setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  const printCard = () => {
+    if (!cardVisualRef.current) return;
+    const cardHtml = cardVisualRef.current.outerHTML;
+    const win = window.open('', '_blank', 'width=700,height=450');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8"/>
+  <title>البطاقة الإلكترونية - ${org.name}</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+    * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
+    body { margin: 0; background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    @media print { body { background: white; } }
+  </style>
+</head>
+<body>
+  <div style="width:480px;padding:24px">
+    ${cardHtml}
+  </div>
+  <script>setTimeout(() => { window.print(); window.close(); }, 800);<\/script>
+</body>
+</html>`);
+    win.document.close();
   };
 
   const shareWA = () => {
@@ -182,6 +211,7 @@ export const AssocCard: React.FC<AssocCardProps> = ({ onClose }) => {
           {/* ══ CARD VISUAL ══════════════════════════════════════════════════ */}
           <div className="px-5 pt-5">
             <div
+              ref={cardVisualRef}
               className="relative w-full rounded-2xl overflow-hidden"
               style={{ background: theme.gradient, aspectRatio: '1.78 / 1' }}
             >
@@ -319,7 +349,7 @@ export const AssocCard: React.FC<AssocCardProps> = ({ onClose }) => {
                   </div>
                 </button>
 
-                <button onClick={() => window.print()}
+                <button onClick={printCard}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
                   <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
                     <Printer size={16} className="text-white" />
