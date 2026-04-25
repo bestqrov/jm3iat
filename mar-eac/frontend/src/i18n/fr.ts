@@ -1240,6 +1240,167 @@ const fr = {
     all:           'Tous',
     noModule:      'Le module Transport Scolaire n\'est pas activé pour votre association.',
   },
+  landing: {
+    nav: {
+      features: 'Fonctionnalités',
+      pricing: 'Tarifs',
+      faq: 'FAQ',
+      login: 'Connexion',
+      startFree: 'Essai gratuit',
+    },
+    hero: {
+      badge: 'Essai gratuit 15 jours — sans carte bancaire',
+      title: 'Gérez votre association avec',
+      titleBrand: 'Jam3iyati',
+      subtitle: 'Une plateforme digitale pour gérer membres, finances et rapports en toute simplicité',
+      ctaPrimary: 'Essai gratuit (15 jours)',
+      ctaSecondary: 'Voir la démo',
+      stat1Value: '+200',
+      stat1Label: 'Associations actives',
+      stat2Value: '15 jours',
+      stat2Label: 'Essai gratuit',
+      stat3Value: '100%',
+      stat3Label: 'Support technique',
+    },
+    problem: {
+      badge: 'Le problème',
+      title: 'Fatigué de la gestion papier ?',
+      subtitle: 'Les associations qui utilisent le papier souffrent quotidiennement de',
+      items: [
+        'Perte de documents et registres importants',
+        'Erreurs dans les calculs financiers',
+        'Difficulté à suivre les adhérents',
+        'Rapports manuels qui prennent des heures',
+        'Manque de transparence dans les décisions',
+      ],
+    },
+    solution: {
+      badge: 'La solution',
+      title: 'Jam3iyati transforme votre gestion en système digital',
+      subtitle: 'Un système complet qui regroupe tous vos besoins en un seul endroit',
+    },
+    features: {
+      badge: 'Fonctionnalités',
+      title: 'Tout ce dont votre association a besoin',
+      subtitle: 'Des fonctionnalités complètes conçues spécialement pour les associations marocaines',
+      items: [
+        { icon: 'Users', title: 'Gestion des membres', desc: 'Enregistrez et suivez vos membres, cotisations et adhésions facilement' },
+        { icon: 'DollarSign', title: 'Finances', desc: 'Suivez revenus et dépenses, générez des rapports financiers professionnels' },
+        { icon: 'BarChart2', title: 'Rapports', desc: 'Rapports détaillés et statistiques instantanées sur votre activité' },
+        { icon: 'Droplets', title: "Gestion de l'eau", desc: "Gérez le réseau d'eau, factures et relevés avec précision" },
+        { icon: 'Bus', title: 'Transport scolaire', desc: 'Suivez bus, élèves et abonnements en temps réel' },
+        { icon: 'Factory', title: 'Production & Ventes', desc: 'Gérez production, ventes et stocks pour les associations productives' },
+      ],
+    },
+    trial: {
+      badge: 'Essai gratuit',
+      title: 'Essayez gratuitement pendant 15 jours',
+      subtitle: 'Sans engagement, sans carte bancaire — inscrivez-vous et commencez',
+      cta: 'Commencer',
+      features: ['Configuration rapide en 5 minutes', 'Support technique gratuit', 'Exportez vos données à tout moment'],
+    },
+    pricing: {
+      badge: 'Tarifs',
+      title: 'Des packs pour chaque association',
+      subtitle: 'Paiement via virement bancaire ou CashPlus — sans frais cachés',
+      perYear: '/ an',
+      perMonth: '/ mois',
+      popular: 'Le plus populaire',
+      cta: 'Commencer gratuitement',
+      ctaPro: 'Nous contacter',
+      paymentNote: 'Paiement via virement bancaire ou CashPlus',
+      packs: [
+        {
+          name: 'Basic',
+          price: '299',
+          desc: 'Idéal pour les petites associations',
+          features: ["Jusqu'à 50 membres", 'Modules de base', 'Rapports simples', 'Support par email'],
+        },
+        {
+          name: 'Standard',
+          price: '599',
+          desc: 'Pour les associations moyennes',
+          features: ["Jusqu'à 200 membres", 'Tous les modules', 'Rapports avancés', 'Support prioritaire', 'Sauvegardes auto'],
+        },
+        {
+          name: 'Pro',
+          price: '999',
+          desc: 'Pour les grandes associations',
+          features: ['Membres illimités', 'Tous les modules', 'Rapports personnalisés', 'Support 24/7 dédié', 'Formation sur site'],
+        },
+      ],
+    },
+    payment: {
+      badge: 'Comment payer',
+      title: "Étapes simples pour l'activation",
+      steps: [
+        { num: '1', title: 'Choisissez un pack', desc: 'Sélectionnez le pack adapté à la taille de votre association' },
+        { num: '2', title: 'Effectuez le paiement', desc: 'Transférez le montant via banque ou CashPlus' },
+        { num: '3', title: 'Envoyez le reçu', desc: 'Téléchargez la photo du reçu sur la plateforme' },
+        { num: '4', title: 'Activation', desc: 'Vérification et activation de votre compte sous 24 heures' },
+      ],
+    },
+    testimonials: {
+      badge: 'Témoignages',
+      title: 'Ce que disent nos utilisateurs',
+      items: [
+        {
+          name: 'Mohammed El Idrissi',
+          role: 'Président — Association Développement, Marrakech',
+          text: 'Jam3iyati a complètement transformé notre façon de travailler. On perdait des heures en paperasse, maintenant tout est centralisé.',
+        },
+        {
+          name: 'Fatima Benali',
+          role: 'Responsable financière — Association Espoir, Agadir',
+          text: 'Les rapports financiers prennent maintenant des minutes au lieu de journées. Excellent !',
+        },
+        {
+          name: 'Youssef El Hassani',
+          role: "Directeur — Association de l'eau, Tiznit",
+          text: "Le module de gestion d'eau est remarquable, le suivi des factures et relevés est devenu très simple.",
+        },
+      ],
+    },
+    faq: {
+      badge: 'FAQ',
+      title: 'Questions fréquentes',
+      items: [
+        {
+          q: 'Y a-t-il un essai gratuit ?',
+          a: 'Oui ! Vous bénéficiez de 15 jours gratuits complets, sans engagement et sans carte bancaire.',
+        },
+        {
+          q: 'Comment payer ?',
+          a: "Le paiement s'effectue par virement bancaire ou CashPlus. Après paiement, envoyez le reçu et votre compte est activé sous 24h.",
+        },
+        {
+          q: 'Est-ce facile à utiliser ?',
+          a: 'Oui, conçu pour être simple et intuitif. La plupart des utilisateurs commencent sans formation.',
+        },
+        {
+          q: 'Puis-je changer de pack plus tard ?',
+          a: 'Absolument ! Vous pouvez mettre à niveau ou changer de pack à tout moment.',
+        },
+        {
+          q: 'Mes données sont-elles sécurisées ?',
+          a: 'Oui, vos données sont chiffrées et protégées. Sauvegardes automatiques quotidiennes.',
+        },
+      ],
+    },
+    finalCta: {
+      title: "Commencez aujourd'hui et développez votre association",
+      subtitle: "Rejoignez des centaines d'associations qui font confiance à Jam3iyati",
+      cta: "Démarrer l'essai gratuit",
+      login: 'Se connecter',
+    },
+    footer: {
+      tagline: 'Plateforme digitale de gestion des associations marocaines',
+      rights: 'Tous droits réservés',
+      contact: 'Nous contacter',
+      privacy: 'Politique de confidentialité',
+      terms: "Conditions d'utilisation",
+    },
+  },
 };
 
 export default fr;

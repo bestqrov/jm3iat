@@ -28,6 +28,7 @@ import { CalendarPage } from './pages/calendar/CalendarPage';
 import { ActivityPage } from './pages/activity/ActivityPage';
 import { RecurringPage } from './pages/recurring/RecurringPage';
 import { PublicProfilePage } from './pages/public/PublicProfilePage';
+import { LandingPage } from './pages/landing/LandingPage';
 
 const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSuperAdmin } = useAuth();
@@ -47,6 +48,7 @@ const App: React.FC = () => {
           <AuthProvider>
             <Routes>
               {/* Public routes */}
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -59,7 +61,7 @@ const App: React.FC = () => {
 
               {/* Protected routes — with global sidebar + header */}
               <Route element={<Layout />}>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/home" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<WaterReaderRoute><DashboardPage /></WaterReaderRoute>} />
                 <Route path="/members" element={<WaterReaderRoute><MembersPage /></WaterReaderRoute>} />
                 <Route path="/administratifs" element={<WaterReaderRoute><AdministratifsPage /></WaterReaderRoute>} />
