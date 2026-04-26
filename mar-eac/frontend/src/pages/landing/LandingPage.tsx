@@ -4,12 +4,13 @@ import {
   Users, DollarSign, BarChart2, Droplets, Bus, Factory,
   CheckCircle, ChevronDown, Globe, Menu, X, ArrowRight,
   Star, Zap, Shield, TrendingUp, AlertCircle, LucideIcon,
-  Layers, FileText,
+  Layers, FileText, MapPin, Network, Scale, ClipboardList,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const iconMap: Record<string, LucideIcon> = {
   Users, DollarSign, BarChart2, Droplets, Bus, Factory, Layers, FileText,
+  MapPin, Network, Scale, ClipboardList,
 };
 
 export const LandingPage: React.FC = () => {
@@ -30,20 +31,28 @@ export const LandingPage: React.FC = () => {
 
   const features = isAr
     ? [
-        { icon: 'Users', title: 'إدارة الأعضاء', desc: 'سجل وتابع أعضاءك، انخراطاتهم، ومستحقاتهم بسهولة تامة' },
-        { icon: 'DollarSign', title: 'المالية', desc: 'تتبع الإيرادات والمصاريف وأنشئ تقارير مالية احترافية' },
-        { icon: 'BarChart2', title: 'التقارير', desc: 'تقارير تفصيلية وإحصائيات فورية عن نشاط جمعيتك' },
-        { icon: 'Droplets', title: 'إدارة الماء', desc: 'إدارة شبكة المياه، الفواتير، والقراءات بكل دقة' },
-        { icon: 'Bus', title: 'النقل المدرسي', desc: 'تتبع الحافلات، الطلاب، والاشتراكات في وقت واحد' },
-        { icon: 'Factory', title: 'الإنتاج والمبيعات', desc: 'إدارة الإنتاج والمبيعات والمخزون للجمعيات الإنتاجية' },
+        { icon: 'Users', title: 'إدارة الأعضاء', desc: 'سجل وتابع أعضاءك، انخراطاتهم، ومستحقاتهم بسهولة تامة', soon: false },
+        { icon: 'DollarSign', title: 'المالية', desc: 'تتبع الإيرادات والمصاريف وأنشئ تقارير مالية احترافية', soon: false },
+        { icon: 'BarChart2', title: 'التقارير', desc: 'تقارير تفصيلية وإحصائيات فورية عن نشاط جمعيتك', soon: false },
+        { icon: 'Droplets', title: 'إدارة الماء', desc: 'إدارة شبكة المياه، الفواتير، والقراءات بكل دقة', soon: false },
+        { icon: 'Bus', title: 'النقل المدرسي', desc: 'تتبع الحافلات، الطلاب، والاشتراكات في وقت واحد', soon: false },
+        { icon: 'Factory', title: 'الإنتاج والمبيعات', desc: 'إدارة الإنتاج والمبيعات والمخزون للجمعيات الإنتاجية', soon: false },
+        { icon: 'Network', title: 'الشراكات والاتفاقيات', desc: 'تدبير عقود الشراكة والاتفاقيات مع الجهات الخارجية', soon: true },
+        { icon: 'MapPin', title: 'الخرائط الميدانية (GIS)', desc: 'تتبع العمليات الميدانية وشبكة الماء على الخريطة', soon: true },
+        { icon: 'Scale', title: 'نصاب الجمع العام', desc: 'احتساب النصاب القانوني وإدارة تصويتات الجمع العام', soon: true },
+        { icon: 'ClipboardList', title: 'البطاقة التقنية للمشاريع', desc: 'توليد البطاقة التقنية لأي مشروع تلقائياً', soon: true },
       ]
     : [
-        { icon: 'Users', title: 'Gestion des membres', desc: 'Enregistrez et suivez vos membres, cotisations et adhésions facilement' },
-        { icon: 'DollarSign', title: 'Finances', desc: 'Suivez revenus et dépenses, générez des rapports financiers professionnels' },
-        { icon: 'BarChart2', title: 'Rapports', desc: 'Rapports détaillés et statistiques instantanées sur votre activité' },
-        { icon: 'Droplets', title: "Gestion de l'eau", desc: "Gérez le réseau d'eau, factures et relevés avec précision" },
-        { icon: 'Bus', title: 'Transport scolaire', desc: 'Suivez bus, élèves et abonnements en temps réel' },
-        { icon: 'Factory', title: 'Production & Ventes', desc: 'Gérez production, ventes et stocks pour les associations productives' },
+        { icon: 'Users', title: 'Gestion des membres', desc: 'Enregistrez et suivez vos membres, cotisations et adhésions facilement', soon: false },
+        { icon: 'DollarSign', title: 'Finances', desc: 'Suivez revenus et dépenses, générez des rapports financiers professionnels', soon: false },
+        { icon: 'BarChart2', title: 'Rapports', desc: 'Rapports détaillés et statistiques instantanées sur votre activité', soon: false },
+        { icon: 'Droplets', title: "Gestion de l'eau", desc: "Gérez le réseau d'eau, factures et relevés avec précision", soon: false },
+        { icon: 'Bus', title: 'Transport scolaire', desc: 'Suivez bus, élèves et abonnements en temps réel', soon: false },
+        { icon: 'Factory', title: 'Production & Ventes', desc: 'Gérez production, ventes et stocks pour les associations productives', soon: false },
+        { icon: 'Network', title: 'Partenariats & conventions', desc: 'Gérez contrats de partenariat et conventions avec organismes externes', soon: true },
+        { icon: 'MapPin', title: 'Cartographie terrain (GIS)', desc: "Suivez opérations terrain et réseau d'eau sur carte interactive", soon: true },
+        { icon: 'Scale', title: "Quorum de l'Assemblée Générale", desc: 'Calcul du quorum légal et gestion des votes en assemblée générale', soon: true },
+        { icon: 'ClipboardList', title: 'Fiche technique de projet', desc: 'Génération automatique de la fiche technique pour tout projet', soon: true },
       ];
 
   const pricingPacks = isAr
@@ -52,7 +61,7 @@ export const LandingPage: React.FC = () => {
           key: 'REGULAR',
           icon: 'FileText',
           name: 'جمعية عادية',
-          price: '99',
+          price: '50',
           desc: 'الأعضاء، الاجتماعات، المالية، الوثائق',
           features: ['إدارة الأعضاء', 'الاجتماعات والمحاضر', 'المالية والفواتير', 'الوثائق والتقارير'],
           popular: false,
@@ -62,7 +71,7 @@ export const LandingPage: React.FC = () => {
           key: 'PROJECTS',
           icon: 'BarChart2',
           name: 'جمعية فيها مشاريع',
-          price: '149',
+          price: '100',
           desc: 'الوحدات الأساسية + إدارة المشاريع والطلبات',
           features: ['كل مميزات الجمعية العادية', 'إدارة المشاريع', 'متابعة الطلبات', 'تقارير المشاريع'],
           popular: false,
@@ -72,7 +81,7 @@ export const LandingPage: React.FC = () => {
           key: 'WATER',
           icon: 'Droplets',
           name: 'جمعية الماء',
-          price: '199',
+          price: '150',
           desc: 'الوحدات الأساسية + إدارة شبكة الماء',
           features: ['كل مميزات الجمعية العادية', 'إدارة شبكة الماء', 'قراءة العدادات', 'فواتير الماء'],
           popular: false,
@@ -82,31 +91,11 @@ export const LandingPage: React.FC = () => {
           key: 'PRODUCTIVE',
           icon: 'Factory',
           name: 'جمعية إنتاجية',
-          price: '199',
+          price: '200',
           desc: 'الوحدات الأساسية + الإنتاج والمبيعات والعملاء والفعاليات',
           features: ['كل مميزات الجمعية العادية', 'إدارة الإنتاج', 'المبيعات والعملاء', 'الفعاليات'],
           popular: true,
           color: 'green',
-        },
-        {
-          key: 'PRODUCTIVE_WATER',
-          icon: 'Layers',
-          name: 'جمعية إنتاجية مع الماء',
-          price: '299',
-          desc: 'جميع الوحدات: الإنتاج + الماء + المشاريع',
-          features: ['جميع الوحدات', 'الإنتاج + الماء', 'المشاريع والطلبات', 'تقارير شاملة'],
-          popular: false,
-          color: 'purple',
-        },
-        {
-          key: 'TRANSPORT',
-          icon: 'Bus',
-          name: 'النقل المدرسي',
-          price: '179',
-          desc: 'الأعضاء + المالية + إدارة الحافلات والتلاميذ والاشتراكات',
-          features: ['إدارة الأعضاء والمالية', 'إدارة الحافلات', 'تسجيل التلاميذ', 'الاشتراكات والمدفوعات'],
-          popular: false,
-          color: 'orange',
         },
       ]
     : [
@@ -114,7 +103,7 @@ export const LandingPage: React.FC = () => {
           key: 'REGULAR',
           icon: 'FileText',
           name: 'Association classique',
-          price: '99',
+          price: '50',
           desc: 'Membres, réunions, finances, documents',
           features: ['Gestion des membres', 'Réunions & procès-verbaux', 'Finances & factures', 'Documents & rapports'],
           popular: false,
@@ -124,7 +113,7 @@ export const LandingPage: React.FC = () => {
           key: 'PROJECTS',
           icon: 'BarChart2',
           name: 'Association avec projets',
-          price: '149',
+          price: '100',
           desc: 'Modules de base + gestion de projets et demandes',
           features: ['Tout le pack classique', 'Gestion de projets', 'Suivi des demandes', 'Rapports de projets'],
           popular: false,
@@ -134,7 +123,7 @@ export const LandingPage: React.FC = () => {
           key: 'WATER',
           icon: 'Droplets',
           name: "Association de l'eau",
-          price: '199',
+          price: '150',
           desc: "Modules de base + gestion du réseau d'eau",
           features: ['Tout le pack classique', "Réseau d'eau", 'Relevés de compteurs', 'Factures eau'],
           popular: false,
@@ -144,31 +133,11 @@ export const LandingPage: React.FC = () => {
           key: 'PRODUCTIVE',
           icon: 'Factory',
           name: 'Association productive',
-          price: '199',
+          price: '200',
           desc: 'Modules de base + production, ventes, clients, événements',
           features: ['Tout le pack classique', 'Gestion de production', 'Ventes & clients', 'Événements'],
           popular: true,
           color: 'green',
-        },
-        {
-          key: 'PRODUCTIVE_WATER',
-          icon: 'Layers',
-          name: 'Association productive + eau',
-          price: '299',
-          desc: 'Tous les modules : production, eau, projets',
-          features: ['Tous les modules', 'Production + eau', 'Projets & demandes', 'Rapports complets'],
-          popular: false,
-          color: 'purple',
-        },
-        {
-          key: 'TRANSPORT',
-          icon: 'Bus',
-          name: 'Transport scolaire',
-          price: '179',
-          desc: 'Membres + finances + véhicules, élèves, abonnements',
-          features: ['Membres & finances', 'Gestion des bus', 'Inscriptions élèves', 'Abonnements & paiements'],
-          popular: false,
-          color: 'orange',
         },
       ];
 
@@ -202,13 +171,15 @@ export const LandingPage: React.FC = () => {
     ? [
         { q: 'هل هناك تجربة مجانية؟', a: 'نعم! تحصل على 15 يوماً مجانية كاملة بدون التزام وبدون بطاقة ائتمانية.' },
         { q: 'كيف يتم الدفع؟', a: 'الدفع يتم عبر تحويل بنكي أو CashPlus. بعد الدفع ترسل الوصل ويتم التفعيل في اقل من 4 ساعات.' },
+        { q: 'ما هي مدة الاشتراك؟', a: 'مدة الاشتراك 3 سنوات. ستتلقى تنبيهاً قبل شهر من انتهاء صلاحية اشتراكك لتجديده في الوقت المناسب.' },
         { q: 'هل النظام سهل الاستخدام؟', a: 'نعم، تم تصميمه خصيصاً ليكون بسيطاً ومريحاً. معظم المستخدمين يبدأون بدون تدريب.' },
         { q: 'هل يمكنني تغيير الباقة لاحقاً؟', a: 'بالتأكيد! يمكنك الترقية أو تغيير الباقة في أي وقت.' },
         { q: 'هل بياناتي آمنة؟', a: 'نعم، بياناتك مشفرة ومحمية. نسخ احتياطية تلقائية يومية.' },
       ]
     : [
         { q: 'Y a-t-il un essai gratuit ?', a: 'Oui ! Vous bénéficiez de 15 jours gratuits complets, sans engagement et sans carte bancaire.' },
-        { q: 'Comment payer ?', a: "Le paiement s'effectue par virement bancaire ou CashPlus. Après paiement, envoyez le reçu et votre compte est activé sous 24h." },
+        { q: 'Comment payer ?', a: "Le paiement s'effectue par virement bancaire ou CashPlus. Après paiement, envoyez le reçu et votre compte est activé en moins de 4 heures." },
+        { q: "Quelle est la durée de l'abonnement ?", a: "L'abonnement est valable 3 ans. Vous recevrez une notification un mois avant l'expiration pour renouveler en temps voulu." },
         { q: 'Est-ce facile à utiliser ?', a: 'Oui, conçu pour être simple et intuitif. La plupart des utilisateurs commencent sans formation.' },
         { q: 'Puis-je changer de pack plus tard ?', a: 'Absolument ! Vous pouvez mettre à niveau ou changer de pack à tout moment.' },
         { q: 'Mes données sont-elles sécurisées ?', a: 'Oui, vos données sont chiffrées et protégées. Sauvegardes automatiques quotidiennes.' },
@@ -524,7 +495,12 @@ export const LandingPage: React.FC = () => {
                 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
               ];
               return (
-                <div key={i} className="group bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+                <div key={i} className={`relative group bg-white dark:bg-gray-800 rounded-2xl p-6 border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${feature.soon ? 'border-dashed border-gray-200 dark:border-gray-600 opacity-80' : 'border-gray-100 dark:border-gray-700'}`}>
+                  {feature.soon && (
+                    <span className="absolute top-3 end-3 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                      {isAr ? 'قريباً' : 'Bientôt'}
+                    </span>
+                  )}
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${colors[i % colors.length]}`}>
                     <Icon size={22} />
                   </div>
@@ -576,11 +552,19 @@ export const LandingPage: React.FC = () => {
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               {isAr ? 'باقة عروض تناسب نوع و حجم جمعيتك' : 'Un pack adapté à votre type d\'association'}
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto mb-4">
               {isAr
                 ? 'اختر الباقة المناسبة — تجربة مجانية 15 يوم بدون التزام'
                 : 'Choisissez votre pack — 15 jours d\'essai gratuit sans engagement'}
             </p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-200 dark:border-primary-800">
+                <Shield size={12} /> {isAr ? 'مدة الاشتراك: 3 سنوات' : 'Durée d\'abonnement : 3 ans'}
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-200 dark:border-amber-800">
+                <Zap size={12} /> {isAr ? 'تنبيه تجديد قبل شهر' : 'Rappel renouvellement 1 mois avant'}
+              </span>
+            </div>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
@@ -626,7 +610,7 @@ export const LandingPage: React.FC = () => {
                     <div className={`flex items-baseline gap-1 mb-5 ${isAr ? 'flex-row-reverse justify-end' : ''}`}>
                       <span className="text-3xl font-extrabold text-gray-900 dark:text-white">{pack.price}</span>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {isAr ? ' د.م/شهر' : ' MAD/mois'}
+                        {isAr ? ' د.م/سنة' : ' MAD/an'}
                       </span>
                     </div>
 
@@ -657,8 +641,27 @@ export const LandingPage: React.FC = () => {
             })}
           </div>
 
+          {/* Transport add-on */}
+          <div className="mt-8 max-w-2xl mx-auto bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-2xl p-5">
+            <div className={`flex items-start gap-3 ${isAr ? 'flex-row-reverse text-end' : ''}`}>
+              <div className="w-9 h-9 bg-orange-100 dark:bg-orange-900/40 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Bus size={18} className="text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                  {isAr ? '🚌 النقل المدرسي — خيار إضافي لجميع الباقات' : '🚌 Transport scolaire — option disponible pour tous les packs'}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {isAr
+                    ? 'إدارة الحافلات والتلاميذ والاشتراكات — يُضاف على أي باقة حسب الطلب'
+                    : 'Gestion des bus, élèves et abonnements — s\'ajoute à tout pack sur demande'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* After-trial note */}
-          <div className="mt-10 max-w-lg mx-auto bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-5">
+          <div className="mt-4 max-w-2xl mx-auto bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-5">
             <div className={`flex items-start gap-3 ${isAr ? 'flex-row-reverse text-end' : ''}`}>
               <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Shield size={15} className="text-primary-600 dark:text-primary-400" />
@@ -669,8 +672,8 @@ export const LandingPage: React.FC = () => {
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {isAr
-                    ? 'يمكن إلغاء الاشتراك في أي وقت · الدفع عبر تحويل بنكي أو CashPlus'
-                    : 'Annulation possible à tout moment · Paiement par virement bancaire ou CashPlus'}
+                    ? 'الاشتراك لمدة 3 سنوات · تنبيه تجديد قبل شهر من الانتهاء · الدفع عبر تحويل بنكي أو CashPlus'
+                    : 'Abonnement d\'une durée de 3 ans · Rappel de renouvellement 1 mois avant expiration · Paiement par virement ou CashPlus'}
                 </p>
               </div>
             </div>
@@ -824,7 +827,7 @@ export const LandingPage: React.FC = () => {
               <div>
                 <div className="font-bold text-white">Jam3iyati</div>
                 <div className="text-xs text-gray-500">
-                  {isAr ? 'منصة رقمية لإدارة الجمعيات المغربية' : 'Plateforme digitale de gestion des associations marocaines'}
+                  {isAr ? 'تدبير الجمعيات والتعاونيات المغربية' : 'Tadbir — Gestion des associations et coopératives marocaines'}
                 </div>
               </div>
             </div>
