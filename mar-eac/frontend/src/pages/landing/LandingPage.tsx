@@ -310,68 +310,99 @@ export const LandingPage: React.FC = () => {
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -start-40 w-80 h-80 bg-primary-200/40 dark:bg-primary-900/20 rounded-full blur-3xl" />
           <div className="absolute -bottom-40 -end-40 w-96 h-96 bg-blue-200/40 dark:bg-blue-900/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-100/20 dark:bg-primary-900/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300 text-sm font-medium px-4 py-2 rounded-full mb-8">
-              <Zap size={14} className="text-primary-500" />
-              {isAr ? 'تجربة مجانية 15 يوم — بدون بطاقة ائتمانية' : 'Essai gratuit 15 jours — sans carte bancaire'}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+          <div className={`flex flex-col lg:flex-row items-center gap-12 ${isAr ? 'lg:flex-row-reverse' : ''}`}>
+
+            {/* ── Left / text column ── */}
+            <div className={`flex-1 text-center ${isAr ? 'lg:text-right' : 'lg:text-left'}`}>
+
+              {/* Badge */}
+              <div className={`inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300 text-sm font-medium px-4 py-2 rounded-full mb-8 ${isAr ? 'flex-row-reverse' : ''}`}>
+                <Zap size={14} className="text-primary-500" />
+                {isAr ? 'تجربة مجانية 15 يوم — بدون بطاقة ائتمانية' : 'Essai gratuit 15 jours — sans carte bancaire'}
+              </div>
+
+              {/* Title */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight mb-6">
+                {isAr ? (
+                  <>
+                    سير جمعيتك بسهولة مع{' '}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-600">جمعيتي</span>
+                  </>
+                ) : (
+                  <>
+                    Gérez votre association avec{' '}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-600">Jam3iyati</span>
+                  </>
+                )}
+              </h1>
+
+              {/* Subtitle */}
+              <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-xl mb-10 leading-relaxed mx-auto lg:mx-0">
+                {isAr
+                  ? 'منصة رقمية لإدارة الأعضاء، المالية، والتقارير بكل بساطة'
+                  : 'Une plateforme digitale pour gérer membres, finances et rapports en toute simplicité'}
+              </p>
+
+              {/* CTA Buttons */}
+              <div className={`flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-12 ${isAr ? 'sm:flex-row-reverse lg:justify-end' : ''}`}>
+                <Link
+                  to="/register"
+                  className="group flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-base shadow-lg shadow-primary-200 dark:shadow-primary-900/30 hover:shadow-xl transition-all duration-200"
+                >
+                  {isAr ? 'ابدأ تجربة مجانية (15 يوم)' : 'Essai gratuit (15 jours)'}
+                  <ArrowRight size={18} className={`transition-transform group-hover:translate-x-1 ${isAr ? 'rotate-180' : ''}`} />
+                </Link>
+                <a
+                  href="#features"
+                  className="flex items-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-7 py-3.5 rounded-xl font-semibold text-base border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  {isAr ? 'شاهد العرض' : 'Voir la démo'}
+                </a>
+              </div>
+
+              {/* Stats */}
+              <div className={`grid grid-cols-3 gap-4 max-w-sm mx-auto lg:mx-0 ${isAr ? 'lg:me-0' : ''}`}>
+                {[
+                  { value: '+200', label: isAr ? 'جمعية نشطة' : 'Associations actives' },
+                  { value: '15 يوم', label: isAr ? 'مجاناً' : 'Jours gratuits' },
+                  { value: '100%', label: isAr ? 'دعم تقني' : 'Support' },
+                ].map((s, i) => (
+                  <div key={i} className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-3 border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+                    <div className="text-lg font-bold text-primary-600 dark:text-primary-400">{s.value}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Title */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight mb-6">
-              {isAr ? (
-                <>
-                  سير جمعيتك بسهولة مع{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-600">جمعيتي</span>
-                </>
-              ) : (
-                <>
-                  Gérez votre association avec{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-600">Jam3iyati</span>
-                </>
-              )}
-            </h1>
-
-            {/* Subtitle */}
-            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-              {isAr
-                ? 'منصة رقمية لإدارة الأعضاء، المالية، والتقارير بكل بساطة'
-                : 'Une plateforme digitale pour gérer membres, finances et rapports en toute simplicité'}
-            </p>
-
-            {/* CTA Buttons */}
-            <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 ${isAr ? 'sm:flex-row-reverse' : ''}`}>
-              <Link
-                to="/register"
-                className="group flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-base shadow-lg shadow-primary-200 dark:shadow-primary-900/30 hover:shadow-xl transition-all duration-200"
-              >
-                {isAr ? 'ابدأ تجربة مجانية (15 يوم)' : 'Essai gratuit (15 jours)'}
-                <ArrowRight size={18} className={`transition-transform group-hover:translate-x-1 ${isAr ? 'rotate-180' : ''}`} />
-              </Link>
-              <a
-                href="#features"
-                className="flex items-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-7 py-3.5 rounded-xl font-semibold text-base border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                {isAr ? 'شاهد العرض' : 'Voir la démo'}
-              </a>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
-              {[
-                { value: '+200', label: isAr ? 'جمعية نشطة' : 'Associations actives' },
-                { value: '15', label: isAr ? 'يوم مجاناً' : 'Jours gratuits' },
-                { value: '100%', label: isAr ? 'دعم تقني' : 'Support technique' },
-              ].map((s, i) => (
-                <div key={i} className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{s.value}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.label}</div>
+            {/* ── Right / banner image column ── */}
+            <div className="flex-1 w-full max-w-2xl lg:max-w-none">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary-200/50 dark:shadow-primary-900/30 border border-white/60 dark:border-gray-700">
+                <img
+                  src="/hero-banner.png"
+                  alt={isAr ? 'لوحة تحكم جمعيتي' : 'Tableau de bord Jam3iyati'}
+                  className="w-full h-auto object-cover"
+                  onError={e => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.className = 'relative rounded-2xl overflow-hidden bg-gradient-to-br from-primary-100 to-blue-100 dark:from-primary-900/30 dark:to-blue-900/30 border border-primary-200 dark:border-primary-800 flex items-center justify-center min-h-72';
+                      parent.innerHTML = `<div class="text-center p-8"><div class="text-6xl mb-4">🏠</div><p class="text-primary-600 dark:text-primary-400 font-semibold">${isAr ? 'لوحة تحكم جمعيتي' : 'Tableau de bord Jam3iyati'}</p></div>`;
+                    }
+                  }}
+                />
+                {/* floating trial badge over image */}
+                <div className="absolute bottom-4 start-4">
+                  <div className="flex items-center gap-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm text-primary-700 dark:text-primary-300 text-xs font-bold px-3 py-2 rounded-xl shadow-lg border border-primary-100 dark:border-primary-800">
+                    <Zap size={12} className="text-primary-500" />
+                    {isAr ? 'جرب مجاناً 15 يوم' : 'Essai gratuit 15 jours'}
+                  </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </div>
