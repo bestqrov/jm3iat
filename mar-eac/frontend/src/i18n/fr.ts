@@ -1312,19 +1312,19 @@ const fr = {
       packs: [
         {
           name: 'Basic',
-          price: '299',
+          price: '50',
           desc: 'Idéal pour les petites associations',
           features: ["Jusqu'à 50 membres", 'Modules de base', 'Rapports simples', 'Support par email'],
         },
         {
           name: 'Standard',
-          price: '599',
+          price: '299',
           desc: 'Pour les associations moyennes',
           features: ["Jusqu'à 200 membres", 'Tous les modules', 'Rapports avancés', 'Support prioritaire', 'Sauvegardes auto'],
         },
         {
           name: 'Pro',
-          price: '999',
+          price: '499',
           desc: 'Pour les grandes associations',
           features: ['Membres illimités', 'Tous les modules', 'Rapports personnalisés', 'Support 24/7 dédié', 'Formation sur site'],
         },

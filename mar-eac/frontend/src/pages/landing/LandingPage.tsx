@@ -49,21 +49,21 @@ export const LandingPage: React.FC = () => {
     ? [
         {
           name: 'Basic',
-          price: '299',
+          price: '50',
           desc: 'مثالي للجمعيات الصغيرة',
           features: ['حتى 50 عضو', 'الوحدات الأساسية', 'تقارير بسيطة', 'دعم بالبريد'],
           popular: false,
         },
         {
           name: 'Standard',
-          price: '599',
+          price: '299',
           desc: 'للجمعيات المتوسطة',
           features: ['حتى 200 عضو', 'جميع الوحدات', 'تقارير متقدمة', 'دعم أولوي', 'نسخ احتياطية'],
           popular: true,
         },
         {
           name: 'Pro',
-          price: '999',
+          price: '499',
           desc: 'للجمعيات الكبيرة والمعقدة',
           features: ['أعضاء غير محدودين', 'جميع الوحدات', 'تقارير مخصصة', 'دعم مخصص 24/7', 'تدريب ميداني'],
           popular: false,
@@ -72,21 +72,21 @@ export const LandingPage: React.FC = () => {
     : [
         {
           name: 'Basic',
-          price: '299',
+          price: '50',
           desc: 'Idéal pour les petites associations',
           features: ["Jusqu'à 50 membres", 'Modules de base', 'Rapports simples', 'Support par email'],
           popular: false,
         },
         {
           name: 'Standard',
-          price: '599',
+          price: '299',
           desc: 'Pour les associations moyennes',
           features: ["Jusqu'à 200 membres", 'Tous les modules', 'Rapports avancés', 'Support prioritaire', 'Sauvegardes auto'],
           popular: true,
         },
         {
           name: 'Pro',
-          price: '999',
+          price: '499',
           desc: 'Pour les grandes associations',
           features: ['Membres illimités', 'Tous les modules', 'Rapports personnalisés', 'Support 24/7 dédié', 'Formation sur site'],
           popular: false,
