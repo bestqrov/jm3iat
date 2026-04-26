@@ -314,10 +314,10 @@ export const LandingPage: React.FC = () => {
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-0 text-center">
 
-          {/* ── Banner image — full width, top of hero ── */}
+          {/* ── Banner image — switches by language ── */}
           <div className="w-full rounded-2xl overflow-hidden shadow-2xl shadow-primary-200/40 dark:shadow-primary-900/30 border border-white/70 dark:border-gray-700 mb-10">
             <img
-              src="/hero-banner.jpeg"
+              src={isAr ? '/hero-banner.jpeg' : '/hero-banner-fr.jpeg'}
               alt={isAr ? 'منصة جمعيتي — لوحة التحكم' : 'Jam3iyati — Tableau de bord'}
               className="w-full h-auto object-cover block"
             />
