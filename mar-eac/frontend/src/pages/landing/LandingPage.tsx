@@ -858,9 +858,13 @@ export const LandingPage: React.FC = () => {
                 {isAr ? 'تواصل معنا' : 'Nous contacter'}
               </a>
               <span className="text-gray-700">·</span>
-              <span>{isAr ? 'سياسة الخصوصية' : 'Politique de confidentialité'}</span>
+              <Link to="/privacy" className="hover:text-gray-300 transition-colors">
+                {isAr ? 'سياسة الخصوصية' : 'Politique de confidentialité'}
+              </Link>
               <span className="text-gray-700">·</span>
-              <span>{isAr ? 'شروط الاستخدام' : "Conditions d'utilisation"}</span>
+              <Link to="/terms" className="hover:text-gray-300 transition-colors">
+                {isAr ? 'شروط الاستخدام' : "Conditions d'utilisation"}
+              </Link>
             </div>
 
             <div className="text-xs text-gray-600">

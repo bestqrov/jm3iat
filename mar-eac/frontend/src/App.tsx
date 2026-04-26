@@ -29,6 +29,8 @@ import { ActivityPage } from './pages/activity/ActivityPage';
 import { RecurringPage } from './pages/recurring/RecurringPage';
 import { PublicProfilePage } from './pages/public/PublicProfilePage';
 import { LandingPage } from './pages/landing/LandingPage';
+import { PrivacyPage } from './pages/legal/PrivacyPage';
+import { TermsPage } from './pages/legal/TermsPage';
 
 const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSuperAdmin } = useAuth();
@@ -53,6 +55,8 @@ const App: React.FC = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/p/:slug" element={<PublicProfilePage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
 
               {/* SuperAdmin — standalone layout (no global sidebar) */}
               <Route path="/superadmin" element={
