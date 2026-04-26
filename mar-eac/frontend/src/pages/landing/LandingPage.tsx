@@ -4,11 +4,12 @@ import {
   Users, DollarSign, BarChart2, Droplets, Bus, Factory,
   CheckCircle, ChevronDown, Globe, Menu, X, ArrowRight,
   Star, Zap, Shield, TrendingUp, AlertCircle, LucideIcon,
+  Layers, FileText,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const iconMap: Record<string, LucideIcon> = {
-  Users, DollarSign, BarChart2, Droplets, Bus, Factory,
+  Users, DollarSign, BarChart2, Droplets, Bus, Factory, Layers, FileText,
 };
 
 export const LandingPage: React.FC = () => {
@@ -48,48 +49,126 @@ export const LandingPage: React.FC = () => {
   const pricingPacks = isAr
     ? [
         {
-          name: 'Basic',
-          price: '50',
-          desc: 'مثالي للجمعيات الصغيرة',
-          features: ['حتى 50 عضو', 'الوحدات الأساسية', 'تقارير بسيطة', 'دعم بالبريد'],
+          key: 'REGULAR',
+          icon: 'FileText',
+          name: 'جمعية عادية',
+          price: '99',
+          desc: 'الأعضاء، الاجتماعات، المالية، الوثائق',
+          features: ['إدارة الأعضاء', 'الاجتماعات والمحاضر', 'المالية والفواتير', 'الوثائق والتقارير'],
           popular: false,
+          color: 'blue',
         },
         {
-          name: 'Standard',
-          price: '299',
-          desc: 'للجمعيات المتوسطة',
-          features: ['حتى 200 عضو', 'جميع الوحدات', 'تقارير متقدمة', 'دعم أولوي', 'نسخ احتياطية'],
+          key: 'PROJECTS',
+          icon: 'BarChart2',
+          name: 'جمعية فيها مشاريع',
+          price: '149',
+          desc: 'الوحدات الأساسية + إدارة المشاريع والطلبات',
+          features: ['كل مميزات الجمعية العادية', 'إدارة المشاريع', 'متابعة الطلبات', 'تقارير المشاريع'],
+          popular: false,
+          color: 'indigo',
+        },
+        {
+          key: 'WATER',
+          icon: 'Droplets',
+          name: 'جمعية الماء',
+          price: '199',
+          desc: 'الوحدات الأساسية + إدارة شبكة الماء',
+          features: ['كل مميزات الجمعية العادية', 'إدارة شبكة الماء', 'قراءة العدادات', 'فواتير الماء'],
+          popular: false,
+          color: 'cyan',
+        },
+        {
+          key: 'PRODUCTIVE',
+          icon: 'Factory',
+          name: 'جمعية إنتاجية',
+          price: '199',
+          desc: 'الوحدات الأساسية + الإنتاج والمبيعات والعملاء والفعاليات',
+          features: ['كل مميزات الجمعية العادية', 'إدارة الإنتاج', 'المبيعات والعملاء', 'الفعاليات'],
           popular: true,
+          color: 'green',
         },
         {
-          name: 'Pro',
-          price: '499',
-          desc: 'للجمعيات الكبيرة والمعقدة',
-          features: ['أعضاء غير محدودين', 'جميع الوحدات', 'تقارير مخصصة', 'دعم مخصص 24/7', 'تدريب ميداني'],
+          key: 'PRODUCTIVE_WATER',
+          icon: 'Layers',
+          name: 'جمعية إنتاجية مع الماء',
+          price: '299',
+          desc: 'جميع الوحدات: الإنتاج + الماء + المشاريع',
+          features: ['جميع الوحدات', 'الإنتاج + الماء', 'المشاريع والطلبات', 'تقارير شاملة'],
           popular: false,
+          color: 'purple',
+        },
+        {
+          key: 'TRANSPORT',
+          icon: 'Bus',
+          name: 'النقل المدرسي',
+          price: '179',
+          desc: 'الأعضاء + المالية + إدارة الحافلات والتلاميذ والاشتراكات',
+          features: ['إدارة الأعضاء والمالية', 'إدارة الحافلات', 'تسجيل التلاميذ', 'الاشتراكات والمدفوعات'],
+          popular: false,
+          color: 'orange',
         },
       ]
     : [
         {
-          name: 'Basic',
-          price: '50',
-          desc: 'Idéal pour les petites associations',
-          features: ["Jusqu'à 50 membres", 'Modules de base', 'Rapports simples', 'Support par email'],
+          key: 'REGULAR',
+          icon: 'FileText',
+          name: 'Association classique',
+          price: '99',
+          desc: 'Membres, réunions, finances, documents',
+          features: ['Gestion des membres', 'Réunions & procès-verbaux', 'Finances & factures', 'Documents & rapports'],
           popular: false,
+          color: 'blue',
         },
         {
-          name: 'Standard',
-          price: '299',
-          desc: 'Pour les associations moyennes',
-          features: ["Jusqu'à 200 membres", 'Tous les modules', 'Rapports avancés', 'Support prioritaire', 'Sauvegardes auto'],
+          key: 'PROJECTS',
+          icon: 'BarChart2',
+          name: 'Association avec projets',
+          price: '149',
+          desc: 'Modules de base + gestion de projets et demandes',
+          features: ['Tout le pack classique', 'Gestion de projets', 'Suivi des demandes', 'Rapports de projets'],
+          popular: false,
+          color: 'indigo',
+        },
+        {
+          key: 'WATER',
+          icon: 'Droplets',
+          name: "Association de l'eau",
+          price: '199',
+          desc: "Modules de base + gestion du réseau d'eau",
+          features: ['Tout le pack classique', "Réseau d'eau", 'Relevés de compteurs', 'Factures eau'],
+          popular: false,
+          color: 'cyan',
+        },
+        {
+          key: 'PRODUCTIVE',
+          icon: 'Factory',
+          name: 'Association productive',
+          price: '199',
+          desc: 'Modules de base + production, ventes, clients, événements',
+          features: ['Tout le pack classique', 'Gestion de production', 'Ventes & clients', 'Événements'],
           popular: true,
+          color: 'green',
         },
         {
-          name: 'Pro',
-          price: '499',
-          desc: 'Pour les grandes associations',
-          features: ['Membres illimités', 'Tous les modules', 'Rapports personnalisés', 'Support 24/7 dédié', 'Formation sur site'],
+          key: 'PRODUCTIVE_WATER',
+          icon: 'Layers',
+          name: 'Association productive + eau',
+          price: '299',
+          desc: 'Tous les modules : production, eau, projets',
+          features: ['Tous les modules', 'Production + eau', 'Projets & demandes', 'Rapports complets'],
           popular: false,
+          color: 'purple',
+        },
+        {
+          key: 'TRANSPORT',
+          icon: 'Bus',
+          name: 'Transport scolaire',
+          price: '179',
+          desc: 'Membres + finances + véhicules, élèves, abonnements',
+          features: ['Membres & finances', 'Gestion des bus', 'Inscriptions élèves', 'Abonnements & paiements'],
+          popular: false,
+          color: 'orange',
         },
       ];
 
@@ -488,70 +567,105 @@ export const LandingPage: React.FC = () => {
               {isAr ? 'الأسعار' : 'Tarifs'}
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              {isAr ? 'باقات تناسب كل جمعية' : 'Des packs pour chaque association'}
+              {isAr ? 'باقة تناسب نوع جمعيتك' : 'Un pack adapté à votre type d\'association'}
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
-              {isAr ? 'ادفع فقط عبر تحويل بنكي أو CashPlus — بدون رسوم خفية' : 'Paiement via virement bancaire ou CashPlus — sans frais cachés'}
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+              {isAr
+                ? 'اختر الباقة المناسبة — تجربة مجانية 15 يوم بدون التزام'
+                : 'Choisissez votre pack — 15 jours d\'essai gratuit sans engagement'}
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {pricingPacks.map((pack, i) => (
-              <div
-                key={i}
-                className={`relative rounded-2xl p-7 border transition-all duration-200 ${pack.popular
-                  ? 'bg-primary-600 border-primary-600 text-white shadow-2xl shadow-primary-200 dark:shadow-primary-900/40 scale-105'
-                  : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg'
-                }`}
-              >
-                {pack.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
-                      {isAr ? 'الأكثر طلباً' : 'Le plus populaire'}
-                    </span>
-                  </div>
-                )}
-
-                <div className={`text-sm font-semibold mb-1 ${pack.popular ? 'text-primary-200' : 'text-gray-500 dark:text-gray-400'}`}>
-                  {pack.name}
-                </div>
-                <div className={`text-sm mb-4 ${pack.popular ? 'text-primary-200' : 'text-gray-500 dark:text-gray-400'}`}>
-                  {pack.desc}
-                </div>
-                <div className={`mb-6 ${pack.popular ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                  <span className="text-4xl font-extrabold">{pack.price}</span>
-                  <span className={`text-sm ms-1 ${pack.popular ? 'text-primary-200' : 'text-gray-500'}`}>
-                    {isAr ? ' درهم / سنة' : ' MAD / an'}
-                  </span>
-                </div>
-
-                <ul className="space-y-2.5 mb-8">
-                  {pack.features.map((f, j) => (
-                    <li key={j} className={`flex items-center gap-2 text-sm ${pack.popular ? 'text-primary-100' : 'text-gray-600 dark:text-gray-400'}`}>
-                      <CheckCircle size={15} className={pack.popular ? 'text-primary-300' : 'text-green-500'} />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  to="/register"
-                  className={`block text-center py-3 rounded-xl font-semibold text-sm transition-all ${pack.popular
-                    ? 'bg-white text-primary-700 hover:bg-primary-50'
-                    : 'bg-primary-600 text-white hover:bg-primary-700'
-                  }`}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {pricingPacks.map((pack, i) => {
+              const Icon = iconMap[pack.icon] || FileText;
+              const colorMap: Record<string, { icon: string; badge: string; border: string }> = {
+                blue:   { icon: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400', badge: 'bg-blue-600', border: 'border-blue-200 dark:border-blue-800' },
+                indigo: { icon: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400', badge: 'bg-indigo-600', border: 'border-indigo-200 dark:border-indigo-800' },
+                cyan:   { icon: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400', badge: 'bg-cyan-600', border: 'border-cyan-200 dark:border-cyan-800' },
+                green:  { icon: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400', badge: 'bg-green-600', border: 'border-green-200 dark:border-green-800' },
+                purple: { icon: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400', badge: 'bg-purple-600', border: 'border-purple-200 dark:border-purple-800' },
+                orange: { icon: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400', badge: 'bg-orange-600', border: 'border-orange-200 dark:border-orange-800' },
+              };
+              const c = colorMap[pack.color] || colorMap.blue;
+              return (
+                <div
+                  key={i}
+                  className={`relative flex flex-col rounded-2xl border-2 transition-all duration-200 overflow-hidden ${
+                    pack.popular
+                      ? `${c.border} shadow-xl`
+                      : 'border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg hover:-translate-y-0.5'
+                  } bg-white dark:bg-gray-800`}
                 >
-                  {isAr ? 'ابدأ مجاناً' : 'Commencer gratuitement'}
-                </Link>
-              </div>
-            ))}
+                  {pack.popular && (
+                    <div className={`${c.badge} text-white text-xs font-bold text-center py-1.5 tracking-wide`}>
+                      {isAr ? '⭐ الأكثر طلباً' : '⭐ Le plus populaire'}
+                    </div>
+                  )}
+
+                  <div className="p-6 flex flex-col flex-1">
+                    {/* Header */}
+                    <div className={`flex items-center justify-between mb-4 ${isAr ? 'flex-row-reverse' : ''}`}>
+                      <div>
+                        <h3 className="font-bold text-gray-900 dark:text-white text-base">{pack.name}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{pack.desc}</p>
+                      </div>
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${c.icon}`}>
+                        <Icon size={20} />
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className={`flex items-baseline gap-1 mb-5 ${isAr ? 'flex-row-reverse justify-end' : ''}`}>
+                      <span className="text-3xl font-extrabold text-gray-900 dark:text-white">{pack.price}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {isAr ? ' د.م/شهر' : ' MAD/mois'}
+                      </span>
+                    </div>
+
+                    {/* Features */}
+                    <ul className="space-y-2 mb-6 flex-1">
+                      {pack.features.map((f, j) => (
+                        <li key={j} className={`flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 ${isAr ? 'flex-row-reverse' : ''}`}>
+                          <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTA */}
+                    <Link
+                      to="/register"
+                      className={`block text-center py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                        pack.popular
+                          ? `${c.badge} text-white hover:opacity-90 shadow-md`
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-primary-600 hover:text-white'
+                      }`}
+                    >
+                      {isAr ? 'ابدأ مجاناً' : 'Commencer gratuitement'}
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Payment note */}
-          <div className="mt-10 text-center">
-            <div className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm px-5 py-3 rounded-xl">
-              <Shield size={16} />
-              {isAr ? 'الدفع يتم عبر تحويل بنكي أو CashPlus' : 'Paiement via virement bancaire ou CashPlus'}
+          {/* After-trial note */}
+          <div className="mt-10 max-w-lg mx-auto bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-5">
+            <div className={`flex items-start gap-3 ${isAr ? 'flex-row-reverse text-end' : ''}`}>
+              <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Shield size={15} className="text-primary-600 dark:text-primary-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                  {isAr ? 'بعد التجربة المجانية:' : 'Après l\'essai gratuit :'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {isAr
+                    ? 'يمكن إلغاء الاشتراك في أي وقت · الدفع عبر تحويل بنكي أو CashPlus'
+                    : 'Annulation possible à tout moment · Paiement par virement bancaire ou CashPlus'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
