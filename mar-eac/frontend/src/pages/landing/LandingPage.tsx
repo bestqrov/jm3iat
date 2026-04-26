@@ -190,7 +190,7 @@ export const LandingPage: React.FC = () => {
     ? [
         { name: 'محمد الإدريسي', role: 'رئيس جمعية التنمية — مراكش', text: 'جمعيتي غيّر طريقة عملنا بالكامل. كنا نضيع ساعات في الأوراق، الآن كل شيء في مكان واحد.', stars: 5 },
         { name: 'فاطمة بنعلي', role: 'مسؤولة مالية — جمعية الأمل، أكادير', text: 'التقارير المالية أصبحت تأخذ دقائق بدلاً من أيام. ممتاز جداً!', stars: 5 },
-        { name: 'يوسف الحسني', role: 'مدير جمعية الماء — تيزنيت', text: 'وحدة إدارة الماء رائعة، تتبع الفواتير والقراءات أصبح سهلاً جداً.', stars: 5 },
+        { name: 'يوسف الحسني', role: 'مدير جمعية الماء — تيزنيت', text: 'وحدة إدارة وتدبير الماء رائعة، تتبع الفواتير والقراءات أصبح سهلاً جداً.', stars: 5 },
       ]
     : [
         { name: 'Mohammed El Idrissi', role: 'Président — Association Développement, Marrakech', text: "Jam3iyati a transformé notre façon de travailler. On perdait des heures en paperasse, maintenant tout est centralisé.", stars: 5 },
@@ -201,7 +201,7 @@ export const LandingPage: React.FC = () => {
   const faqItems = isAr
     ? [
         { q: 'هل هناك تجربة مجانية؟', a: 'نعم! تحصل على 15 يوماً مجانية كاملة بدون التزام وبدون بطاقة ائتمانية.' },
-        { q: 'كيف يتم الدفع؟', a: 'الدفع يتم عبر تحويل بنكي أو CashPlus. بعد الدفع ترسل الوصل ويتم التفعيل خلال 24 ساعة.' },
+        { q: 'كيف يتم الدفع؟', a: 'الدفع يتم عبر تحويل بنكي أو CashPlus. بعد الدفع ترسل الوصل ويتم التفعيل في اقل من 4 ساعات.' },
         { q: 'هل النظام سهل الاستخدام؟', a: 'نعم، تم تصميمه خصيصاً ليكون بسيطاً ومريحاً. معظم المستخدمين يبدأون بدون تدريب.' },
         { q: 'هل يمكنني تغيير الباقة لاحقاً؟', a: 'بالتأكيد! يمكنك الترقية أو تغيير الباقة في أي وقت.' },
         { q: 'هل بياناتي آمنة؟', a: 'نعم، بياناتك مشفرة ومحمية. نسخ احتياطية تلقائية يومية.' },
@@ -465,7 +465,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 {(isAr
-                  ? ['أوراق في كل مكان', 'ضياع البيانات', 'تقارير يدوية', 'لا شفافية', 'وقت ضائع']
+                  ? ['أوراق في كل مكان', 'ضياع البيانات', 'تقارير يدوية', 'انعدام الشفافية', 'وقت ضائع']
                   : ['Papiers partout', 'Perte de données', 'Rapports manuels', 'Pas de transparence', 'Temps perdu']
                 ).map((item, i) => (
                   <li key={i} className="flex items-center gap-2">
@@ -574,7 +574,7 @@ export const LandingPage: React.FC = () => {
               {isAr ? 'الأسعار' : 'Tarifs'}
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              {isAr ? 'باقة تناسب نوع جمعيتك' : 'Un pack adapté à votre type d\'association'}
+              {isAr ? 'باقة عروض تناسب نوع و حجم جمعيتك' : 'Un pack adapté à votre type d\'association'}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
               {isAr
