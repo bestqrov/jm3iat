@@ -18,6 +18,7 @@ export const LandingPage: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [plan3Y, setPlan3Y] = useState(false);
 
   const isAr = lang === 'ar';
 
@@ -552,19 +553,35 @@ export const LandingPage: React.FC = () => {
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               {isAr ? 'باقة عروض تناسب نوع و حجم جمعيتك' : 'Un pack adapté à votre type d\'association'}
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto mb-4">
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto mb-6">
               {isAr
                 ? 'اختر الباقة المناسبة — تجربة مجانية 15 يوم بدون التزام'
                 : 'Choisissez votre pack — 15 jours d\'essai gratuit sans engagement'}
             </p>
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-200 dark:border-primary-800">
-                <Shield size={12} /> {isAr ? 'مدة الاشتراك: 3 سنوات' : 'Durée d\'abonnement : 3 ans'}
-              </span>
-              <span className="inline-flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-200 dark:border-amber-800">
-                <Zap size={12} /> {isAr ? 'تنبيه تجديد قبل شهر' : 'Rappel renouvellement 1 mois avant'}
-              </span>
+
+            {/* Billing toggle */}
+            <div className="inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-2xl p-1 gap-1">
+              <button
+                onClick={() => setPlan3Y(false)}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${!plan3Y ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
+              >
+                {isAr ? 'سنوي' : 'Annuel'}
+              </button>
+              <button
+                onClick={() => setPlan3Y(true)}
+                className={`relative px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${plan3Y ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
+              >
+                {isAr ? '3 سنوات' : '3 ans'}
+                <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">-35%</span>
+              </button>
             </div>
+            {plan3Y && (
+              <p className="mt-3 text-xs text-green-600 dark:text-green-400 font-medium">
+                {isAr
+                  ? '⏳ مدة الاشتراك تتوافق مع دورة المكتب المسيّر للجمعية · تنبيه تجديد قبل شهر من الانتهاء'
+                  : "⏳ Durée alignée sur le mandat du bureau directeur · Rappel de renouvellement 1 mois avant"}
+              </p>
+            )}
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
@@ -607,12 +624,33 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     {/* Price */}
-                    <div className={`flex items-baseline gap-1 mb-5 ${isAr ? 'flex-row-reverse justify-end' : ''}`}>
-                      <span className="text-3xl font-extrabold text-gray-900 dark:text-white">{pack.price}</span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {isAr ? ' د.م/سنة' : ' MAD/an'}
-                      </span>
-                    </div>
+                    {(() => {
+                      const base = parseInt(pack.price);
+                      const total3Y = Math.round(base * 3 * 0.65);
+                      const perYear3Y = Math.round(base * 0.65);
+                      return (
+                        <div className="mb-5">
+                          <div className={`flex items-baseline gap-1 ${isAr ? 'flex-row-reverse justify-end' : ''}`}>
+                            <span className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                              {plan3Y ? total3Y : base}
+                            </span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {plan3Y
+                                ? (isAr ? ' د.م / 3 سنوات' : ' MAD / 3 ans')
+                                : (isAr ? ' د.م/سنة' : ' MAD/an')}
+                            </span>
+                          </div>
+                          {plan3Y && (
+                            <div className={`flex items-center gap-2 mt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
+                              <span className="text-xs text-gray-400 line-through">{base * 3} {isAr ? 'د.م' : 'MAD'}</span>
+                              <span className="text-xs text-green-600 dark:text-green-400 font-semibold">
+                                {isAr ? `(${perYear3Y} د.م/سنة)` : `(${perYear3Y} MAD/an)`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Features */}
                     <ul className="space-y-2 mb-6 flex-1">
@@ -671,9 +709,13 @@ export const LandingPage: React.FC = () => {
                   {isAr ? 'بعد التجربة المجانية:' : 'Après l\'essai gratuit :'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {isAr
-                    ? 'الاشتراك لمدة 3 سنوات · تنبيه تجديد قبل شهر من الانتهاء · الدفع عبر تحويل بنكي أو CashPlus'
-                    : 'Abonnement d\'une durée de 3 ans · Rappel de renouvellement 1 mois avant expiration · Paiement par virement ou CashPlus'}
+                  {plan3Y
+                    ? (isAr
+                        ? 'اشتراك 3 سنوات · توفير 35% · تنبيه تجديد قبل شهر من الانتهاء · الدفع عبر تحويل بنكي أو CashPlus'
+                        : 'Abonnement 3 ans · Économie de 35% · Rappel de renouvellement 1 mois avant · Paiement par virement ou CashPlus')
+                    : (isAr
+                        ? 'اشتراك سنوي · الدفع عبر تحويل بنكي أو CashPlus · تنبيه تجديد قبل شهر من الانتهاء'
+                        : 'Abonnement annuel · Paiement par virement ou CashPlus · Rappel de renouvellement 1 mois avant')}
                 </p>
               </div>
             </div>
