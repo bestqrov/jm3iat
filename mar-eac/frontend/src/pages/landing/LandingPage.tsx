@@ -217,7 +217,7 @@ export const LandingPage: React.FC = () => {
   const problemItems = isAr
     ? [
         'ضياع الوثائق والسجلات المهمة',
-        'أخطاء في حسابات المالية',
+        'أخطاء في الحسابات المالية',
         'صعوبة متابعة الأعضاء وانخراطاتهم',
         'تقارير يدوية تستغرق ساعات',
         'غياب الشفافية في القرارات',
@@ -333,7 +333,7 @@ export const LandingPage: React.FC = () => {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight mb-5">
             {isAr ? (
               <>
-                سير جمعيتك بسهولة مع{' '}
+                سيّر جمعيتك بسهولة مع{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-600">جمعيتي</span>
               </>
             ) : (
@@ -347,7 +347,7 @@ export const LandingPage: React.FC = () => {
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
             {isAr
-              ? 'منصة رقمية لإدارة الأعضاء، المالية، والتقارير بكل بساطة'
+              ? 'منصة رقمية لإدارة الأعضاء، المالية، والتقارير بكل سهولة'
               : 'Une plateforme digitale pour gérer membres, finances et rapports en toute simplicité'}
           </p>
 
