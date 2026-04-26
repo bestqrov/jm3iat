@@ -270,9 +270,10 @@ export const PrivacyPage: React.FC = () => {
       {/* Header */}
       <div className="bg-gradient-to-br from-primary-700 to-blue-800 text-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className={`flex items-center justify-between mb-8 ${isAr ? 'flex-row-reverse' : ''}`}>
-            <Link to="/" className={`flex items-center gap-2 text-primary-200 hover:text-white text-sm transition-colors ${isAr ? 'flex-row-reverse' : ''}`}>
-              <ArrowRight size={16} className={isAr ? '' : 'rotate-180'} />
+          {/* top bar: back link on start, lang switcher on end */}
+          <div className="flex items-center justify-between mb-8">
+            <Link to="/" className="flex items-center gap-2 text-primary-200 hover:text-white text-sm transition-colors">
+              <ArrowRight size={16} className="rotate-180 rtl:rotate-0" />
               {c.backHome}
             </Link>
             <button
@@ -283,7 +284,8 @@ export const PrivacyPage: React.FC = () => {
             </button>
           </div>
 
-          <div className={`flex items-start gap-4 ${isAr ? 'flex-row-reverse text-end' : ''}`}>
+          {/* title block — flex flows RTL naturally via dir */}
+          <div className="flex items-start gap-4">
             <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
               <Shield size={28} />
             </div>
@@ -298,7 +300,8 @@ export const PrivacyPage: React.FC = () => {
 
       {/* Body */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className={`flex gap-8 ${isAr ? 'flex-row-reverse' : ''}`}>
+        {/* flex: with dir=rtl, aside (first) appears on RIGHT, main on LEFT */}
+        <div className="flex gap-8">
 
           {/* Sidebar TOC — desktop only */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
@@ -314,9 +317,9 @@ export const PrivacyPage: React.FC = () => {
                     key={i}
                     href={`#section-${i}`}
                     onClick={() => setActiveSection(i)}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${isAr ? 'flex-row-reverse text-end' : ''} ${activeSection === i ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${activeSection === i ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
                   >
-                    <ChevronRight size={12} className={`flex-shrink-0 ${isAr ? 'rotate-180' : ''}`} />
+                    <ChevronRight size={12} className="flex-shrink-0 rtl:rotate-180" />
                     <span className="truncate">{s.title}</span>
                   </a>
                 ))}
@@ -335,13 +338,14 @@ export const PrivacyPage: React.FC = () => {
                   className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden"
                   onMouseEnter={() => setActiveSection(i)}
                 >
-                  <div className={`flex items-center gap-3 p-6 pb-4 border-b border-gray-50 dark:border-gray-700 ${isAr ? 'flex-row-reverse' : ''}`}>
+                  {/* section header — flex flows via dir */}
+                  <div className="flex items-center gap-3 p-6 pb-4 border-b border-gray-50 dark:border-gray-700">
                     <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
                       <Icon size={18} className="text-primary-600 dark:text-primary-400" />
                     </div>
                     <h2 className="font-bold text-gray-900 dark:text-white text-lg">{section.title}</h2>
                   </div>
-                  <div className={`p-6 text-gray-600 dark:text-gray-300 text-sm leading-relaxed space-y-3 ${isAr ? 'text-end' : ''}`}>
+                  <div className="p-6 text-gray-600 dark:text-gray-300 text-sm leading-relaxed space-y-3">
                     {section.content.split('\n').map((line, j) => {
                       if (line.startsWith('**') && line.endsWith('**')) {
                         return <p key={j} className="font-semibold text-gray-800 dark:text-gray-200 mt-4">{line.replace(/\*\*/g, '')}</p>;
@@ -349,7 +353,7 @@ export const PrivacyPage: React.FC = () => {
                       if (line.startsWith('• **')) {
                         const match = line.match(/^• \*\*(.+?)\*\*(.*)$/);
                         if (match) return (
-                          <p key={j} className={`flex gap-2 ${isAr ? 'flex-row-reverse' : ''}`}>
+                          <p key={j} className="flex gap-2">
                             <span className="text-primary-500 flex-shrink-0">•</span>
                             <span><strong className="text-gray-800 dark:text-gray-200">{match[1]}</strong>{match[2]}</span>
                           </p>
@@ -357,7 +361,7 @@ export const PrivacyPage: React.FC = () => {
                       }
                       if (line.startsWith('• ')) {
                         return (
-                          <p key={j} className={`flex gap-2 ${isAr ? 'flex-row-reverse' : ''}`}>
+                          <p key={j} className="flex gap-2">
                             <span className="text-primary-500 flex-shrink-0">•</span>
                             <span>{line.slice(2)}</span>
                           </p>
@@ -373,7 +377,7 @@ export const PrivacyPage: React.FC = () => {
 
             {/* Footer note */}
             <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-2xl p-6">
-              <div className={`flex items-start gap-3 ${isAr ? 'flex-row-reverse text-end' : ''}`}>
+              <div className="flex items-start gap-3">
                 <Mail size={18} className="text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
@@ -390,12 +394,12 @@ export const PrivacyPage: React.FC = () => {
             </div>
 
             {/* Nav links */}
-            <div className={`flex items-center justify-between pt-4 ${isAr ? 'flex-row-reverse' : ''}`}>
+            <div className="flex items-center justify-between pt-4">
               <Link to="/" className="text-sm text-primary-600 dark:text-primary-400 hover:underline">
-                {isAr ? '← الرئيسية' : '← Accueil'}
+                {isAr ? 'الرئيسية ←' : '← Accueil'}
               </Link>
               <Link to="/terms" className="text-sm text-primary-600 dark:text-primary-400 hover:underline">
-                {isAr ? 'شروط الاستخدام →' : "Conditions d'utilisation →"}
+                {isAr ? '→ شروط الاستخدام' : "Conditions d'utilisation →"}
               </Link>
             </div>
           </main>
