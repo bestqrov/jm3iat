@@ -6,11 +6,10 @@ import {
   FileText, Save, Loader2,
 } from 'lucide-react';
 import { projectsApi, fundingApi, requestsApi, documentsApi, milestonesApi, technicalCardApi } from '../../lib/api';
-import { downloadBlob } from '../../lib/utils';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { formatCurrency, formatDate } from '../../lib/utils';
+import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
 
 const FUNDING_SOURCES = ['COMMUNE', 'DONOR', 'INTERNAL', 'GRANT', 'OTHER'];
 
