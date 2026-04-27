@@ -177,6 +177,8 @@ export const SuperAdminPage: React.FC = () => {
   const [viewingOrg, setViewingOrg] = useState<any>(null);
   const [editingOrg, setEditingOrg] = useState<any>(null);
   const [deletingOrgId, setDeletingOrgId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [editForm, setEditForm] = useState({ assocType: '', status: '', expiresAt: '' });
   const [editSaving, setEditSaving] = useState(false);
 
@@ -282,10 +284,18 @@ export const SuperAdminPage: React.FC = () => {
 
   const deleteOrg = async () => {
     if (!deletingOrgId) return;
-    await superadminApi.deleteOrganization(deletingOrgId);
-    setDeletingOrgId(null);
-    await loadOrgs();
-    await loadStats();
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      await superadminApi.deleteOrganization(deletingOrgId);
+      setDeletingOrgId(null);
+      await loadOrgs();
+      await loadStats();
+    } catch (err: any) {
+      setDeleteError(err.response?.data?.message || 'Erreur lors de la suppression');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   // ─── Payment actions ───────────────────────────────────────────────────────
@@ -955,7 +965,15 @@ export const SuperAdminPage: React.FC = () => {
       )}
 
       {/* Confirm Dialogs */}
-      <ConfirmDialog isOpen={!!deletingOrgId} onClose={() => setDeletingOrgId(null)} onConfirm={deleteOrg} title={isAr ? 'حذف المنظمة؟' : 'Supprimer l\'organisation ?'} message={isAr ? 'ستُحذف جميع البيانات المرتبطة. هذا الإجراء لا يمكن التراجع عنه.' : 'Toutes les données associées seront supprimées. Cette action est irréversible.'} variant="danger" />
+      <ConfirmDialog
+        isOpen={!!deletingOrgId}
+        onClose={() => { setDeletingOrgId(null); setDeleteError(''); }}
+        onConfirm={deleteOrg}
+        title={isAr ? 'حذف المنظمة؟' : 'Supprimer l\'organisation ?'}
+        message={deleteError || (isAr ? 'ستُحذف جميع البيانات المرتبطة. هذا الإجراء لا يمكن التراجع عنه.' : 'Toutes les données associées seront supprimées. Cette action est irréversible.')}
+        variant="danger"
+        loading={deleteLoading}
+      />
       <ConfirmDialog isOpen={!!deletingPaymentId} onClose={() => setDeletingPaymentId(null)} onConfirm={deletePayment} title={isAr ? 'حذف هذه الدفعة؟' : 'Supprimer ce paiement ?'} message={isAr ? 'هذا الإجراء لا يمكن التراجع عنه.' : 'Cette action est irréversible.'} variant="danger" />
     </div>
   );

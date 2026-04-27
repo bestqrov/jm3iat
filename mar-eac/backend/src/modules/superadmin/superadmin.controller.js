@@ -577,12 +577,103 @@ const updateSubscription = async (req, res) => {
 
 const deleteOrganization = async (req, res) => {
   try {
-    const org = await prisma.organization.findUnique({ where: { id: req.params.id } });
+    const id = req.params.id;
+    const org = await prisma.organization.findUnique({ where: { id } });
     if (!org) return res.status(404).json({ message: 'Organization not found' });
-    await prisma.organization.delete({ where: { id: req.params.id } });
+
+    // Collect intermediate IDs needed for nested deletes
+    const [meetings, projects, installations, products, sales, students] = await Promise.all([
+      prisma.meeting.findMany({ where: { organizationId: id }, select: { id: true } }),
+      prisma.project.findMany({ where: { organizationId: id }, select: { id: true } }),
+      prisma.waterInstallation.findMany({ where: { organizationId: id }, select: { id: true } }),
+      prisma.assocProduct.findMany({ where: { organizationId: id }, select: { id: true } }),
+      prisma.assocSale.findMany({ where: { organizationId: id }, select: { id: true } }),
+      prisma.transportStudent.findMany({ where: { organizationId: id }, select: { id: true } }),
+    ]);
+
+    const meetingIds       = meetings.map(m => m.id);
+    const projectIds       = projects.map(p => p.id);
+    const installationIds  = installations.map(i => i.id);
+    const productIds       = products.map(p => p.id);
+    const saleIds          = sales.map(s => s.id);
+    const studentIds       = students.map(s => s.id);
+
+    // Collect funding IDs for FundingEntry deletion
+    const fundings = projectIds.length
+      ? await prisma.funding.findMany({ where: { projectId: { in: projectIds } }, select: { id: true } })
+      : [];
+    const fundingIds = fundings.map(f => f.id);
+
+    // Collect invoice IDs for WaterPayment deletion
+    const invoices = installationIds.length
+      ? await prisma.waterInvoice.findMany({ where: { installationId: { in: installationIds } }, select: { id: true } })
+      : [];
+    const invoiceIds = invoices.map(i => i.id);
+
+    // Collect voting session IDs for Vote deletion
+    const sessions = meetingIds.length
+      ? await prisma.votingSession.findMany({ where: { meetingId: { in: meetingIds } }, select: { id: true } })
+      : [];
+    const sessionIds = sessions.map(s => s.id);
+
+    // Delete deepest dependents first
+    await Promise.all([
+      sessionIds.length    && prisma.vote.deleteMany({ where: { votingSessionId: { in: sessionIds } } }),
+      invoiceIds.length    && prisma.waterPayment.deleteMany({ where: { invoiceId: { in: invoiceIds } } }),
+      fundingIds.length    && prisma.fundingEntry.deleteMany({ where: { fundingId: { in: fundingIds } } }),
+      saleIds.length       && prisma.assocSaleItem.deleteMany({ where: { saleId: { in: saleIds } } }),
+    ]);
+
+    await Promise.all([
+      meetingIds.length      && prisma.votingSession.deleteMany({ where: { meetingId: { in: meetingIds } } }),
+      meetingIds.length      && prisma.meetingAttendance.deleteMany({ where: { meetingId: { in: meetingIds } } }),
+      meetingIds.length      && prisma.decision.deleteMany({ where: { meetingId: { in: meetingIds } } }),
+      installationIds.length && prisma.waterInvoice.deleteMany({ where: { installationId: { in: installationIds } } }),
+      installationIds.length && prisma.meterReading.deleteMany({ where: { installationId: { in: installationIds } } }),
+      projectIds.length      && prisma.funding.deleteMany({ where: { projectId: { in: projectIds } } }),
+      projectIds.length      && prisma.projectMilestone.deleteMany({ where: { projectId: { in: projectIds } } }),
+      productIds.length      && prisma.assocProduction.deleteMany({ where: { productId: { in: productIds } } }),
+      studentIds.length      && prisma.transportSubscription.deleteMany({ where: { studentId: { in: studentIds } } }),
+      studentIds.length      && prisma.transportPayment.deleteMany({ where: { studentId: { in: studentIds } } }),
+      studentIds.length      && prisma.transportAttendance.deleteMany({ where: { studentId: { in: studentIds } } }),
+    ]);
+
+    // Delete direct org children
+    await Promise.all([
+      prisma.meeting.deleteMany({ where: { organizationId: id } }),
+      prisma.document.deleteMany({ where: { organizationId: id } }),
+      prisma.request.deleteMany({ where: { organizationId: id } }),
+      prisma.project.deleteMany({ where: { organizationId: id } }),
+      prisma.waterRepair.deleteMany({ where: { organizationId: id } }),
+      prisma.waterInstallation.deleteMany({ where: { organizationId: id } }),
+      prisma.waterTariff.deleteMany({ where: { organizationId: id } }),
+      prisma.assocSale.deleteMany({ where: { organizationId: id } }),
+      prisma.assocProduct.deleteMany({ where: { organizationId: id } }),
+      prisma.assocClient.deleteMany({ where: { organizationId: id } }),
+      prisma.assocProduction.deleteMany({ where: { organizationId: id } }),
+      prisma.assocEvent.deleteMany({ where: { organizationId: id } }),
+      prisma.transportStudent.deleteMany({ where: { organizationId: id } }),
+      prisma.transportRoute.deleteMany({ where: { organizationId: id } }),
+      prisma.transportVehicle.deleteMany({ where: { organizationId: id } }),
+      prisma.transportDriver.deleteMany({ where: { organizationId: id } }),
+      prisma.transportExpense.deleteMany({ where: { organizationId: id } }),
+      prisma.transaction.deleteMany({ where: { organizationId: id } }),
+      prisma.member.deleteMany({ where: { organizationId: id } }),
+      prisma.reminder.deleteMany({ where: { organizationId: id } }),
+      prisma.notification.deleteMany({ where: { organizationId: id } }),
+      prisma.activityLog.deleteMany({ where: { organizationId: id } }),
+      prisma.recurringPayment.deleteMany({ where: { organizationId: id } }),
+      prisma.backupRecord.deleteMany({ where: { organizationId: id } }),
+      prisma.payment.deleteMany({ where: { organizationId: id } }),
+      prisma.subscription.deleteMany({ where: { organizationId: id } }),
+      prisma.user.updateMany({ where: { organizationId: id }, data: { organizationId: null } }),
+    ]);
+
+    await prisma.organization.delete({ where: { id } });
     res.json({ message: 'Organization and all related data deleted' });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('deleteOrganization error:', err);
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };
 
