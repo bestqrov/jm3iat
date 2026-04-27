@@ -144,6 +144,13 @@ export const milestonesApi = {
   exportReport: (projectId: string, lang?: string) => api.get(`/projects/${projectId}/report`, { responseType: 'blob', params: { lang } }),
 };
 
+// ---- Technical Card ----
+export const technicalCardApi = {
+  get:    (projectId: string)            => api.get(`/projects/${projectId}/technical-card`),
+  save:   (projectId: string, data: any) => api.put(`/projects/${projectId}/technical-card`, data),
+  exportPdf: (projectId: string)         => api.get(`/projects/${projectId}/technical-card/pdf`, { responseType: 'blob' }),
+};
+
 // ---- Funding ----
 export const fundingApi = {
   get: (projectId: string) => api.get(`/funding/projects/${projectId}`),

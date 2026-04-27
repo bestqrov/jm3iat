@@ -3,8 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Plus, Trash2, MapPin, Calendar, CheckCircle2,
   Clock, AlertCircle, Circle, Pencil, Sparkles, FileDown, ChevronRight,
+  FileText, Save, Loader2,
 } from 'lucide-react';
-import { projectsApi, fundingApi, requestsApi, documentsApi, milestonesApi } from '../../lib/api';
+import { projectsApi, fundingApi, requestsApi, documentsApi, milestonesApi, technicalCardApi } from '../../lib/api';
+import { downloadBlob } from '../../lib/utils';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -48,21 +50,29 @@ export const ProjectDetailPage: React.FC = () => {
   const [budgetForm, setBudgetForm] = useState({ totalBudget: '' });
   const [msForm, setMsForm] = useState({ title: '', description: '', plannedDate: '', actualDate: '', status: 'PENDING' });
 
+  // Technical card
+  const [tc, setTc] = useState<any>({});
+  const [tcSaving, setTcSaving]         = useState(false);
+  const [tcExporting, setTcExporting]   = useState(false);
+  const [tcSaved, setTcSaved]           = useState(false);
+
   const load = async () => {
     if (!id) return;
     try {
-      const [p, f, r, d, m] = await Promise.allSettled([
+      const [p, f, r, d, m, tcRes] = await Promise.allSettled([
         projectsApi.getById(id),
         fundingApi.get(id),
         requestsApi.getAll(),
         documentsApi.getAll({ projectId: id }),
         milestonesApi.getAll(id),
+        technicalCardApi.get(id),
       ]);
       if (p.status === 'fulfilled') setProject(p.value.data);
       if (f.status === 'fulfilled') setFunding(f.value.data);
       if (r.status === 'fulfilled') setRequests(r.value.data.filter((req: any) => req.projectId === id));
       if (d.status === 'fulfilled') setDocuments(d.value.data);
       if (m.status === 'fulfilled') setMilestones(m.value.data);
+      if (tcRes.status === 'fulfilled') setTc(tcRes.value.data.technicalCard || {});
     } finally { setLoading(false); }
   };
 
@@ -191,12 +201,34 @@ export const ProjectDetailPage: React.FC = () => {
 
   const statusBadge: Record<string, string> = { PLANNED: 'badge-blue', IN_PROGRESS: 'badge-yellow', COMPLETED: 'badge-green', CANCELLED: 'badge-red' };
 
+  const handleSaveTc = async () => {
+    if (!id) return;
+    setTcSaving(true);
+    try {
+      await technicalCardApi.save(id, tc);
+      setTcSaved(true);
+      setTimeout(() => setTcSaved(false), 2000);
+    } catch {}
+    setTcSaving(false);
+  };
+
+  const handleExportTcPdf = async () => {
+    if (!id) return;
+    setTcExporting(true);
+    try {
+      const res = await technicalCardApi.exportPdf(id);
+      downloadBlob(new Blob([res.data], { type: 'application/pdf' }), `bataqa-taniya-${project.title}.pdf`);
+    } catch {}
+    setTcExporting(false);
+  };
+
   const TABS = [
-    { key: 'avancement', label: lang === 'ar' ? 'التقدم والمراحل' : 'Avancement' },
-    { key: 'details',   label: t('projects.tabs.details') },
-    { key: 'funding',   label: t('projects.tabs.funding') },
-    { key: 'requests',  label: t('projects.tabs.requests') },
-    { key: 'documents', label: t('projects.tabs.documents') },
+    { key: 'avancement',     label: lang === 'ar' ? 'التقدم والمراحل' : 'Avancement' },
+    { key: 'details',        label: t('projects.tabs.details') },
+    { key: 'funding',        label: t('projects.tabs.funding') },
+    { key: 'requests',       label: t('projects.tabs.requests') },
+    { key: 'documents',      label: t('projects.tabs.documents') },
+    { key: 'technicalCard',  label: lang === 'ar' ? 'البطاقة التقنية' : 'Fiche Technique' },
   ];
 
   return (
@@ -515,6 +547,146 @@ export const ProjectDetailPage: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── TECHNICAL CARD TAB ───────────────────────────────────────────── */}
+      {activeTab === 'technicalCard' && (
+        <div className="space-y-5" dir="rtl">
+          {/* Actions bar */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <FileText size={20} className="text-primary-600" />
+              <h3 className="font-bold text-gray-900 dark:text-white text-lg">
+                {lang === 'ar' ? 'البطاقة التقنية للمشروع' : 'Fiche Technique du Projet'}
+              </h3>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handleExportTcPdf} disabled={tcExporting} className="btn-secondary flex items-center gap-2 text-sm">
+                {tcExporting ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
+                {lang === 'ar' ? 'تصدير PDF' : 'Exporter PDF'}
+              </button>
+              <button onClick={handleSaveTc} disabled={tcSaving} className="btn-primary flex items-center gap-2 text-sm">
+                {tcSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                {tcSaved ? (lang === 'ar' ? 'تم الحفظ ✓' : 'Enregistré ✓') : (lang === 'ar' ? 'حفظ' : 'Enregistrer')}
+              </button>
+            </div>
+          </div>
+
+          {/* Section: الصفة */}
+          <div className="card p-5">
+            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-4 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">الصفة</h4>
+            <div className="flex gap-6 justify-end">
+              {['تعاونية', 'شباب حامل فكرة مشروع'].map(opt => (
+                <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{opt}</span>
+                  <input type="radio" name="holderType" value={opt}
+                    checked={(tc.holderType || 'تعاونية') === opt}
+                    onChange={() => setTc((p: any) => ({ ...p, holderType: opt }))}
+                    className="w-4 h-4 accent-primary-600" />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Section: سلسلة المشروع */}
+          <div className="card p-5">
+            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-4 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">سلسلة المشروع</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <input key={i} value={(tc.projectChain || [])[i] || ''} placeholder={`......... ${i + 1}`}
+                  onChange={e => {
+                    const arr = [...(tc.projectChain || Array(9).fill(''))];
+                    arr[i] = e.target.value;
+                    setTc((p: any) => ({ ...p, projectChain: arr }));
+                  }}
+                  className="input text-right text-sm" />
+              ))}
+            </div>
+          </div>
+
+          {/* Section: معلومات الوحدة */}
+          <div className="card p-5">
+            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-4 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">معلومات إضافية عن الوحدة</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">الجماعة</label>
+                <input value={tc.commune || ''} onChange={e => setTc((p: any) => ({ ...p, commune: e.target.value }))}
+                  className="input w-full text-right" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">رقم السجل التعاوني</label>
+                <input value={tc.regNumber || ''} onChange={e => setTc((p: any) => ({ ...p, regNumber: e.target.value }))}
+                  className="input w-full text-right" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">ر.ب.ت.و (للشباب)</label>
+                <input value={tc.iceNumber || ''} onChange={e => setTc((p: any) => ({ ...p, iceNumber: e.target.value }))}
+                  className="input w-full text-right" />
+              </div>
+              <div />
+              {[
+                { label: 'أعضاء المكتب — ذكور', key: 'boardMale' },
+                { label: 'أعضاء المكتب — إناث', key: 'boardFemale' },
+                { label: 'الشركاء — ذكور', key: 'partnerMale' },
+                { label: 'الشركاء — إناث', key: 'partnerFemale' },
+              ].map(({ label, key }) => (
+                <div key={key}>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">{label}</label>
+                  <input type="number" min="0" value={tc[key] || ''} onChange={e => setTc((p: any) => ({ ...p, [key]: e.target.value }))}
+                    className="input w-full text-right" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section: محتوى المشروع */}
+          <div className="card p-5 space-y-5">
+            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">محتوى المشروع</h4>
+            {[
+              { label: 'فكرة المشروع', key: 'projectIdea' },
+              { label: 'إشكالية وجدوى المشروع', key: 'problemFeasibility' },
+              { label: 'جانب الابتكار في المشروع', key: 'innovation' },
+              { label: 'مكونات المشروع', key: 'components' },
+              { label: 'أهداف المشروع والنتائج المنتظرة', key: 'objectives' },
+            ].map(({ label, key }) => (
+              <div key={key}>
+                <label className="block text-sm font-medium text-primary-700 dark:text-primary-400 mb-2 text-right">{label}</label>
+                <textarea value={tc[key] || ''} onChange={e => setTc((p: any) => ({ ...p, [key]: e.target.value }))}
+                  rows={3} className="input w-full text-right resize-none" />
+              </div>
+            ))}
+          </div>
+
+          {/* Section: التركيبة المالية */}
+          <div className="card p-5">
+            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-4 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">التركيبة المالية</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">مساهمة حامل المشروع %</label>
+                <input type="number" min="0" max="100" value={tc.holderPct ?? 10}
+                  onChange={e => setTc((p: any) => ({ ...p, holderPct: e.target.value, indhPct: String(100 - Number(e.target.value)) }))}
+                  className="input w-full text-right" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">مساهمة المبادرة الوطنية للتنمية البشرية %</label>
+                <input type="number" min="0" max="100" value={tc.indhPct ?? 90}
+                  onChange={e => setTc((p: any) => ({ ...p, indhPct: e.target.value, holderPct: String(100 - Number(e.target.value)) }))}
+                  className="input w-full text-right" />
+              </div>
+            </div>
+            {project?.budget && (
+              <div className="mt-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg text-right text-sm">
+                <div className="text-gray-600 dark:text-gray-400">
+                  {lang === 'ar' ? 'التكلفة الإجمالية' : 'Coût total'}: <strong>{formatCurrency(project.budget, lang)}</strong>
+                </div>
+                <div className="mt-1 text-gray-600 dark:text-gray-400">
+                  مساهمة حامل المشروع: <strong className="text-emerald-600">{formatCurrency(Math.round(project.budget * (tc.holderPct ?? 10) / 100), lang)}</strong>
+                  {' · '}مساهمة INDH: <strong className="text-primary-600">{formatCurrency(Math.round(project.budget * (tc.indhPct ?? 90) / 100), lang)}</strong>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

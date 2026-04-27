@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const ctrl = require('./projects.controller');
-const ms = require('./milestones.controller');
+const ms   = require('./milestones.controller');
+const tc   = require('./technicalCard.controller');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
 const { requireModule } = require('../../middleware/module');
@@ -24,5 +25,10 @@ router.delete('/:id/milestones/:milestoneId', ms.deleteMilestone);
 
 // Report PDF
 router.get('/:id/report', ms.exportReport);
+
+// Technical Card
+router.get('/:id/technical-card',        tc.getTechnicalCard);
+router.put('/:id/technical-card',        tc.saveTechnicalCard);
+router.get('/:id/technical-card/pdf',    tc.exportTechnicalCardPdf);
 
 module.exports = router;
