@@ -179,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       PROJECTS:   ['STANDARD', 'PREMIUM'],
       PRODUCTIVE: ['PREMIUM'],
       TRANSPORT:  ['STANDARD', 'PREMIUM'],
+      SPORTS:     ['STANDARD', 'PREMIUM'],
     };
     return (LEGACY[mod] ?? []).includes(sub.plan);
   };

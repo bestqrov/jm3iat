@@ -74,11 +74,9 @@ const register = async (req, res) => {
         role: result.user.role,
       },
       organization: {
-        id: result.org.id,
-        name: result.org.name,
-        trialEndsAt: result.org.trialEndsAt,
+        ...result.org,
+        subscription: result.subscription,
       },
-      subscription: result.subscription,
     });
   } catch (err) {
     console.error('Register error:', err);

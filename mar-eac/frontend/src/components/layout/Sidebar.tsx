@@ -5,7 +5,7 @@ import {
   Briefcase, Droplets, BarChart2, Bell, Shield, Settings,
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
   Building2, FolderKanban, Layers, CreditCard, Bus,
-  Activity, RefreshCw,
+  Activity, RefreshCw, Trophy,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -40,9 +40,10 @@ type OrgTheme = {
 };
 
 const getOrgTheme = (modules: string[]): OrgTheme => {
-  const hasWater = modules.includes('WATER');
-  const hasProd  = modules.includes('PRODUCTIVE');
-  const hasProj  = modules.includes('PROJECTS');
+  const hasWater  = modules.includes('WATER');
+  const hasProd   = modules.includes('PRODUCTIVE');
+  const hasProj   = modules.includes('PROJECTS');
+  const hasSports = modules.includes('SPORTS');
 
   if (hasWater && hasProd) return {
     logoBg: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
@@ -87,6 +88,17 @@ const getOrgTheme = (modules: string[]): OrgTheme => {
     icon: <FolderKanban size={14} />,
     labelFr: 'Association avec projets',
     labelAr: 'جمعية المشاريع',
+  };
+  if (hasSports) return {
+    logoBg: 'linear-gradient(135deg, #d97706, #f59e0b)',
+    activeClass: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-semibold',
+    activeBorder: '#d97706',
+    badgeBg: 'bg-amber-100 dark:bg-amber-900/30',
+    badgeText: 'text-amber-700 dark:text-amber-300',
+    stripeBg: 'linear-gradient(90deg, #d97706, #f59e0b)',
+    icon: <Trophy size={14} />,
+    labelFr: 'Association sportive',
+    labelAr: 'جمعية رياضية',
   };
   return {
     logoBg: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
@@ -184,6 +196,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
         ...(isFullAccess && hasModule('WATER')      ? [{ to: '/water',     icon: <Droplets size={18} />,    label: t('nav.water') }]     : []),
         ...(isFullAccess && hasModule('PRODUCTIVE') ? [{ to: '/assoc',     icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]     : []),
         ...(isFullAccess && hasModule('TRANSPORT')  ? [{ to: '/transport', icon: <Bus size={18} />,         label: t('nav.transport') }] : []),
+        ...(isFullAccess && hasModule('SPORTS')     ? [{ to: '/sports',    icon: <Trophy size={18} />,      label: isAr ? 'الرياضة' : 'Sports' }]    : []),
       ],
     },
     {
