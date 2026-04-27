@@ -447,3 +447,13 @@ export const backupApi = {
   list:    ()  => api.get('/backup'),
   create:  ()  => { window.open('/api/backup/create', '_blank'); },
 };
+
+// ---- Assets ----
+export const assetsApi = {
+  getAll:   (params?: any)              => api.get('/assets', { params }),
+  getStats: ()                          => api.get('/assets/stats'),
+  getById:  (id: string)                => api.get(`/assets/${id}`),
+  create:   (data: any)                 => api.post('/assets', data),
+  update:   (id: string, data: any)     => api.put(`/assets/${id}`, data),
+  remove:   (id: string)                => api.delete(`/assets/${id}`),
+};

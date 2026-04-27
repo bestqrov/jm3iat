@@ -27,6 +27,7 @@ import { TransportPage } from './pages/transport/TransportPage';
 import { CalendarPage } from './pages/calendar/CalendarPage';
 import { ActivityPage } from './pages/activity/ActivityPage';
 import { RecurringPage } from './pages/recurring/RecurringPage';
+import { AssetsPage } from './pages/assets/AssetsPage';
 import { PublicProfilePage } from './pages/public/PublicProfilePage';
 import { LandingPage } from './pages/landing/LandingPage';
 import { PrivacyPage } from './pages/legal/PrivacyPage';
@@ -84,6 +85,7 @@ const App: React.FC = () => {
                 <Route path="/calendar" element={<WaterReaderRoute><CalendarPage /></WaterReaderRoute>} />
                 <Route path="/activity" element={<WaterReaderRoute><ActivityPage /></WaterReaderRoute>} />
                 <Route path="/recurring" element={<WaterReaderRoute><RecurringPage /></WaterReaderRoute>} />
+                <Route path="/assets"   element={<WaterReaderRoute><AssetsPage /></WaterReaderRoute>} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
 

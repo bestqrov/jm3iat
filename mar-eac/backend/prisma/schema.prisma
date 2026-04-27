@@ -78,6 +78,7 @@ model Organization {
   notifications      Notification[]
   recurringPayments  RecurringPayment[]
   backupRecords      BackupRecord[]
+  assets             Asset[]
 }
 
 model Subscription {
@@ -541,6 +542,27 @@ model Payment {
   createdAt      DateTime @default(now())
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// ── Asset Management ─────────────────────────────────────────────────────────
+
+model Asset {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  name           String
+  type           String   @default("OTHER")   // REAL_ESTATE | VEHICLE | EQUIPMENT | FURNITURE | OTHER
+  description    String?
+  reference      String?
+  location       String?
+  acquisitionDate DateTime?
+  acquisitionValue Float?
+  currentValue   Float?
+  status         String   @default("ACTIVE")  // ACTIVE | MAINTENANCE | DEPRECATED | SOLD
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 // ── SaaS Management Models ────────────────────────────────────────────────────

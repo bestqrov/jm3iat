@@ -664,6 +664,7 @@ const deleteOrganization = async (req, res) => {
       prisma.activityLog.deleteMany({ where: { organizationId: id } }),
       prisma.recurringPayment.deleteMany({ where: { organizationId: id } }),
       prisma.backupRecord.deleteMany({ where: { organizationId: id } }),
+      prisma.asset.deleteMany({ where: { organizationId: id } }),
       prisma.payment.deleteMany({ where: { organizationId: id } }),
       prisma.subscription.deleteMany({ where: { organizationId: id } }),
       prisma.user.updateMany({ where: { organizationId: id }, data: { organizationId: null } }),
