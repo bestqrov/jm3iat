@@ -13,7 +13,6 @@ export const ReportsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [exportYear,    setExportYear]    = useState(new Date().getFullYear());
   const [literaryYear,  setLiteraryYear]  = useState(new Date().getFullYear());
-  const [literaryLang,  setLiteraryLang]  = useState<'ar' | 'fr'>(lang as 'ar' | 'fr');
   const [exportingLit,  setExportingLit]  = useState(false);
 
   useEffect(() => {
@@ -27,8 +26,8 @@ export const ReportsPage: React.FC = () => {
   const exportLiterary = async () => {
     setExportingLit(true);
     try {
-      const res = await reportsApi.exportLiterary(literaryYear, literaryLang);
-      const fname = literaryLang === 'fr'
+      const res = await reportsApi.exportLiterary(literaryYear, lang);
+      const fname = lang === 'fr'
         ? `rapport-activites-${literaryYear}.pdf`
         : `التقرير-الأدبي-${literaryYear}.pdf`;
       downloadBlob(new Blob([res.data], { type: 'application/pdf' }), fname);
@@ -68,14 +67,6 @@ export const ReportsPage: React.FC = () => {
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
-              <button
-                onClick={() => setLiteraryLang('ar')}
-                className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${literaryLang === 'ar' ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400'}`}
-              >ع</button>
-              <button
-                onClick={() => setLiteraryLang('fr')}
-                className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${literaryLang === 'fr' ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400'}`}
-              >Fr</button>
               <button onClick={exportLiterary} disabled={exportingLit} className="btn-secondary text-xs py-1.5 px-3">
                 {exportingLit ? <Loader2 size={13} className="animate-spin" /> : <Download size={14} />}
                 {t('reports.exportPDF')}
