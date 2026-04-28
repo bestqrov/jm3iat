@@ -99,6 +99,17 @@ const generateTechnicalCardPdf = (project, org, res) => {
   // Header band
   fillRect(0, 12, W, 68, NAVY);
 
+  // State entity logo (left side of header) — if provided
+  const uploadDir = process.env.UPLOAD_DIR || path.resolve('./uploads');
+  const etatLogoPath = tc.etatLogoUrl
+    ? path.join(uploadDir, path.basename(tc.etatLogoUrl))
+    : null;
+  if (etatLogoPath && fs.existsSync(etatLogoPath)) {
+    try {
+      doc.image(etatLogoPath, M, 18, { fit: [50, 50], align: 'left', valign: 'center' });
+    } catch (_) { /* skip if unembeddable */ }
+  }
+
   // INDH logo text (right)
   doc.font(ARB).fontSize(9).fillColor('#fff');
   arText('المبادرة الوطنية للتنمية البشرية', M, 20, { width: CW, align: 'right' });
@@ -130,9 +141,11 @@ const generateTechnicalCardPdf = (project, org, res) => {
   doc.font(ARB).fontSize(8.5).fillColor(NAVY);
   arText('الصفة:', M, y + 6, { width: CW - 4, align: 'right' });
 
-  const holderType = tc.holderType || 'تعاونية';
-  const isCoop = holderType === 'تعاونية';
-  // Two checkboxes
+  const holderType = tc.holderType || 'جمعية';
+  const isAssoc = holderType === 'جمعية';
+  const isCoop  = holderType === 'تعاونية';
+  const isYouth = holderType === 'شباب حامل فكرة مشروع';
+
   const box = (bx, by, checked) => {
     doc.save().rect(bx, by, 10, 10).strokeColor(NAVY).lineWidth(0.7).stroke().restore();
     if (checked) {
@@ -140,13 +153,17 @@ const generateTechnicalCardPdf = (project, org, res) => {
       doc.text('✓', bx + 1, by + 0, { lineBreak: false });
     }
   };
-  // Coopératives box
-  box(W - M - 100, y + 5, isCoop);
-  doc.font(AR).fontSize(8).fillColor('#333');
-  arText('التعاونيات', W - M - 90, y + 6, { width: 80, align: 'right' });
-  // Youth box
-  box(W - M - 210, y + 5, !isCoop);
-  arText('الشباب حاملو فكرة مشروع', W - M - 200, y + 6, { width: 100, align: 'right' });
+
+  // Three checkboxes — association | coopérative | jeunes
+  box(W - M - 70,  y + 5, isCoop);
+  doc.font(AR).fontSize(7.5).fillColor('#333');
+  arText('التعاونيات', W - M - 60, y + 6, { width: 55, align: 'right' });
+
+  box(W - M - 160, y + 5, isAssoc);
+  arText('جمعية', W - M - 150, y + 6, { width: 80, align: 'right' });
+
+  box(W - M - 285, y + 5, isYouth);
+  arText('شباب حاملو فكرة مشروع', W - M - 275, y + 6, { width: 110, align: 'right' });
 
   y += 26;
 

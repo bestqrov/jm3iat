@@ -1,4 +1,5 @@
 const prisma  = require('../../config/database');
+const path    = require('path');
 const { generateTechnicalCardPdf } = require('../../utils/technicalCardPdf');
 
 const getTechnicalCard = async (req, res) => {
@@ -59,4 +60,14 @@ const exportTechnicalCardPdf = async (req, res) => {
   }
 };
 
-module.exports = { getTechnicalCard, saveTechnicalCard, exportTechnicalCardPdf };
+const uploadEtatLogo = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const logoUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: logoUrl });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getTechnicalCard, saveTechnicalCard, exportTechnicalCardPdf, uploadEtatLogo };

@@ -150,6 +150,11 @@ export const technicalCardApi = {
   get:    (projectId: string)            => api.get(`/projects/${projectId}/technical-card`),
   save:   (projectId: string, data: any) => api.put(`/projects/${projectId}/technical-card`, data),
   exportPdf: (projectId: string)         => api.get(`/projects/${projectId}/technical-card/pdf`, { responseType: 'blob' }),
+  uploadLogo: (projectId: string, file: File) => {
+    const fd = new FormData();
+    fd.append('logo', file);
+    return api.post(`/projects/${projectId}/technical-card/logo`, fd);
+  },
 };
 
 // ---- Funding ----

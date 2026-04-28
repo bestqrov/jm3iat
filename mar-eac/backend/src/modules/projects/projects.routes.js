@@ -6,6 +6,7 @@ const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
 const { requireModule } = require('../../middleware/module');
 const { logActivity } = require('../activity/activity.controller');
+const upload = require('../../utils/multer');
 
 router.use(auth, tenant, requireModule('PROJECTS'));
 
@@ -27,8 +28,9 @@ router.delete('/:id/milestones/:milestoneId', ms.deleteMilestone);
 router.get('/:id/report', ms.exportReport);
 
 // Technical Card
-router.get('/:id/technical-card',        tc.getTechnicalCard);
-router.put('/:id/technical-card',        tc.saveTechnicalCard);
-router.get('/:id/technical-card/pdf',    tc.exportTechnicalCardPdf);
+router.get('/:id/technical-card',              tc.getTechnicalCard);
+router.put('/:id/technical-card',              tc.saveTechnicalCard);
+router.get('/:id/technical-card/pdf',          tc.exportTechnicalCardPdf);
+router.post('/:id/technical-card/logo', upload.single('logo'), tc.uploadEtatLogo);
 
 module.exports = router;
