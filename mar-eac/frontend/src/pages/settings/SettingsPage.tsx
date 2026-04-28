@@ -50,6 +50,7 @@ export const SettingsPage: React.FC = () => {
 
   const [infoFormFr, setInfoFormFr] = useState({
     foundingDate: org?.foundingDate ? new Date(org.foundingDate).toISOString().split('T')[0] : '',
+    bureauCreationDate: org?.bureauCreationDate ? new Date(org.bureauCreationDate).toISOString().split('T')[0] : '',
     activities: org?.activities || '',
     adminHistory: org?.adminHistory || '',
   });
@@ -179,6 +180,7 @@ export const SettingsPage: React.FC = () => {
       if (lang === 'ar') {
         await authApi.updateOrganization({
           foundingDate: infoFormFr.foundingDate,
+          bureauCreationDate: infoFormFr.bureauCreationDate,
           activitiesAr: infoFormAr.activitiesAr,
           adminHistoryAr: infoFormAr.adminHistoryAr,
         });
@@ -743,6 +745,37 @@ export const SettingsPage: React.FC = () => {
                 {lang === 'ar' ? 'الحالي: ' : 'Actuel : '}{formatDate(org.foundingDate, lang)}
               </p>
             )}
+          </div>
+
+          {/* Bureau creation date */}
+          <div>
+            <label className="label flex items-center gap-1.5">
+              <CalendarDays size={13} className="text-orange-500" />
+              {lang === 'ar' ? 'تاريخ إنشاء المكتب (للتذكير بالتجديد)' : 'Date de création du bureau (rappel renouvellement)'}
+            </label>
+            <input
+              className="input"
+              type="date"
+              value={infoFormFr.bureauCreationDate}
+              onChange={(e) => setInfoFormFr({ ...infoFormFr, bureauCreationDate: e.target.value })}
+            />
+            {org?.bureauCreationDate && (() => {
+              const expiry = new Date(org.bureauCreationDate);
+              expiry.setFullYear(expiry.getFullYear() + 3);
+              const daysLeft = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+              return (
+                <p className={`text-xs mt-1 ${daysLeft <= 30 ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
+                  {lang === 'ar'
+                    ? `تنتهي صلاحية المكتب في: ${expiry.toLocaleDateString('ar-MA')} (${daysLeft > 0 ? `${daysLeft} يوم متبقي` : 'منتهية'})`
+                    : `Expiration du bureau : ${expiry.toLocaleDateString('fr-FR')} (${daysLeft > 0 ? `${daysLeft} jour(s) restant(s)` : 'expiré'})`}
+                </p>
+              );
+            })()}
+            <p className="text-xs text-gray-400 mt-1">
+              {lang === 'ar'
+                ? 'ستتلقى تذكيرات كل 4 أيام خلال الـ 30 يوماً الأخيرة قبل انتهاء مدة 3 سنوات'
+                : 'Rappels envoyés tous les 4 jours pendant les 30 derniers jours avant l\'expiration (3 ans)'}
+            </p>
           </div>
 
           {/* Activities */}

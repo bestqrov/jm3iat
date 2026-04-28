@@ -18,9 +18,10 @@ model Organization {
   region      String?
   logo        String?
   description  String?
-  foundingDate DateTime?
-  activities   String?
-  adminHistory String?
+  foundingDate       DateTime?
+  bureauCreationDate DateTime?
+  activities         String?
+  adminHistory       String?
   // ── Arabic profile ──────────────────────────────
   nameAr         String?
   cityAr         String?

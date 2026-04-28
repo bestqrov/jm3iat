@@ -153,4 +153,60 @@ const scheduleMonthlyReminders = () => {
   console.log('[Cron] Monthly reminder scheduler started');
 };
 
-module.exports = { getAll, getUnreadCount, markRead, markAllRead, create, remove, scheduleMonthlyReminders };
+// Bureau expiry cron — every 4 days at 09:00
+// Sends a reminder/notification to any org whose bureauCreationDate + 3 years falls within 30 days
+const scheduleBureauExpiryReminders = () => {
+  cron.schedule('0 9 */4 * *', async () => {
+    console.log('[Cron] Checking bureau expiry dates...');
+    try {
+      const orgs = await prisma.organization.findMany({
+        where: { bureauCreationDate: { not: null } },
+        include: { subscription: true },
+      });
+
+      const now = new Date();
+
+      for (const org of orgs) {
+        if (!org.subscription || ['EXPIRED', 'CANCELLED'].includes(org.subscription.status)) continue;
+
+        const expiry = new Date(org.bureauCreationDate);
+        expiry.setFullYear(expiry.getFullYear() + 3);
+
+        const msLeft = expiry.getTime() - now.getTime();
+        const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+
+        if (daysLeft <= 0 || daysLeft > 30) continue;
+
+        // Avoid duplicates: skip if a bureau-expiry reminder already exists in the last 4 days
+        const recent = await prisma.reminder.findFirst({
+          where: {
+            organizationId: org.id,
+            type: 'BUREAU_EXPIRY',
+            createdAt: { gte: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000) },
+          },
+        });
+        if (recent) continue;
+
+        const expiryStr = expiry.toLocaleDateString('fr-FR');
+
+        await prisma.reminder.create({
+          data: {
+            organizationId: org.id,
+            type: 'BUREAU_EXPIRY',
+            title: `⚠️ انتهاء صلاحية المكتب / Expiration du bureau — ${daysLeft} ${daysLeft === 1 ? 'jour' : 'jours'}`,
+            message: `سينتهي مكتب الجمعية ويصبح غير قانوني بعد ${daysLeft} يوم (${expiryStr}). يجب تجديد انتخاب المكتب قبل هذا التاريخ. / Le bureau de l'association deviendra illégal dans ${daysLeft} jour(s) (${expiryStr}). Le bureau doit être renouvelé avant cette date.`,
+            scheduledFor: now,
+          },
+        });
+
+        console.log(`[Cron] Bureau expiry reminder sent for org ${org.id} — ${daysLeft} days left`);
+      }
+    } catch (err) {
+      console.error('[Cron] Error in bureau expiry check:', err);
+    }
+  });
+
+  console.log('[Cron] Bureau expiry scheduler started');
+};
+
+module.exports = { getAll, getUnreadCount, markRead, markAllRead, create, remove, scheduleMonthlyReminders, scheduleBureauExpiryReminders };

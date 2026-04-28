@@ -7,7 +7,7 @@ const { generateToken } = require('../../config/jwt');
 const register = async (req, res) => {
   try {
     const {
-      orgName, orgEmail, orgPhone, orgCity, orgRegion,
+      orgName, orgEmail, orgPhone, orgCity, orgRegion, bureauCreationDate,
       adminName, adminEmail, password, modules,
     } = req.body;
 
@@ -37,6 +37,7 @@ const register = async (req, res) => {
           region: orgRegion,
           trialEndsAt,
           modules: Array.isArray(modules) ? modules : [],
+          bureauCreationDate: bureauCreationDate ? new Date(bureauCreationDate) : undefined,
         },
       });
 
@@ -189,7 +190,7 @@ const updateProfile = async (req, res) => {
 const updateOrganization = async (req, res) => {
   try {
     const {
-      name, email, phone, address, city, region, description, foundingDate, activities, adminHistory,
+      name, email, phone, address, city, region, description, foundingDate, bureauCreationDate, activities, adminHistory,
       nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
       bankName, bankAccount, bankRib,
       whatsapp, facebook, instagram, tiktok, youtube,
@@ -210,6 +211,7 @@ const updateOrganization = async (req, res) => {
         whatsapp, facebook, instagram, tiktok, youtube,
         ...(email ? { email } : {}),
         foundingDate: foundingDate ? new Date(foundingDate) : undefined,
+        bureauCreationDate: bureauCreationDate ? new Date(bureauCreationDate) : undefined,
       },
     });
 

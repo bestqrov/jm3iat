@@ -129,6 +129,7 @@ export const RegisterPage: React.FC = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [form, setForm] = useState({
     orgName: '', orgEmail: '', orgPhone: '', orgCity: '', orgRegion: '',
+    bureauCreationDate: '',
     adminName: '', adminEmail: '', password: '', confirmPassword: '',
   });
   const [selectedModules, setSelectedModules] = useState<Set<ModuleKey>>(new Set());
@@ -283,6 +284,23 @@ export const RegisterPage: React.FC = () => {
                       <option value="">{t('common.selectOption')}</option>
                       {regions.map((r) => <option key={r} value={r}>{r}</option>)}
                     </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="label">
+                      {isAr ? 'تاريخ إنشاء المكتب (للتذكير بالتجديد)' : 'Date de création du bureau (pour rappel de renouvellement)'}
+                    </label>
+                    <input
+                      className="input"
+                      type="date"
+                      dir="ltr"
+                      value={form.bureauCreationDate}
+                      onChange={(e) => set('bureauCreationDate', e.target.value)}
+                    />
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      {isAr
+                        ? 'ستتلقى تذكيرات 30 يوماً قبل انتهاء صلاحية المكتب (3 سنوات)'
+                        : 'Vous recevrez des rappels 30 jours avant l\'expiration du bureau (3 ans)'}
+                    </p>
                   </div>
                 </div>
               </div>

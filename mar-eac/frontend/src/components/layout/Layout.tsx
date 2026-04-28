@@ -36,6 +36,19 @@ export const Layout: React.FC = () => {
   const showTrialBanner   = isTrial   && trialDays !== null && trialDays > 0 && !bannerDismissed;
   const showExpiredBanner = isExpired || (isTrial && trialDays === 0);
 
+  // Bureau expiry banner
+  const bureauCreationDate = (organization as any)?.bureauCreationDate;
+  const bureauExpiry = bureauCreationDate ? (() => {
+    const d = new Date(bureauCreationDate);
+    d.setFullYear(d.getFullYear() + 3);
+    return d;
+  })() : null;
+  const bureauDaysLeft = bureauExpiry
+    ? Math.ceil((bureauExpiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+  const showBureauBanner = bureauDaysLeft !== null && bureauDaysLeft <= 30 && !bannerDismissed;
+  const bureauExpired    = bureauDaysLeft !== null && bureauDaysLeft <= 0;
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -81,6 +94,29 @@ export const Layout: React.FC = () => {
               <Zap size={14} />
               {lang === 'ar' ? 'اشترك الآن' : 'S\'abonner'}
             </Link>
+          </div>
+        )}
+
+        {/* Bureau expiry — dismissible warning banner */}
+        {showBureauBanner && (
+          <div className={`border-b px-4 py-2 flex items-center gap-3 ${bureauExpired
+            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+            : bureauDaysLeft! <= 7
+              ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+              : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'}`}>
+            <AlertTriangle size={16} className={`flex-shrink-0 ${bureauExpired || bureauDaysLeft! <= 7 ? 'text-red-600 dark:text-red-400' : 'text-orange-500 dark:text-orange-400'}`} />
+            <p className={`text-sm flex-1 ${bureauExpired || bureauDaysLeft! <= 7 ? 'text-red-700 dark:text-red-300' : 'text-orange-700 dark:text-orange-300'}`}>
+              {lang === 'ar'
+                ? bureauExpired
+                  ? <>⛔ <strong>انتهت صلاحية مكتب الجمعية</strong> — أصبح المكتب غير قانوني. يجب إجراء انتخابات لتجديد المكتب فوراً.</>
+                  : <>⚠️ <strong>سيصبح المكتب غير قانوني بعد {bureauDaysLeft} يوم</strong> ({bureauExpiry!.toLocaleDateString('ar-MA')}). يجب تجديد انتخاب المكتب قبل هذا التاريخ.</>
+                : bureauExpired
+                  ? <>⛔ <strong>Le bureau de l&apos;association est expiré</strong> — le bureau est illégal. Des élections doivent être organisées immédiatement.</>
+                  : <>⚠️ <strong>Le bureau deviendra illégal dans {bureauDaysLeft} jour{bureauDaysLeft! > 1 ? 's' : ''}</strong> ({bureauExpiry!.toLocaleDateString('fr-FR')}). Le renouvellement du bureau doit être effectué avant cette date.</>}
+            </p>
+            <button onClick={() => setBannerDismissed(true)} className={`p-1 ${bureauExpired || bureauDaysLeft! <= 7 ? 'text-red-600 hover:text-red-800' : 'text-orange-500 hover:text-orange-700'}`}>
+              <X size={16} />
+            </button>
           </div>
         )}
 
