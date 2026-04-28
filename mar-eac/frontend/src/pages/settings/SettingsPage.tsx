@@ -65,6 +65,7 @@ export const SettingsPage: React.FC = () => {
     bankName: org?.bankName || '',
     bankAccount: org?.bankAccount || '',
     bankRib: org?.bankRib || '',
+    membershipFee: org?.membershipFee != null ? String(org.membershipFee) : '',
   });
 
   const [socialForm, setSocialForm] = useState({
@@ -577,6 +578,27 @@ export const SettingsPage: React.FC = () => {
                     placeholder="000 000 0000000000000000 00"
                   />
                 </div>
+              </div>
+              {/* Membership fee */}
+              <div>
+                <label className="label flex items-center gap-1.5">
+                  <CreditCard size={13} className="text-emerald-500" />
+                  {lang === 'ar' ? 'رسوم الانخراط السنوي (درهم)' : 'Cotisation annuelle d\'adhésion (MAD)'}
+                </label>
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={contactForm.membershipFee}
+                  onChange={(e) => setContactForm({ ...contactForm, membershipFee: e.target.value })}
+                  placeholder={lang === 'ar' ? 'مثال: 100' : 'Ex : 100'}
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  {lang === 'ar'
+                    ? 'ستظهر هذه الرسوم في صفحة الانضمام العامة للجمعية'
+                    : 'Ce montant sera affiché sur la page publique de demande d\'adhésion'}
+                </p>
               </div>
             </div>
           </div>

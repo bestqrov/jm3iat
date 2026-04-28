@@ -46,6 +46,7 @@ export const membersApi = {
   create: (data: any) => api.post('/members', data),
   update: (id: string, data: any) => api.put(`/members/${id}`, data),
   delete: (id: string) => api.delete(`/members/${id}`),
+  approve: (id: string) => api.post(`/members/${id}/approve`),
   getBoard: () => api.get('/members/board'),
   getStats: () => api.get('/members/stats'),
 };
@@ -453,6 +454,11 @@ export const calendarApi = {
 export const publicApi = {
   getProfile:      (slug: string)            => api.get(`/public/${slug}`),
   submitJoin:      (slug: string, data: any) => api.post(`/public/${slug}/join`, data),
+  uploadReceipt:   (slug: string, file: File) => {
+    const fd = new FormData();
+    fd.append('receipt', file);
+    return api.post(`/public/${slug}/receipt`, fd);
+  },
   getSupportContact: ()                      => api.get('/public/contact'),
 };
 

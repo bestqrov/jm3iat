@@ -1,10 +1,10 @@
 const prisma = require('../../config/database');
+const path   = require('path');
 const { push: pushNotification } = require('../notifications/notifications.controller');
 
 const getPublicProfile = async (req, res) => {
   try {
     const { slug } = req.params;
-    // slug = email prefix or org id suffix
     const org = await prisma.organization.findFirst({
       where: {
         OR: [
@@ -19,7 +19,8 @@ const getPublicProfile = async (req, res) => {
         activities: true, activitiesAr: true, logo: true,
         foundingDate: true, facebook: true, instagram: true,
         whatsapp: true, youtube: true, tiktok: true,
-        modules: true,
+        modules: true, membershipFee: true,
+        bankName: true, bankAccount: true, bankRib: true,
         _count: { select: { members: true, meetings: true, projects: true } },
       },
     });
@@ -33,7 +34,7 @@ const getPublicProfile = async (req, res) => {
 const submitJoinRequest = async (req, res) => {
   try {
     const { slug } = req.params;
-    const { fullName, phone, email, cin, city, message } = req.body;
+    const { fullName, phone, email, city, message, paymentReceiptUrl, notifyChannel } = req.body;
     if (!fullName || !phone) return res.status(400).json({ message: 'Nom et téléphone requis' });
 
     const org = await prisma.organization.findFirst({
@@ -53,6 +54,8 @@ const submitJoinRequest = async (req, res) => {
         phone,
         email: email || null,
         isActive: false,
+        paymentReceiptUrl: paymentReceiptUrl || null,
+        notifyChannel: notifyChannel || null,
       },
     });
 
@@ -61,12 +64,22 @@ const submitJoinRequest = async (req, res) => {
       type: 'INFO',
       title: `New join request: ${fullName}`,
       titleAr: `طلب انضمام جديد: ${fullName}`,
-      body: `${phone}${email ? ' — ' + email : ''}`,
-      bodyAr: `${phone}${email ? ' — ' + email : ''}`,
+      body: `${phone}${email ? ' — ' + email : ''}${paymentReceiptUrl ? ' — وصل دفع مرفق' : ''}`,
+      bodyAr: `${phone}${email ? ' — ' + email : ''}${paymentReceiptUrl ? ' — وصل دفع مرفق' : ''}`,
       link: '/members',
     });
 
     res.json({ ok: true, message: 'Demande envoyée avec succès' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const uploadPaymentReceipt = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const url = `/uploads/${req.file.filename}`;
+    res.json({ url });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -79,8 +92,8 @@ const getSupportContact = async (req, res) => {
     });
     const obj = { email: 'support@mar-eac.ma', whatsapp: '' };
     for (const s of settings) {
-      if (s.key === 'support_email')    obj.email     = s.value;
-      if (s.key === 'support_whatsapp') obj.whatsapp  = s.value;
+      if (s.key === 'support_email')    obj.email    = s.value;
+      if (s.key === 'support_whatsapp') obj.whatsapp = s.value;
     }
     res.json(obj);
   } catch (err) {
@@ -88,4 +101,4 @@ const getSupportContact = async (req, res) => {
   }
 };
 
-module.exports = { getPublicProfile, submitJoinRequest, getSupportContact };
+module.exports = { getPublicProfile, submitJoinRequest, uploadPaymentReceipt, getSupportContact };

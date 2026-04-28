@@ -1,6 +1,23 @@
-const prisma = require('../../config/database');
+const prisma      = require('../../config/database');
+const axios       = require('axios');
+const { sendEmail } = require('../../utils/mailer');
 
 const UNIQUE_ROLES = ['PRESIDENT', 'TREASURER'];
+
+// ── WhatsApp helper (Evolution API) ─────────────────────────────────────────
+const sendWA = async (phone, text, orgInstance) => {
+  const rows = await prisma.platformSettings.findMany({
+    where: { key: { in: ['evolution_api_url', 'evolution_api_key'] } },
+  });
+  const m = Object.fromEntries(rows.map(r => [r.key, r.value]));
+  const evoUrl = m['evolution_api_url'] || process.env.EVOLUTION_API_URL || '';
+  const evoKey = m['evolution_api_key'] || process.env.EVOLUTION_API_KEY || '';
+  if (!evoUrl) throw new Error('EVOLUTION_API_URL not set');
+  const instance = orgInstance || process.env.EVOLUTION_INSTANCE || 'main';
+  return axios.post(`${evoUrl}/message/sendText/${instance}`,
+    { number: phone.replace(/[\s\-\+]/g, ''), textMessage: { text } },
+    { headers: { apikey: evoKey, 'Content-Type': 'application/json' }, timeout: 15000 });
+};
 
 const getAll = async (req, res) => {
   try {
@@ -156,4 +173,91 @@ const getStats = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, remove, getBoardMembers, getStats };
+// ── Approve a pending join request ───────────────────────────────────────────
+const approve = async (req, res) => {
+  try {
+    const orgId    = req.organization.id;
+    const memberId = req.params.id;
+
+    const member = await prisma.member.findFirst({
+      where: { id: memberId, organizationId: orgId },
+    });
+    if (!member) return res.status(404).json({ message: 'Member not found' });
+    if (member.isActive) return res.status(400).json({ message: 'Already active' });
+
+    // Activate the member
+    const updated = await prisma.member.update({
+      where: { id: memberId },
+      data: { isActive: true, joinDate: new Date() },
+    });
+
+    // Fetch org for name + fee + whatsapp instance
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true, nameAr: true, membershipFee: true, evolutionInstance: true, email: true },
+    });
+
+    const feeText = org?.membershipFee
+      ? `\n💰 الاشتراك السنوي المدفوع: ${org.membershipFee} درهم`
+      : '';
+    const feeFr = org?.membershipFee
+      ? `\n💰 Cotisation annuelle réglée : ${org.membershipFee} MAD`
+      : '';
+
+    const msgAr =
+      `✅ تهانينا ${member.name}!\n` +
+      `تم قبول طلب انضمامك إلى جمعية "${org?.nameAr || org?.name}".\n` +
+      feeText +
+      `\nمرحباً بك في عائلة الجمعية 🎉`;
+
+    const msgFr =
+      `✅ Félicitations ${member.name} !\n` +
+      `Votre demande d'adhésion à l'association "${org?.name}" a été acceptée.` +
+      feeFr +
+      `\nBienvenue dans la famille de l'association 🎉`;
+
+    const receiptHtml = `
+      <div style="font-family:sans-serif;max-width:520px;margin:auto;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+        <div style="background:#4f46e5;padding:24px;text-align:center">
+          <h1 style="color:#fff;margin:0;font-size:20px">${org?.nameAr || org?.name}</h1>
+          <p style="color:#c7d2fe;margin:6px 0 0;font-size:13px">وصل انخراط / Reçu d'adhésion</p>
+        </div>
+        <div style="padding:24px">
+          <p style="margin:0 0 16px;font-size:15px;color:#111827">السلام عليكم <strong>${member.name}</strong>،</p>
+          <p style="margin:0 0 16px;font-size:14px;color:#374151">
+            يسعدنا إعلامكم بقبول طلب انضمامكم رسمياً إلى الجمعية.
+          </p>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;color:#374151">
+            <tr style="background:#f9fafb"><td style="padding:10px 14px;font-weight:600">الاسم / Nom</td><td style="padding:10px 14px">${member.name}</td></tr>
+            ${member.phone ? `<tr><td style="padding:10px 14px;font-weight:600">الهاتف / Tél</td><td style="padding:10px 14px">${member.phone}</td></tr>` : ''}
+            <tr style="background:#f9fafb"><td style="padding:10px 14px;font-weight:600">تاريخ الانخراط</td><td style="padding:10px 14px">${new Date().toLocaleDateString('fr-MA')}</td></tr>
+            ${org?.membershipFee ? `<tr><td style="padding:10px 14px;font-weight:600">مبلغ الاشتراك</td><td style="padding:10px 14px;color:#16a34a;font-weight:700">${org.membershipFee} درهم / MAD ✅</td></tr>` : ''}
+          </table>
+          <p style="margin:20px 0 0;font-size:13px;color:#6b7280;text-align:center">
+            شكراً لثقتكم · Merci pour votre confiance
+          </p>
+        </div>
+      </div>`;
+
+    // Send via chosen channel — best-effort (don't fail the approval if sending fails)
+    if (member.notifyChannel === 'whatsapp' && member.phone) {
+      sendWA(member.phone, msgAr, org?.evolutionInstance).catch(e =>
+        console.warn('[approve] WA send failed:', e.message));
+    } else if (member.email) {
+      sendEmail(
+        member.email,
+        `✅ تم قبول انخراطك — ${org?.nameAr || org?.name}`,
+        receiptHtml,
+      ).catch(e => console.warn('[approve] Email send failed:', e.message));
+    } else if (member.phone) {
+      // Fallback: WhatsApp even if channel was email but no email address
+      sendWA(member.phone, msgAr, org?.evolutionInstance).catch(() => {});
+    }
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getAll, getById, create, update, remove, getBoardMembers, getStats, approve };

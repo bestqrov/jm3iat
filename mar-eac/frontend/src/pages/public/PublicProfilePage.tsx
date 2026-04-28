@@ -6,6 +6,7 @@ import {
   Building2, Globe, Star, Heart, Award, TrendingUp,
   FileText, Share2, Copy, Check, Droplets, ShoppingBag, Bus,
   ChevronRight, UserPlus, MessageSquare, Clock, Printer,
+  Upload, X, CreditCard, Banknote, Smartphone,
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { publicApi } from '../../lib/api';
@@ -16,7 +17,7 @@ interface OrgProfile {
   nameAr?: string;
   email: string;
   phone?: string;
-  city?: string;  cityAr?: string;
+  city?: string; cityAr?: string;
   region?: string; regionAr?: string;
   address?: string; addressAr?: string;
   description?: string; descriptionAr?: string;
@@ -26,6 +27,10 @@ interface OrgProfile {
   facebook?: string; instagram?: string;
   whatsapp?: string; youtube?: string; tiktok?: string;
   modules?: string[];
+  membershipFee?: number;
+  bankName?: string;
+  bankAccount?: string;
+  bankRib?: string;
   _count: { members: number; meetings: number; projects: number };
 }
 
@@ -40,7 +45,15 @@ export const PublicProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [tab, setTab]         = useState<Tab>('about');
-  const [form, setForm]       = useState({ fullName: '', phone: '', email: '', city: '', message: '' });
+  const [form, setForm] = useState({
+    fullName: '', phone: '', email: '', city: '', message: '',
+    notifyChannel: 'email' as 'email' | 'whatsapp',
+  });
+  const [receiptFile, setReceiptFile]     = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string>('');
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [receiptUrl, setReceiptUrl]       = useState('');
+  const receiptInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted]   = useState(false);
   const [formErr, setFormErr]       = useState('');
@@ -55,11 +68,46 @@ export const PublicProfilePage: React.FC = () => {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  const handleReceiptSelected = async (file: File) => {
+    setReceiptFile(file);
+    // Show image preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = e => setReceiptPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setReceiptPreview('');
+    }
+    // Upload immediately
+    setUploadingReceipt(true);
+    try {
+      const res = await publicApi.uploadReceipt(slug!, file);
+      setReceiptUrl(res.data.url);
+    } catch {
+      setFormErr('فشل رفع الوصل — Échec du téléchargement du reçu');
+    } finally { setUploadingReceipt(false); }
+  };
+
   const submit = async () => {
-    if (!form.fullName || !form.phone) { setFormErr('الاسم والهاتف مطلوبان / Nom et téléphone requis'); return; }
+    if (!form.fullName || !form.phone) {
+      setFormErr('الاسم والهاتف مطلوبان / Nom et téléphone requis');
+      return;
+    }
+    if (uploadingReceipt) {
+      setFormErr('يرجى الانتظار حتى اكتمال رفع الوصل...');
+      return;
+    }
     setSubmitting(true); setFormErr('');
     try {
-      await publicApi.submitJoin(slug!, form);
+      await publicApi.submitJoin(slug!, {
+        fullName:          form.fullName,
+        phone:             form.phone,
+        email:             form.email,
+        city:              form.city,
+        message:           form.message,
+        paymentReceiptUrl: receiptUrl || undefined,
+        notifyChannel:     form.notifyChannel,
+      });
       setSubmitted(true);
     } catch (e: any) {
       setFormErr(e?.response?.data?.message || 'Erreur');
@@ -617,9 +665,9 @@ export const PublicProfilePage: React.FC = () => {
             {/* Benefits */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { icon: <Users size={20} className="text-indigo-500" />,    title: 'مجتمع',       sub: 'شبكة علاقات قوية',    bg: 'bg-indigo-50' },
-                { icon: <TrendingUp size={20} className="text-emerald-500"/>, title: 'تطوير',      sub: 'فرص تكوين وتعلم',     bg: 'bg-emerald-50' },
-                { icon: <Award size={20} className="text-amber-500" />,     title: 'مشاركة',      sub: 'أنشطة ومشاريع',       bg: 'bg-amber-50' },
+                { icon: <Users size={20} className="text-indigo-500" />,      title: 'مجتمع',   sub: 'شبكة علاقات قوية', bg: 'bg-indigo-50' },
+                { icon: <TrendingUp size={20} className="text-emerald-500" />, title: 'تطوير',   sub: 'فرص تكوين وتعلم',  bg: 'bg-emerald-50' },
+                { icon: <Award size={20} className="text-amber-500" />,        title: 'مشاركة', sub: 'أنشطة ومشاريع',    bg: 'bg-amber-50' },
               ].map((b, i) => (
                 <div key={i} className={`${b.bg} rounded-2xl p-4 text-center`}>
                   <div className="flex justify-center mb-2">{b.icon}</div>
@@ -628,6 +676,38 @@ export const PublicProfilePage: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {/* Subscription fee info */}
+            {org.membershipFee && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <CreditCard size={18} className="text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-emerald-900 text-sm">رسوم الانخراط السنوي</p>
+                    <p className="text-emerald-700 text-xs">Cotisation annuelle d'adhésion</p>
+                  </div>
+                  <div className="ms-auto text-right">
+                    <p className="text-2xl font-extrabold text-emerald-700">{org.membershipFee}</p>
+                    <p className="text-xs text-emerald-600 font-semibold">درهم / MAD</p>
+                  </div>
+                </div>
+                {(org.bankName || org.bankAccount || org.bankRib) && (
+                  <div className="bg-white rounded-xl p-3 space-y-1.5 border border-emerald-100">
+                    <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Banknote size={12} className="text-emerald-500" /> معلومات الدفع / Paiement
+                    </p>
+                    {org.bankName    && <p className="text-xs text-gray-700"><span className="font-semibold text-gray-500">البنك: </span>{org.bankName}</p>}
+                    {org.bankAccount && <p className="text-xs text-gray-700 dir-ltr"><span className="font-semibold text-gray-500">الحساب: </span><span dir="ltr">{org.bankAccount}</span></p>}
+                    {org.bankRib     && <p className="text-xs text-gray-700"><span className="font-semibold text-gray-500">RIB: </span><span dir="ltr">{org.bankRib}</span></p>}
+                  </div>
+                )}
+                <p className="text-[11px] text-emerald-600 mt-2 text-center">
+                  ✅ يرجى إرفاق وصل الدفع أدناه بعد أداء الاشتراك · Joignez le reçu de paiement ci-dessous
+                </p>
+              </div>
+            )}
 
             {/* Form */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -645,7 +725,11 @@ export const PublicProfilePage: React.FC = () => {
                     <CheckCircle2 size={40} className="text-emerald-500" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">تم إرسال طلبك!</h3>
-                  <p className="text-gray-500 text-sm mb-6">سيتواصل معك مسؤول الجمعية قريباً على الرقم الذي أدخلته</p>
+                  <p className="text-gray-500 text-sm mb-1">سيتم مراجعة طلبك من قِبَل مسؤول الجمعية</p>
+                  <p className="text-gray-400 text-xs mb-6">
+                    ستتلقى وصل الانخراط عبر{' '}
+                    {form.notifyChannel === 'whatsapp' ? 'واتساب' : 'البريد الإلكتروني'} بعد القبول
+                  </p>
                   <button onClick={() => { setSubmitted(false); setTab('about'); }}
                     className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">
                     العودة للصفحة الرئيسية
@@ -653,34 +737,141 @@ export const PublicProfilePage: React.FC = () => {
                 </div>
               ) : (
                 <div className="p-6 space-y-4">
+
+                  {/* Personal info */}
                   <div>
                     <label className={lbl}>الاسم الكامل *</label>
-                    <input className={inp} placeholder="مثال: محمد الأمين" value={form.fullName} onChange={e => setForm(p => ({...p, fullName: e.target.value}))} />
+                    <input className={inp} placeholder="مثال: محمد الأمين"
+                      value={form.fullName} onChange={e => setForm(p => ({...p, fullName: e.target.value}))} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className={lbl}>الهاتف *</label>
-                      <input className={inp} type="tel" placeholder="06XXXXXXXX" dir="ltr" value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))} />
+                      <input className={inp} type="tel" placeholder="06XXXXXXXX" dir="ltr"
+                        value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))} />
                     </div>
                     <div>
                       <label className={lbl}>المدينة</label>
-                      <input className={inp} placeholder="مراكش..." value={form.city} onChange={e => setForm(p => ({...p, city: e.target.value}))} />
+                      <input className={inp} placeholder="مراكش..."
+                        value={form.city} onChange={e => setForm(p => ({...p, city: e.target.value}))} />
                     </div>
                   </div>
                   <div>
                     <label className={lbl}>البريد الإلكتروني</label>
-                    <input className={inp} type="email" placeholder="exemple@gmail.com" dir="ltr" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} />
+                    <input className={inp} type="email" placeholder="exemple@gmail.com" dir="ltr"
+                      value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} />
                   </div>
                   <div>
                     <label className={lbl}>رسالة أو ملاحظة (اختياري)</label>
-                    <textarea className={`${inp} h-24 resize-none`} placeholder="اكتب سبب رغبتك في الانضمام..." value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} />
+                    <textarea className={`${inp} h-20 resize-none`}
+                      placeholder="اكتب سبب رغبتك في الانضمام..."
+                      value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} />
                   </div>
+
+                  {/* Payment receipt upload */}
+                  <div>
+                    <label className={lbl}>
+                      وصل الدفع {org.membershipFee ? '*' : '(اختياري)'}
+                      <span className="normal-case font-normal text-gray-400 ms-1">
+                        · Reçu de paiement
+                      </span>
+                    </label>
+                    <input
+                      ref={receiptInputRef}
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={e => e.target.files?.[0] && handleReceiptSelected(e.target.files[0])}
+                    />
+                    {!receiptFile ? (
+                      <button
+                        type="button"
+                        onClick={() => receiptInputRef.current?.click()}
+                        className="w-full border-2 border-dashed border-gray-200 hover:border-indigo-400 rounded-xl py-5 flex flex-col items-center gap-2 transition-colors text-gray-400 hover:text-indigo-500 bg-gray-50 hover:bg-indigo-50"
+                      >
+                        <Upload size={22} />
+                        <span className="text-xs font-medium">اضغط لرفع وصل الدفع</span>
+                        <span className="text-[10px]">صورة أو PDF — 10MB max</span>
+                      </button>
+                    ) : (
+                      <div className="border border-gray-200 rounded-xl p-3 flex items-center gap-3 bg-gray-50">
+                        {receiptPreview ? (
+                          <img src={receiptPreview} alt="receipt" className="w-14 h-14 object-cover rounded-lg border flex-shrink-0" />
+                        ) : (
+                          <div className="w-14 h-14 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileText size={22} className="text-indigo-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-800 truncate">{receiptFile.name}</p>
+                          {uploadingReceipt ? (
+                            <p className="text-[11px] text-indigo-500 flex items-center gap-1 mt-0.5">
+                              <Loader2 size={11} className="animate-spin" /> جارٍ الرفع...
+                            </p>
+                          ) : receiptUrl ? (
+                            <p className="text-[11px] text-emerald-600 flex items-center gap-1 mt-0.5">
+                              <Check size={11} /> تم رفع الوصل بنجاح
+                            </p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setReceiptFile(null); setReceiptPreview(''); setReceiptUrl(''); }}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 flex-shrink-0"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notification channel */}
+                  <div>
+                    <label className={lbl}>
+                      استلام وصل الانخراط عبر · Recevoir le reçu via
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setForm(p => ({...p, notifyChannel: 'email'}))}
+                        className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                          form.notifyChannel === 'email'
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                        }`}
+                      >
+                        <Mail size={16} />
+                        <span>البريد الإلكتروني</span>
+                        {form.notifyChannel === 'email' && <Check size={14} className="ms-auto" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm(p => ({...p, notifyChannel: 'whatsapp'}))}
+                        className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                          form.notifyChannel === 'whatsapp'
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                        }`}
+                      >
+                        <Smartphone size={16} />
+                        <span>واتساب</span>
+                        {form.notifyChannel === 'whatsapp' && <Check size={14} className="ms-auto" />}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1.5 text-center">
+                      {form.notifyChannel === 'email'
+                        ? 'سيُرسَل وصل الانخراط إلى بريدك الإلكتروني بعد الموافقة'
+                        : 'سيُرسَل وصل الانخراط إلى رقم هاتفك عبر واتساب بعد الموافقة'}
+                    </p>
+                  </div>
+
                   {formErr && (
                     <p className="text-sm text-red-500 flex items-center gap-1.5 bg-red-50 px-3 py-2 rounded-xl">
                       <span>⚠</span> {formErr}
                     </p>
                   )}
-                  <button onClick={submit} disabled={submitting}
+
+                  <button onClick={submit} disabled={submitting || uploadingReceipt}
                     className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm text-sm">
                     {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                     {submitting ? 'جارٍ الإرسال...' : 'إرسال طلب الانضمام'}
