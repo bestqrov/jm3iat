@@ -36,6 +36,7 @@ export const authApi = {
   upgradeSubscription:  (plan: string) => api.post('/auth/subscription/upgrade', { plan }),
   cancelDowngrade:      ()             => api.post('/auth/subscription/cancel-downgrade'),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  toggleAddon: (addon: string) => api.post('/auth/addon/toggle', { addon }),
 };
 
 // ---- Members ----
@@ -186,6 +187,8 @@ export const waterApi = {
   getAllReadings: (params?: any) => api.get('/water/readings', { params }),
   getReadings: (id: string) => api.get(`/water/${id}/readings`),
   addReading: (id: string, data: any) => api.post(`/water/${id}/readings`, data),
+  // Smart meter OCR
+  scanMeter: (imageBase64: string) => api.post('/water/ocr-reading', { imageBase64 }),
   // Invoices
   getInvoices: (params?: any) => api.get('/water/invoices', { params }),
   markPaid: (invoiceId: string, data?: any) => api.put(`/water/invoices/${invoiceId}/pay`, data),

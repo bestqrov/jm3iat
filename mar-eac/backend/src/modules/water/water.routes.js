@@ -1,11 +1,15 @@
 const router = require('express').Router();
 const ctrl = require('./water.controller');
+const ocr  = require('./water-ocr');
 const { auth } = require('../../middleware/auth');
 const { tenant } = require('../../middleware/tenant');
 const { requireModule } = require('../../middleware/module');
 const upload = require('../../utils/multer');
 
 router.use(auth, tenant, requireModule('WATER'));
+
+// Smart meter OCR scan (requires SMART_METER addon)
+router.post('/ocr-reading', ocr.scanMeterReading);
 
 // Summary & Reports
 router.get('/summary', ctrl.getSummary);

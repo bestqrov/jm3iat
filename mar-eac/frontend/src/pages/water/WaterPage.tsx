@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Plus, Droplets, Trash2, CheckCircle, Pencil, Wrench,
   BarChart2, AlertTriangle, Phone, MapPin, Hash, RefreshCw,
@@ -33,7 +33,8 @@ const repairStatusColor: Record<string, string> = {
 
 export const WaterPage: React.FC = () => {
   const { lang } = useLanguage();
-  const { isWaterReader } = useAuth();
+  const { isWaterReader, organization } = useAuth();
+  const hasMeterOCR = ((organization as any)?.modules ?? []).includes('SMART_METER');
   const t = (key: string) => key; // handled inline for water-specific labels
   const w = (key: string) => {
     const map: Record<string, Record<string, string>> = {
@@ -176,7 +177,13 @@ export const WaterPage: React.FC = () => {
 
   // Forms
   const [instForm, setInstForm] = useState({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true, readerId: '' });
-  const [readingForm, setReadingForm] = useState({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '' });
+  const [readingForm, setReadingForm] = useState({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '' });
+
+  // Smart meter OCR state
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState<{ reading: number | null; confidence: string; imageUrl: string } | null>(null);
+  const [ocrPreview, setOcrPreview] = useState<string | null>(null);
   const [payForm, setPayForm] = useState({ method: 'CASH', reference: '', notes: '' });
   const [payReceiptFile, setPayReceiptFile] = useState<File | null>(null);
   const [repairForm, setRepairForm] = useState({
@@ -338,14 +345,52 @@ export const WaterPage: React.FC = () => {
     try {
       await waterApi.addReading(readingInstId, readingForm);
       setShowReadingModal(false);
-      setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '' });
+      setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '' });
       setReadingInstId('');
+      setOcrResult(null);
+      setOcrPreview(null);
       loadSummary();
       if (activeTab === 'readings') loadReadings();
       if (activeTab === 'invoices') loadInvoices();
     } catch (err: any) {
       alert(err.response?.data?.message || w('error'));
     } finally { setSaving(false); }
+  };
+
+  const handleMeterPhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onload = (ev) => setOcrPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    setOcrLoading(true);
+    setOcrResult(null);
+
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result as string);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+
+      const res = await waterApi.scanMeter(base64);
+      const data = res.data;
+      setOcrResult(data);
+
+      if (data.reading !== null) {
+        setReadingForm(f => ({ ...f, currentReading: String(data.reading), meterPhotoUrl: data.imageUrl }));
+      }
+    } catch (err: any) {
+      alert(lang === 'ar' ? 'فشل تحليل الصورة، أدخل القيمة يدوياً' : 'Analyse échouée, saisissez la valeur manuellement');
+    } finally {
+      setOcrLoading(false);
+      // Reset input so the same file can be re-selected
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+    }
   };
 
   const handleMarkPaid = async () => {
@@ -532,7 +577,7 @@ export const WaterPage: React.FC = () => {
           {w('title')}
         </h2>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={() => { setReadingInstId(''); setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '' }); setShowReadingModal(true); }} className="btn-secondary text-sm">
+          <button onClick={() => { setReadingInstId(''); setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '' }); setOcrResult(null); setOcrPreview(null); setShowReadingModal(true); }} className="btn-secondary text-sm">
             <Plus size={15} />{w('addReading')}
           </button>
           <button onClick={() => openRepairModal()} className="btn-warning text-sm">
@@ -830,7 +875,7 @@ export const WaterPage: React.FC = () => {
                           <td>
                             <div className="flex gap-1">
                               <button
-                                onClick={() => { setReadingInstId(inst.id); setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '' }); setShowReadingModal(true); }}
+                                onClick={() => { setReadingInstId(inst.id); setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '' }); setOcrResult(null); setOcrPreview(null); setShowReadingModal(true); }}
                                 className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20" title={w('addReading')}>
                                 <Hash size={14} />
                               </button>
@@ -1523,9 +1568,19 @@ export const WaterPage: React.FC = () => {
       </Modal>
 
       {/* Add Reading Modal */}
-      <Modal isOpen={showReadingModal} onClose={() => setShowReadingModal(false)} title={w('addReading')}
-        footer={<><button onClick={() => setShowReadingModal(false)} className="btn-secondary">{w('cancel')}</button><button onClick={handleAddReading} disabled={saving} className="btn-primary">{saving ? w('loading') : w('save')}</button></>}
+      <Modal isOpen={showReadingModal} onClose={() => { setShowReadingModal(false); setOcrResult(null); setOcrPreview(null); }} title={w('addReading')}
+        footer={<><button onClick={() => { setShowReadingModal(false); setOcrResult(null); setOcrPreview(null); }} className="btn-secondary">{w('cancel')}</button><button onClick={handleAddReading} disabled={saving} className="btn-primary">{saving ? w('loading') : w('save')}</button></>}
       >
+        {/* Hidden camera input */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handleMeterPhotoSelected}
+        />
+
         <div className="space-y-4">
           <div>
             <label className="label">{lang === 'ar' ? 'المنشأة' : 'Installation'} *</label>
@@ -1539,9 +1594,63 @@ export const WaterPage: React.FC = () => {
               ))}
             </select>
           </div>
+
+          {/* Smart meter OCR scan section */}
+          {hasMeterOCR && (
+            <div className="rounded-xl border-2 border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/10 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-violet-800 dark:text-violet-300 flex items-center gap-1.5">
+                  📷 {lang === 'ar' ? 'مسح العداد بالكاميرا' : 'Scanner le compteur par caméra'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={ocrLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white text-xs font-medium transition-colors"
+                >
+                  {ocrLoading
+                    ? <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />{lang === 'ar' ? 'جاري التحليل...' : 'Analyse...'}</>
+                    : <>{lang === 'ar' ? '📷 التقاط صورة' : '📷 Prendre une photo'}</>}
+                </button>
+              </div>
+
+              {/* Preview + OCR result */}
+              {(ocrPreview || ocrResult) && (
+                <div className="flex items-start gap-3">
+                  {ocrPreview && (
+                    <img src={ocrPreview} alt="meter" className="w-20 h-20 object-cover rounded-lg border border-violet-300 dark:border-violet-700 flex-shrink-0" />
+                  )}
+                  {ocrResult && (
+                    <div className="flex-1">
+                      {ocrResult.reading !== null ? (
+                        <>
+                          <p className={`text-sm font-bold ${ocrResult.confidence === 'high' ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                            {ocrResult.confidence === 'high' ? '✅' : '⚠️'}{' '}
+                            {lang === 'ar' ? 'القيمة المقروءة:' : 'Valeur détectée :'}{' '}
+                            <span className="font-mono text-base">{ocrResult.reading} m³</span>
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            {lang === 'ar'
+                              ? `ثقة: ${ocrResult.confidence === 'high' ? 'عالية' : ocrResult.confidence === 'medium' ? 'متوسطة' : 'منخفضة'} — يمكنك تعديل القيمة يدوياً أدناه`
+                              : `Confiance : ${ocrResult.confidence === 'high' ? 'haute' : ocrResult.confidence === 'medium' ? 'moyenne' : 'faible'} — vous pouvez corriger manuellement ci-dessous`}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-red-600 dark:text-red-400">
+                          ❌ {lang === 'ar' ? 'لم يتمكن من قراءة العداد — أدخل القيمة يدوياً' : 'Lecture impossible — saisissez la valeur manuellement'}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="label">{w('currentReading')} *</label>
-            <input className="input font-mono" type="number" step="0.01" value={readingForm.currentReading}
+            <input className={`input font-mono ${ocrResult?.reading !== null && readingForm.currentReading ? 'border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-900/10' : ''}`}
+              type="number" step="0.01" value={readingForm.currentReading}
               onChange={(e) => setReadingForm({ ...readingForm, currentReading: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">

@@ -351,6 +351,7 @@ model MeterReading {
   month           Int
   year            Int
   notes           String?
+  meterPhotoUrl   String?
   createdAt       DateTime @default(now())
 
   installation WaterInstallation @relation(fields: [installationId], references: [id], onDelete: NoAction, onUpdate: NoAction)

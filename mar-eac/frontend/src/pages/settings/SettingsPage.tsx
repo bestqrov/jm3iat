@@ -109,7 +109,9 @@ export const SettingsPage: React.FC = () => {
   const [backupToggling,  setBackupToggling]  = useState(false);
   const [backupCreating,  setBackupCreating]  = useState(false);
 
-  const hasBackup = ((org as any)?.modules ?? []).includes('BACKUP');
+  const hasBackup      = ((org as any)?.modules ?? []).includes('BACKUP');
+  const hasSmartMeter  = ((org as any)?.modules ?? []).includes('SMART_METER');
+  const [smartMeterToggling, setSmartMeterToggling] = useState(false);
 
   const loadBackups = async () => {
     if (!hasBackup) return;
@@ -127,6 +129,14 @@ export const SettingsPage: React.FC = () => {
       await backupApi.toggle();
       await refreshUser();
     } catch {} finally { setBackupToggling(false); }
+  };
+
+  const handleToggleSmartMeter = async () => {
+    setSmartMeterToggling(true);
+    try {
+      await authApi.toggleAddon('SMART_METER');
+      await refreshUser();
+    } catch {} finally { setSmartMeterToggling(false); }
   };
 
   const handleCreateBackup = async () => {
@@ -1289,6 +1299,60 @@ export const SettingsPage: React.FC = () => {
               </p>
             </div>
           )}
+        </div>
+
+        {/* ── SMART_METER addon card ── */}
+        <div className={`rounded-xl border-2 p-4 transition-colors ${hasSmartMeter ? 'border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-900/10' : 'border-gray-200 dark:border-gray-700'}`}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl ${hasSmartMeter ? 'bg-violet-100 dark:bg-violet-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                📷
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {lang === 'ar' ? 'قراءة العدادات بالكاميرا (ذكاء اصطناعي)' : 'Lecture compteurs par caméra (IA)'}
+                  </span>
+                  <span className="text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-2 py-0.5 rounded-full font-medium">
+                    +49 MAD/mois
+                  </span>
+                  {hasSmartMeter && (
+                    <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      <CheckCircle2 size={11} />{lang === 'ar' ? 'مفعّل' : 'Actif'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
+                  {lang === 'ar'
+                    ? 'صوّر العداد بكاميرا هاتفك — الذكاء الاصطناعي يقرأ القيمة تلقائياً ويحسب الاستهلاك ويُنشئ الفاتورة'
+                    : 'Photographiez le compteur avec votre mobile — l\'IA lit la valeur, calcule la consommation et génère la facture automatiquement'}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(lang === 'ar'
+                    ? ['📷 تصوير العداد', '🤖 قراءة آلية', '⚡ حساب فوري', '💧 فاتورة تلقائية']
+                    : ['📷 Photo compteur', '🤖 Lecture IA', '⚡ Calcul instantané', '💧 Facture auto']
+                  ).map(f => (
+                    <span key={f} className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{f}</span>
+                  ))}
+                </div>
+                {!hasSmartMeter && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                    💡 {lang === 'ar'
+                      ? 'يتطلب تفعيل وحدة إدارة الماء — الرسوم تُطبَّق في الشهر القادم'
+                      : 'Nécessite le module Gestion de l\'eau activé — frais appliqués le mois prochain'}
+                  </p>
+                )}
+              </div>
+            </div>
+            {/* Toggle switch */}
+            <button
+              onClick={handleToggleSmartMeter}
+              disabled={smartMeterToggling}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${hasSmartMeter ? 'bg-violet-600' : 'bg-gray-200 dark:bg-gray-600'}`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${hasSmartMeter ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </div>
         </div>
       </div>
 

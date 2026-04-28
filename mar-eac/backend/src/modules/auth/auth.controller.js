@@ -336,4 +336,33 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, updateOrganization, uploadLogo, upgradeSubscription, cancelDowngrade, applyPlanChange, forgotPassword };
+const TOGGLEABLE_ADDONS = ['BACKUP', 'WHATSAPP', 'SMART_METER'];
+
+const toggleAddon = async (req, res) => {
+  try {
+    const { addon } = req.body;
+    if (!TOGGLEABLE_ADDONS.includes(addon)) {
+      return res.status(400).json({ message: 'Invalid addon key' });
+    }
+
+    const org = await prisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+      select: { modules: true },
+    });
+
+    const modules = org.modules || [];
+    const enabled = modules.includes(addon);
+    const updated = enabled ? modules.filter(m => m !== addon) : [...modules, addon];
+
+    await prisma.organization.update({
+      where: { id: req.user.organizationId },
+      data: { modules: updated },
+    });
+
+    res.json({ enabled: !enabled, modules: updated });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { register, login, getMe, updateProfile, updateOrganization, uploadLogo, upgradeSubscription, cancelDowngrade, applyPlanChange, forgotPassword, toggleAddon };

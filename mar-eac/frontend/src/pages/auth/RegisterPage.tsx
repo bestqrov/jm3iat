@@ -79,7 +79,7 @@ const MODULES: ModuleDef[] = [
 
 // ─── Optional add-ons ─────────────────────────────────────────────────────────
 
-type AddonKey = 'BACKUP' | 'WHATSAPP';
+type AddonKey = 'BACKUP' | 'WHATSAPP' | 'SMART_METER';
 
 interface AddonDef {
   key: AddonKey;
@@ -112,6 +112,16 @@ const ADDONS: AddonDef[] = [
     descFr: 'Notifications automatiques aux membres via WhatsApp',
     color: 'border-green-200 text-green-600 bg-green-50 dark:border-green-700 dark:text-green-400 dark:bg-green-900/20',
     selectedColor: 'border-green-500 ring-green-400 bg-green-100 dark:bg-green-900/40',
+  },
+  {
+    key: 'SMART_METER',
+    icon: <span className="text-xl">📷</span>,
+    labelAr: 'قراءة العدادات بالكاميرا',
+    labelFr: 'Lecture compteurs par caméra (IA)',
+    descAr: 'تصوير العداد بكاميرا الهاتف — الذكاء الاصطناعي يقرأ القيمة تلقائياً ويحسب الاستهلاك',
+    descFr: 'Photographiez le compteur avec votre mobile — l\'IA lit la valeur et calcule la consommation automatiquement',
+    color: 'border-violet-200 text-violet-600 bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:bg-violet-900/20',
+    selectedColor: 'border-violet-500 ring-violet-400 bg-violet-100 dark:bg-violet-900/40',
   },
 ];
 

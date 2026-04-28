@@ -150,7 +150,7 @@ const deleteInstallation = async (req, res) => {
 
 const addReading = async (req, res) => {
   try {
-    const { currentReading, readingDate, month, year, notes } = req.body;
+    const { currentReading, readingDate, month, year, notes, meterPhotoUrl } = req.body;
     const installationId = req.params.id;
 
     if (!currentReading || !month || !year) {
@@ -184,6 +184,7 @@ const addReading = async (req, res) => {
           month: parseInt(month),
           year: parseInt(year),
           notes,
+          meterPhotoUrl: meterPhotoUrl || null,
         },
       });
 
