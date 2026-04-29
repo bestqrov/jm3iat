@@ -5,12 +5,13 @@ import {
   CheckCircle, ChevronDown, Globe, Menu, X, ArrowRight,
   Star, Zap, Shield, TrendingUp, AlertCircle, LucideIcon,
   Layers, FileText, MapPin, Network, Scale, ClipboardList,
+  CreditCard, Package, UserPlus, Sparkles,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const iconMap: Record<string, LucideIcon> = {
   Users, DollarSign, BarChart2, Droplets, Bus, Factory, Layers, FileText,
-  MapPin, Network, Scale, ClipboardList,
+  MapPin, Network, Scale, ClipboardList, CreditCard, Package, UserPlus,
 };
 
 export const LandingPage: React.FC = () => {
@@ -32,28 +33,32 @@ export const LandingPage: React.FC = () => {
 
   const features = isAr
     ? [
-        { icon: 'Users', title: 'إدارة الأعضاء', desc: 'سجل وتابع أعضاءك، انخراطاتهم، ومستحقاتهم بسهولة تامة', soon: false },
-        { icon: 'DollarSign', title: 'المالية', desc: 'تتبع الإيرادات والمصاريف وأنشئ تقارير مالية احترافية', soon: false },
-        { icon: 'BarChart2', title: 'التقارير', desc: 'تقارير تفصيلية وإحصائيات فورية عن نشاط جمعيتك', soon: false },
-        { icon: 'Droplets', title: 'إدارة الماء', desc: 'إدارة شبكة المياه، الفواتير، والقراءات بكل دقة', soon: false },
-        { icon: 'Bus', title: 'النقل المدرسي', desc: 'تتبع الحافلات، الطلاب، والاشتراكات في وقت واحد', soon: false },
-        { icon: 'Factory', title: 'الإنتاج والمبيعات', desc: 'إدارة الإنتاج والمبيعات والمخزون للجمعيات الإنتاجية', soon: false },
-        { icon: 'Network', title: 'الشراكات والاتفاقيات', desc: 'تدبير عقود الشراكة والاتفاقيات مع الجهات الخارجية', soon: true },
-        { icon: 'MapPin', title: 'الخرائط الميدانية (GIS)', desc: 'تتبع العمليات الميدانية وشبكة الماء على الخريطة', soon: true },
-        { icon: 'Scale', title: 'نصاب الجمع العام', desc: 'احتساب النصاب القانوني وإدارة تصويتات الجمع العام', soon: true },
-        { icon: 'ClipboardList', title: 'البطاقة التقنية للمشاريع', desc: 'توليد البطاقة التقنية لأي مشروع تلقائياً', soon: true },
+        { icon: 'Users',        title: 'إدارة الأعضاء',               desc: 'سجل وتابع أعضاءك، انخراطاتهم، ومستحقاتهم بسهولة تامة',                    soon: false, isNew: false },
+        { icon: 'UserPlus',     title: 'طلب الانضمام الإلكتروني',       desc: 'نموذج انضمام عبر الإنترنت مع رفع وصل الدفع واختيار قناة الإشعار',           soon: false, isNew: true },
+        { icon: 'CreditCard',   title: 'بطاقة المنخرط الرقمية',         desc: 'توليد بطاقة عضوية احترافية بشكل تلقائي عند قبول الانضمام',                  soon: false, isNew: true },
+        { icon: 'DollarSign',   title: 'المالية',                       desc: 'تتبع الإيرادات والمصاريف وأنشئ تقارير مالية احترافية',                       soon: false, isNew: false },
+        { icon: 'BarChart2',    title: 'التقارير',                      desc: 'تقارير تفصيلية وإحصائيات فورية عن نشاط جمعيتك بالعربية والفرنسية',           soon: false, isNew: false },
+        { icon: 'Package',      title: 'الممتلكات',                     desc: 'تسيير الأصول والممتلكات: عقارات، سيارات، تجهيزات بشكل منظم',                 soon: false, isNew: true },
+        { icon: 'ClipboardList',title: 'البطاقة التقنية للمشاريع',      desc: 'توليد البطاقة التقنية لأي مشروع تلقائياً بصيغة PDF',                         soon: false, isNew: true },
+        { icon: 'Droplets',     title: 'إدارة الماء',                   desc: 'إدارة شبكة المياه، الفواتير، والقراءات بكل دقة',                             soon: false, isNew: false },
+        { icon: 'Factory',      title: 'الإنتاج والمبيعات',             desc: 'إدارة الإنتاج والمبيعات والمخزون للجمعيات الإنتاجية',                        soon: false, isNew: false },
+        { icon: 'Network',      title: 'الشراكات والاتفاقيات',          desc: 'تدبير عقود الشراكة والاتفاقيات مع الجهات الخارجية',                           soon: true,  isNew: false },
+        { icon: 'MapPin',       title: 'الخرائط الميدانية (GIS)',       desc: 'تتبع العمليات الميدانية وشبكة الماء على الخريطة',                             soon: true,  isNew: false },
+        { icon: 'Scale',        title: 'نصاب الجمع العام',              desc: 'احتساب النصاب القانوني وإدارة تصويتات الجمع العام',                           soon: true,  isNew: false },
       ]
     : [
-        { icon: 'Users', title: 'Gestion des membres', desc: 'Enregistrez et suivez vos membres, cotisations et adhésions facilement', soon: false },
-        { icon: 'DollarSign', title: 'Finances', desc: 'Suivez revenus et dépenses, générez des rapports financiers professionnels', soon: false },
-        { icon: 'BarChart2', title: 'Rapports', desc: 'Rapports détaillés et statistiques instantanées sur votre activité', soon: false },
-        { icon: 'Droplets', title: "Gestion de l'eau", desc: "Gérez le réseau d'eau, factures et relevés avec précision", soon: false },
-        { icon: 'Bus', title: 'Transport scolaire', desc: 'Suivez bus, élèves et abonnements en temps réel', soon: false },
-        { icon: 'Factory', title: 'Production & Ventes', desc: 'Gérez production, ventes et stocks pour les associations productives', soon: false },
-        { icon: 'Network', title: 'Partenariats & conventions', desc: 'Gérez contrats de partenariat et conventions avec organismes externes', soon: true },
-        { icon: 'MapPin', title: 'Cartographie terrain (GIS)', desc: "Suivez opérations terrain et réseau d'eau sur carte interactive", soon: true },
-        { icon: 'Scale', title: "Quorum de l'Assemblée Générale", desc: 'Calcul du quorum légal et gestion des votes en assemblée générale', soon: true },
-        { icon: 'ClipboardList', title: 'Fiche technique de projet', desc: 'Génération automatique de la fiche technique pour tout projet', soon: true },
+        { icon: 'Users',        title: 'Gestion des membres',           desc: 'Enregistrez et suivez vos membres, cotisations et adhésions facilement',       soon: false, isNew: false },
+        { icon: 'UserPlus',     title: 'Adhésion en ligne',             desc: 'Formulaire d\'adhésion en ligne avec upload du reçu et choix du canal de notification', soon: false, isNew: true },
+        { icon: 'CreditCard',   title: 'Carte d\'adhérent numérique',   desc: 'Génération automatique d\'une carte de membre professionnelle à l\'approbation',  soon: false, isNew: true },
+        { icon: 'DollarSign',   title: 'Finances',                      desc: 'Suivez revenus et dépenses, générez des rapports financiers professionnels',      soon: false, isNew: false },
+        { icon: 'BarChart2',    title: 'Rapports',                      desc: 'Rapports détaillés en arabe et français avec mise en page professionnelle',       soon: false, isNew: false },
+        { icon: 'Package',      title: 'Gestion des actifs',            desc: 'Gérez immobilier, véhicules et équipements de manière organisée',                 soon: false, isNew: true },
+        { icon: 'ClipboardList',title: 'Fiche technique de projet',     desc: 'Génération automatique de la fiche technique en PDF pour tout projet',            soon: false, isNew: true },
+        { icon: 'Droplets',     title: "Gestion de l'eau",              desc: "Gérez le réseau d'eau, factures et relevés avec précision",                       soon: false, isNew: false },
+        { icon: 'Factory',      title: 'Production & Ventes',           desc: 'Gérez production, ventes et stocks pour les associations productives',             soon: false, isNew: false },
+        { icon: 'Network',      title: 'Partenariats & conventions',    desc: 'Gérez contrats de partenariat et conventions avec organismes externes',             soon: true,  isNew: false },
+        { icon: 'MapPin',       title: 'Cartographie terrain (GIS)',    desc: "Suivez opérations terrain et réseau d'eau sur carte interactive",                  soon: true,  isNew: false },
+        { icon: 'Scale',        title: "Quorum — Assemblée Générale",   desc: 'Calcul du quorum légal et gestion des votes en assemblée générale',                soon: true,  isNew: false },
       ];
 
   const pricingPacks = isAr
@@ -64,7 +69,14 @@ export const LandingPage: React.FC = () => {
           name: 'جمعية عادية',
           price: '50',
           desc: 'الأعضاء، الاجتماعات، المالية، الوثائق',
-          features: ['إدارة الأعضاء', 'الاجتماعات والمحاضر', 'المالية والفواتير', 'الوثائق والتقارير'],
+          features: [
+            'إدارة الأعضاء',
+            '✨ طلب الانضمام الإلكتروني',
+            '✨ بطاقة المنخرط الرقمية',
+            'الاجتماعات والمحاضر',
+            'المالية والفواتير',
+            'الوثائق والتقارير',
+          ],
           popular: false,
           color: 'blue',
         },
@@ -74,7 +86,14 @@ export const LandingPage: React.FC = () => {
           name: 'جمعية فيها مشاريع',
           price: '100',
           desc: 'الوحدات الأساسية + إدارة المشاريع والطلبات',
-          features: ['كل مميزات الجمعية العادية', 'إدارة المشاريع', 'متابعة الطلبات', 'تقارير المشاريع'],
+          features: [
+            'كل مميزات الجمعية العادية',
+            'إدارة المشاريع',
+            '✨ الممتلكات (عقارات، سيارات…)',
+            '✨ البطاقة التقنية للمشاريع',
+            'متابعة الطلبات',
+            'تقارير المشاريع بالعربية والفرنسية',
+          ],
           popular: false,
           color: 'indigo',
         },
@@ -84,7 +103,12 @@ export const LandingPage: React.FC = () => {
           name: 'جمعية الماء',
           price: '150',
           desc: 'الوحدات الأساسية + إدارة شبكة الماء',
-          features: ['كل مميزات الجمعية العادية', 'إدارة شبكة الماء', 'قراءة العدادات', 'فواتير الماء'],
+          features: [
+            'كل مميزات الجمعية العادية',
+            'إدارة شبكة الماء',
+            'قراءة العدادات',
+            'فواتير الماء',
+          ],
           popular: false,
           color: 'cyan',
         },
@@ -94,7 +118,13 @@ export const LandingPage: React.FC = () => {
           name: 'جمعية إنتاجية',
           price: '200',
           desc: 'الوحدات الأساسية + الإنتاج والمبيعات والعملاء والفعاليات',
-          features: ['كل مميزات الجمعية العادية', 'إدارة الإنتاج', 'المبيعات والعملاء', 'الفعاليات'],
+          features: [
+            'كل مميزات الجمعية العادية',
+            'إدارة المشاريع والممتلكات',
+            'إدارة الإنتاج',
+            'المبيعات والعملاء',
+            'الفعاليات',
+          ],
           popular: true,
           color: 'green',
         },
@@ -106,7 +136,14 @@ export const LandingPage: React.FC = () => {
           name: 'Association classique',
           price: '50',
           desc: 'Membres, réunions, finances, documents',
-          features: ['Gestion des membres', 'Réunions & procès-verbaux', 'Finances & factures', 'Documents & rapports'],
+          features: [
+            'Gestion des membres',
+            '✨ Adhésion en ligne',
+            '✨ Carte d\'adhérent numérique',
+            'Réunions & procès-verbaux',
+            'Finances & factures',
+            'Documents & rapports',
+          ],
           popular: false,
           color: 'blue',
         },
@@ -116,7 +153,14 @@ export const LandingPage: React.FC = () => {
           name: 'Association avec projets',
           price: '100',
           desc: 'Modules de base + gestion de projets et demandes',
-          features: ['Tout le pack classique', 'Gestion de projets', 'Suivi des demandes', 'Rapports de projets'],
+          features: [
+            'Tout le pack classique',
+            'Gestion de projets',
+            '✨ Actifs (immobilier, véhicules…)',
+            '✨ Fiche technique de projet PDF',
+            'Suivi des demandes',
+            'Rapports en arabe & français',
+          ],
           popular: false,
           color: 'indigo',
         },
@@ -126,7 +170,12 @@ export const LandingPage: React.FC = () => {
           name: "Association de l'eau",
           price: '150',
           desc: "Modules de base + gestion du réseau d'eau",
-          features: ['Tout le pack classique', "Réseau d'eau", 'Relevés de compteurs', 'Factures eau'],
+          features: [
+            'Tout le pack classique',
+            "Réseau d'eau",
+            'Relevés de compteurs',
+            'Factures eau',
+          ],
           popular: false,
           color: 'cyan',
         },
@@ -136,7 +185,13 @@ export const LandingPage: React.FC = () => {
           name: 'Association productive',
           price: '200',
           desc: 'Modules de base + production, ventes, clients, événements',
-          features: ['Tout le pack classique', 'Gestion de production', 'Ventes & clients', 'Événements'],
+          features: [
+            'Tout le pack classique',
+            'Projets & actifs',
+            'Gestion de production',
+            'Ventes & clients',
+            'Événements',
+          ],
           popular: true,
           color: 'green',
         },
@@ -453,8 +508,22 @@ export const LandingPage: React.FC = () => {
               </div>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 {(isAr
-                  ? ['كل شيء رقمي ومنظم', 'بيانات محفوظة وآمنة', 'تقارير تلقائية', 'شفافية كاملة', 'توفير الوقت']
-                  : ['Tout est numérique et organisé', 'Données sauvegardées et sécurisées', 'Rapports automatiques', 'Transparence totale', 'Gain de temps']
+                  ? [
+                      'كل شيء رقمي ومنظم',
+                      'بيانات محفوظة وآمنة',
+                      'تقارير تلقائية بالعربية والفرنسية',
+                      'طلب انضمام إلكتروني مع إشعار فوري',
+                      'بطاقة منخرط رقمية تلقائية',
+                      'شفافية كاملة وتوفير الوقت',
+                    ]
+                  : [
+                      'Tout est numérique et organisé',
+                      'Données sauvegardées et sécurisées',
+                      'Rapports automatiques en arabe et français',
+                      'Adhésion en ligne avec notification instantanée',
+                      'Carte d\'adhérent numérique automatique',
+                      'Transparence totale et gain de temps',
+                    ]
                 ).map((item, i) => (
                   <li key={i} className="flex items-center gap-2">
                     <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
@@ -477,11 +546,26 @@ export const LandingPage: React.FC = () => {
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               {isAr ? 'كل ما تحتاجه جمعيتك' : 'Tout ce dont votre association a besoin'}
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8">
               {isAr
                 ? 'مميزات متكاملة مصممة خصيصاً لإدارة الجمعيات المغربية'
                 : 'Des fonctionnalités complètes conçues spécialement pour les associations marocaines'}
             </p>
+            {/* New features highlight strip */}
+            <div className={`inline-flex flex-wrap justify-center gap-2 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-2xl px-5 py-3`}>
+              <span className="flex items-center gap-1.5 text-xs font-bold text-primary-700 dark:text-primary-300">
+                <Sparkles size={13} />
+                {isAr ? 'مستجدات المنصة:' : 'Nouveautés :'}
+              </span>
+              {(isAr
+                ? ['طلب الانضمام الإلكتروني', 'بطاقة المنخرط الرقمية', 'الممتلكات', 'البطاقة التقنية للمشاريع']
+                : ["Adhésion en ligne", "Carte d'adhérent numérique", "Gestion des actifs", "Fiche technique PDF"]
+              ).map((label, i) => (
+                <span key={i} className="text-xs bg-white dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-700 px-2.5 py-1 rounded-full font-medium">
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -496,10 +580,16 @@ export const LandingPage: React.FC = () => {
                 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
               ];
               return (
-                <div key={i} className={`relative group bg-white dark:bg-gray-800 rounded-2xl p-6 border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${feature.soon ? 'border-dashed border-gray-200 dark:border-gray-600 opacity-80' : 'border-gray-100 dark:border-gray-700'}`}>
+                <div key={i} className={`relative group bg-white dark:bg-gray-800 rounded-2xl p-6 border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${feature.soon ? 'border-dashed border-gray-200 dark:border-gray-600 opacity-80' : feature.isNew ? 'border-primary-200 dark:border-primary-800' : 'border-gray-100 dark:border-gray-700'}`}>
                   {feature.soon && (
                     <span className="absolute top-3 end-3 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
                       {isAr ? 'قريباً' : 'Bientôt'}
+                    </span>
+                  )}
+                  {feature.isNew && !feature.soon && (
+                    <span className="absolute top-3 end-3 flex items-center gap-1 text-[10px] font-bold bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 px-2 py-0.5 rounded-full">
+                      <Sparkles size={9} />
+                      {isAr ? 'جديد' : 'Nouveau'}
                     </span>
                   )}
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${colors[i % colors.length]}`}>
