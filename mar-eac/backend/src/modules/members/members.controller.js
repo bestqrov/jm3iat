@@ -1,6 +1,7 @@
 const prisma      = require('../../config/database');
 const axios       = require('axios');
 const { sendEmail } = require('../../utils/mailer');
+const { generateMemberCard, buildMemberCard } = require('../../utils/memberCardPdf');
 
 const UNIQUE_ROLES = ['PRESIDENT', 'TREASURER'];
 
@@ -239,18 +240,29 @@ const approve = async (req, res) => {
         </div>
       </div>`;
 
+    // Build e-card buffer (best-effort)
+    let cardBuffer = null;
+    try {
+      cardBuffer = await buildMemberCard(updated, org, 'ar');
+    } catch (e) {
+      console.warn('[approve] Card generation failed:', e.message);
+    }
+
     // Send via chosen channel — best-effort (don't fail the approval if sending fails)
     if (member.notifyChannel === 'whatsapp' && member.phone) {
       sendWA(member.phone, msgAr, org?.evolutionInstance).catch(e =>
         console.warn('[approve] WA send failed:', e.message));
     } else if (member.email) {
+      const attachments = cardBuffer
+        ? [{ filename: 'carte-adherent.pdf', content: cardBuffer, contentType: 'application/pdf' }]
+        : [];
       sendEmail(
         member.email,
         `✅ تم قبول انخراطك — ${org?.nameAr || org?.name}`,
         receiptHtml,
+        attachments,
       ).catch(e => console.warn('[approve] Email send failed:', e.message));
     } else if (member.phone) {
-      // Fallback: WhatsApp even if channel was email but no email address
       sendWA(member.phone, msgAr, org?.evolutionInstance).catch(() => {});
     }
 
@@ -260,4 +272,7 @@ const approve = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, remove, getBoardMembers, getStats, approve };
+// ── Download member e-card ───────────────────────────────────────────────────
+const getCard = (req, res) => generateMemberCard(req, res);
+
+module.exports = { getAll, getById, create, update, remove, getBoardMembers, getStats, approve, getCard };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Pencil, Trash2, Users, UserCheck, FileSpreadsheet, Clock, CheckCircle2, Receipt, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Users, UserCheck, FileSpreadsheet, Clock, CheckCircle2, Receipt, Loader2, ExternalLink, CreditCard } from 'lucide-react';
 import { membersApi, exportApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
@@ -21,6 +21,7 @@ export const MembersPage: React.FC = () => {
   const [saving, setSaving]     = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [downloadingCardId, setDownloadingCardId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', phone: '', email: '', role: 'MEMBER', joinDate: '' });
   const [formError, setFormError] = useState('');
 
@@ -42,6 +43,19 @@ export const MembersPage: React.FC = () => {
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Error');
     } finally { setApprovingId(null); }
+  };
+
+  const handleDownloadCard = async (member: any) => {
+    setDownloadingCardId(member.id);
+    try {
+      const res = await membersApi.downloadCard(member.id, lang);
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `carte-${member.name.replace(/\s+/g, '-')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* silent */ } finally { setDownloadingCardId(null); }
   };
 
   useEffect(() => { load(); }, []);
@@ -248,6 +262,16 @@ export const MembersPage: React.FC = () => {
                     </td>
                     <td>
                       <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleDownloadCard(m)}
+                          disabled={downloadingCardId === m.id}
+                          title={lang === 'ar' ? 'تحميل البطاقة' : 'Télécharger la carte'}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors disabled:opacity-50"
+                        >
+                          {downloadingCardId === m.id
+                            ? <Loader2 size={15} className="animate-spin" />
+                            : <CreditCard size={15} />}
+                        </button>
                         <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"><Pencil size={15} /></button>
                         <button onClick={() => setDeleteId(m.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 size={15} /></button>
                       </div>

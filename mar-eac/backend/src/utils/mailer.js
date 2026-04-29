@@ -15,7 +15,7 @@ const getSmtpConfig = async () => {
   };
 };
 
-const sendEmail = async (to, subject, html) => {
+const sendEmail = async (to, subject, html, attachments = []) => {
   const { host, port, user, pass, from } = await getSmtpConfig();
   if (!host || !user || !pass) throw new Error('Email not configured');
   const transporter = nodemailer.createTransport({
@@ -24,7 +24,7 @@ const sendEmail = async (to, subject, html) => {
     secure: port === 465,
     auth: { user, pass },
   });
-  return transporter.sendMail({ from: `Mar E-A.C <${from}>`, to, subject, html });
+  return transporter.sendMail({ from: `Mar E-A.C <${from}>`, to, subject, html, attachments });
 };
 
 module.exports = { sendEmail, getSmtpConfig };

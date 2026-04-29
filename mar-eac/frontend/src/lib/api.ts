@@ -47,6 +47,7 @@ export const membersApi = {
   update: (id: string, data: any) => api.put(`/members/${id}`, data),
   delete: (id: string) => api.delete(`/members/${id}`),
   approve: (id: string) => api.post(`/members/${id}/approve`),
+  downloadCard: (id: string, lang = 'ar') => api.get(`/members/${id}/card`, { params: { lang }, responseType: 'blob' }),
   getBoard: () => api.get('/members/board'),
   getStats: () => api.get('/members/stats'),
 };
