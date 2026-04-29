@@ -64,11 +64,13 @@ const TYPE_LABEL = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const fmtDate = (d, lang) => {
+const fmtDate = (d) => {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-MA', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  });
+  const dt = new Date(d);
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const yyyy = dt.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
 };
 const fmtMoney = (n) =>
   `${(n || 0).toLocaleString('fr-MA', { minimumFractionDigits: 2 })} MAD`;
@@ -174,11 +176,11 @@ async function generateProjectReportPDF(req, res) {
     },
     {
       label: isAr ? 'تاريخ البداية' : 'Début',
-      value: fmtDate(project.startDate, lang),
+      value: fmtDate(project.startDate),
     },
     {
       label: isAr ? 'تاريخ النهاية' : 'Fin prévue',
-      value: fmtDate(project.endDate, lang),
+      value: fmtDate(project.endDate),
     },
   ];
   const displayItems = isAr ? [...infoItems].reverse() : infoItems;
@@ -338,11 +340,11 @@ async function generateProjectReportPDF(req, res) {
         },
         planned: (x, w) => {
           doc.font(fReg).fontSize(8).fillColor(C.slate)
-             .text(fmtDate(ms.plannedDate, lang), x + 5, y + 8, { width: w - 10, align: al });
+             .text(fmtDate(ms.plannedDate), x + 5, y + 8, { width: w - 10, align: al });
         },
         actual:  (x, w) => {
           doc.font(fReg).fontSize(8).fillColor(C.slate)
-             .text(fmtDate(ms.actualDate, lang), x + 5, y + 8, { width: w - 10, align: al });
+             .text(fmtDate(ms.actualDate), x + 5, y + 8, { width: w - 10, align: al });
         },
         status:  (x, w) => {
           const sc  = MS_STATUS_COLOR[ms.status] || C.slate;
@@ -397,7 +399,7 @@ async function generateProjectReportPDF(req, res) {
 
       const srcTxt = t(entry.source + (entry.donor ? ` — ${entry.donor}` : ''));
       const amtTxt = fmtMoney(entry.amount);
-      const dtTxt  = fmtDate(entry.date, lang);
+      const dtTxt  = fmtDate(entry.date);
 
       if (isAr) {
         doc.font(fBold).fontSize(9).fillColor(C.green)
