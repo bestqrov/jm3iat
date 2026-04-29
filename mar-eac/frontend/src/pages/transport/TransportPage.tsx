@@ -1117,10 +1117,15 @@ export const TransportPage: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="page-title flex items-center gap-2"><Bus size={22} className="text-primary-500" />{t('transport.title')}</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{t('transport.subtitle')}</p>
+      <div className="rounded-2xl bg-gradient-to-br from-orange-600 via-red-500 to-orange-500 p-5 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+              <Bus size={24} className="text-orange-200" />
+              {t('transport.title')}
+            </h2>
+            <p className="text-orange-100 text-sm mt-0.5 opacity-90">{t('transport.subtitle')}</p>
+          </div>
         </div>
       </div>
 

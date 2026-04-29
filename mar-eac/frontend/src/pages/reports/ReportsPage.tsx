@@ -46,7 +46,12 @@ export const ReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="page-title">{t('reports.title')}</h2>
+      <div className="rounded-2xl bg-gradient-to-br from-violet-700 via-purple-600 to-violet-500 p-5 shadow-lg">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+          <BarChart2 size={24} className="text-violet-200" />
+          {t('reports.title')}
+        </h2>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Literary Report */}

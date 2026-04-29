@@ -63,18 +63,19 @@ export const RemindersPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="page-header">
-        <div>
-          <h2 className="page-title flex items-center gap-2">
+      <div className="rounded-2xl bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-400 p-5 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+            <Bell size={24} className="text-yellow-200" />
             {t('reminders.title')}
-            {unreadCount > 0 && <span className="badge badge-red">{unreadCount}</span>}
+            {unreadCount > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">{unreadCount}</span>}
           </h2>
-        </div>
-        <div className="flex gap-2">
-          {unreadCount > 0 && (
-            <button onClick={handleMarkAllRead} className="btn-secondary"><CheckCheck size={16} />{t('reminders.markAllRead')}</button>
-          )}
-          <button onClick={() => setShowModal(true)} className="btn-primary"><Plus size={16} />{t('reminders.createReminder')}</button>
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <button onClick={handleMarkAllRead} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-medium transition-colors backdrop-blur-sm border border-white/30"><CheckCheck size={15} />{t('reminders.markAllRead')}</button>
+            )}
+            <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-amber-700 hover:bg-amber-50 text-sm font-semibold transition-colors shadow"><Plus size={15} />{t('reminders.createReminder')}</button>
+          </div>
         </div>
       </div>
 

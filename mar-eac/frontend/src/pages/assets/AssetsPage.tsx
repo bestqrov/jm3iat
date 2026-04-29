@@ -172,17 +172,19 @@ export const AssetsPage: React.FC = () => {
   return (
     <div className="space-y-6" dir={dir}>
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Landmark size={22} className="text-primary-600" />
-            {t('assets.title')}
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('assets.subtitle')}</p>
+      <div className="rounded-2xl bg-gradient-to-br from-amber-700 via-yellow-600 to-amber-500 p-5 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+              <Landmark size={24} className="text-amber-200" />
+              {t('assets.title')}
+            </h2>
+            <p className="text-amber-100 text-sm mt-0.5 opacity-90">{t('assets.subtitle')}</p>
+          </div>
+          <button onClick={openAdd} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-amber-700 hover:bg-amber-50 text-sm font-semibold transition-colors shadow">
+            <Plus size={15} /> {t('assets.add')}
+          </button>
         </div>
-        <button onClick={openAdd} className="btn-primary flex items-center gap-2">
-          <Plus size={16} /> {t('assets.add')}
-        </button>
       </div>
 
       {/* Stats */}

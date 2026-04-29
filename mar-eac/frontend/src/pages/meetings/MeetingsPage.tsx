@@ -89,11 +89,16 @@ export const MeetingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="page-header">
-        <h2 className="page-title">{t('meetings.title')}</h2>
-        <button onClick={openCreateModal} className="btn-primary">
-          <Plus size={16} />{t('meetings.createMeeting')}
-        </button>
+      <div className="rounded-2xl bg-gradient-to-br from-amber-600 via-orange-500 to-yellow-500 p-5 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+            <Calendar size={24} className="text-amber-200" />
+            {t('meetings.title')}
+          </h2>
+          <button onClick={openCreateModal} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-amber-700 hover:bg-amber-50 text-sm font-semibold transition-colors shadow">
+            <Plus size={15} />{t('meetings.createMeeting')}
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

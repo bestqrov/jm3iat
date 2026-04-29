@@ -62,19 +62,19 @@ export const RecurringPage: React.FC = () => {
 
   return (
     <div className="space-y-4 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-            <RefreshCw size={18} className="text-blue-600 dark:text-blue-400" />
-          </div>
+      <div className="rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-500 to-blue-500 p-5 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{lang === 'ar' ? 'الدفعات المتكررة' : 'Paiements récurrents'}</h2>
-            <p className="text-xs text-gray-500">{lang === 'ar' ? 'تُنشأ تلقائياً حسب الجدول' : 'Créés automatiquement selon le calendrier'}</p>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+              <RefreshCw size={24} className="text-violet-200" />
+              {lang === 'ar' ? 'الدفعات المتكررة' : 'Paiements récurrents'}
+            </h2>
+            <p className="text-violet-100 text-sm mt-0.5 opacity-90">{lang === 'ar' ? 'تُنشأ تلقائياً حسب الجدول' : 'Créés automatiquement selon le calendrier'}</p>
           </div>
+          <button onClick={() => { setForm({ description: '', amount: '', category: '', type: 'INCOME', frequency: 'MONTHLY', startDate: new Date().toISOString().split('T')[0], autoCreate: true, notes: '' }); setError(''); setModal(true); }} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-violet-700 hover:bg-violet-50 text-sm font-semibold transition-colors shadow">
+            <Plus size={15} />{lang === 'ar' ? 'إضافة' : 'Ajouter'}
+          </button>
         </div>
-        <button onClick={() => { setForm({ description: '', amount: '', category: '', type: 'INCOME', frequency: 'MONTHLY', startDate: new Date().toISOString().split('T')[0], autoCreate: true, notes: '' }); setError(''); setModal(true); }} className="btn-primary flex items-center gap-1.5 text-sm">
-          <Plus size={15} />{lang === 'ar' ? 'إضافة' : 'Ajouter'}
-        </button>
       </div>
 
       {/* Summary */}

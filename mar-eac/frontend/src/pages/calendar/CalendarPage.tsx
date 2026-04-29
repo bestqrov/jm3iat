@@ -71,14 +71,12 @@ export const CalendarPage: React.FC = () => {
 
   return (
     <div className="space-y-4 max-w-4xl">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
-          <Calendar size={18} className="text-indigo-600 dark:text-indigo-400" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{lang === 'ar' ? 'التقويم' : 'Calendrier'}</h2>
-          <p className="text-xs text-gray-500">{lang === 'ar' ? 'اجتماعات، تذكيرات ومواعيد' : 'Réunions, rappels et échéances'}</p>
-        </div>
+      <div className="rounded-2xl bg-gradient-to-br from-indigo-600 via-cyan-600 to-teal-500 p-5 shadow-lg">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+          <Calendar size={24} className="text-indigo-200" />
+          {lang === 'ar' ? 'التقويم' : 'Calendrier'}
+        </h2>
+        <p className="text-indigo-100 text-sm mt-0.5 opacity-90">{lang === 'ar' ? 'اجتماعات، تذكيرات ومواعيد' : 'Réunions, rappels et échéances'}</p>
       </div>
 
       <div className="card p-4">

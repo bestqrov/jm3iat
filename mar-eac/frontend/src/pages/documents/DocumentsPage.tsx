@@ -65,9 +65,14 @@ export const DocumentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="page-header">
-        <h2 className="page-title">{t('documents.title')}</h2>
-        <button onClick={() => setShowModal(true)} className="btn-primary"><Upload size={16} />{t('documents.upload')}</button>
+      <div className="rounded-2xl bg-gradient-to-br from-teal-600 via-cyan-500 to-sky-500 p-5 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+            <FileText size={24} className="text-teal-200" />
+            {t('documents.title')}
+          </h2>
+          <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-teal-700 hover:bg-teal-50 text-sm font-semibold transition-colors shadow"><Upload size={15} />{t('documents.upload')}</button>
+        </div>
       </div>
 
       {/* Type filter */}

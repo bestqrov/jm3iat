@@ -109,19 +109,26 @@ export const MembersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="page-header">
-        <div>
-          <h2 className="page-title">{t('members.title')}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {lang === 'ar' ? 'قائمة منخرطي الجمعية' : 'Liste des adhérents de l\'association'}
-          </p>
+      <div className="rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-500 p-5 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+              <Users size={24} className="text-purple-200" />
+              {t('members.title')}
+            </h2>
+            <p className="text-purple-100 text-sm mt-0.5 opacity-90">
+              {lang === 'ar' ? 'قائمة منخرطي الجمعية' : 'Liste des adhérents de l\'association'}
+            </p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => exportApi.members()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-medium transition-colors backdrop-blur-sm border border-white/30">
+              <FileSpreadsheet size={15} />Excel
+            </button>
+            <button onClick={openAdd} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-violet-700 hover:bg-violet-50 text-sm font-semibold transition-colors shadow">
+              <Plus size={15} />{t('members.addMember')}
+            </button>
+          </div>
         </div>
-        <button onClick={() => exportApi.members()} className="btn-secondary" title={lang === 'ar' ? 'تصدير Excel' : 'Export Excel'}>
-          <FileSpreadsheet size={16} />Excel
-        </button>
-        <button onClick={openAdd} className="btn-primary">
-          <Plus size={16} />{t('members.addMember')}
-        </button>
       </div>
 
       {/* Stats */}

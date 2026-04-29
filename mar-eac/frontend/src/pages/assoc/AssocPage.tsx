@@ -346,24 +346,25 @@ const AssocPage: React.FC = () => {
   return (
     <div className="space-y-6" dir={dir}>
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
-          <ShoppingBag size={20} className="text-white" />
+      <div className="rounded-2xl bg-gradient-to-br from-emerald-600 via-green-500 to-teal-500 p-5 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+              <ShoppingBag size={24} className="text-emerald-200" />
+              {t('assoc.title')}
+            </h1>
+            <p className="text-emerald-100 text-sm mt-0.5 opacity-90">{t('assoc.subtitle')}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('assoc.title')}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('assoc.subtitle')}</p>
+        {/* Tabs inside banner */}
+        <div className="flex gap-1 mt-4 bg-white/10 p-1 rounded-xl flex-wrap backdrop-blur-sm">
+          {TABS.map(tabItem => (
+            <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === tabItem.id ? 'bg-white text-emerald-700 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/20'}`}>
+              {tabItem.icon}{tabItem.label}
+            </button>
+          ))}
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex-wrap">
-        {TABS.map(tabItem => (
-          <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${tab === tabItem.id ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}>
-            {tabItem.icon}{tabItem.label}
-          </button>
-        ))}
       </div>
 
       {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">{error}</div>}

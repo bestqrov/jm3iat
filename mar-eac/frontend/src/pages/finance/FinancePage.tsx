@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus, TrendingUp, TrendingDown, Wallet, Download, Pencil, Trash2, Paperclip, ExternalLink, FileSpreadsheet, FileText } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Wallet, Download, Pencil, Trash2, Paperclip, ExternalLink, FileSpreadsheet, FileText, DollarSign } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { financeApi, exportApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -187,21 +187,26 @@ export const FinancePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="page-header">
-        <h2 className="page-title">{t('finance.title')}</h2>
-        <div className="flex gap-2">
-          <select
-            value={exportYear}
-            onChange={(e) => setExportYear(Number(e.target.value))}
-            className="input py-1.5 text-sm w-24"
-          >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-          <button onClick={handleExport} className="btn-secondary"><Download size={16} />{t('finance.export')}</button>
-          <button onClick={() => exportApi.finance()} className="btn-secondary" title={lang === 'ar' ? 'تصدير Excel' : 'Export Excel'}><FileSpreadsheet size={16} />Excel</button>
-          <button onClick={openAdd} className="btn-primary"><Plus size={16} />{t('finance.addTransaction')}</button>
+      <div className="rounded-2xl bg-gradient-to-br from-green-700 via-emerald-600 to-teal-600 p-5 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+            <DollarSign size={24} className="text-emerald-200" />
+            {t('finance.title')}
+          </h2>
+          <div className="flex gap-2 flex-wrap">
+            <select
+              value={exportYear}
+              onChange={(e) => setExportYear(Number(e.target.value))}
+              className="px-3 py-2 rounded-xl bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm"
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                <option key={y} value={y} className="text-gray-900 bg-white">{y}</option>
+              ))}
+            </select>
+            <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-medium transition-colors backdrop-blur-sm border border-white/30"><Download size={15} />{t('finance.export')}</button>
+            <button onClick={() => exportApi.finance()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-medium transition-colors backdrop-blur-sm border border-white/30"><FileSpreadsheet size={15} />Excel</button>
+            <button onClick={openAdd} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-green-700 hover:bg-green-50 text-sm font-semibold transition-colors shadow"><Plus size={15} />{t('finance.addTransaction')}</button>
+          </div>
         </div>
       </div>
 

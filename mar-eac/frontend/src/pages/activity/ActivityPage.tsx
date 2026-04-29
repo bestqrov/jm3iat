@@ -54,14 +54,12 @@ export const ActivityPage: React.FC = () => {
 
   return (
     <div className="space-y-4 max-w-4xl">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-          <Activity size={18} className="text-purple-600 dark:text-purple-400" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{lang === 'ar' ? 'سجل النشاطات' : 'Journal d\'activité'}</h2>
-          <p className="text-xs text-gray-500">{lang === 'ar' ? `${total} نشاط مسجل` : `${total} activités enregistrées`}</p>
-        </div>
+      <div className="rounded-2xl bg-gradient-to-br from-slate-600 via-indigo-600 to-slate-500 p-5 shadow-lg">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+          <Activity size={24} className="text-slate-200" />
+          {lang === 'ar' ? 'سجل النشاطات' : 'Journal d\'activité'}
+        </h2>
+        <p className="text-slate-200 text-sm mt-0.5 opacity-90">{lang === 'ar' ? `${total} نشاط مسجل` : `${total} activités enregistrées`}</p>
       </div>
 
       {/* Filters */}
