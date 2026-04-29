@@ -135,6 +135,15 @@ export const WaterPage: React.FC = () => {
       waPaid: { fr: 'Confirmer paiement WA', ar: 'تأكيد الدفع واتساب' },
       reference: { fr: 'Référence / N° fiche', ar: 'المرجع / رقم البطاقة' },
       reportedBy: { fr: 'Signalé par', ar: 'أبلغ عنه' },
+      initialReading: { fr: 'Index de départ (m³)', ar: 'مؤشر البداية (م³)' },
+      installationFee: { fr: 'Frais d\'installation (MAD)', ar: 'رسوم التركيب (درهم)' },
+      period: { fr: 'Période de relevé', ar: 'فترة القراءة' },
+      periodMonthly: { fr: 'Mensuel', ar: 'شهري' },
+      periodQuarterly: { fr: 'Trimestriel', ar: 'ثلاثي' },
+      periodSemiannual: { fr: 'Semestriel', ar: 'نصف سنوي' },
+      quarter: { fr: 'Trimestre', ar: 'الربع' },
+      semester: { fr: 'Semestre', ar: 'النصف' },
+      taxReminder: { fr: 'N\'oubliez pas de configurer la taxe dans l\'onglet Tarification !', ar: 'لا تنسَ إعداد الضريبة في تبويب التسعيرة!' },
     };
     return (map[key]?.[lang]) ?? key;
   };
@@ -176,8 +185,9 @@ export const WaterPage: React.FC = () => {
   const [showReaderPass, setShowReaderPass] = useState(false);
 
   // Forms
-  const [instForm, setInstForm] = useState({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true, readerId: '' });
-  const [readingForm, setReadingForm] = useState({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '' });
+  const [instForm, setInstForm] = useState({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true, readerId: '', initialReading: '', installationFee: '' });
+  const [readingForm, setReadingForm] = useState({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '', period: 'MONTHLY' });
+  const [showTariffReminder, setShowTariffReminder] = useState(false);
 
   // Smart meter OCR state
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -314,10 +324,12 @@ export const WaterPage: React.FC = () => {
         installDate: inst.installDate ? inst.installDate.split('T')[0] : '',
         isActive: inst.isActive,
         readerId: inst.readerId || '',
+        initialReading: '',
+        installationFee: '',
       });
     } else {
       setEditingInst(null);
-      setInstForm({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true, readerId: '' });
+      setInstForm({ householdName: '', phone: '', address: '', meterNumber: '', pricePerUnit: '5', installDate: '', isActive: true, readerId: '', initialReading: '', installationFee: '' });
     }
     setShowInstModal(true);
   };
@@ -330,6 +342,9 @@ export const WaterPage: React.FC = () => {
         await waterApi.updateInstallation(editingInst.id, instForm);
       } else {
         await waterApi.createInstallation(instForm);
+        if (tariff.fixedFee === 0 && tariff.tranches.length === 0) {
+          setShowTariffReminder(true);
+        }
       }
       setShowInstModal(false);
       loadInstallations();
@@ -345,7 +360,7 @@ export const WaterPage: React.FC = () => {
     try {
       await waterApi.addReading(readingInstId, readingForm);
       setShowReadingModal(false);
-      setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '' });
+      setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '', period: 'MONTHLY' });
       setReadingInstId('');
       setOcrResult(null);
       setOcrPreview(null);
@@ -449,6 +464,7 @@ export const WaterPage: React.FC = () => {
       setShowReaderModal(false);
       setReaderForm({ name: '', email: '', password: '' });
       setReaderInstIds([]);
+      setActiveTab('readers');
       loadReaders();
       loadInstallations(); // refresh to show updated reader assignments
     } catch (err: any) {
@@ -570,40 +586,82 @@ export const WaterPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="page-title flex items-center gap-2">
-          <Droplets size={22} className="text-blue-500" />
-          {w('title')}
-        </h2>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => { setReadingInstId(''); setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '' }); setOcrResult(null); setOcrPreview(null); setShowReadingModal(true); }} className="btn-secondary text-sm">
-            <Plus size={15} />{w('addReading')}
-          </button>
-          <button onClick={() => openRepairModal()} className="btn-warning text-sm">
-            <Plus size={15} />{w('addIntervention')}
-          </button>
-          {!isWaterReader && (
-            <button onClick={() => openInstModal()} className="btn-primary text-sm">
-              <Plus size={15} />{w('addInstallation')}
+      {/* Water-themed header banner */}
+      <div className="rounded-2xl bg-gradient-to-br from-blue-600 via-cyan-500 to-teal-500 p-5 shadow-lg relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '50px 50px, 80px 80px' }} />
+        <div className="relative flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+              <Droplets size={26} className="text-cyan-200" />
+              {w('title')}
+            </h2>
+            <p className="text-cyan-100 text-sm mt-0.5 opacity-90">
+              {lang === 'ar' ? `${summary?.activeInstallations ?? 0} منشأة نشطة` : `${summary?.activeInstallations ?? 0} installation(s) active(s)`}
+            </p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => { setReadingInstId(''); setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '', period: 'MONTHLY' }); setOcrResult(null); setOcrPreview(null); setShowReadingModal(true); }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-medium transition-colors backdrop-blur-sm border border-white/30">
+              <Plus size={15} />{w('addReading')}
             </button>
-          )}
+            <button onClick={() => openRepairModal()}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-400/80 hover:bg-amber-400 text-white text-sm font-medium transition-colors">
+              <Plus size={15} />{w('addIntervention')}
+            </button>
+            {!isWaterReader && (
+              <button onClick={() => openInstModal()}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-sm font-semibold transition-colors shadow">
+                <Plus size={15} />{w('addInstallation')}
+              </button>
+            )}
+          </div>
+        </div>
+        {/* Stats inside header */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+            <div className="flex items-center gap-1.5 mb-1"><Droplets size={13} className="text-cyan-200" /><span className="text-xs text-cyan-100 font-medium">{w('installations')}</span></div>
+            <p className="text-lg font-bold text-white">{summary?.activeInstallations ?? 0} <span className="text-sm font-normal text-cyan-200">/ {summary?.totalInstallations ?? 0}</span></p>
+          </div>
+          <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+            <div className="flex items-center gap-1.5 mb-1"><TrendingUp size={13} className="text-cyan-200" /><span className="text-xs text-cyan-100 font-medium">{w('consumptionThisMonth')}</span></div>
+            <p className="text-lg font-bold text-white">{(summary?.totalConsumptionThisMonth ?? 0).toFixed(1)} <span className="text-sm font-normal text-cyan-200">m³</span></p>
+          </div>
+          <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+            <div className="flex items-center gap-1.5 mb-1"><Banknote size={13} className="text-red-200" /><span className="text-xs text-cyan-100 font-medium">{w('outstanding')}</span></div>
+            <p className="text-lg font-bold text-red-200">{formatCurrency(summary?.outstanding ?? 0, lang)}</p>
+          </div>
+          <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+            <div className="flex items-center gap-1.5 mb-1"><Wrench size={13} className="text-amber-200" /><span className="text-xs text-cyan-100 font-medium">{w('openRepairs')}</span></div>
+            <p className="text-lg font-bold text-amber-200">{summary?.openRepairs ?? 0}</p>
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title={w('installations')} value={`${summary?.activeInstallations ?? 0} / ${summary?.totalInstallations ?? 0}`} icon={<Droplets size={18} />} iconBg="bg-blue-100 dark:bg-blue-900/30" iconColor="text-blue-600 dark:text-blue-400" />
-        <StatCard title={w('consumptionThisMonth')} value={`${(summary?.totalConsumptionThisMonth ?? 0).toFixed(1)} m³`} icon={<TrendingUp size={18} />} iconBg="bg-teal-100 dark:bg-teal-900/30" iconColor="text-teal-600 dark:text-teal-400" />
-        <StatCard title={w('outstanding')} value={formatCurrency(summary?.outstanding ?? 0, lang)} icon={<Banknote size={18} />} iconBg="bg-red-100 dark:bg-red-900/30" iconColor="text-red-600 dark:text-red-400" />
-        <StatCard title={w('openRepairs')} value={summary?.openRepairs ?? 0} icon={<Wrench size={18} />} iconBg="bg-amber-100 dark:bg-amber-900/30" iconColor="text-amber-600 dark:text-amber-400" />
-      </div>
+      {/* Tariff reminder */}
+      {showTariffReminder && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl p-4 flex items-start gap-3">
+          <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{w('taxReminder')}</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+              {lang === 'ar' ? 'يمكنك أيضاً تسجيل رسوم التركيب في نموذج العداد عند الإنشاء.' : 'Les frais d\'installation peuvent être saisis lors de la création du compteur.'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={() => { setShowTariffReminder(false); setActiveTab('tariff'); }}
+              className="text-xs btn-warning py-1 px-3">
+              {lang === 'ar' ? 'إعداد التسعيرة' : 'Configurer le tarif'}
+            </button>
+            <button onClick={() => setShowTariffReminder(false)} className="text-gray-400 hover:text-gray-600 p-1">✕</button>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+      <div className="flex gap-1 border-b-2 border-blue-200 dark:border-blue-900/50 overflow-x-auto bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/10 rounded-t-xl px-2 pt-2">
         {TABS.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${activeTab === tab.key ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap rounded-t-lg ${activeTab === tab.key ? 'border-blue-500 text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800 shadow-sm' : 'border-transparent text-blue-400 dark:text-blue-500 hover:text-blue-600 dark:hover:text-blue-300'}`}>
             {tab.icon}{tab.label}
           </button>
         ))}
@@ -875,7 +933,7 @@ export const WaterPage: React.FC = () => {
                           <td>
                             <div className="flex gap-1">
                               <button
-                                onClick={() => { setReadingInstId(inst.id); setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '' }); setOcrResult(null); setOcrPreview(null); setShowReadingModal(true); }}
+                                onClick={() => { setReadingInstId(inst.id); setReadingForm({ currentReading: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), notes: '', meterPhotoUrl: '', period: 'MONTHLY' }); setOcrResult(null); setOcrPreview(null); setShowReadingModal(true); }}
                                 className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20" title={w('addReading')}>
                                 <Hash size={14} />
                               </button>
@@ -1547,6 +1605,22 @@ export const WaterPage: React.FC = () => {
                 onChange={(e) => setInstForm({ ...instForm, installDate: e.target.value })} />
             </div>
           </div>
+          {!editingInst && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">{w('initialReading')}</label>
+                <input className="input font-mono" type="number" step="0.01" min="0" placeholder="0.00"
+                  value={instForm.initialReading}
+                  onChange={(e) => setInstForm({ ...instForm, initialReading: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">{w('installationFee')}</label>
+                <input className="input" type="number" step="0.01" min="0" placeholder="0.00"
+                  value={instForm.installationFee}
+                  onChange={(e) => setInstForm({ ...instForm, installationFee: e.target.value })} />
+              </div>
+            </div>
+          )}
           <div>
             <label className="label">{w('assignReader')}</label>
             <select className="input" value={instForm.readerId}
@@ -1653,13 +1727,53 @@ export const WaterPage: React.FC = () => {
               type="number" step="0.01" value={readingForm.currentReading}
               onChange={(e) => setReadingForm({ ...readingForm, currentReading: e.target.value })} />
           </div>
+          {/* Period selector */}
+          <div>
+            <label className="label">{w('period')}</label>
+            <div className="flex gap-2">
+              {([['MONTHLY', w('periodMonthly')], ['QUARTERLY', w('periodQuarterly')], ['SEMIANNUAL', w('periodSemiannual')]] as [string, string][]).map(([val, label]) => (
+                <button key={val} type="button"
+                  onClick={() => {
+                    const newPeriod = val;
+                    let newMonth = readingForm.month;
+                    if (newPeriod === 'QUARTERLY') newMonth = [1, 4, 7, 10].includes(newMonth) ? newMonth : 1;
+                    if (newPeriod === 'SEMIANNUAL') newMonth = newMonth <= 6 ? 1 : 7;
+                    setReadingForm({ ...readingForm, period: newPeriod, month: newMonth });
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl border-2 text-sm font-medium transition-colors ${readingForm.period === val ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">{w('month')} *</label>
-              <select className="input" value={readingForm.month}
-                onChange={(e) => setReadingForm({ ...readingForm, month: parseInt(e.target.value) })}>
-                {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-              </select>
+              <label className="label">
+                {readingForm.period === 'QUARTERLY' ? w('quarter') : readingForm.period === 'SEMIANNUAL' ? w('semester') : w('month')} *
+              </label>
+              {readingForm.period === 'MONTHLY' && (
+                <select className="input" value={readingForm.month}
+                  onChange={(e) => setReadingForm({ ...readingForm, month: parseInt(e.target.value) })}>
+                  {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                </select>
+              )}
+              {readingForm.period === 'QUARTERLY' && (
+                <select className="input" value={readingForm.month}
+                  onChange={(e) => setReadingForm({ ...readingForm, month: parseInt(e.target.value) })}>
+                  <option value={1}>{lang === 'ar' ? 'الربع 1 (يناير–مارس)' : 'T1 (Jan–Mar)'}</option>
+                  <option value={4}>{lang === 'ar' ? 'الربع 2 (أبريل–يونيو)' : 'T2 (Avr–Juin)'}</option>
+                  <option value={7}>{lang === 'ar' ? 'الربع 3 (يوليو–سبتمبر)' : 'T3 (Juil–Sep)'}</option>
+                  <option value={10}>{lang === 'ar' ? 'الربع 4 (أكتوبر–ديسمبر)' : 'T4 (Oct–Déc)'}</option>
+                </select>
+              )}
+              {readingForm.period === 'SEMIANNUAL' && (
+                <select className="input" value={readingForm.month}
+                  onChange={(e) => setReadingForm({ ...readingForm, month: parseInt(e.target.value) })}>
+                  <option value={1}>{lang === 'ar' ? 'النصف الأول (يناير–يونيو)' : 'S1 (Jan–Juin)'}</option>
+                  <option value={7}>{lang === 'ar' ? 'النصف الثاني (يوليو–ديسمبر)' : 'S2 (Juil–Déc)'}</option>
+                </select>
+              )}
             </div>
             <div>
               <label className="label">{w('year')} *</label>
