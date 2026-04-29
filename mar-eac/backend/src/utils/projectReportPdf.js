@@ -3,39 +3,75 @@ const path = require('path');
 const fs = require('fs');
 const arabicReshaper = require('arabic-reshaper');
 
+// ── Fonts ─────────────────────────────────────────────────────────────────────
 const FONT_AR      = path.join(__dirname, '../assets/fonts/Amiri-Regular.ttf');
 const FONT_AR_BOLD = path.join(__dirname, '../assets/fonts/Amiri-Bold.ttf');
+const hasFont      = fs.existsSync(FONT_AR);
 
-const STATUS_LABEL = {
-  PLANNED:     { fr: 'Planifié',     ar: 'مُخطَّط' },
-  IN_PROGRESS: { fr: 'En cours',     ar: 'جاري التنفيذ' },
-  COMPLETED:   { fr: 'Terminé',      ar: 'مكتمل' },
-  CANCELLED:   { fr: 'Annulé',       ar: 'ملغى' },
+// ── Colours ───────────────────────────────────────────────────────────────────
+const C = {
+  navy:    '#1e3a5f',
+  blue:    '#2563eb',
+  sky:     '#e8f0fe',
+  green:   '#10b981',
+  amber:   '#f59e0b',
+  red:     '#ef4444',
+  slate:   '#64748b',
+  dark:    '#1e293b',
+  light:   '#f8fafc',
+  border:  '#e2e8f0',
+  white:   '#ffffff',
+  accent:  '#3b82f6',
 };
-const MS_STATUS = {
-  PENDING:     { fr: 'En attente',   ar: 'قيد الانتظار' },
-  IN_PROGRESS: { fr: 'En cours',     ar: 'جاري' },
-  COMPLETED:   { fr: 'Réalisé',      ar: 'منجز' },
-  DELAYED:     { fr: 'Retardé',      ar: 'متأخر' },
+
+// ── Lookup tables ─────────────────────────────────────────────────────────────
+const STATUS_COLOR = {
+  PLANNED:     C.accent,
+  IN_PROGRESS: C.amber,
+  COMPLETED:   C.green,
+  CANCELLED:   C.red,
+};
+const STATUS_LABEL = {
+  PLANNED:     { fr: 'Planifié',    ar: 'مُخطَّط' },
+  IN_PROGRESS: { fr: 'En cours',    ar: 'جاري التنفيذ' },
+  COMPLETED:   { fr: 'Terminé',     ar: 'مكتمل' },
+  CANCELLED:   { fr: 'Annulé',      ar: 'ملغى' },
+};
+const MS_STATUS_LABEL = {
+  PENDING:     { fr: 'En attente',  ar: 'قيد الانتظار' },
+  IN_PROGRESS: { fr: 'En cours',    ar: 'جاري' },
+  COMPLETED:   { fr: 'Réalisé',     ar: 'منجز' },
+  DELAYED:     { fr: 'Retardé',     ar: 'متأخر' },
+};
+const MS_STATUS_COLOR = {
+  COMPLETED:   C.green,
+  IN_PROGRESS: C.accent,
+  DELAYED:     C.red,
+  PENDING:     C.slate,
 };
 const TYPE_LABEL = {
-  WATER:          { fr: 'Eau potable',       ar: 'الماء الصالح للشرب' },
-  ROAD:           { fr: 'Route / Piste',     ar: 'طريق / مسلك' },
-  HEALTH:         { fr: 'Santé',             ar: 'الصحة' },
-  EDUCATION:      { fr: 'Éducation',         ar: 'التعليم' },
-  ENVIRONMENT:    { fr: 'Environnement',     ar: 'البيئة' },
-  AGRICULTURE:    { fr: 'Agriculture',       ar: 'الفلاحة' },
-  INFRASTRUCTURE: { fr: 'Infrastructure',    ar: 'البنية التحتية' },
-  OTHER:          { fr: 'Autre',             ar: 'أخرى' },
+  ROAD:              { fr: 'Route / Piste',          ar: 'طريق / مسلك' },
+  ROAD_REPAIR:       { fr: 'Réparation de routes',   ar: 'إصلاح الطرق' },
+  WATER:             { fr: 'Eau potable',             ar: 'الماء الصالح للشرب' },
+  WATER_INSTALLATION:{ fr: "Installation d'eau",     ar: 'تركيب الماء' },
+  LOCAL_DEVELOPMENT: { fr: 'Développement local',    ar: 'التنمية المحلية' },
+  HEALTH:            { fr: 'Santé',                  ar: 'الصحة' },
+  EDUCATION:         { fr: 'Éducation',              ar: 'التعليم' },
+  ENVIRONMENT:       { fr: 'Environnement',          ar: 'البيئة' },
+  AGRICULTURE:       { fr: 'Agriculture',            ar: 'الفلاحة' },
+  INFRASTRUCTURE:    { fr: 'Infrastructure',         ar: 'البنية التحتية' },
+  OTHER:             { fr: 'Autre',                  ar: 'أخرى' },
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate = (d, lang) => {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-MA', { day: '2-digit', month: 'long', year: 'numeric' });
+  return new Date(d).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-MA', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  });
 };
-const fmtCurrency = (n) => `${(n || 0).toLocaleString('fr-MA', { minimumFractionDigits: 2 })} MAD`;
-
-const hasFont = fs.existsSync(FONT_AR);
+const fmtMoney = (n) =>
+  `${(n || 0).toLocaleString('fr-MA', { minimumFractionDigits: 2 })} MAD`;
 
 const reshape = (text) => {
   if (!text) return '';
@@ -43,297 +79,372 @@ const reshape = (text) => {
   return shaped.split(' ').reverse().join(' ');
 };
 
+// ── Main generator ────────────────────────────────────────────────────────────
 async function generateProjectReportPDF(req, res) {
   const prisma = require('../config/database');
-  const orgId = req.organization.id;
+  const orgId  = req.organization.id;
   const { id } = req.params;
-  const lang = req.query.lang || 'fr';
+  const lang   = req.query.lang || 'fr';
+  const isAr   = lang === 'ar' && hasFont;
 
   const project = await prisma.project.findFirst({
     where: { id, organizationId: orgId },
     include: {
       milestones: { orderBy: { order: 'asc' } },
-      funding: { include: { entries: { orderBy: { date: 'asc' } } } },
+      funding:    { include: { entries: { orderBy: { date: 'asc' } } } },
       organization: { select: { name: true, nameAr: true, city: true, logo: true } },
     },
   });
   if (!project) { res.status(404).json({ message: 'Project not found' }); return; }
 
-  const doc = new PDFDocument({ size: 'A4', margin: 40, info: { Title: project.title } });
+  // ── Font aliases ────────────────────────────────────────────────────────────
+  const fReg  = isAr ? FONT_AR      : 'Helvetica';
+  const fBold = isAr ? FONT_AR_BOLD : 'Helvetica-Bold';
+
+  // Text helpers
+  const t  = (s) => isAr ? reshape(String(s || '')) : String(s || '');
+  const al = isAr ? 'right' : 'left';      // default text align
+  const oal = isAr ? 'left' : 'right';     // opposite align
+
+  // ── Document ────────────────────────────────────────────────────────────────
+  const doc = new PDFDocument({ size: 'A4', margin: 0, info: { Title: project.title } });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="project-${id}.pdf"`);
   doc.pipe(res);
 
-  const M = 40;
-  const PW = doc.page.width;
-  const W = PW - M * 2;
-  const isAr = lang === 'ar' && hasFont;
-  const regularFont = isAr ? FONT_AR : 'Helvetica';
-  const boldFont    = isAr ? (fs.existsSync(FONT_AR_BOLD) ? FONT_AR_BOLD : FONT_AR) : 'Helvetica-Bold';
+  const PW = doc.page.width;   // 595
+  const PH = doc.page.height;  // 842
+  const M  = 44;               // margin
+  const W  = PW - M * 2;       // content width
 
-  // Render text: reshape when AR, pass through otherwise
-  const t = (text) => isAr ? reshape(String(text || '')) : String(text || '');
-  // Text alignment helper
-  const align = (a = 'left') => isAr ? (a === 'left' ? 'right' : a === 'right' ? 'left' : a) : a;
-  // x offset for text inside a card: start from right edge when RTL
-  const tx = (x, cardW, pad = 6) => isAr ? x + pad : x + pad;
-  const textOpts = (w, a = 'natural') => ({ width: w, align: isAr ? 'right' : (a === 'natural' ? 'left' : a) });
+  // ── Computed values ─────────────────────────────────────────────────────────
+  const funded      = project.funding?.fundedAmount || 0;
+  const total       = project.funding?.totalBudget  || 0;
+  const pct         = total > 0 ? Math.min(100, (funded / total) * 100) : 0;
+  const completedMs = project.milestones.filter(m => m.status === 'COMPLETED').length;
+  const totalMs     = project.milestones.length;
+  const msPct       = totalMs > 0 ? Math.round((completedMs / totalMs) * 100) : 0;
+  const stColor     = STATUS_COLOR[project.status] || C.slate;
+  const orgName     = (isAr && project.organization.nameAr) ? project.organization.nameAr : project.organization.name;
 
-  const funded     = project.funding?.fundedAmount || 0;
-  const total      = project.funding?.totalBudget  || 0;
-  const pct        = total > 0 ? Math.min(100, (funded / total) * 100) : 0;
-  const completedMs = project.milestones.filter((m) => m.status === 'COMPLETED').length;
-  const totalMs    = project.milestones.length;
-  const msPct      = totalMs > 0 ? Math.round((completedMs / totalMs) * 100) : 0;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COVER BAND
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Full-width deep navy header
+  doc.rect(0, 0, PW, 110).fill(C.navy);
+  // Accent stripe at the very top
+  doc.rect(0, 0, PW, 4).fill(stColor);
 
-  // ── Header band ─────────────────────────────────────────────────────────────
-  doc.rect(0, 0, PW, 90).fill('#1e3a5f');
+  // Organisation name
+  doc.font(fBold).fontSize(15).fillColor(C.white);
+  doc.text(t(orgName), M, 18, { width: W, align: al });
 
-  const orgName = (lang === 'ar' && project.organization.nameAr) ? project.organization.nameAr : project.organization.name;
-  doc.fillColor('white').font(boldFont).fontSize(18);
-  doc.text(t(orgName), M, 18, { width: W, align: isAr ? 'right' : 'left' });
+  // Report label
+  doc.font(fReg).fontSize(9).fillColor('#93c5fd');
+  doc.text(
+    t(isAr ? 'تقرير المشروع' : 'Rapport de Projet'),
+    M, 40, { width: W, align: al },
+  );
 
-  doc.font(regularFont).fontSize(10).fillColor('#a0c4ff');
-  doc.text(t(lang === 'ar' ? 'تقرير المشروع' : 'Rapport de Projet'), M, 44, { width: W, align: isAr ? 'right' : 'left' });
+  // Project title
+  doc.font(fBold).fontSize(17).fillColor(C.white);
+  doc.text(t(project.title), M, 56, { width: W - 100, align: al });
 
-  doc.fillColor('white').font(boldFont).fontSize(13);
-  doc.text(t(project.title), M, 62, { width: W, align: isAr ? 'right' : 'left' });
+  // Status pill — always top-right corner of band
+  doc.roundedRect(PW - M - 90, 18, 90, 24, 12).fill(stColor);
+  doc.font(fBold).fontSize(9).fillColor(C.white);
+  doc.text(
+    t(STATUS_LABEL[project.status]?.[lang] || project.status),
+    PW - M - 90, 25, { width: 90, align: 'center' },
+  );
 
-  // Status badge — top-right for FR, top-left for AR
-  const stLabel = t(STATUS_LABEL[project.status]?.[lang] || project.status);
-  const stColor = { PLANNED: '#3b82f6', IN_PROGRESS: '#f59e0b', COMPLETED: '#10b981', CANCELLED: '#ef4444' }[project.status] || '#6b7280';
-  const badgeX = isAr ? M : PW - 130;
-  doc.roundedRect(badgeX, 18, 90, 22, 11).fill(stColor);
-  doc.fillColor('white').font(boldFont).fontSize(9).text(stLabel, badgeX, 24, { width: 90, align: 'center' });
+  let y = 125;
 
-  let y = 110;
-
-  // ── Key info cards ───────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // INFO CARDS ROW
+  // ═══════════════════════════════════════════════════════════════════════════
   const infoItems = [
-    { label: lang === 'ar' ? 'النوع' : 'Type',              value: t(TYPE_LABEL[project.type]?.[lang] || project.type) },
-    { label: lang === 'ar' ? 'المسؤول' : 'Responsable',      value: t(project.manager || '—') },
-    { label: lang === 'ar' ? 'تاريخ البداية' : 'Début',      value: fmtDate(project.startDate, lang) },
-    { label: lang === 'ar' ? 'تاريخ النهاية' : 'Fin prévue', value: fmtDate(project.endDate, lang) },
+    {
+      label: isAr ? 'النوع' : 'Type',
+      value: t(TYPE_LABEL[project.type]?.[lang] || project.type),
+    },
+    {
+      label: isAr ? 'المسؤول' : 'Responsable',
+      value: t(project.manager || '—'),
+    },
+    {
+      label: isAr ? 'تاريخ البداية' : 'Début',
+      value: fmtDate(project.startDate, lang),
+    },
+    {
+      label: isAr ? 'تاريخ النهاية' : 'Fin prévue',
+      value: fmtDate(project.endDate, lang),
+    },
   ];
-  // Reverse card order for RTL so reading flows right-to-left
   const displayItems = isAr ? [...infoItems].reverse() : infoItems;
-  const colW = W / displayItems.length;
-  displayItems.forEach((item, i) => {
-    const cx = M + i * colW;
-    doc.roundedRect(cx, y, colW - 6, 46, 6).fill('#f0f4f8');
-    doc.fillColor('#64748b').font(regularFont).fontSize(8)
-       .text(t(item.label), cx + 6, y + 8, { width: colW - 18, align: isAr ? 'right' : 'left' });
-    doc.fillColor('#1e293b').font(boldFont).fontSize(10)
-       .text(item.value, cx + 6, y + 22, { width: colW - 18, align: isAr ? 'right' : 'left' });
-  });
-  y += 60;
+  const cW = W / 4;
 
-  // ── Goals ────────────────────────────────────────────────────────────────────
+  displayItems.forEach((item, i) => {
+    const cx = M + i * cW;
+    // Card background
+    doc.roundedRect(cx, y, cW - 8, 52, 7).fill(C.light);
+    // Top accent bar
+    doc.rect(cx, y, cW - 8, 3).fill(stColor);
+    // Label
+    doc.font(fBold).fontSize(7.5).fillColor(C.slate);
+    doc.text(t(item.label), cx + 8, y + 10, { width: cW - 22, align: al });
+    // Value
+    doc.font(fBold).fontSize(11).fillColor(C.dark);
+    doc.text(item.value, cx + 8, y + 24, { width: cW - 22, align: al });
+  });
+  y += 64;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTION HELPER — draws a coloured left/right bar + bold title
+  // ═══════════════════════════════════════════════════════════════════════════
+  const sectionTitle = (label, yPos, color = C.navy) => {
+    const barX = isAr ? M + W - 4 : M;
+    doc.rect(barX, yPos, 4, 20).fill(color);
+    doc.font(fBold).fontSize(13).fillColor(color);
+    const textX = isAr ? M : M + 10;
+    doc.text(t(label), textX, yPos + 3, { width: W - 10, align: al });
+    // Thin separator line
+    doc.moveTo(M, yPos + 24).lineTo(M + W, yPos + 24)
+       .lineWidth(0.5).strokeColor(C.border).stroke();
+    return yPos + 32;
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GOALS
+  // ═══════════════════════════════════════════════════════════════════════════
   if (project.generalGoal || project.specificGoals) {
-    doc.fillColor('#1e3a5f').font(boldFont).fontSize(12)
-       .text(t(lang === 'ar' ? 'الأهداف' : 'Objectifs'), M, y, { width: W, align: isAr ? 'right' : 'left' });
-    y += 18;
+    y = sectionTitle(isAr ? 'الأهداف' : 'Objectifs', y, C.navy);
 
     if (project.generalGoal) {
-      const prefix = lang === 'ar' ? 'الهدف العام: ' : 'Objectif général : ';
-      const txt = t(prefix + project.generalGoal);
-      doc.fillColor('#334155').font(regularFont).fontSize(9)
-         .text(txt, M, y, { width: W, align: isAr ? 'right' : 'left' });
-      y += doc.heightOfString(txt, { width: W }) + 6;
+      // Sub-label
+      doc.font(fBold).fontSize(9).fillColor(C.accent);
+      doc.text(
+        t(isAr ? 'الهدف العام' : 'Objectif général'),
+        M, y, { width: W, align: al },
+      );
+      y += 14;
+      doc.font(fReg).fontSize(9.5).fillColor(C.dark);
+      const gtxt = t(project.generalGoal);
+      doc.text(gtxt, M, y, { width: W, align: al });
+      y += doc.heightOfString(gtxt, { width: W }) + 10;
     }
     if (project.specificGoals) {
-      const prefix = lang === 'ar' ? 'الأهداف الخاصة: ' : 'Objectifs spécifiques : ';
-      const txt = t(prefix + project.specificGoals);
-      doc.fillColor('#334155').font(regularFont).fontSize(9)
-         .text(txt, M, y, { width: W, align: isAr ? 'right' : 'left' });
-      y += doc.heightOfString(txt, { width: W }) + 6;
+      doc.font(fBold).fontSize(9).fillColor(C.accent);
+      doc.text(
+        t(isAr ? 'الأهداف الخاصة' : 'Objectifs spécifiques'),
+        M, y, { width: W, align: al },
+      );
+      y += 14;
+      doc.font(fReg).fontSize(9.5).fillColor(C.dark);
+      const stxt = t(project.specificGoals);
+      doc.text(stxt, M, y, { width: W, align: al });
+      y += doc.heightOfString(stxt, { width: W }) + 10;
     }
     y += 8;
   }
 
-  // ── Progress section ─────────────────────────────────────────────────────────
-  doc.fillColor('#1e3a5f').font(boldFont).fontSize(12)
-     .text(t(lang === 'ar' ? 'التقدم المحرز' : 'Avancement'), M, y, { width: W, align: isAr ? 'right' : 'left' });
-  y += 18;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PROGRESS
+  // ═══════════════════════════════════════════════════════════════════════════
+  y = sectionTitle(isAr ? 'التقدم المحرز' : 'Avancement', y, C.accent);
 
-  // Milestones progress bar
-  const msBarLabel = t(lang === 'ar' ? 'تقدم المراحل' : 'Avancement des jalons');
-  const msPctLabel = `${msPct}%  (${completedMs}/${totalMs})`;
-  if (isAr) {
-    doc.fillColor('#475569').font(boldFont).fontSize(9).text(msPctLabel, M, y, { width: W * 0.35, align: 'left' });
-    doc.fillColor('#475569').font(regularFont).fontSize(9).text(msBarLabel, M + W * 0.35, y, { width: W * 0.65, align: 'right' });
-  } else {
-    doc.fillColor('#475569').font(regularFont).fontSize(9).text(msBarLabel, M, y);
-    doc.fillColor('#475569').font(boldFont).fontSize(9).text(msPctLabel, M, y, { width: W, align: 'right' });
-  }
+  // — Milestones bar —
+  const msBarLabel  = t(isAr ? 'تقدم المراحل' : 'Avancement des jalons');
+  const msPctLabel  = `${msPct}% (${completedMs}/${totalMs})`;
+  doc.font(fBold).fontSize(9).fillColor(C.dark);
+  doc.text(msBarLabel, M, y, { width: W * 0.6, align: al });
+  doc.font(fBold).fontSize(9).fillColor(C.accent);
+  doc.text(msPctLabel, M, y, { width: W, align: oal });
   y += 14;
-  doc.roundedRect(M, y, W, 10, 5).fill('#e2e8f0');
+  doc.roundedRect(M, y, W, 11, 5).fill(C.border);
   if (msPct > 0) {
-    if (isAr) {
-      // RTL: bar fills from the right
-      doc.roundedRect(M + W - W * msPct / 100, y, W * msPct / 100, 10, 5).fill('#3b82f6');
-    } else {
-      doc.roundedRect(M, y, W * msPct / 100, 10, 5).fill('#3b82f6');
-    }
+    const bw = W * msPct / 100;
+    isAr
+      ? doc.roundedRect(M + W - bw, y, bw, 11, 5).fill(C.accent)
+      : doc.roundedRect(M, y, bw, 11, 5).fill(C.accent);
   }
   y += 20;
 
+  // — Funding bar —
   if (total > 0) {
-    const fundLabel = t(lang === 'ar' ? 'التمويل' : 'Financement');
-    const fundPctLabel = `${pct.toFixed(0)}%  ${fmtCurrency(funded)} / ${fmtCurrency(total)}`;
-    if (isAr) {
-      doc.fillColor('#475569').font(boldFont).fontSize(9).text(fundPctLabel, M, y, { width: W * 0.55, align: 'left' });
-      doc.fillColor('#475569').font(regularFont).fontSize(9).text(fundLabel, M + W * 0.55, y, { width: W * 0.45, align: 'right' });
-    } else {
-      doc.fillColor('#475569').font(regularFont).fontSize(9).text(fundLabel, M, y);
-      doc.fillColor('#475569').font(boldFont).fontSize(9).text(fundPctLabel, M, y, { width: W, align: 'right' });
-    }
+    const fLabel    = t(isAr ? 'التمويل' : 'Financement');
+    const fPctLabel = `${pct.toFixed(0)}% — ${fmtMoney(funded)} / ${fmtMoney(total)}`;
+    doc.font(fBold).fontSize(9).fillColor(C.dark);
+    doc.text(fLabel, M, y, { width: W * 0.4, align: al });
+    doc.font(fBold).fontSize(9).fillColor(C.green);
+    doc.text(fPctLabel, M, y, { width: W, align: oal });
     y += 14;
-    doc.roundedRect(M, y, W, 10, 5).fill('#e2e8f0');
+    doc.roundedRect(M, y, W, 11, 5).fill(C.border);
     if (pct > 0) {
-      if (isAr) {
-        doc.roundedRect(M + W - W * pct / 100, y, W * pct / 100, 10, 5).fill('#10b981');
-      } else {
-        doc.roundedRect(M, y, W * pct / 100, 10, 5).fill('#10b981');
-      }
+      const bw = W * pct / 100;
+      isAr
+        ? doc.roundedRect(M + W - bw, y, bw, 11, 5).fill(C.green)
+        : doc.roundedRect(M, y, bw, 11, 5).fill(C.green);
     }
     y += 24;
   }
 
-  // ── Milestones table ──────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MILESTONES TABLE
+  // ═══════════════════════════════════════════════════════════════════════════
   if (project.milestones.length > 0) {
-    if (y > 600) { doc.addPage(); y = 40; }
-    doc.fillColor('#1e3a5f').font(boldFont).fontSize(12)
-       .text(t(lang === 'ar' ? 'مراحل المشروع' : 'Jalons du projet'), M, y, { width: W, align: isAr ? 'right' : 'left' });
-    y += 20;
+    if (y > 590) { doc.addPage(); y = M; }
+    y = sectionTitle(isAr ? 'مراحل المشروع' : 'Jalons du projet', y, C.navy);
 
-    // Column definitions — define logical order, then reverse for AR display
-    const colsFR = [
-      { key: 'num',     label: '#',                              w: 24 },
-      { key: 'title',   label: 'Jalon',                         w: W * 0.38 },
-      { key: 'planned', label: 'Date prévue',                   w: W * 0.18 },
-      { key: 'actual',  label: 'Date réelle',                   w: W * 0.18 },
-      { key: 'status',  label: 'Statut',                        w: W * 0.18 },
+    // Column definitions in logical (LTR) order; reversed for AR display
+    const colsLTR = [
+      { key: 'num',     labelFr: '#',           labelAr: '#',               w: 28 },
+      { key: 'title',   labelFr: 'Jalon',        labelAr: 'المرحلة',         w: W * 0.38 },
+      { key: 'planned', labelFr: 'Date prévue',  labelAr: 'التاريخ المخطط',  w: W * 0.19 },
+      { key: 'actual',  labelFr: 'Date réelle',  labelAr: 'التاريخ الفعلي',  w: W * 0.19 },
+      { key: 'status',  labelFr: 'Statut',       labelAr: 'الحالة',          w: W * 0.18 },
     ];
-    const colsAR = [
-      { key: 'status',  label: 'الحالة',                        w: W * 0.18 },
-      { key: 'actual',  label: 'التاريخ الفعلي',                w: W * 0.18 },
-      { key: 'planned', label: 'التاريخ المخطط',               w: W * 0.18 },
-      { key: 'title',   label: 'المرحلة',                       w: W * 0.38 },
-      { key: 'num',     label: '#',                              w: 24 },
-    ];
-    const cols = isAr ? colsAR : colsFR;
+    const cols = isAr ? [...colsLTR].reverse() : colsLTR;
 
-    // Header row
-    doc.rect(M, y, W, 18).fill('#1e3a5f');
+    // Header
+    const hh = 20;
+    doc.rect(M, y, W, hh).fill(C.navy);
     let cx = M;
-    cols.forEach((col) => {
-      doc.fillColor('white').font(boldFont).fontSize(8)
-         .text(t(col.label), cx + 4, y + 5, { width: col.w - 8, align: isAr ? 'right' : 'left' });
+    cols.forEach(col => {
+      doc.font(fBold).fontSize(8).fillColor(C.white);
+      doc.text(t(isAr ? col.labelAr : col.labelFr), cx + 5, y + 6, {
+        width: col.w - 10, align: al,
+      });
       cx += col.w;
     });
-    y += 18;
+    y += hh;
 
     project.milestones.forEach((ms, idx) => {
-      if (y > 720) { doc.addPage(); y = 40; }
-      const bg = idx % 2 === 0 ? '#f8fafc' : 'white';
-      const msH = 22;
-      doc.rect(M, y, W, msH).fill(bg);
+      if (y > 720) { doc.addPage(); y = M; }
+      const rh  = 24;
+      const bg  = idx % 2 === 0 ? C.light : C.white;
+      doc.rect(M, y, W, rh).fill(bg);
+      // Left border stripe
+      doc.rect(M, y, 3, rh).fill(MS_STATUS_COLOR[ms.status] || C.slate);
 
-      const msStatusColor = { COMPLETED: '#10b981', IN_PROGRESS: '#3b82f6', DELAYED: '#ef4444', PENDING: '#94a3b8' }[ms.status] || '#94a3b8';
-      const msLabel = t(MS_STATUS[ms.status]?.[lang] || ms.status);
-
-      // Build a map of column key → render function
       const renderCell = {
         num:     (x, w) => {
-          doc.fillColor('#374151').font(regularFont).fontSize(8)
-             .text(String(idx + 1), x + 4, y + 7, { width: w - 8, align: isAr ? 'right' : 'left' });
+          doc.font(fBold).fontSize(8).fillColor(C.slate)
+             .text(String(idx + 1), x + 5, y + 8, { width: w - 10, align: al });
         },
         title:   (x, w) => {
-          doc.fillColor('#1e293b').font(boldFont).fontSize(8)
-             .text(t(ms.title), x + 4, y + 7, { width: w - 8, align: isAr ? 'right' : 'left' });
+          doc.font(fBold).fontSize(8.5).fillColor(C.dark)
+             .text(t(ms.title), x + 5, y + 8, { width: w - 10, align: al });
         },
         planned: (x, w) => {
-          doc.fillColor('#374151').font(regularFont).fontSize(8)
-             .text(fmtDate(ms.plannedDate, lang), x + 4, y + 7, { width: w - 8, align: isAr ? 'right' : 'left' });
+          doc.font(fReg).fontSize(8).fillColor(C.slate)
+             .text(fmtDate(ms.plannedDate, lang), x + 5, y + 8, { width: w - 10, align: al });
         },
         actual:  (x, w) => {
-          doc.fillColor('#374151').font(regularFont).fontSize(8)
-             .text(fmtDate(ms.actualDate, lang), x + 4, y + 7, { width: w - 8, align: isAr ? 'right' : 'left' });
+          doc.font(fReg).fontSize(8).fillColor(C.slate)
+             .text(fmtDate(ms.actualDate, lang), x + 5, y + 8, { width: w - 10, align: al });
         },
         status:  (x, w) => {
-          doc.roundedRect(x + 2, y + 5, w - 8, 13, 6).fill(msStatusColor);
-          doc.fillColor('white').font(boldFont).fontSize(7)
-             .text(msLabel, x + 2, y + 8, { width: w - 8, align: 'center' });
+          const sc  = MS_STATUS_COLOR[ms.status] || C.slate;
+          const sl  = t(MS_STATUS_LABEL[ms.status]?.[lang] || ms.status);
+          doc.roundedRect(x + 4, y + 6, w - 12, 13, 6).fill(sc);
+          doc.font(fBold).fontSize(7).fillColor(C.white)
+             .text(sl, x + 4, y + 9, { width: w - 12, align: 'center' });
         },
       };
 
       cx = M;
-      cols.forEach((col) => {
-        renderCell[col.key]?.(cx, col.w);
-        cx += col.w;
-      });
-      y += msH;
+      cols.forEach(col => { renderCell[col.key]?.(cx, col.w); cx += col.w; });
+      y += rh;
     });
-    y += 12;
+    y += 14;
   }
 
-  // ── Funding entries ────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FUNDING ENTRIES
+  // ═══════════════════════════════════════════════════════════════════════════
   if (project.funding?.entries?.length > 0) {
-    if (y > 600) { doc.addPage(); y = 40; }
-    doc.fillColor('#1e3a5f').font(boldFont).fontSize(12)
-       .text(t(lang === 'ar' ? 'مصادر التمويل' : 'Sources de financement'), M, y, { width: W, align: isAr ? 'right' : 'left' });
-    y += 20;
+    if (y > 590) { doc.addPage(); y = M; }
+    y = sectionTitle(isAr ? 'مصادر التمويل' : 'Sources de financement', y, C.green);
+
+    // Sub-header
+    doc.rect(M, y, W, 18).fill('#dcfce7');
+    const fhLabel = t(isAr ? 'المصدر / المانح' : 'Source / Donateur');
+    const fhAmt   = t(isAr ? 'المبلغ' : 'Montant');
+    const fhDate  = t(isAr ? 'التاريخ' : 'Date');
+    if (isAr) {
+      doc.font(fBold).fontSize(8).fillColor('#15803d')
+         .text(fhAmt,   M + 6,       y + 5, { width: W * 0.22, align: 'left' });
+      doc.font(fBold).fontSize(8).fillColor('#15803d')
+         .text(fhDate,  M + W * 0.22, y + 5, { width: W * 0.2, align: 'center' });
+      doc.font(fBold).fontSize(8).fillColor('#15803d')
+         .text(fhLabel, M + W * 0.42, y + 5, { width: W * 0.54, align: 'right' });
+    } else {
+      doc.font(fBold).fontSize(8).fillColor('#15803d')
+         .text(fhLabel, M + 8, y + 5, { width: W * 0.54 });
+      doc.font(fBold).fontSize(8).fillColor('#15803d')
+         .text(fhDate,  M + W * 0.58, y + 5, { width: W * 0.2, align: 'center' });
+      doc.font(fBold).fontSize(8).fillColor('#15803d')
+         .text(fhAmt,   M + W * 0.78, y + 5, { width: W * 0.22, align: 'right' });
+    }
+    y += 18;
 
     project.funding.entries.forEach((entry, idx) => {
-      if (y > 730) { doc.addPage(); y = 40; }
-      const bg = idx % 2 === 0 ? '#f0fdf4' : 'white';
-      doc.rect(M, y, W, 20).fill(bg);
+      if (y > 730) { doc.addPage(); y = M; }
+      const rh = 22;
+      const bg = idx % 2 === 0 ? '#f0fdf4' : C.white;
+      doc.rect(M, y, W, rh).fill(bg);
 
-      const sourceTxt = t(entry.source + (entry.donor ? ` — ${entry.donor}` : ''));
-      const amountTxt = fmtCurrency(entry.amount);
-      const dateTxt   = fmtDate(entry.date, lang);
+      const srcTxt = t(entry.source + (entry.donor ? ` — ${entry.donor}` : ''));
+      const amtTxt = fmtMoney(entry.amount);
+      const dtTxt  = fmtDate(entry.date, lang);
 
       if (isAr) {
-        // AR: amount on left, source on right
-        doc.fillColor('#10b981').font(boldFont).fontSize(9)
-           .text(amountTxt, M + 6, y + 6, { width: W * 0.35, align: 'left' });
-        doc.fillColor('#1e293b').font(boldFont).fontSize(9)
-           .text(sourceTxt, M + W * 0.35, y + 6, { width: W * 0.6, align: 'right' });
-        doc.fillColor('#64748b').font(regularFont).fontSize(7.5)
-           .text(dateTxt, M + 6, y + 13, { width: W * 0.35, align: 'left' });
+        doc.font(fBold).fontSize(9).fillColor(C.green)
+           .text(amtTxt, M + 6, y + 7, { width: W * 0.22, align: 'left' });
+        doc.font(fReg).fontSize(8).fillColor(C.slate)
+           .text(dtTxt, M + W * 0.22, y + 7, { width: W * 0.2, align: 'center' });
+        doc.font(fBold).fontSize(9).fillColor(C.dark)
+           .text(srcTxt, M + W * 0.42, y + 7, { width: W * 0.54, align: 'right' });
       } else {
-        doc.fillColor('#1e293b').font(boldFont).fontSize(9)
-           .text(sourceTxt, M + 6, y + 6, { width: W * 0.55 });
-        doc.fillColor('#10b981').font(boldFont).fontSize(9)
-           .text(amountTxt, M + 6, y + 6, { width: W - 12, align: 'right' });
-        doc.fillColor('#64748b').font(regularFont).fontSize(7.5)
-           .text(dateTxt, M + 6, y + 13, { width: W * 0.55 });
+        doc.font(fBold).fontSize(9).fillColor(C.dark)
+           .text(srcTxt, M + 8, y + 7, { width: W * 0.54 });
+        doc.font(fReg).fontSize(8).fillColor(C.slate)
+           .text(dtTxt, M + W * 0.58, y + 7, { width: W * 0.2, align: 'center' });
+        doc.font(fBold).fontSize(9).fillColor(C.green)
+           .text(amtTxt, M + W * 0.78, y + 7, { width: W * 0.22, align: 'right' });
       }
-      y += 20;
+      y += rh;
     });
 
     // Total row
-    doc.rect(M, y, W, 22).fill('#1e3a5f');
+    const th = 26;
+    doc.rect(M, y, W, th).fill(C.navy);
+    const totLabel = t(isAr ? 'المجموع الكلي' : 'TOTAL');
     if (isAr) {
-      doc.fillColor('#86efac').font(boldFont).fontSize(10)
-         .text(fmtCurrency(funded), M + 6, y + 6, { width: W * 0.45, align: 'left' });
-      doc.fillColor('white').font(boldFont).fontSize(10)
-         .text(t('المجموع'), M + W * 0.45, y + 6, { width: W * 0.5, align: 'right' });
+      doc.font(fBold).fontSize(10.5).fillColor('#86efac')
+         .text(fmtMoney(funded), M + 8, y + 8, { width: W * 0.4, align: 'left' });
+      doc.font(fBold).fontSize(10.5).fillColor(C.white)
+         .text(totLabel, M + W * 0.4, y + 8, { width: W * 0.55, align: 'right' });
     } else {
-      doc.fillColor('white').font(boldFont).fontSize(10).text('TOTAL', M + 6, y + 6, { width: W * 0.55 });
-      doc.fillColor('#86efac').font(boldFont).fontSize(10)
-         .text(fmtCurrency(funded), M + 6, y + 6, { width: W - 12, align: 'right' });
+      doc.font(fBold).fontSize(10.5).fillColor(C.white)
+         .text(totLabel, M + 8, y + 8, { width: W * 0.5 });
+      doc.font(fBold).fontSize(10.5).fillColor('#86efac')
+         .text(fmtMoney(funded), M + 8, y + 8, { width: W - 8, align: 'right' });
     }
-    y += 30;
+    y += th + 14;
   }
 
-  // ── Footer ─────────────────────────────────────────────────────────────────────
-  const footerTxt = lang === 'ar'
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FOOTER
+  // ═══════════════════════════════════════════════════════════════════════════
+  const footerY = PH - 36;
+  doc.rect(0, footerY, PW, 36).fill(C.navy);
+  const footerTxt = isAr
     ? t(`تقرير المشروع — ${new Date().toLocaleDateString('fr-MA')}`)
     : `Rapport généré le ${new Date().toLocaleDateString('fr-MA')}`;
-  doc.fillColor('#94a3b8').font(regularFont).fontSize(8)
-     .text(footerTxt, M, doc.page.height - 40, { width: W, align: 'center' });
+  doc.font(fReg).fontSize(8).fillColor('#93c5fd');
+  doc.text(footerTxt, M, footerY + 12, { width: W, align: 'center' });
 
   doc.end();
 }
