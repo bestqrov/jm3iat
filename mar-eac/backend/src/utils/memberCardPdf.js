@@ -142,12 +142,7 @@ async function _render(member, org, lang, outStream) {
   // Top edge of band — thin highlight
   doc.moveTo(0, bandY).lineTo(CW, bandY).lineWidth(0.8).strokeColor('#6080ff').stroke();
 
-  // Role text
-  const roleLabel = lang === 'ar' ? 'منخرط' : 'MEMBRE';
-  doc.fillColor('white').font(boldFont).fontSize(24).opacity(1);
-  doc.text(t(roleLabel), 16, bandY + 20, { width: CW - 80, align: isAr ? 'right' : 'left' });
-
-  // ── QR code ──────────────────────────────────────────────────────────────
+  // ── QR code — always on the left ─────────────────────────────────────────
   const qrData = member.email || member.phone || `MAR-EAC:${member.id}`;
   const qrBuffer = await QRCode.toBuffer(qrData, {
     type: 'png',
@@ -155,7 +150,12 @@ async function _render(member, org, lang, outStream) {
     margin: 1,
     color: { dark: '#ffffff', light: '#00000000' },
   });
-  doc.image(qrBuffer, CW - 70, bandY + 8, { width: 58 });
+  doc.image(qrBuffer, 8, bandY + 8, { width: 56 });
+
+  // Role text — centered in the remaining space (after QR)
+  const roleLabel = lang === 'ar' ? 'منخرط' : 'MEMBRE';
+  doc.fillColor('white').font(boldFont).fontSize(24).opacity(1);
+  doc.text(t(roleLabel), 64, bandY + 20, { width: CW - 64, align: 'center' });
 
   doc.end();
 }
