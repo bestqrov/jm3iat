@@ -126,7 +126,7 @@ export const LandingPage: React.FC = () => {
             'المبيعات والعملاء',
             'الفعاليات',
           ],
-          popular: true,
+          popular: false,
           color: 'green',
         },
         {
@@ -161,7 +161,7 @@ export const LandingPage: React.FC = () => {
             'النقل المدرسي مجاناً',
             'دعم أولوي 24/7',
           ],
-          popular: false,
+          popular: true,
           color: 'gold',
         },
       ]
@@ -229,7 +229,7 @@ export const LandingPage: React.FC = () => {
             'Ventes & clients',
             'Événements',
           ],
-          popular: true,
+          popular: false,
           color: 'green',
         },
         {
@@ -264,7 +264,7 @@ export const LandingPage: React.FC = () => {
             'Transport scolaire offert',
             'Support prioritaire 24/7',
           ],
-          popular: false,
+          popular: true,
           color: 'gold',
         },
       ];
@@ -456,8 +456,9 @@ export const LandingPage: React.FC = () => {
               to="/register"
               className="group flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-base shadow-lg shadow-primary-200 dark:shadow-primary-900/30 hover:shadow-xl transition-all duration-200"
             >
+              {!isAr && <ArrowRight size={18} className="transition-transform group-hover:translate-x-1 -order-1" />}
               {isAr ? 'ابدأ تجربة مجانية (15 يوم)' : 'Essai gratuit (15 jours)'}
-              <ArrowRight size={18} className={`transition-transform group-hover:translate-x-1 ${isAr ? 'rotate-180' : ''}`} />
+              {isAr && <ArrowRight size={18} className="rotate-180" />}
             </Link>
             <a
               href="#features"
@@ -699,8 +700,9 @@ export const LandingPage: React.FC = () => {
             to="/register"
             className="inline-flex items-center gap-2 bg-white text-primary-700 hover:bg-primary-50 px-8 py-3.5 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200"
           >
+            {!isAr && <ArrowRight size={18} className="-order-1" />}
             {isAr ? 'ابدأ الآن' : 'Commencer'}
-            <ArrowRight size={18} className={isAr ? 'rotate-180' : ''} />
+            {isAr && <ArrowRight size={18} className="rotate-180" />}
           </Link>
         </div>
       </section>
@@ -746,7 +748,7 @@ export const LandingPage: React.FC = () => {
             )}
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 max-w-7xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {pricingPacks.map((pack, i) => {
               const Icon = iconMap[pack.icon] || FileText;
               const colorMap: Record<string, { icon: string; badge: string; border: string }> = {
@@ -1010,8 +1012,9 @@ export const LandingPage: React.FC = () => {
               to="/register"
               className="group flex items-center gap-2 bg-primary-500 hover:bg-primary-400 text-white px-8 py-4 rounded-xl font-bold text-base shadow-xl hover:shadow-2xl transition-all duration-200"
             >
+              {!isAr && <ArrowRight size={18} className="transition-transform group-hover:translate-x-1 -order-1" />}
               {isAr ? 'ابدأ تجربة مجانية' : "Démarrer l'essai gratuit"}
-              <ArrowRight size={18} className={`transition-transform group-hover:translate-x-1 ${isAr ? 'rotate-180' : ''}`} />
+              {isAr && <ArrowRight size={18} className="transition-transform group-hover:-translate-x-1 rotate-180" />}
             </Link>
             <Link
               to="/login"
