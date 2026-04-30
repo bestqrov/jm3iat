@@ -4,7 +4,8 @@ import {
   Users, Calendar, DollarSign, Briefcase, TrendingUp, TrendingDown,
   Bell, Droplets, ShoppingBag, Layers, Building2, FolderKanban,
   AlertCircle, CheckCircle, Wrench, Package, RefreshCw, Activity, Globe,
-  Bus, MapPin, CreditCard, UserCheck,
+  Bus, MapPin, CreditCard, UserCheck, ArrowRightLeft, Sparkles, Crown,
+  ChevronDown, ChevronRight, Lock, X,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -115,6 +116,48 @@ export const DashboardPage: React.FC = () => {
   const [transportStats,     setTransportStats]      = useState<any>(null);
   const [loading,            setLoading]             = useState(true);
 
+  // ── Cooperative conversion ──
+  const isPro = organization?.assocType === 'PRO' || (sub?.plan === 'PREMIUM' && (mods.length >= 4));
+  const [showCoopSection,  setShowCoopSection]  = useState(false);
+  const [showCoopSteps,    setShowCoopSteps]    = useState(false);
+  const [showUpgradeDialog,setShowUpgradeDialog]= useState(false);
+
+  const COOP_STEPS = isAr ? [
+    { num: '01', title: 'قرار الجمعية العامة', duration: '1 يوم', color: 'bg-emerald-500',
+      desc: 'انعقاد جمعية عامة استثنائية للتصويت على قرار التحويل إلى تعاونية. يجب أن يصادق على القرار بأغلبية الثلثين من الأعضاء الحاضرين. تُحرَّر محضر رسمي موثَّق.' },
+    { num: '02', title: 'إعداد القانون الأساسي للتعاونية', duration: '7 إلى 15 يوم', color: 'bg-teal-500',
+      desc: 'صياغة القانون الأساسي للتعاونية وفق مقتضيات القانون رقم 112.12 المتعلق بالتعاونيات. يجب أن يتضمن: الاسم، المقر، الغرض، رأس المال، الحصص، القيادة، وآليات توزيع الأرباح.' },
+    { num: '03', title: 'إيداع الملف لدى ODCO', duration: '30 يوم', color: 'bg-cyan-500',
+      desc: 'تقديم ملف التأسيس إلى المكتب المركزي للتعاون (ODCO) يتضمن: القانون الأساسي، محضر الجمعية التأسيسية، قائمة المؤسسين مع وثائق الهوية، شهادة مقر التعاونية، وبطاقة المعلومات البنكية.' },
+    { num: '04', title: 'الحصول على شهادة التسجيل', duration: '15 إلى 30 يوم', color: 'bg-blue-500',
+      desc: 'بعد مراجعة ODCO للملف وقبوله، يُصدَر قرار تسجيل التعاونية رسمياً. تُسلَّم شهادة التسجيل التي تُعدّ الوثيقة القانونية الأساسية للتعاونية.' },
+    { num: '05', title: 'النشر في الجريدة الرسمية', duration: '15 يوم', color: 'bg-indigo-500',
+      desc: 'نشر ملخص القانون الأساسي وقرار التسجيل في الجريدة الرسمية للمملكة المغربية. يُعدّ النشر إعلاناً قانونياً رسمياً بوجود التعاونية ويُكسبها الشخصية المعنوية الكاملة.' },
+    { num: '06', title: 'فتح الحساب البنكي', duration: '5 إلى 10 أيام', color: 'bg-violet-500',
+      desc: 'فتح حساب بنكي باسم التعاونية وإيداع رأس المال الأولي. يجب أن يكون الحساب منفصلاً تماماً عن حساب الجمعية السابقة. يُودَع شهادة التسجيل والقانون الأساسي لدى البنك.' },
+    { num: '07', title: 'التسجيل في السجل التجاري', duration: '5 إلى 15 يوم', color: 'bg-purple-500',
+      desc: 'التسجيل في السجل التجاري لدى المحكمة التجارية المختصة للحصول على رقم التسجيل التجاري (IF). ضروري للفواتير، العقود، والتعاملات التجارية الرسمية.' },
+    { num: '08', title: 'إغلاق ملف الجمعية', duration: '30 يوم', color: 'bg-rose-500',
+      desc: 'تسوية الوضعية الإدارية للجمعية السابقة: إخبار السلطة الإدارية بالتوقف، تحويل الأصول والأرصدة إلى التعاونية الجديدة، أرشفة وثائق الجمعية، وإخبار المتعاملين والشركاء بالتغيير.' },
+  ] : [
+    { num: '01', title: "Décision de l'Assemblée Générale", duration: '1 jour', color: 'bg-emerald-500',
+      desc: "Tenue d'une assemblée générale extraordinaire pour voter la décision de conversion en coopérative. La décision doit être approuvée aux deux tiers des membres présents. Un procès-verbal officiel et signé est rédigé." },
+    { num: '02', title: 'Rédaction des statuts de la coopérative', duration: '7 à 15 jours', color: 'bg-teal-500',
+      desc: "Rédaction des statuts de la coopérative conformément à la loi n°112.12 relative aux coopératives. Ils doivent inclure : le nom, le siège, l'objet, le capital, les parts, la gouvernance et les modalités de distribution des bénéfices." },
+    { num: '03', title: "Dépôt du dossier à l'ODCO", duration: '30 jours', color: 'bg-cyan-500',
+      desc: "Soumission du dossier de constitution à l'Office de Développement de la Coopération (ODCO). Le dossier comprend : les statuts, le PV de l'AG constitutive, la liste des fondateurs avec pièces d'identité, l'attestation de siège et les coordonnées bancaires." },
+    { num: '04', title: "Obtention du certificat d'enregistrement", duration: '15 à 30 jours', color: 'bg-blue-500',
+      desc: "Après examen et acceptation du dossier par l'ODCO, une décision d'enregistrement officielle est émise. Le certificat d'enregistrement constitue le document juridique fondamental de la coopérative." },
+    { num: '05', title: 'Publication au Bulletin Officiel', duration: '15 jours', color: 'bg-indigo-500',
+      desc: "Publication d'un résumé des statuts et de la décision d'enregistrement au Bulletin Officiel du Royaume du Maroc. La publication est une annonce légale officielle conférant à la coopérative sa pleine personnalité morale." },
+    { num: '06', title: 'Ouverture du compte bancaire', duration: '5 à 10 jours', color: 'bg-violet-500',
+      desc: "Ouverture d'un compte bancaire au nom de la coopérative et dépôt du capital initial. Le compte doit être entièrement distinct du compte de l'ancienne association. Le certificat d'enregistrement et les statuts sont remis à la banque." },
+    { num: '07', title: 'Inscription au registre du commerce', duration: '5 à 15 jours', color: 'bg-purple-500',
+      desc: "Inscription au registre du commerce auprès du Tribunal de commerce compétent pour obtenir le numéro d'enregistrement (IF). Indispensable pour les factures, les contrats et les transactions commerciales officielles." },
+    { num: '08', title: "Clôture du dossier de l'association", duration: '30 jours', color: 'bg-rose-500',
+      desc: "Régularisation de la situation administrative de l'ancienne association : notification à l'autorité administrative, transfert des actifs et soldes à la nouvelle coopérative, archivage des documents de l'association et information des partenaires du changement." },
+  ];
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -221,14 +264,177 @@ export const DashboardPage: React.FC = () => {
               )}
             </div>
           </div>
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
-            style={{ background: theme.gradient }}
-          >
-            <span className="font-bold text-white text-sm">MA</span>
+          <div className="flex items-center gap-3">
+            {/* Convert to cooperative button */}
+            <button
+              onClick={() => isPro ? setShowCoopSection(v => !v) : setShowUpgradeDialog(true)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all border ${
+                isPro
+                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
+                  : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {isPro ? <ArrowRightLeft size={15} /> : <Lock size={14} />}
+              {isAr ? 'تحويل إلى تعاونية' : 'Convertir en coopérative'}
+              {isPro && (showCoopSection ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
+              {!isPro && <Crown size={13} className="text-yellow-500" />}
+            </button>
+
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
+              style={{ background: theme.gradient }}
+            >
+              <span className="font-bold text-white text-sm">MA</span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* ── Cooperative conversion panel (PRO only) ── */}
+      {showCoopSection && isPro && (
+        <div className="rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 overflow-hidden shadow-lg">
+          {/* Panel header */}
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <ArrowRightLeft size={20} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">
+                  {isAr ? 'تحويل الجمعية إلى تعاونية' : "Conversion de l'association en coopérative"}
+                </h3>
+                <p className="text-emerald-100 text-xs mt-0.5">
+                  {isAr ? 'دليل خطوة بخطوة وفق القانون المغربي رقم 112.12' : 'Guide étape par étape selon la loi marocaine n°112.12'}
+                </p>
+              </div>
+            </div>
+            <button onClick={() => { setShowCoopSection(false); setShowCoopSteps(false); }}
+              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors">
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Generate button or steps */}
+          {!showCoopSteps ? (
+            <div className="px-6 py-8 text-center">
+              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/40 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Sparkles size={28} className="text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <h4 className="text-gray-900 dark:text-white font-bold text-lg mb-2">
+                {isAr ? 'هل أنت مستعد للتحويل؟' : 'Prêt pour la conversion ?'}
+              </h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md mx-auto mb-6">
+                {isAr
+                  ? 'اضغط على الزر أدناه لعرض المسار الكامل للتحويل من جمعية إلى تعاونية مع الشروحات التفصيلية لكل خطوة'
+                  : 'Cliquez sur le bouton ci-dessous pour afficher le parcours complet de conversion avec les explications détaillées de chaque étape'}
+              </p>
+              <button
+                onClick={() => setShowCoopSteps(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md shadow-emerald-200 dark:shadow-emerald-900/30 transition-all"
+              >
+                <Sparkles size={16} />
+                {isAr ? 'توليد الخطوات' : 'Générer les étapes'}
+              </button>
+            </div>
+          ) : (
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  {isAr ? `${COOP_STEPS.length} خطوات — مدة إجمالية تقديرية: 3 إلى 4 أشهر` : `${COOP_STEPS.length} étapes — Durée totale estimée : 3 à 4 mois`}
+                </p>
+                <span className="text-xs text-gray-400 bg-white dark:bg-gray-800 px-2 py-1 rounded-full border border-gray-200 dark:border-gray-700">
+                  {isAr ? 'القانون 112.12' : 'Loi 112.12'}
+                </span>
+              </div>
+              {COOP_STEPS.map((step, i) => (
+                <div key={i} className="flex gap-4 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                  {/* Step number */}
+                  <div className={`w-10 h-10 rounded-xl ${step.color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                    <span className="text-white font-bold text-sm">{step.num}</span>
+                  </div>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <h4 className="font-bold text-gray-900 dark:text-white text-sm">{step.title}</h4>
+                      <span className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full border border-blue-100 dark:border-blue-800 whitespace-nowrap flex-shrink-0">
+                        <ArrowRightLeft size={10} />{step.duration}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+              <div className="mt-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                  {isAr
+                    ? '⚠️ تنبيه: هذه الخطوات إرشادية عامة. يُنصح باستشارة محامٍ متخصص أو ODCO للحصول على توجيه دقيق حسب وضع جمعيتك.'
+                    : "⚠️ Avertissement : Ces étapes sont indicatives. Il est recommandé de consulter un juriste spécialisé ou l'ODCO pour un accompagnement adapté à votre situation."}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Upgrade to PRO dialog ── */}
+      {showUpgradeDialog && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowUpgradeDialog(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <Crown size={22} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">
+                  {isAr ? 'ميزة حصرية — باقة PRO' : 'Fonctionnalité exclusive — Pack PRO'}
+                </h3>
+                <p className="text-white/80 text-xs">{isAr ? '250 د.م/سنة' : '250 MAD/an'}</p>
+              </div>
+              <button onClick={() => setShowUpgradeDialog(false)} className="ms-auto p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white">
+                <X size={16} />
+              </button>
+            </div>
+            {/* Body */}
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+                  <Lock size={22} className="text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-white">
+                    {isAr ? 'التحويل إلى تعاونية — PRO فقط' : 'Conversion en coopérative — PRO uniquement'}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                    {isAr ? 'هذه الميزة متاحة فقط في باقة PRO' : 'Cette fonctionnalité est réservée au pack PRO'}
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-2 mb-6">
+                {(isAr
+                  ? ['دليل تحويل قانوني خطوة بخطوة', 'شرح تفصيلي لكل مرحلة', 'مراجع القانون المغربي 112.12', 'جميع وحدات المنصة مفتوحة', 'دعم أولوي 24/7']
+                  : ["Guide légal de conversion étape par étape", "Explication détaillée de chaque phase", "Références loi marocaine 112.12", "Tous les modules de la plateforme ouverts", "Support prioritaire 24/7"]
+                ).map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                    <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/settings"
+                onClick={() => setShowUpgradeDialog(false)}
+                className="block text-center w-full py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-white font-bold text-sm shadow-md hover:opacity-90 transition-opacity"
+              >
+                {isAr ? 'الترقية إلى PRO — 250 د.م/سنة' : 'Passer au Pack PRO — 250 MAD/an'}
+              </Link>
+              <button onClick={() => setShowUpgradeDialog(false)} className="block w-full text-center text-sm text-gray-400 hover:text-gray-600 mt-3">
+                {isAr ? 'لاحقاً' : 'Plus tard'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Quick actions ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
