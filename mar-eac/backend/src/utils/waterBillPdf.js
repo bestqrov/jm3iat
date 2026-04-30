@@ -130,16 +130,19 @@ const generateWaterBillPDF = async (req, res) => {
 
     // Logo
     if (org?.logo) {
-      // org.logo is stored as "/uploads/filename.ext" — resolve to filesystem path
-      const logoFile = path.basename(org.logo);
-      const logoPaths = [
-        path.join(UPLOAD_DIR, logoFile),
-        path.join(process.cwd(), 'uploads', logoFile),
-        path.join(__dirname, '../../uploads', logoFile),
-      ];
-      const lp = logoPaths.find(p => fs.existsSync(p));
-      if (lp) {
-        try { doc.image(lp, M + 4, 11, { fit: [58, 58] }); } catch (_) {}
+      let logoSrc = null;
+      if (org.logo.startsWith('data:')) {
+        try { logoSrc = Buffer.from(org.logo.split(',')[1], 'base64'); } catch (_) {}
+      } else {
+        const logoFile = path.basename(org.logo);
+        logoSrc = [
+          path.join(UPLOAD_DIR, logoFile),
+          path.join(process.cwd(), 'uploads', logoFile),
+          path.join(__dirname, '../../uploads', logoFile),
+        ].find(p => fs.existsSync(p)) || null;
+      }
+      if (logoSrc) {
+        try { doc.image(logoSrc, M + 4, 11, { fit: [58, 58] }); } catch (_) {}
       }
     }
 

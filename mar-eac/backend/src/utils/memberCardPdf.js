@@ -78,11 +78,17 @@ async function _render(member, org, lang, outStream) {
   // Org logo or initials
   const orgDisplayName = (lang === 'ar' && org.nameAr) ? org.nameAr : org.name;
   if (org.logo) {
-    const logoPath = path.join(__dirname, '../../uploads', path.basename(org.logo));
-    if (fs.existsSync(logoPath)) {
+    let logoSrc = null;
+    if (org.logo.startsWith('data:')) {
+      try { logoSrc = Buffer.from(org.logo.split(',')[1], 'base64'); } catch (_) {}
+    } else {
+      const lp = path.join(__dirname, '../../uploads', path.basename(org.logo));
+      if (fs.existsSync(lp)) logoSrc = lp;
+    }
+    if (logoSrc) {
       try {
         doc.save().circle(lcx, lcy, 38).clip();
-        doc.image(logoPath, lcx - 38, lcy - 38, { width: 76, height: 76 });
+        doc.image(logoSrc, lcx - 38, lcy - 38, { width: 76, height: 76 });
         doc.restore();
       } catch (_) { _drawInitials(doc, boldFont, orgDisplayName, lcx, lcy); }
     } else {

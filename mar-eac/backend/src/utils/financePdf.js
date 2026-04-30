@@ -401,10 +401,18 @@ async function generateFinancialPDF(req, res) {
 
   // Logo box
   drawRect(doc, logoBoxX, 40, 110, 80, null, BLUE, 1);
-  const logoFilePath = org.logo ? path.join(UPLOAD_DIR, path.basename(org.logo)) : null;
-  if (logoFilePath && fs.existsSync(logoFilePath)) {
+  let logoSrc = null;
+  if (org.logo) {
+    if (org.logo.startsWith('data:')) {
+      try { logoSrc = Buffer.from(org.logo.split(',')[1], 'base64'); } catch (_) {}
+    } else {
+      const lp = path.join(UPLOAD_DIR, path.basename(org.logo));
+      if (fs.existsSync(lp)) logoSrc = lp;
+    }
+  }
+  if (logoSrc) {
     try {
-      doc.image(logoFilePath, logoBoxX + 5, 45, { width: 100, height: 60, fit: [100, 60], align: 'center', valign: 'center' });
+      doc.image(logoSrc, logoBoxX + 5, 45, { width: 100, height: 60, fit: [100, 60], align: 'center', valign: 'center' });
     } catch { /* fall back to placeholder if image is corrupt */ }
   } else {
     drawRect(doc, logoBoxX + 5, 45, 100, 60, null, '#93c5fd', 0.5);

@@ -37,6 +37,9 @@ const dateAr = () => {
 
 const logoPath = (org) => {
   if (!org?.logo) return null;
+  if (org.logo.startsWith('data:')) {
+    try { return Buffer.from(org.logo.split(',')[1], 'base64'); } catch (_) { return null; }
+  }
   return [
     path.join(UPLOAD_DIR, path.basename(org.logo)),
     path.join(process.cwd(), 'uploads', path.basename(org.logo)),

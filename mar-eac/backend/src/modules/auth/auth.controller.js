@@ -25,7 +25,7 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 60);
+    trialEndsAt.setDate(trialEndsAt.getDate() + 15);
 
     const result = await prisma.$transaction(async (tx) => {
       const org = await tx.organization.create({
@@ -226,17 +226,22 @@ const uploadLogo = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     const orgId = req.user.organizationId;
-    const uploadDir = process.env.UPLOAD_DIR || path.resolve('./uploads');
 
-    // Delete old logo file if it exists
+    // Read file from disk, convert to base64 data URL, then delete temp file
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const mimeType = req.file.mimetype || 'image/jpeg';
+    const logoDataUrl = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
+    try { fs.unlinkSync(req.file.path); } catch (_) {}
+
+    // Delete old disk logo if it was stored as a file path (legacy)
     const current = await prisma.organization.findUnique({ where: { id: orgId }, select: { logo: true } });
-    if (current?.logo) {
+    if (current?.logo && current.logo.startsWith('/uploads/')) {
+      const uploadDir = process.env.UPLOAD_DIR || path.resolve('./uploads');
       const oldPath = path.join(uploadDir, path.basename(current.logo));
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      try { if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } catch (_) {}
     }
 
-    const logoUrl = `/uploads/${req.file.filename}`;
-    const updated = await prisma.organization.update({ where: { id: orgId }, data: { logo: logoUrl } });
+    const updated = await prisma.organization.update({ where: { id: orgId }, data: { logo: logoDataUrl } });
     res.json({ logo: updated.logo });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
