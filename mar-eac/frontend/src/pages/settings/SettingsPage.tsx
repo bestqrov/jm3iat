@@ -20,7 +20,7 @@ import { StaffAccounts } from '../../components/settings/StaffAccounts';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { authApi, whatsappApi, backupApi, publicApi } from '../../lib/api';
-import { formatDate } from '../../lib/utils';
+import { formatDate, arabicDays } from '../../lib/utils';
 
 export const SettingsPage: React.FC = () => {
   const { user, organization, refreshUser } = useAuth();
@@ -798,7 +798,7 @@ export const SettingsPage: React.FC = () => {
               return (
                 <p className={`text-xs mt-1 ${daysLeft <= 30 ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
                   {lang === 'ar'
-                    ? `تنتهي صلاحية المكتب في: ${expiry.toLocaleDateString('ar-MA')} (${daysLeft > 0 ? `${daysLeft} يوم متبقي` : 'منتهية'})`
+                    ? `تنتهي صلاحية المكتب في: ${expiry.toLocaleDateString('ar-MA')} (${daysLeft > 0 ? `${daysLeft} ${arabicDays(daysLeft)} متبقية` : 'منتهية'})`
                     : `Expiration du bureau : ${expiry.toLocaleDateString('fr-FR')} (${daysLeft > 0 ? `${daysLeft} jour(s) restant(s)` : 'expiré'})`}
                 </p>
               );

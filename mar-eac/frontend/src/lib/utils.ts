@@ -41,6 +41,14 @@ export const formatFileSize = (bytes: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+/** Arabic grammar: 1→يوم  2→يومان  3-10→أيام  11+→يوماً */
+export const arabicDays = (n: number): string => {
+  if (n === 1) return 'يوم';
+  if (n === 2) return 'يومان';
+  if (n >= 3 && n <= 10) return 'أيام';
+  return 'يوماً';
+};
+
 export const getTrialDaysRemaining = (trialEndsAt: string) => {
   const end = new Date(trialEndsAt);
   const now = new Date();

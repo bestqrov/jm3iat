@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { AlertTriangle, X, Zap, Clock } from 'lucide-react';
-import { getTrialDaysRemaining } from '../../lib/utils';
+import { getTrialDaysRemaining, arabicDays } from '../../lib/utils';
 
 export const Layout: React.FC = () => {
   const { isAuthenticated, isLoading, organization } = useAuth();
@@ -62,7 +62,7 @@ export const Layout: React.FC = () => {
             <AlertTriangle size={16} className={`flex-shrink-0 ${urgent ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`} />
             <p className={`text-sm flex-1 ${urgent ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'}`}>
               {lang === 'ar'
-                ? <>تنتهي الفترة التجريبية خلال <strong>{trialDays} {trialDays === 1 ? 'يوم' : 'أيام'}</strong>. <Link to="/settings" className="underline font-semibold">اشترك الآن</Link> للاستمرار.</>
+                ? <>تنتهي الفترة التجريبية خلال <strong>{trialDays} {arabicDays(trialDays!)}</strong>. <Link to="/settings" className="underline font-semibold">اشترك الآن</Link> للاستمرار.</>
                 : <>{t('dashboard.trialEnds')} <strong>{trialDays} {t('dashboard.days')}</strong>. <Link to="/settings" className="underline font-semibold">Abonnez-vous</Link> pour continuer.</>}
             </p>
             <button onClick={() => setBannerDismissed(true)} className={`p-1 ${urgent ? 'text-red-600 hover:text-red-800' : 'text-amber-600 hover:text-amber-800'}`}>
@@ -109,7 +109,7 @@ export const Layout: React.FC = () => {
               {lang === 'ar'
                 ? bureauExpired
                   ? <>⛔ <strong>انتهت صلاحية مكتب الجمعية</strong> — أصبح المكتب غير قانوني. يجب إجراء انتخابات لتجديد المكتب فوراً.</>
-                  : <>⚠️ <strong>سيصبح المكتب غير قانوني بعد {bureauDaysLeft} يوم</strong> ({bureauExpiry!.toLocaleDateString('ar-MA')}). يجب تجديد انتخاب المكتب قبل هذا التاريخ.</>
+                  : <>⚠️ <strong>سيصبح المكتب غير قانوني بعد {bureauDaysLeft} {arabicDays(bureauDaysLeft!)}</strong> ({bureauExpiry!.toLocaleDateString('ar-MA')}). يجب تجديد انتخاب المكتب قبل هذا التاريخ.</>
                 : bureauExpired
                   ? <>⛔ <strong>Le bureau de l&apos;association est expiré</strong> — le bureau est illégal. Des élections doivent être organisées immédiatement.</>
                   : <>⚠️ <strong>Le bureau deviendra illégal dans {bureauDaysLeft} jour{bureauDaysLeft! > 1 ? 's' : ''}</strong> ({bureauExpiry!.toLocaleDateString('fr-FR')}). Le renouvellement du bureau doit être effectué avant cette date.</>}
