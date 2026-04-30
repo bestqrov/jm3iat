@@ -5,13 +5,13 @@ import {
   CheckCircle, ChevronDown, Globe, Menu, X, ArrowRight,
   Star, Zap, Shield, TrendingUp, AlertCircle, LucideIcon,
   Layers, FileText, MapPin, Network, Scale, ClipboardList,
-  CreditCard, Package, UserPlus, Sparkles,
+  CreditCard, Package, UserPlus, Sparkles, Trophy, Crown,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const iconMap: Record<string, LucideIcon> = {
   Users, DollarSign, BarChart2, Droplets, Bus, Factory, Layers, FileText,
-  MapPin, Network, Scale, ClipboardList, CreditCard, Package, UserPlus,
+  MapPin, Network, Scale, ClipboardList, CreditCard, Package, UserPlus, Trophy, Crown,
 };
 
 export const LandingPage: React.FC = () => {
@@ -130,20 +130,39 @@ export const LandingPage: React.FC = () => {
           color: 'green',
         },
         {
-          key: 'COOPERATIVE',
-          icon: 'Users',
-          name: 'تعاونية',
+          key: 'SPORTIF',
+          icon: 'Trophy',
+          name: 'جمعية رياضية',
           price: '100',
-          desc: 'الوحدات الأساسية + التسيير التعاوني والأرباح والمنتجات',
+          desc: 'الوحدات الأساسية + تسيير الرياضيين والتدريبات والمنافسات',
           features: [
             'كل مميزات الجمعية العادية',
-            'إدارة المنخرطين والحصص',
-            'توزيع الأرباح',
-            'إدارة المنتجات',
-            'الفواتير والمبيعات',
+            'إدارة الرياضيين والفرق',
+            'جدولة التدريبات والمباريات',
+            'إدارة التراخيص الرياضية',
+            'نتائج المنافسات والترتيب',
+            'المعدات الرياضية',
           ],
           popular: false,
-          color: 'purple',
+          color: 'orange',
+        },
+        {
+          key: 'PRO',
+          icon: 'Crown',
+          name: 'باقة PRO',
+          price: '250',
+          desc: 'جميع الوحدات بدون استثناء — للجمعيات الكبيرة والمتعددة النشاطات',
+          features: [
+            '✨ كل مميزات جميع الباقات',
+            'إدارة المشاريع والممتلكات',
+            'إدارة شبكة الماء',
+            'إدارة الإنتاج والمبيعات',
+            'الفعاليات والتذاكر',
+            'النقل المدرسي مجاناً',
+            'دعم أولوي 24/7',
+          ],
+          popular: false,
+          color: 'gold',
         },
       ]
     : [
@@ -214,20 +233,39 @@ export const LandingPage: React.FC = () => {
           color: 'green',
         },
         {
-          key: 'COOPERATIVE',
-          icon: 'Users',
-          name: 'Coopérative',
+          key: 'SPORTIF',
+          icon: 'Trophy',
+          name: 'Association sportive',
           price: '100',
-          desc: 'Modules de base + gestion coopérative, parts et produits',
+          desc: 'Modules de base + sportifs, entraînements et compétitions',
           features: [
             'Tout le pack classique',
-            'Gestion des adhérents & parts',
-            'Distribution des bénéfices',
-            'Gestion des produits',
-            'Factures & ventes',
+            'Gestion des sportifs & équipes',
+            'Planning entraînements & matchs',
+            'Licences sportives',
+            'Résultats & classements',
+            'Matériel sportif',
           ],
           popular: false,
-          color: 'purple',
+          color: 'orange',
+        },
+        {
+          key: 'PRO',
+          icon: 'Crown',
+          name: 'Pack PRO',
+          price: '250',
+          desc: 'Tous les modules sans exception — pour les grandes associations multi-activités',
+          features: [
+            '✨ Tout le contenu de tous les packs',
+            'Projets & actifs',
+            "Réseau d'eau",
+            'Production & ventes',
+            'Événements & billetterie',
+            'Transport scolaire offert',
+            'Support prioritaire 24/7',
+          ],
+          popular: false,
+          color: 'gold',
         },
       ];
 
@@ -718,6 +756,7 @@ export const LandingPage: React.FC = () => {
                 green:  { icon: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400', badge: 'bg-green-600', border: 'border-green-200 dark:border-green-800' },
                 purple: { icon: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400', badge: 'bg-purple-600', border: 'border-purple-200 dark:border-purple-800' },
                 orange: { icon: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400', badge: 'bg-orange-600', border: 'border-orange-200 dark:border-orange-800' },
+                gold:   { icon: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400', badge: 'bg-gradient-to-r from-yellow-500 to-amber-500', border: 'border-yellow-300 dark:border-yellow-700' },
               };
               const c = colorMap[pack.color] || colorMap.blue;
               return (

@@ -43,7 +43,7 @@ model Organization {
   bankAccount  String?
   bankRib      String?
   membershipFee Float?
-  assocType    String?   // REGULAR, PROJECTS, WATER, PRODUCTIVE, COOPERATIVE
+  assocType    String?   // REGULAR, PROJECTS, WATER, PRODUCTIVE, SPORTIF, PRO
   trialEndsAt  DateTime?
   modules      String[]  @default([])
   createdAt   DateTime  @default(now())
