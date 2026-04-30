@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, FileText, Pencil, Trash2, Send, Download, MessageCircle, Mail, CheckCircle2, Loader2 } from 'lucide-react';
+import { Plus, FileText, Pencil, Trash2, Send, Download, MessageCircle, Mail, CheckCircle2, Loader2, BookOpen, Scale, Landmark, Users, ClipboardList } from 'lucide-react';
 import { requestsApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
@@ -42,6 +42,9 @@ export const RequestsPage: React.FC = () => {
   const [sendResult,    setSendResult]    = useState<{ ok: boolean; msg: string } | null>(null);
   const [toPhone,       setToPhone]       = useState('');
   const [toEmail,       setToEmail]       = useState('');
+
+  // tabs
+  const [activeTab, setActiveTab] = useState<'requests' | 'library'>('requests');
 
   // shared
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -144,6 +147,45 @@ export const RequestsPage: React.FC = () => {
     } finally { setSendAction(null); }
   };
 
+  const DOC_LIBRARY = [
+    {
+      category: 'legal' as const,
+      icon: <Scale size={20} />,
+      color: 'from-violet-500 to-purple-600',
+      bg: 'bg-violet-50 dark:bg-violet-900/20',
+      border: 'border-violet-200 dark:border-violet-800',
+      iconColor: 'text-violet-600 dark:text-violet-400',
+      docs: ['statutes', 'receipt', 'idPresident', 'birthCert', 'internalRegulation'],
+    },
+    {
+      category: 'financial' as const,
+      icon: <Landmark size={20} />,
+      color: 'from-emerald-500 to-teal-600',
+      bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+      border: 'border-emerald-200 dark:border-emerald-800',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      docs: ['bankAccount', 'annualBudget', 'accountBalance', 'taxCert'],
+    },
+    {
+      category: 'administrative' as const,
+      icon: <ClipboardList size={20} />,
+      color: 'from-blue-500 to-indigo-600',
+      bg: 'bg-blue-50 dark:bg-blue-900/20',
+      border: 'border-blue-200 dark:border-blue-800',
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      docs: ['boardList', 'headquarterDecl', 'memberRegister'],
+    },
+    {
+      category: 'meetings' as const,
+      icon: <Users size={20} />,
+      color: 'from-amber-500 to-orange-500',
+      bg: 'bg-amber-50 dark:bg-amber-900/20',
+      border: 'border-amber-200 dark:border-amber-800',
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      docs: ['agMinutes', 'boardMinutes', 'electionReport', 'activityReport'],
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-br from-rose-600 via-pink-500 to-fuchsia-500 p-5 shadow-lg">
@@ -152,76 +194,138 @@ export const RequestsPage: React.FC = () => {
             <FileText size={24} className="text-rose-200" />
             {t('requests.title')}
           </h2>
-          <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-rose-700 hover:bg-rose-50 text-sm font-semibold transition-colors shadow">
-            <Plus size={15} />{t('requests.createRequest')}
+          {activeTab === 'requests' && (
+            <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-rose-700 hover:bg-rose-50 text-sm font-semibold transition-colors shadow">
+              <Plus size={15} />{t('requests.createRequest')}
+            </button>
+          )}
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'requests' ? 'bg-white text-rose-700' : 'bg-white/20 text-white hover:bg-white/30'}`}
+          >
+            <FileText size={14} />{t('requests.tabRequests')}
+          </button>
+          <button
+            onClick={() => setActiveTab('library')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'library' ? 'bg-white text-rose-700' : 'bg-white/20 text-white hover:bg-white/30'}`}
+          >
+            <BookOpen size={14} />{t('requests.tabLibrary')}
           </button>
         </div>
       </div>
 
-      <div className="stats-grid">
-        <StatCard title={t('requests.stats.total')}    value={stats.total    ?? 0} icon={<FileText size={20} />} iconBg="bg-blue-100 dark:bg-blue-900/30"    iconColor="text-blue-600 dark:text-blue-400" />
-        <StatCard title={t('requests.stats.pending')}  value={stats.pending  ?? 0} icon={<FileText size={20} />} iconBg="bg-yellow-100 dark:bg-yellow-900/30" iconColor="text-yellow-600 dark:text-yellow-400" />
-        <StatCard title={t('requests.stats.approved')} value={stats.approved ?? 0} icon={<FileText size={20} />} iconBg="bg-emerald-100 dark:bg-emerald-900/30" iconColor="text-emerald-600 dark:text-emerald-400" />
-        <StatCard title={t('requests.stats.rejected')} value={stats.rejected ?? 0} icon={<FileText size={20} />} iconBg="bg-red-100 dark:bg-red-900/30"       iconColor="text-red-600 dark:text-red-400" />
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {REQ_STATUSES.map((s) => (
-          <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${statusFilter === s ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}>
-            {s ? t(`requests.statuses.${s}`) : t('common.all')}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
-      ) : requests.length === 0 ? (
-        <EmptyState icon={<FileText size={28} />} title={t('requests.noRequests')} action={<button onClick={() => setShowModal(true)} className="btn-primary"><Plus size={16} />{t('requests.createRequest')}</button>} />
-      ) : (
-        <div className="card">
-          <div className="table-wrap">
-            <table className="table">
-              <thead><tr>
-                <th>{t('requests.requestTitle')}</th>
-                <th>{t('requests.type')}</th>
-                <th>{t('requests.recipient')}</th>
-                <th>{t('requests.amount')}</th>
-                <th>{t('common.status')}</th>
-                <th>{t('common.date')}</th>
-                <th>{t('common.actions')}</th>
-              </tr></thead>
-              <tbody>
-                {requests.map((req) => (
-                  <tr key={req.id}>
-                    <td>
-                      <div className="font-medium text-gray-900 dark:text-white">{req.title}</div>
-                      {req.description && <div className="text-xs text-gray-500 truncate max-w-[200px]">{req.description}</div>}
-                    </td>
-                    <td><span className="badge badge-blue">{t(`requests.types.${req.type}`)}</span></td>
-                    <td>{req.recipient || '-'}</td>
-                    <td>{req.amount ? formatCurrency(req.amount, lang) : '-'}</td>
-                    <td><span className={statusBadge[req.status]}>{t(`requests.statuses.${req.status}`)}</span></td>
-                    <td>{formatDate(req.createdAt, lang)}</td>
-                    <td>
-                      <div className="flex gap-1">
-                        {/* Send / Download */}
-                        <button
-                          onClick={() => openSendModal(req)}
-                          title={t('requests.sendOrDownload')}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                        >
-                          <Send size={14} />
-                        </button>
-                        <button onClick={() => openStatusUpdate(req)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"><Pencil size={14} /></button>
-                        <button onClick={() => setDeleteId(req.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 size={14} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {activeTab === 'requests' && (
+        <>
+          <div className="stats-grid">
+            <StatCard title={t('requests.stats.total')}    value={stats.total    ?? 0} icon={<FileText size={20} />} iconBg="bg-blue-100 dark:bg-blue-900/30"    iconColor="text-blue-600 dark:text-blue-400" />
+            <StatCard title={t('requests.stats.pending')}  value={stats.pending  ?? 0} icon={<FileText size={20} />} iconBg="bg-yellow-100 dark:bg-yellow-900/30" iconColor="text-yellow-600 dark:text-yellow-400" />
+            <StatCard title={t('requests.stats.approved')} value={stats.approved ?? 0} icon={<FileText size={20} />} iconBg="bg-emerald-100 dark:bg-emerald-900/30" iconColor="text-emerald-600 dark:text-emerald-400" />
+            <StatCard title={t('requests.stats.rejected')} value={stats.rejected ?? 0} icon={<FileText size={20} />} iconBg="bg-red-100 dark:bg-red-900/30"       iconColor="text-red-600 dark:text-red-400" />
           </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {REQ_STATUSES.map((s) => (
+              <button key={s} onClick={() => setStatusFilter(s)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${statusFilter === s ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}>
+                {s ? t(`requests.statuses.${s}`) : t('common.all')}
+              </button>
+            ))}
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+          ) : requests.length === 0 ? (
+            <EmptyState icon={<FileText size={28} />} title={t('requests.noRequests')} action={<button onClick={() => setShowModal(true)} className="btn-primary"><Plus size={16} />{t('requests.createRequest')}</button>} />
+          ) : (
+            <div className="card">
+              <div className="table-wrap">
+                <table className="table">
+                  <thead><tr>
+                    <th>{t('requests.requestTitle')}</th>
+                    <th>{t('requests.type')}</th>
+                    <th>{t('requests.recipient')}</th>
+                    <th>{t('requests.amount')}</th>
+                    <th>{t('common.status')}</th>
+                    <th>{t('common.date')}</th>
+                    <th>{t('common.actions')}</th>
+                  </tr></thead>
+                  <tbody>
+                    {requests.map((req) => (
+                      <tr key={req.id}>
+                        <td>
+                          <div className="font-medium text-gray-900 dark:text-white">{req.title}</div>
+                          {req.description && <div className="text-xs text-gray-500 truncate max-w-[200px]">{req.description}</div>}
+                        </td>
+                        <td><span className="badge badge-blue">{t(`requests.types.${req.type}`)}</span></td>
+                        <td>{req.recipient || '-'}</td>
+                        <td>{req.amount ? formatCurrency(req.amount, lang) : '-'}</td>
+                        <td><span className={statusBadge[req.status]}>{t(`requests.statuses.${req.status}`)}</span></td>
+                        <td>{formatDate(req.createdAt, lang)}</td>
+                        <td>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => openSendModal(req)}
+                              title={t('requests.sendOrDownload')}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                            >
+                              <Send size={14} />
+                            </button>
+                            <button onClick={() => openStatusUpdate(req)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"><Pencil size={14} /></button>
+                            <button onClick={() => setDeleteId(req.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 size={14} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'library' && (
+        <div className="space-y-6">
+          <div className="text-center py-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('requests.library.subtitle')}</p>
+          </div>
+
+          {DOC_LIBRARY.map((group) => (
+            <div key={group.category} className="card overflow-hidden">
+              {/* Category header */}
+              <div className={`flex items-center gap-3 px-5 py-3 bg-gradient-to-r ${group.color} text-white`}>
+                {group.icon}
+                <h3 className="font-semibold text-base">{t(`requests.library.categories.${group.category}`)}</h3>
+                <span className="ms-auto text-white/70 text-xs">{group.docs.length} {isAr ? 'وثيقة' : 'documents'}</span>
+              </div>
+
+              {/* Document cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+                {group.docs.map((docKey) => (
+                  <div
+                    key={docKey}
+                    className={`flex items-start gap-3 p-3 rounded-xl border ${group.border} ${group.bg} transition-shadow hover:shadow-sm`}
+                  >
+                    <div className={`mt-0.5 p-1.5 rounded-lg bg-white dark:bg-gray-800 shadow-sm ${group.iconColor} flex-shrink-0`}>
+                      <FileText size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-sm font-semibold ${group.iconColor} leading-tight`}>
+                        {t(`requests.library.docs.${docKey}.name`)}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                        {t(`requests.library.docs.${docKey}.desc`)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
