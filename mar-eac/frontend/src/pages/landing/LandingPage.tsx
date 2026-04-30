@@ -83,16 +83,16 @@ export const LandingPage: React.FC = () => {
         {
           key: 'PROJECTS',
           icon: 'BarChart2',
-          name: 'جمعية فيها مشاريع',
+          name: 'جمعية المشاريع',
           price: '100',
-          desc: 'الوحدات الأساسية + إدارة المشاريع والطلبات',
+          desc: 'الوحدات الأساسية + إدارة المشاريع والطلبات والممتلكات',
           features: [
             'كل مميزات الجمعية العادية',
             'إدارة المشاريع',
             '✨ الممتلكات (عقارات، سيارات…)',
             '✨ البطاقة التقنية للمشاريع',
             'متابعة الطلبات',
-            'تقارير المشاريع بالعربية والفرنسية',
+            'تقارير بالعربية والفرنسية',
           ],
           popular: false,
           color: 'indigo',
@@ -100,14 +100,15 @@ export const LandingPage: React.FC = () => {
         {
           key: 'WATER',
           icon: 'Droplets',
-          name: 'جمعية الماء',
-          price: '150',
-          desc: 'الوحدات الأساسية + إدارة شبكة الماء',
+          name: 'جمعية تدبير الماء',
+          price: '100',
+          desc: 'الوحدات الأساسية + إدارة شبكة الماء والفواتير',
           features: [
             'كل مميزات الجمعية العادية',
             'إدارة شبكة الماء',
             'قراءة العدادات',
             'فواتير الماء',
+            'تقارير استهلاك الماء',
           ],
           popular: false,
           color: 'cyan',
@@ -116,8 +117,8 @@ export const LandingPage: React.FC = () => {
           key: 'PRODUCTIVE',
           icon: 'Factory',
           name: 'جمعية إنتاجية',
-          price: '200',
-          desc: 'الوحدات الأساسية + الإنتاج والمبيعات والعملاء والفعاليات',
+          price: '100',
+          desc: 'الوحدات الأساسية + الإنتاج والمبيعات والعملاء',
           features: [
             'كل مميزات الجمعية العادية',
             'إدارة المشاريع والممتلكات',
@@ -127,6 +128,22 @@ export const LandingPage: React.FC = () => {
           ],
           popular: true,
           color: 'green',
+        },
+        {
+          key: 'COOPERATIVE',
+          icon: 'Users',
+          name: 'تعاونية',
+          price: '100',
+          desc: 'الوحدات الأساسية + التسيير التعاوني والأرباح والمنتجات',
+          features: [
+            'كل مميزات الجمعية العادية',
+            'إدارة المنخرطين والحصص',
+            'توزيع الأرباح',
+            'إدارة المنتجات',
+            'الفواتير والمبيعات',
+          ],
+          popular: false,
+          color: 'purple',
         },
       ]
     : [
@@ -150,9 +167,9 @@ export const LandingPage: React.FC = () => {
         {
           key: 'PROJECTS',
           icon: 'BarChart2',
-          name: 'Association avec projets',
+          name: 'Association de projets',
           price: '100',
-          desc: 'Modules de base + gestion de projets et demandes',
+          desc: 'Modules de base + projets, demandes et actifs',
           features: [
             'Tout le pack classique',
             'Gestion de projets',
@@ -168,13 +185,14 @@ export const LandingPage: React.FC = () => {
           key: 'WATER',
           icon: 'Droplets',
           name: "Association de l'eau",
-          price: '150',
-          desc: "Modules de base + gestion du réseau d'eau",
+          price: '100',
+          desc: "Modules de base + réseau d'eau et facturation",
           features: [
             'Tout le pack classique',
             "Réseau d'eau",
             'Relevés de compteurs',
             'Factures eau',
+            'Rapports de consommation',
           ],
           popular: false,
           color: 'cyan',
@@ -183,8 +201,8 @@ export const LandingPage: React.FC = () => {
           key: 'PRODUCTIVE',
           icon: 'Factory',
           name: 'Association productive',
-          price: '200',
-          desc: 'Modules de base + production, ventes, clients, événements',
+          price: '100',
+          desc: 'Modules de base + production, ventes, clients',
           features: [
             'Tout le pack classique',
             'Projets & actifs',
@@ -194,6 +212,22 @@ export const LandingPage: React.FC = () => {
           ],
           popular: true,
           color: 'green',
+        },
+        {
+          key: 'COOPERATIVE',
+          icon: 'Users',
+          name: 'Coopérative',
+          price: '100',
+          desc: 'Modules de base + gestion coopérative, parts et produits',
+          features: [
+            'Tout le pack classique',
+            'Gestion des adhérents & parts',
+            'Distribution des bénéfices',
+            'Gestion des produits',
+            'Factures & ventes',
+          ],
+          popular: false,
+          color: 'purple',
         },
       ];
 
@@ -674,7 +708,7 @@ export const LandingPage: React.FC = () => {
             )}
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 max-w-7xl mx-auto">
             {pricingPacks.map((pack, i) => {
               const Icon = iconMap[pack.icon] || FileText;
               const colorMap: Record<string, { icon: string; badge: string; border: string }> = {
