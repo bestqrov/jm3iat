@@ -5,7 +5,8 @@ import {
   Briefcase, Droplets, BarChart2, Bell, Shield, Settings,
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
   Building2, FolderKanban, Layers, CreditCard, Bus,
-  Activity, RefreshCw, Trophy, Landmark,
+  Activity, RefreshCw, Trophy, Landmark, Wallet, ClipboardList,
+  Send, BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -17,12 +18,14 @@ interface NavItem {
   label: string;
   plan?: string;
   module?: string;
-  tab?: string; // superadmin tab matching via ?tab=
+  tab?: string;
 }
 
 interface NavGroup {
   label: string;
   items: NavItem[];
+  color?: string;   // tailwind text color for the label
+  dotColor?: string; // small dot before label
 }
 
 // ─── Association theme ────────────────────────────────────────────────────────
@@ -172,43 +175,85 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
   const navGroups: NavGroup[] = isWaterReader ? [
     { label: '', items: [{ to: '/water', icon: <Droplets size={18} />, label: t('nav.water') }] },
   ] : [
+    // ── 1. Vue d'ensemble ──────────────────────────────────────────────────────
     {
-      label: '',
+      label: isAr ? 'عام' : 'Général',
+      color: 'text-indigo-500 dark:text-indigo-400',
+      dotColor: 'bg-indigo-400',
       items: [
         { to: '/dashboard', icon: <LayoutDashboard size={18} />, label: t('nav.dashboard') },
+        { to: '/calendar',  icon: <Calendar size={18} />,        label: isAr ? 'التقويم' : 'Calendrier' },
+        ...(isFullAccess ? [{ to: '/activity', icon: <Activity size={18} />, label: isAr ? 'سجل النشاطات' : 'Activité' }] : []),
       ],
     },
+
+    // ── 2. Ressources humaines ────────────────────────────────────────────────
     {
-      label: t('nav.management'),
+      label: isAr ? 'الموارد البشرية' : 'Ressources humaines',
+      color: 'text-violet-500 dark:text-violet-400',
+      dotColor: 'bg-violet-400',
       items: [
-        ...(isFullAccess            ? [{ to: '/administratifs', icon: <UserCog size={18} />,    label: t('nav.administratifs') }] : []),
-        ...(isFullAccess            ? [{ to: '/members',        icon: <Users size={18} />,      label: t('nav.members') }]        : []),
-        ...(canAccess('meetings')   ? [{ to: '/meetings',       icon: <Calendar size={18} />,   label: t('nav.meetings') }]       : []),
-        ...(canAccess('finance')    ? [{ to: '/finance',        icon: <DollarSign size={18} />, label: t('nav.finance'), plan: 'STANDARD' }] : []),
-        ...(canAccess('documents')  ? [{ to: '/documents',      icon: <FileText size={18} />,   label: t('nav.documents') }]      : []),
+        ...(isFullAccess          ? [{ to: '/administratifs', icon: <UserCog size={18} />,  label: t('nav.administratifs') }] : []),
+        ...(isFullAccess          ? [{ to: '/members',        icon: <Users size={18} />,    label: t('nav.members') }]        : []),
+        ...(canAccess('meetings') ? [{ to: '/meetings',       icon: <Calendar size={18} />, label: t('nav.meetings') }]       : []),
       ],
     },
+
+    // ── 3. Finance & Patrimoine ───────────────────────────────────────────────
     {
-      label: t('nav.ruralProjects'),
+      label: isAr ? 'المالية والممتلكات' : 'Finance & Patrimoine',
+      color: 'text-emerald-500 dark:text-emerald-400',
+      dotColor: 'bg-emerald-400',
       items: [
-        ...(isFullAccess && hasModule('PROJECTS')   ? [{ to: '/projects',  icon: <Briefcase size={18} />,   label: t('nav.projects') }]  : []),
-        ...(canAccess('requests')                   ? [{ to: '/requests',  icon: <FileText size={18} />,    label: t('nav.requests') }]  : []),
-        ...(isFullAccess && hasModule('WATER')      ? [{ to: '/water',     icon: <Droplets size={18} />,    label: t('nav.water') }]     : []),
-        ...(isFullAccess && hasModule('PRODUCTIVE') ? [{ to: '/assoc',     icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]     : []),
-        ...(isFullAccess && hasModule('TRANSPORT')  ? [{ to: '/transport', icon: <Bus size={18} />,         label: t('nav.transport') }] : []),
-        ...(isFullAccess && hasModule('SPORTS')     ? [{ to: '/sports',    icon: <Trophy size={18} />,      label: isAr ? 'الرياضة' : 'Sports' }]    : []),
+        ...(canAccess('finance')  ? [{ to: '/finance',    icon: <DollarSign size={18} />, label: t('nav.finance'),   plan: 'STANDARD' }] : []),
+        ...(canAccess('finance')  ? [{ to: '/recurring',  icon: <RefreshCw size={18} />,  label: isAr ? 'الدفعات المتكررة' : 'Récurrents' }] : []),
+        ...(isFullAccess          ? [{ to: '/assets',     icon: <Landmark size={18} />,   label: t('nav.assets') }]  : []),
       ],
     },
+
+    // ── 4. Documents & Communication ─────────────────────────────────────────
     {
-      label: '',
+      label: isAr ? 'الوثائق والتواصل' : 'Documents & Communication',
+      color: 'text-amber-500 dark:text-amber-400',
+      dotColor: 'bg-amber-400',
       items: [
-        ...(canAccess('reports')  ? [{ to: '/reports',   icon: <BarChart2 size={18} />, label: t('nav.reports'),   plan: 'STANDARD' }] : []),
-        ...(isFullAccess          ? [{ to: '/reminders', icon: <Bell size={18} />,      label: t('nav.reminders'), plan: 'PREMIUM' }]   : []),
-        { to: '/calendar',  icon: <Calendar size={18} />,   label: isAr ? 'التقويم' : 'Calendrier' },
-        ...(canAccess('finance')  ? [{ to: '/recurring', icon: <RefreshCw size={18} />, label: isAr ? 'الدفعات المتكررة' : 'Récurrents' }] : []),
-        ...(isFullAccess          ? [{ to: '/assets',    icon: <Landmark size={18} />,  label: t('nav.assets') }]                       : []),
-        ...(isFullAccess          ? [{ to: '/activity',  icon: <Activity size={18} />,  label: isAr ? 'سجل النشاطات' : 'Activité' }]   : []),
-        ...(isFullAccess          ? [{ to: '/settings',  icon: <Settings size={18} />,  label: t('nav.settings') }]                     : []),
+        ...(canAccess('documents') ? [{ to: '/documents', icon: <FileText size={18} />,     label: t('nav.documents') }]                  : []),
+        ...(canAccess('requests')  ? [{ to: '/requests',  icon: <Send size={18} />,          label: t('nav.requests') }]                   : []),
+        ...(isFullAccess           ? [{ to: '/reminders', icon: <Bell size={18} />,           label: t('nav.reminders'), plan: 'PREMIUM' }] : []),
+      ],
+    },
+
+    // ── 5. Rapports & Analyse ─────────────────────────────────────────────────
+    {
+      label: isAr ? 'التقارير والتحليل' : 'Rapports & Analyse',
+      color: 'text-sky-500 dark:text-sky-400',
+      dotColor: 'bg-sky-400',
+      items: [
+        ...(canAccess('reports') ? [{ to: '/reports', icon: <BarChart2 size={18} />, label: t('nav.reports'), plan: 'STANDARD' }] : []),
+      ],
+    },
+
+    // ── 6. Modules spécialisés ────────────────────────────────────────────────
+    ...(isFullAccess && (hasModule('PROJECTS') || hasModule('WATER') || hasModule('PRODUCTIVE') || hasModule('TRANSPORT') || hasModule('SPORTS')) ? [{
+      label: isAr ? 'الوحدات التخصصية' : 'Modules spécialisés',
+      color: 'text-teal-500 dark:text-teal-400',
+      dotColor: 'bg-teal-400',
+      items: [
+        ...(hasModule('PROJECTS')   ? [{ to: '/projects',  icon: <Briefcase size={18} />,   label: t('nav.projects') }]                         : []),
+        ...(hasModule('WATER')      ? [{ to: '/water',     icon: <Droplets size={18} />,    label: t('nav.water') }]                            : []),
+        ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',     icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]                            : []),
+        ...(hasModule('TRANSPORT')  ? [{ to: '/transport', icon: <Bus size={18} />,         label: t('nav.transport') }]                        : []),
+        ...(hasModule('SPORTS')     ? [{ to: '/sports',    icon: <Trophy size={18} />,      label: isAr ? 'الرياضة' : 'Sports' }]               : []),
+      ],
+    }] : []),
+
+    // ── 7. Paramètres ─────────────────────────────────────────────────────────
+    {
+      label: isAr ? 'الإعدادات' : 'Paramètres',
+      color: 'text-gray-400 dark:text-gray-500',
+      dotColor: 'bg-gray-400',
+      items: [
+        ...(isFullAccess ? [{ to: '/settings', icon: <Settings size={18} />, label: t('nav.settings') }] : []),
       ],
     },
   ];
@@ -301,9 +346,10 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {filteredGroups.map((group, gi) => (
-          <div key={gi}>
+          <div key={gi} className={gi > 0 ? 'mt-1' : ''}>
             {group.label && (
-              <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-2">
+              <div className={`flex items-center gap-1.5 px-2 py-1.5 mt-2 mb-0.5 text-[10px] font-bold uppercase tracking-widest ${group.color || 'text-gray-400 dark:text-gray-500'}`}>
+                {group.dotColor && <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${group.dotColor}`} />}
                 {group.label}
               </div>
             )}
