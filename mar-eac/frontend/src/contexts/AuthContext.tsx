@@ -46,6 +46,7 @@ interface Organization {
   bankName?: string;
   bankAccount?: string;
   bankRib?: string;
+  assocType?: string;
   trialEndsAt?: string;
   modules?: string[];
   subscription?: {

@@ -8,7 +8,7 @@ const register = async (req, res) => {
   try {
     const {
       orgName, orgEmail, orgPhone, orgCity, orgRegion, bureauCreationDate,
-      adminName, adminEmail, password, modules,
+      adminName, adminEmail, password, modules, assocType,
     } = req.body;
 
     if (!orgName || !orgEmail || !adminName || !adminEmail || !password) {
@@ -35,6 +35,7 @@ const register = async (req, res) => {
           phone: orgPhone,
           city: orgCity,
           region: orgRegion,
+          assocType: assocType || 'REGULAR',
           trialEndsAt,
           modules: Array.isArray(modules) ? modules : [],
           bureauCreationDate: bureauCreationDate ? new Date(bureauCreationDate) : undefined,
@@ -192,7 +193,7 @@ const updateOrganization = async (req, res) => {
     const {
       name, email, phone, address, city, region, description, foundingDate, bureauCreationDate, activities, adminHistory,
       nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
-      bankName, bankAccount, bankRib, membershipFee,
+      bankName, bankAccount, bankRib, membershipFee, assocType,
       whatsapp, facebook, instagram, tiktok, youtube,
     } = req.body;
     const orgId = req.user.organizationId;
@@ -209,6 +210,7 @@ const updateOrganization = async (req, res) => {
         nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
         bankName, bankAccount, bankRib,
         membershipFee: membershipFee !== undefined ? parseFloat(membershipFee) || null : undefined,
+        ...(assocType ? { assocType } : {}),
         whatsapp, facebook, instagram, tiktok, youtube,
         ...(email ? { email } : {}),
         foundingDate: foundingDate ? new Date(foundingDate) : undefined,

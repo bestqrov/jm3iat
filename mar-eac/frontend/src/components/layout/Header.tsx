@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Menu, CreditCard } from 'lucide-react';
+import { Bell, Menu, CreditCard, MapPin } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -26,9 +26,18 @@ const pageTitles: Record<string, string> = {
   '/superadmin': 'nav.superadmin',
 };
 
+const ASSOC_TYPE_LABELS: Record<string, { ar: string; fr: string; color: string }> = {
+  REGULAR:     { ar: 'جمعية عادية',         fr: 'Association classique',    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  PROJECTS:    { ar: 'جمعية المشاريع',       fr: 'Association de projets',   color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
+  WATER:       { ar: 'جمعية تدبير الماء',   fr: "Association de l'eau",     color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  PRODUCTIVE:  { ar: 'جمعية إنتاجية',       fr: 'Association productive',   color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  COOPERATIVE: { ar: 'تعاونية',             fr: 'Coopérative',              color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+};
+
 export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { user, organization } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const isAr = lang === 'ar';
   const location = useLocation();
   const [unreadCount,  setUnreadCount]  = useState(0);
   const [showCard,     setShowCard]     = useState(false);
@@ -88,9 +97,9 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         {/* In-app notifications bell */}
         {organization && <NotificationsBell />}
 
-        {/* User */}
+        {/* User + org info */}
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
             <span className="text-primary-700 dark:text-primary-400 font-semibold text-xs">
               {user?.name?.charAt(0).toUpperCase()}
             </span>
@@ -98,7 +107,20 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           <div className="hidden sm:block">
             <div className="text-sm font-medium text-gray-900 dark:text-white leading-none">{user?.name}</div>
             {organization && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 leading-none mt-0.5">{organization.name}</div>
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-0.5">
+                <span className="text-xs text-gray-500 dark:text-gray-400 leading-none">{organization.name}</span>
+                {organization.assocType && ASSOC_TYPE_LABELS[organization.assocType] && (
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${ASSOC_TYPE_LABELS[organization.assocType].color}`}>
+                    {isAr ? ASSOC_TYPE_LABELS[organization.assocType].ar : ASSOC_TYPE_LABELS[organization.assocType].fr}
+                  </span>
+                )}
+                {(organization.address || organization.city) && (
+                  <span className="flex items-center gap-0.5 text-[10px] text-gray-400 dark:text-gray-500 leading-none">
+                    <MapPin size={9} />
+                    {[isAr ? organization.addressAr || organization.address : organization.address, isAr ? organization.cityAr || organization.city : organization.city].filter(Boolean).join('، ')}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
