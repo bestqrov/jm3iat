@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus, TrendingUp, TrendingDown, Wallet, Download, Pencil, Trash2, Paperclip, ExternalLink, FileSpreadsheet, FileText, DollarSign } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Wallet, Download, Pencil, Trash2, Paperclip, ExternalLink, FileSpreadsheet, FileText, DollarSign, Banknote, Landmark, RefreshCw, Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { financeApi, exportApi } from '../../lib/api';
+import { financeApi, exportApi, recurringApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -65,12 +65,21 @@ function parsePaymentMethod(ref: string): { paymentMethod: string; bankName: str
   return { paymentMethod: 'autre', bankName: '' };
 }
 
+// Classify a transaction into 'caisse' or 'banque' based on its reference
+function paymentBucket(ref: string): 'caisse' | 'banque' {
+  const r = (ref || '').toLowerCase();
+  if (r.includes('virement') || r.includes('cheque') || r.includes('chèque') || r.includes('شيك') || r.includes('تحويل') || r.includes('poste') || r.includes('بريد')) return 'banque';
+  return 'caisse';
+}
+
 export const FinancePage: React.FC = () => {
   const { t, lang } = useLanguage();
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [recurring, setRecurring]       = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [monthly, setMonthly] = useState<any[]>([]);
   const [typeFilter, setTypeFilter] = useState('');
+  const [bucketFilter, setBucketFilter] = useState<'all' | 'caisse' | 'banque'>('all');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editTx, setEditTx] = useState<any>(null);
@@ -91,16 +100,17 @@ export const FinancePage: React.FC = () => {
 
   const load = async (year = selectedYear) => {
     try {
-      const yearFilter = { year };
       const txFilter: any = { ...(typeFilter ? { type: typeFilter } : {}), year };
-      const [tx, sum, mon] = await Promise.all([
+      const [tx, sum, mon, rec] = await Promise.all([
         financeApi.getAll(txFilter),
         financeApi.getSummary(year),
         financeApi.getMonthly(year),
+        recurringApi.getAll(),
       ]);
       setTransactions(tx.data);
       setSummary(sum.data);
       setMonthly(mon.data);
+      setRecurring(rec.data);
     } finally { setLoading(false); }
   };
 
@@ -237,8 +247,8 @@ export const FinancePage: React.FC = () => {
 
       {/* Transactions table */}
       <div className="card p-4">
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-4">
+        {/* Filter tabs — type */}
+        <div className="flex flex-wrap gap-2 mb-3">
           {[['', t('finance.filterAll')], ['INCOME', t('finance.filterIncome')], ['EXPENSE', t('finance.filterExpense')]].map(([v, label]) => (
             <button key={v} onClick={() => setTypeFilter(v)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${typeFilter === v ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}`}>
@@ -247,54 +257,139 @@ export const FinancePage: React.FC = () => {
           ))}
         </div>
 
+        {/* Filter tabs — bucket (Caisse / Banque) */}
+        <div className="flex gap-2 mb-4">
+          {([
+            ['all',    lang === 'ar' ? 'الكل' : 'Tout',   null],
+            ['caisse', lang === 'ar' ? 'الصندوق' : 'Caisse', <Banknote size={13} key="b" />],
+            ['banque', lang === 'ar' ? 'البنك' : 'Banque',  <Landmark size={13} key="l" />],
+          ] as [string, string, React.ReactNode][]).map(([v, label, icon]) => (
+            <button key={v} onClick={() => setBucketFilter(v as 'all' | 'caisse' | 'banque')}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${bucketFilter === v
+                ? v === 'caisse' ? 'bg-amber-500 border-amber-500 text-white'
+                  : v === 'banque' ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'bg-gray-700 border-gray-700 text-white'
+                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400'}`}>
+              {icon}{label}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
-        ) : transactions.length === 0 ? (
-          <EmptyState icon={<Wallet size={28} />} title={t('finance.noTransactions')} action={<button onClick={openAdd} className="btn-primary"><Plus size={16} />{t('finance.addTransaction')}</button>} />
-        ) : (
-          <div className="table-wrap">
-            <table className="table">
-              <thead><tr>
-                <th>{t('finance.date')}</th>
-                <th>{t('finance.category')}</th>
-                <th>{t('finance.description')}</th>
-                <th>{t('finance.amount')}</th>
-                <th>{t('common.actions')}</th>
-              </tr></thead>
-              <tbody>
-                {transactions.map((tx) => (
-                  <tr key={tx.id}>
-                    <td>{formatDate(tx.date, lang)}</td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        {tx.type === 'INCOME' ? <TrendingUp size={14} className="text-emerald-500" /> : <TrendingDown size={14} className="text-red-500" />}
-                        <span>{tx.category}</span>
-                      </div>
-                    </td>
-                    <td className="max-w-[200px] truncate">{tx.description || '-'}</td>
-                    <td className={`font-semibold ${tx.type === 'INCOME' ? 'text-emerald-600' : 'text-red-500'}`}>
-                      {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount, lang)}
-                    </td>
-                    <td>
-                      <div className="flex gap-1 items-center">
-                        {tx.receiptUrl && (
-                          <a href={tx.receiptUrl} target="_blank" rel="noopener noreferrer"
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" title={lang === 'ar' ? 'عرض الوثيقة' : 'Voir la pièce'}>
-                            <Paperclip size={14} />
-                          </a>
-                        )}
-                        <button onClick={() => exportApi.invoice(tx.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" title={lang === 'ar' ? 'تحميل الوصل' : 'Télécharger le reçu'}><FileText size={14} /></button>
-                        <button onClick={() => openEdit(tx)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20"><Pencil size={14} /></button>
-                        <button onClick={() => setDeleteId(tx.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        ) : (() => {
+          const filtered = transactions.filter(tx =>
+            bucketFilter === 'all' || paymentBucket(tx.reference) === bucketFilter
+          );
+          return filtered.length === 0 ? (
+            <EmptyState icon={<Wallet size={28} />} title={t('finance.noTransactions')} action={<button onClick={openAdd} className="btn-primary"><Plus size={16} />{t('finance.addTransaction')}</button>} />
+          ) : (
+            <div className="table-wrap">
+              <table className="table">
+                <thead><tr>
+                  <th>{t('finance.date')}</th>
+                  <th>{t('finance.category')}</th>
+                  <th>{lang === 'ar' ? 'طريقة الأداء' : 'Mode'}</th>
+                  <th>{t('finance.description')}</th>
+                  <th>{t('finance.amount')}</th>
+                  <th>{t('common.actions')}</th>
+                </tr></thead>
+                <tbody>
+                  {filtered.map((tx) => {
+                    const bucket = paymentBucket(tx.reference);
+                    return (
+                      <tr key={tx.id}>
+                        <td>{formatDate(tx.date, lang)}</td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            {tx.type === 'INCOME' ? <TrendingUp size={14} className="text-emerald-500" /> : <TrendingDown size={14} className="text-red-500" />}
+                            <span>{tx.category}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${bucket === 'banque' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'}`}>
+                            {bucket === 'banque' ? <Landmark size={11} /> : <Banknote size={11} />}
+                            {bucket === 'banque' ? (lang === 'ar' ? 'بنك' : 'Banque') : (lang === 'ar' ? 'صندوق' : 'Caisse')}
+                          </span>
+                        </td>
+                        <td className="max-w-[180px] truncate">{tx.description || '-'}</td>
+                        <td className={`font-semibold ${tx.type === 'INCOME' ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount, lang)}
+                        </td>
+                        <td>
+                          <div className="flex gap-1 items-center">
+                            {tx.receiptUrl && (
+                              <a href={tx.receiptUrl} target="_blank" rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" title={lang === 'ar' ? 'عرض الوثيقة' : 'Voir la pièce'}>
+                                <Paperclip size={14} />
+                              </a>
+                            )}
+                            <button onClick={() => exportApi.invoice(tx.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" title={lang === 'ar' ? 'تحميل الوصل' : 'Télécharger le reçu'}><FileText size={14} /></button>
+                            <button onClick={() => openEdit(tx)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20"><Pencil size={14} /></button>
+                            <button onClick={() => setDeleteId(tx.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
       </div>
+
+      {/* Recurring payments section */}
+      {recurring.length > 0 && (
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+              <RefreshCw size={16} className="text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                {lang === 'ar' ? 'الدفعات المتكررة' : 'Paiements récurrents'}
+              </h3>
+              <p className="text-xs text-gray-500">{recurring.length} {lang === 'ar' ? 'دفعة نشطة' : 'paiement(s) actif(s)'}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {recurring.map((rp) => {
+              const isIncome = rp.type === 'INCOME';
+              const freqLabel: Record<string, { ar: string; fr: string }> = {
+                DAILY:    { ar: 'يومي',     fr: 'Quotidien' },
+                WEEKLY:   { ar: 'أسبوعي',   fr: 'Hebdomadaire' },
+                MONTHLY:  { ar: 'شهري',     fr: 'Mensuel' },
+                QUARTERLY:{ ar: 'ربع سنوي', fr: 'Trimestriel' },
+                YEARLY:   { ar: 'سنوي',     fr: 'Annuel' },
+              };
+              const freq = freqLabel[rp.frequency]?.[lang] ?? rp.frequency;
+              return (
+                <div key={rp.id} className={`rounded-xl border p-3 space-y-2 ${isIncome ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/10' : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      {isIncome ? <TrendingUp size={14} className="text-emerald-500 flex-shrink-0" /> : <TrendingDown size={14} className="text-red-500 flex-shrink-0" />}
+                      <span className="text-sm font-medium text-gray-900 dark:text-white leading-tight">{rp.description}</span>
+                    </div>
+                    <span className={`text-sm font-bold flex-shrink-0 ${isIncome ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {isIncome ? '+' : '-'}{formatCurrency(rp.amount, lang)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="flex items-center gap-1"><RefreshCw size={10} />{freq}</span>
+                    {rp.nextDueDate && (
+                      <span className="flex items-center gap-1"><Calendar size={10} />{formatDate(rp.nextDueDate, lang)}</span>
+                    )}
+                  </div>
+                  {rp.category && (
+                    <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">{rp.category}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       <Modal isOpen={showModal} onClose={() => { setShowModal(false); setSaveError(null); }} title={editTx ? lang === 'ar' ? 'تعديل المعاملة' : 'Modifier' : t('finance.addTransaction')}

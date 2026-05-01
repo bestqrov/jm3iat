@@ -71,9 +71,21 @@ const T = {
     footer_report:'Rapport Financier',
     page: 'Page',
     of:   '/',
-    sign_title: 'Signatures & Cachets',
-    treasurer:  'Trésorier(e)',
-    president:  'Président(e)',
+    sign_title:   'Signatures & Cachets',
+    treasurer:    'Trésorier(e)',
+    president:    'Président(e)',
+    recurring_title: 'Paiements Récurrents',
+    rec_desc:     'Description',
+    rec_amount:   'Montant (MAD)',
+    rec_freq:     'Fréquence',
+    rec_next:     'Prochaine échéance',
+    rec_type:     'Type',
+    rec_none:     'Aucun paiement récurrent enregistré.',
+    freq_daily:   'Quotidien',
+    freq_weekly:  'Hebdomadaire',
+    freq_monthly: 'Mensuel',
+    freq_quarterly:'Trimestriel',
+    freq_yearly:  'Annuel',
   },
   ar: {
     cover_title:   'التقرير المالي',
@@ -104,9 +116,21 @@ const T = {
     footer_report:'التقرير المالي',
     page: 'صفحة',
     of:   '/',
-    sign_title: 'التوقيعات والأختام',
-    treasurer:  'أمين الصندوق',
-    president:  'الرئيس',
+    sign_title:   'التوقيعات والأختام',
+    treasurer:    'أمين الصندوق',
+    president:    'الرئيس',
+    recurring_title: 'الدفعات المتكررة',
+    rec_desc:     'الوصف',
+    rec_amount:   'المبلغ (د.م)',
+    rec_freq:     'التكرار',
+    rec_next:     'الاستحقاق القادم',
+    rec_type:     'النوع',
+    rec_none:     'لا توجد دفعات متكررة مسجلة.',
+    freq_daily:   'يومي',
+    freq_weekly:  'أسبوعي',
+    freq_monthly: 'شهري',
+    freq_quarterly:'ربع سنوي',
+    freq_yearly:  'سنوي',
   },
 };
 
@@ -278,10 +302,11 @@ async function generateFinancialPDF(req, res) {
   const start = new Date(year, 0, 1);
   const end   = new Date(year, 11, 31, 23, 59, 59);
 
-  const [transactions, aggIncome, aggExpense] = await Promise.all([
+  const [transactions, aggIncome, aggExpense, recurringAll] = await Promise.all([
     prisma.transaction.findMany({ where: { organizationId: orgId, date: { gte: start, lte: end } }, orderBy: { date: 'asc' } }),
     prisma.transaction.aggregate({ where: { organizationId: orgId, type: 'INCOME',  date: { gte: start, lte: end } }, _sum: { amount: true } }),
     prisma.transaction.aggregate({ where: { organizationId: orgId, type: 'EXPENSE', date: { gte: start, lte: end } }, _sum: { amount: true } }),
+    prisma.recurringPayment.findMany({ where: { organizationId: orgId }, orderBy: { nextDueDate: 'asc' } }),
   ]);
 
   const totalIncome   = aggIncome._sum.amount  || 0;
@@ -563,6 +588,58 @@ async function generateFinancialPDF(req, res) {
     .text(`${balSign}${fmt(balance)} MAD`, MARGIN + 12, cy + 22,
       { width: CONTENT_W - 24, align: 'center', lineBreak: false });
   cy += 50;
+
+  // ── RECURRING PAYMENTS SECTION ──────────────────────────────────────────────
+  cy = checkPage(doc, cy, 90);
+  cy += 8;
+  const recTitle = isAr ? ar(t.recurring_title) : t.recurring_title;
+  cy = sectionBar(doc, recTitle, cy, fontBold, isAr);
+
+  const freqLabel = (f) => {
+    const map = { DAILY: t.freq_daily, WEEKLY: t.freq_weekly, MONTHLY: t.freq_monthly, QUARTERLY: t.freq_quarterly, YEARLY: t.freq_yearly };
+    return map[f] || f;
+  };
+
+  // Columns: Description | Type | Amount | Frequency | Next due date
+  const rW0 = 160, rW1 = 55, rW2 = 70, rW3 = 80, rW4 = CONTENT_W - 160 - 55 - 70 - 80;
+  const recCols = isAr
+    ? [
+        { label: ar(t.rec_desc),   w: rW0, wrap: true },
+        { label: ar(t.rec_type),   w: rW1 },
+        { label: ar(t.rec_amount), w: rW2 },
+        { label: ar(t.rec_freq),   w: rW3 },
+        { label: ar(t.rec_next),   w: rW4 },
+      ]
+    : [
+        { label: t.rec_desc,   w: rW0, wrap: true },
+        { label: t.rec_type,   w: rW1 },
+        { label: t.rec_amount, w: rW2 },
+        { label: t.rec_freq,   w: rW3 },
+        { label: t.rec_next,   w: rW4 },
+      ];
+
+  cy = tableHeader(doc, recCols, cy, fontBold, isAr);
+
+  if (recurringAll.length === 0) {
+    rect(doc, MARGIN, cy, CONTENT_W, 24, C.light, C.border, 0.4);
+    doc.font(fontReg).fontSize(9).fillColor(C.neutral)
+      .text(ar(t.rec_none), MARGIN + 8, cy + 7,
+        { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
+    cy += 24;
+  } else {
+    recurringAll.forEach((rp, i) => {
+      const isInc = rp.type === 'INCOME';
+      const typeLabel = isInc ? (isAr ? 'إيراد' : 'Recette') : (isAr ? 'مصروف' : 'Dépense');
+      const row = isAr
+        ? [ar(rp.description || '-'), ar(typeLabel), fmt(rp.amount), ar(freqLabel(rp.frequency)), fmtDate(rp.nextDueDate)]
+        : [rp.description || '-', typeLabel, fmt(rp.amount), freqLabel(rp.frequency), fmtDate(rp.nextDueDate)];
+      row['_c2'] = isInc ? C.income : C.expense;
+      row['_c1'] = isInc ? C.income : C.expense;
+      cy = checkPage(doc, cy, calcRowH(doc, recCols, row, fontReg) + 4);
+      cy = tableRow(doc, recCols, row, cy, i % 2 === 1, fontReg, isAr);
+    });
+  }
+  cy += 16;
 
   // ── SIGNATURE BLOCK ─────────────────────────────────────────────────────────
   cy = checkPage(doc, cy, 90);
