@@ -153,6 +153,7 @@ const AssocPage: React.FC = () => {
 
   useEffect(() => { loadAll(); }, []);
   useEffect(() => {
+    if (tab === 'dashboard') refreshStats();
     if (tab === 'stock') loadStock();
     if (tab === 'sales') loadSales();
     if (tab === 'clients') loadClients();
@@ -160,6 +161,10 @@ const AssocPage: React.FC = () => {
     if (tab === 'production') loadProductions();
     if (tab === 'products') loadProducts();
   }, [tab]);
+
+  const refreshStats = async () => {
+    try { const r = await assocApi.getStats(); setStats(r.data); } catch {}
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -196,9 +201,9 @@ const AssocPage: React.FC = () => {
       } else {
         const r = await assocApi.createProduct(productForm);
         setProducts(prev => [r.data, ...prev]);
-        if (stats) setStats({ ...stats, productCount: stats.productCount + 1 });
       }
       setProductModal(false);
+      refreshStats();
     } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setSaving(false);
   };
@@ -214,6 +219,7 @@ const AssocPage: React.FC = () => {
       await loadProducts();
       setProductionModal(false);
       setProductionForm({ productId: '', quantityProduced: '', productionCost: '', date: new Date().toISOString().slice(0, 10), notes: '' });
+      refreshStats();
     } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setSaving(false);
   };
@@ -249,7 +255,7 @@ const AssocPage: React.FC = () => {
       setSaleModal(false);
       setCartItems([{ productId: '', quantity: '', unitPrice: '' }]);
       setSaleClientId(''); setSaleNotes('');
-      if (stats) setStats({ ...stats, totalRevenue: stats.totalRevenue + r.data.totalAmount, totalSales: stats.totalSales + 1 });
+      refreshStats();
     } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setSaving(false);
   };
@@ -308,6 +314,7 @@ const AssocPage: React.FC = () => {
         setEvents(prev => [r.data, ...prev]);
       }
       setEventModal(false);
+      refreshStats();
     } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setSaving(false);
   };
@@ -322,6 +329,7 @@ const AssocPage: React.FC = () => {
       if (deleteTarget.type === 'sale')       { await assocApi.deleteSale(deleteTarget.id);       setSales(prev => prev.filter(s => s.id !== deleteTarget.id)); }
       if (deleteTarget.type === 'client')     { await assocApi.deleteClient(deleteTarget.id);     setClients(prev => prev.filter(c => c.id !== deleteTarget.id)); }
       if (deleteTarget.type === 'event')      { await assocApi.deleteEvent(deleteTarget.id);      setEvents(prev => prev.filter(e => e.id !== deleteTarget.id)); }
+      refreshStats();
     } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
     setDeleteTarget(null);
   };

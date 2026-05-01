@@ -74,6 +74,16 @@ const T = {
     sign_title:   'Signatures & Cachets',
     treasurer:    'Trésorier(e)',
     president:    'Président(e)',
+    prod_title:    'Activité Productive & Ventes',
+    prod_sales:    'Chiffre d\'affaires (Ventes)',
+    prod_cost:     'Coût de production',
+    prod_margin:   'Marge brute',
+    prod_events:   'Recettes Événements',
+    prod_evcost:   'Coûts Événements',
+    prod_evnet:    'Net Événements',
+    prod_sales_count: 'Nombre de ventes',
+    prod_prod_count: 'Lots produits',
+    prod_ev_count:  'Événements',
     recurring_title: 'Paiements Récurrents',
     rec_desc:     'Description',
     rec_amount:   'Montant (MAD)',
@@ -119,6 +129,16 @@ const T = {
     sign_title:   'التوقيعات والأختام',
     treasurer:    'أمين الصندوق',
     president:    'الرئيس',
+    prod_title:    'النشاط الإنتاجي والمبيعات',
+    prod_sales:    'رقم الأعمال (المبيعات)',
+    prod_cost:     'تكلفة الإنتاج',
+    prod_margin:   'هامش الربح الإجمالي',
+    prod_events:   'إيرادات الفعاليات',
+    prod_evcost:   'تكاليف الفعاليات',
+    prod_evnet:    'صافي الفعاليات',
+    prod_sales_count: 'عدد البيوعات',
+    prod_prod_count: 'دفعات الإنتاج',
+    prod_ev_count:  'الفعاليات',
     recurring_title: 'الدفعات المتكررة',
     rec_desc:     'الوصف',
     rec_amount:   'المبلغ (د.م)',
@@ -302,11 +322,14 @@ async function generateFinancialPDF(req, res) {
   const start = new Date(year, 0, 1);
   const end   = new Date(year, 11, 31, 23, 59, 59);
 
-  const [transactions, aggIncome, aggExpense, recurringAll] = await Promise.all([
+  const [transactions, aggIncome, aggExpense, recurringAll, salesAgg, prodAgg, eventsAll] = await Promise.all([
     prisma.transaction.findMany({ where: { organizationId: orgId, date: { gte: start, lte: end } }, orderBy: { date: 'asc' } }),
     prisma.transaction.aggregate({ where: { organizationId: orgId, type: 'INCOME',  date: { gte: start, lte: end } }, _sum: { amount: true } }),
     prisma.transaction.aggregate({ where: { organizationId: orgId, type: 'EXPENSE', date: { gte: start, lte: end } }, _sum: { amount: true } }),
     prisma.recurringPayment.findMany({ where: { organizationId: orgId }, orderBy: { nextDueDate: 'asc' } }),
+    prisma.assocSale.aggregate({ where: { organizationId: orgId, date: { gte: start, lte: end } }, _sum: { totalAmount: true }, _count: { id: true } }).catch(() => null),
+    prisma.assocProduction.aggregate({ where: { organizationId: orgId, date: { gte: start, lte: end } }, _sum: { productionCost: true }, _count: { id: true } }).catch(() => null),
+    prisma.assocEvent.findMany({ where: { organizationId: orgId, date: { gte: start, lte: end } }, orderBy: { date: 'asc' } }).catch(() => []),
   ]);
 
   const totalIncome   = aggIncome._sum.amount  || 0;
@@ -588,6 +611,90 @@ async function generateFinancialPDF(req, res) {
     .text(`${balSign}${fmt(balance)} MAD`, MARGIN + 12, cy + 22,
       { width: CONTENT_W - 24, align: 'center', lineBreak: false });
   cy += 50;
+
+  // ── PRODUCTION & SALES SECTION ──────────────────────────────────────────────
+  const hasProdData = salesAgg || prodAgg || (eventsAll && eventsAll.length > 0);
+  if (hasProdData) {
+    const totalSalesRev  = salesAgg?._sum?.totalAmount || 0;
+    const salesCount     = salesAgg?._count?.id || 0;
+    const totalProdCost  = prodAgg?._sum?.productionCost || 0;
+    const prodCount      = prodAgg?._count?.id || 0;
+    const grossMargin    = totalSalesRev - totalProdCost;
+    const totalEvRev     = (eventsAll || []).reduce((s, e) => s + (e.revenue || 0), 0);
+    const totalEvCost    = (eventsAll || []).reduce((s, e) => s + (e.cost || 0), 0);
+    const netEvents      = totalEvRev - totalEvCost;
+
+    cy = checkPage(doc, cy, 100);
+    cy += 8;
+    cy = sectionBar(doc, isAr ? ar(t.prod_title) : t.prod_title, cy, fontBold, isAr);
+
+    // KPI row — 3 or 6 cells
+    const kpiDefs = [
+      { label: t.prod_sales,       value: `${fmt(totalSalesRev)} MAD`,  color: C.income,  count: `${salesCount}` },
+      { label: t.prod_cost,        value: `${fmt(totalProdCost)} MAD`,  color: C.expense, count: `${prodCount}` },
+      { label: t.prod_margin,      value: `${fmt(grossMargin)} MAD`,    color: grossMargin >= 0 ? C.income : C.expense },
+    ];
+    if (eventsAll && eventsAll.length > 0) {
+      kpiDefs.push(
+        { label: t.prod_events,  value: `${fmt(totalEvRev)} MAD`,   color: C.income  },
+        { label: t.prod_evcost,  value: `${fmt(totalEvCost)} MAD`,  color: C.expense },
+        { label: t.prod_evnet,   value: `${fmt(netEvents)} MAD`,    color: netEvents >= 0 ? C.income : C.expense },
+      );
+    }
+    const kpiCols = kpiDefs.length;
+    const kpiW = CONTENT_W / kpiCols;
+    kpiDefs.forEach((k, i) => {
+      const kx = isAr ? MARGIN + (kpiCols - 1 - i) * kpiW : MARGIN + i * kpiW;
+      rect(doc, kx, cy, kpiW, 56, C.light, C.border, 0.4);
+      doc.font(fontBold).fontSize(8).fillColor(k.color)
+        .text(fitText(doc, isAr ? ar(k.label) : k.label, kpiW - 12), kx + 6, cy + 7,
+          { width: kpiW - 12, align: isAr ? 'right' : 'left', lineBreak: false });
+      doc.font(fontBold).fontSize(12).fillColor(k.color)
+        .text(k.value, kx + 6, cy + 22, { width: kpiW - 12, align: 'center', lineBreak: false });
+      if (k.count !== undefined) {
+        doc.font(fontReg).fontSize(7.5).fillColor(C.neutral)
+          .text(k.count + ' ' + (isAr ? ar(t.prod_sales_count) : t.prod_sales_count), kx + 6, cy + 42,
+            { width: kpiW - 12, align: isAr ? 'right' : 'left', lineBreak: false });
+      }
+    });
+    cy += 64;
+
+    // Events detail table (if any)
+    if (eventsAll && eventsAll.length > 0) {
+      cy = checkPage(doc, cy, 50);
+      const evCols = isAr
+        ? [
+            { label: ar(isAr ? 'الفعالية' : 'Événement'), w: 160, wrap: true },
+            { label: ar(isAr ? 'النوع' : 'Type'),          w: 60 },
+            { label: ar(isAr ? 'التاريخ' : 'Date'),        w: 60 },
+            { label: ar(isAr ? 'الإيراد' : 'Recettes'),    w: 70 },
+            { label: ar(isAr ? 'التكلفة' : 'Coûts'),       w: 70 },
+            { label: ar(isAr ? 'الصافي' : 'Net'),          w: CONTENT_W - 160 - 60 - 60 - 70 - 70 },
+          ]
+        : [
+            { label: 'Événement',  w: 160, wrap: true },
+            { label: 'Type',       w: 60 },
+            { label: 'Date',       w: 60 },
+            { label: 'Recettes',   w: 70 },
+            { label: 'Coûts',      w: 70 },
+            { label: 'Net',        w: CONTENT_W - 160 - 60 - 60 - 70 - 70 },
+          ];
+      cy = tableHeader(doc, evCols, cy, fontBold, isAr);
+      eventsAll.forEach((ev, i) => {
+        const net = (ev.revenue || 0) - (ev.cost || 0);
+        const evTypeMap = { EVENT: isAr ? 'فعالية' : 'Événement', CATERING: isAr ? 'تقديم طعام' : 'Traiteur', EXHIBITION: isAr ? 'معرض' : 'Exposition' };
+        const row = isAr
+          ? [ar(ev.name), ar(evTypeMap[ev.type] || ev.type), fmtDate(ev.date), fmt(ev.revenue || 0), fmt(ev.cost || 0), fmt(net)]
+          : [ev.name, evTypeMap[ev.type] || ev.type, fmtDate(ev.date), fmt(ev.revenue || 0), fmt(ev.cost || 0), fmt(net)];
+        row['_c3'] = C.income;
+        row['_c4'] = C.expense;
+        row['_c5'] = net >= 0 ? C.income : C.expense;
+        cy = checkPage(doc, cy, 30);
+        cy = tableRow(doc, evCols, row, cy, i % 2 === 1, fontReg, isAr);
+      });
+      cy += 8;
+    }
+  }
 
   // ── RECURRING PAYMENTS SECTION ──────────────────────────────────────────────
   cy = checkPage(doc, cy, 90);
