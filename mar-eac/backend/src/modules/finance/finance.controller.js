@@ -8,12 +8,15 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
 
 const getTransactions = async (req, res) => {
   try {
-    const { type, category, dateFrom, dateTo } = req.query;
+    const { type, category, dateFrom, dateTo, year } = req.query;
     const where = { organizationId: req.organization.id };
 
     if (type) where.type = type;
     if (category) where.category = { contains: category, mode: 'insensitive' };
-    if (dateFrom || dateTo) {
+    if (year) {
+      const y = parseInt(year);
+      where.date = { gte: new Date(y, 0, 1), lte: new Date(y, 11, 31, 23, 59, 59) };
+    } else if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) where.date.gte = new Date(dateFrom);
       if (dateTo) where.date.lte = new Date(dateTo);
@@ -141,15 +144,17 @@ const remove = async (req, res) => {
 const getSummary = async (req, res) => {
   try {
     const orgId = req.organization.id;
+    const year = parseInt(req.query.year) || null;
+    const dateFilter = year ? { gte: new Date(year, 0, 1), lte: new Date(year, 11, 31, 23, 59, 59) } : undefined;
 
     const [incomeResult, expenseResult] = await Promise.all([
       prisma.transaction.aggregate({
-        where: { organizationId: orgId, type: 'INCOME' },
+        where: { organizationId: orgId, type: 'INCOME', ...(dateFilter ? { date: dateFilter } : {}) },
         _sum: { amount: true },
         _count: true,
       }),
       prisma.transaction.aggregate({
-        where: { organizationId: orgId, type: 'EXPENSE' },
+        where: { organizationId: orgId, type: 'EXPENSE', ...(dateFilter ? { date: dateFilter } : {}) },
         _sum: { amount: true },
         _count: true,
       }),

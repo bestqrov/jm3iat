@@ -79,7 +79,7 @@ export const FinancePage: React.FC = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [exportYear, setExportYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [form, setForm] = useState({ type: 'INCOME', amount: '', category: '', description: '', date: '', paymentMethod: 'especes', bankName: '', docRef: '' });
   const [savedTxId, setSavedTxId] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -89,12 +89,14 @@ export const FinancePage: React.FC = () => {
 
   const emptyForm = { type: 'INCOME', amount: '', category: '', description: '', date: new Date().toISOString().split('T')[0], paymentMethod: 'especes', bankName: '', docRef: '' };
 
-  const load = async () => {
+  const load = async (year = selectedYear) => {
     try {
+      const yearFilter = { year };
+      const txFilter: any = { ...(typeFilter ? { type: typeFilter } : {}), year };
       const [tx, sum, mon] = await Promise.all([
-        financeApi.getAll(typeFilter ? { type: typeFilter } : {}),
-        financeApi.getSummary(),
-        financeApi.getMonthly(),
+        financeApi.getAll(txFilter),
+        financeApi.getSummary(year),
+        financeApi.getMonthly(year),
       ]);
       setTransactions(tx.data);
       setSummary(sum.data);
@@ -102,7 +104,7 @@ export const FinancePage: React.FC = () => {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { setLoading(true); load(); }, [typeFilter]);
+  useEffect(() => { setLoading(true); load(selectedYear); }, [typeFilter, selectedYear]);
 
   const resetReceiptState = () => {
     setReceiptFile(null);
@@ -172,8 +174,8 @@ export const FinancePage: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      const res = await financeApi.exportPDF(exportYear, lang);
-      const filename = lang === 'ar' ? `التقرير_المالي_${exportYear}.pdf` : `rapport_financier_${exportYear}.pdf`;
+      const res = await financeApi.exportPDF(selectedYear, lang);
+      const filename = lang === 'ar' ? `التقرير_المالي_${selectedYear}.pdf` : `rapport_financier_${selectedYear}.pdf`;
       downloadBlob(new Blob([res.data], { type: 'application/pdf' }), filename);
     } catch {}
   };
@@ -195,8 +197,8 @@ export const FinancePage: React.FC = () => {
           </h2>
           <div className="flex gap-2 flex-wrap">
             <select
-              value={exportYear}
-              onChange={(e) => setExportYear(Number(e.target.value))}
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="px-3 py-2 rounded-xl bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm"
             >
               {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (

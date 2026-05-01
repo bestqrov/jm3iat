@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Users, Crown, Wallet, PenLine, Plus, Pencil, Trash2, X,
-  CheckCircle2, XCircle, Eye, EyeOff, Loader2, ShieldCheck,
+  CheckCircle2, XCircle, Eye, EyeOff, Loader2, ShieldCheck, MessageCircle,
 } from 'lucide-react';
 import { staffApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -13,6 +13,7 @@ interface StaffUser {
   id: string;
   name: string;
   email: string;
+  whatsapp?: string;
   role: StaffRole;
   isActive: boolean;
   createdAt: string;
@@ -57,7 +58,7 @@ export const StaffAccounts: React.FC = () => {
   const [saving, setSaving]     = useState(false);
   const [showPw, setShowPw]     = useState(false);
   const [error, setError]       = useState('');
-  const [form, setForm]         = useState({ name: '', email: '', password: '' });
+  const [form, setForm]         = useState({ name: '', email: '', whatsapp: '', password: '' });
 
   const load = useCallback(() => {
     setLoading(true);
@@ -71,13 +72,13 @@ export const StaffAccounts: React.FC = () => {
   const byRole = (role: StaffRole) => staff.find(s => s.role === role) || null;
 
   const openCreate = (role: StaffRole) => {
-    setForm({ name: '', email: '', password: '' });
+    setForm({ name: '', email: '', whatsapp: '', password: '' });
     setError('');
     setModal({ role });
   };
 
   const openEdit = (user: StaffUser) => {
-    setForm({ name: user.name, email: user.email, password: '' });
+    setForm({ name: user.name, email: user.email, whatsapp: user.whatsapp || '', password: '' });
     setError('');
     setModal({ role: user.role, user });
   };
@@ -89,11 +90,11 @@ export const StaffAccounts: React.FC = () => {
     setSaving(true); setError('');
     try {
       if (modal.user) {
-        const payload: any = { name: form.name, email: form.email };
+        const payload: any = { name: form.name, email: form.email, whatsapp: form.whatsapp || '' };
         if (form.password) payload.password = form.password;
         await staffApi.update(modal.user.id, payload);
       } else {
-        await staffApi.create({ name: form.name, email: form.email, password: form.password, role: modal.role });
+        await staffApi.create({ name: form.name, email: form.email, whatsapp: form.whatsapp || undefined, password: form.password, role: modal.role });
       }
       setModal(null); load();
     } catch (err: any) {
@@ -184,7 +185,14 @@ export const StaffAccounts: React.FC = () => {
                     <div className="mt-auto">
                       <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 space-y-1">
                         <div className="font-medium text-sm text-gray-900 dark:text-white">{user.name}</div>
-                        <div className="text-xs text-gray-500">{user.email}</div>
+                        <div className="text-xs text-gray-500 flex items-center gap-1">
+                          <span className="opacity-60">✉</span>{user.email}
+                        </div>
+                        {user.whatsapp && (
+                          <div className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <MessageCircle size={11} />{user.whatsapp}
+                          </div>
+                        )}
                         <div className={`text-xs font-medium ${user.isActive ? 'text-emerald-600' : 'text-red-500'}`}>
                           {user.isActive ? t('settings.staff.active') : t('settings.staff.inactive')}
                         </div>
@@ -249,6 +257,19 @@ export const StaffAccounts: React.FC = () => {
               <div>
                 <label className="label">{t('settings.staff.email')} *</label>
                 <input className="input" type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} />
+              </div>
+              <div>
+                <label className="label flex items-center gap-1.5">
+                  <MessageCircle size={13} className="text-emerald-500" />
+                  {lang === 'ar' ? 'واتساب (اختياري)' : 'WhatsApp (optionnel)'}
+                </label>
+                <input
+                  className="input"
+                  type="tel"
+                  placeholder="+212600000000"
+                  value={form.whatsapp}
+                  onChange={e => setForm(p => ({...p, whatsapp: e.target.value}))}
+                />
               </div>
               <div>
                 <label className="label">

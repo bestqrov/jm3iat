@@ -12,7 +12,7 @@ const getStaff = async (req, res) => {
         organizationId: req.organization.id,
         role: { in: ALLOWED_STAFF_ROLES },
       },
-      select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+      select: { id: true, name: true, email: true, whatsapp: true, role: true, isActive: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     });
     res.json(staff);
@@ -24,7 +24,7 @@ const getStaff = async (req, res) => {
 // ── Create a staff account ────────────────────────────────────────────────────
 const createStaff = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, whatsapp } = req.body;
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'name, email, password, role required' });
     }
@@ -51,8 +51,9 @@ const createStaff = async (req, res) => {
         password: hashed,
         role,
         isActive: true,
+        ...(whatsapp ? { whatsapp } : {}),
       },
-      select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+      select: { id: true, name: true, email: true, whatsapp: true, role: true, isActive: true, createdAt: true },
     });
 
     res.status(201).json(user);
@@ -65,12 +66,13 @@ const createStaff = async (req, res) => {
 // ── Update staff (name, email, password, isActive) ───────────────────────────
 const updateStaff = async (req, res) => {
   try {
-    const { name, email, password, isActive } = req.body;
+    const { name, email, password, isActive, whatsapp } = req.body;
     const data = {};
     if (name)     data.name = name;
     if (email)    data.email = email;
     if (password) data.password = await bcrypt.hash(password, 10);
     if (isActive !== undefined) data.isActive = isActive;
+    if (whatsapp !== undefined) data.whatsapp = whatsapp;
 
     const result = await prisma.user.updateMany({
       where: { id: req.params.id, organizationId: req.organization.id, role: { in: ALLOWED_STAFF_ROLES } },
@@ -80,7 +82,7 @@ const updateStaff = async (req, res) => {
 
     const updated = await prisma.user.findUnique({
       where: { id: req.params.id },
-      select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+      select: { id: true, name: true, email: true, whatsapp: true, role: true, isActive: true, createdAt: true },
     });
     res.json(updated);
   } catch (err) {
