@@ -263,13 +263,33 @@ export const SettingsPage: React.FC = () => {
     } finally { setSaving(null); }
   };
 
+  const [profileError, setProfileError] = useState('');
+
   const handleSaveProfile = async () => {
+    setProfileError('');
+    // Client-side guard: if user is changing password, both fields are required
+    if (profileForm.newPassword && !profileForm.currentPassword) {
+      setProfileError(lang === 'ar' ? 'يرجى إدخال كلمة المرور الحالية' : 'Veuillez saisir le mot de passe actuel');
+      return;
+    }
+    if (profileForm.currentPassword && !profileForm.newPassword) {
+      setProfileError(lang === 'ar' ? 'يرجى إدخال كلمة المرور الجديدة' : 'Veuillez saisir le nouveau mot de passe');
+      return;
+    }
     setSaving('profile');
     try {
       await authApi.updateProfile(profileForm);
       await refreshUser();
+      // Clear password fields after successful save
+      setProfileForm(p => ({ ...p, currentPassword: '', newPassword: '' }));
       showSuccess('profile');
-    } catch { setError('profile'); } finally { setSaving(null); }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      setProfileError(
+        msg ||
+        (lang === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Erreur lors de la sauvegarde')
+      );
+    } finally { setSaving(null); }
   };
 
   // WhatsApp connect flow
@@ -882,19 +902,59 @@ export const SettingsPage: React.FC = () => {
           <h3 className="font-semibold text-gray-900 dark:text-white">{t('settings.account')}</h3>
         </div>
         <div className="space-y-4">
+          {/* Display name */}
           <div>
             <label className="label">{t('auth.adminName')}</label>
             <input className="input" value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} />
           </div>
-          <div>
-            <label className="label">{lang === 'ar' ? 'كلمة المرور الحالية' : 'Mot de passe actuel'}</label>
-            <input className="input" type="password" value={profileForm.currentPassword} onChange={(e) => setProfileForm({ ...profileForm, currentPassword: e.target.value })} />
+
+          {/* Password change section */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3 bg-gray-50 dark:bg-gray-700/30">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              {lang === 'ar' ? 'تغيير كلمة المرور (اختياري)' : 'Changer le mot de passe (optionnel)'}
+            </p>
+            <div>
+              <label className="label">{lang === 'ar' ? 'كلمة المرور الحالية' : 'Mot de passe actuel'}</label>
+              <input
+                className="input"
+                type="password"
+                autoComplete="current-password"
+                placeholder={lang === 'ar' ? 'اتركها فارغة إن لم تريد التغيير' : 'Laisser vide pour ne pas modifier'}
+                value={profileForm.currentPassword}
+                onChange={(e) => { setProfileError(''); setProfileForm({ ...profileForm, currentPassword: e.target.value }); }}
+              />
+            </div>
+            <div>
+              <label className="label">{lang === 'ar' ? 'كلمة المرور الجديدة' : 'Nouveau mot de passe'}</label>
+              <input
+                className="input"
+                type="password"
+                autoComplete="new-password"
+                placeholder={lang === 'ar' ? '8 أحرف على الأقل' : 'Minimum 8 caractères'}
+                value={profileForm.newPassword}
+                onChange={(e) => { setProfileError(''); setProfileForm({ ...profileForm, newPassword: e.target.value }); }}
+              />
+            </div>
+            {profileForm.newPassword && profileForm.newPassword.length < 8 && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                {lang === 'ar' ? '⚠ كلمة المرور قصيرة جداً (8 أحرف على الأقل)' : '⚠ Mot de passe trop court (min. 8 caractères)'}
+              </p>
+            )}
           </div>
-          <div>
-            <label className="label">{lang === 'ar' ? 'كلمة المرور الجديدة' : 'Nouveau mot de passe'}</label>
-            <input className="input" type="password" value={profileForm.newPassword} onChange={(e) => setProfileForm({ ...profileForm, newPassword: e.target.value })} />
-          </div>
-          <button onClick={handleSaveProfile} disabled={saving === 'profile'} className="btn-primary">
+
+          {/* Error message */}
+          {profileError && (
+            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400 flex items-start gap-2">
+              <span className="flex-shrink-0 mt-0.5">⚠</span>
+              <span>{profileError}</span>
+            </div>
+          )}
+
+          <button
+            onClick={handleSaveProfile}
+            disabled={saving === 'profile' || (!!profileForm.newPassword && profileForm.newPassword.length < 8)}
+            className="btn-primary"
+          >
             {saving === 'profile' ? t('common.loading') : t('common.save')}
             {success === 'profile' && <span className="ms-1">✓</span>}
           </button>

@@ -168,11 +168,16 @@ const updateProfile = async (req, res) => {
 
     if (newPassword) {
       if (!currentPassword) {
-        return res.status(400).json({ message: 'Current password required' });
+        return res.status(400).json({ message: 'كلمة المرور الحالية مطلوبة / Mot de passe actuel requis' });
+      }
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل / Le nouveau mot de passe doit contenir au moins 8 caractères' });
       }
       const user = await prisma.user.findUnique({ where: { id: req.user.id } });
       const valid = await bcrypt.compare(currentPassword, user.password);
-      if (!valid) return res.status(400).json({ message: 'Current password incorrect' });
+      if (!valid) {
+        return res.status(400).json({ message: 'كلمة المرور الحالية غير صحيحة / Mot de passe actuel incorrect' });
+      }
       updateData.password = await bcrypt.hash(newPassword, 12);
     }
 
