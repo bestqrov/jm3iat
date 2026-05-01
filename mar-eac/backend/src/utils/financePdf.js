@@ -379,6 +379,10 @@ async function generateFinancialPDF(req, res) {
   const orgRegion  = isAr ? (org.regionAr  || org.region  || '') : (org.region  || '');
   const orgAddress = isAr ? (org.addressAr || org.address || '') : (org.address || '');
 
+  // PDFKit renders text strictly LTR — reverse Arabic word order so multi-word
+  // strings display correctly (e.g. "جمعية اسمون" stored → rendered correctly).
+  const arw = (str) => isAr ? str.split(' ').reverse().join(' ') : str;
+
   const fontReg   = isAr ? 'AR'       : 'Helvetica';
   const fontBold  = isAr ? 'AR-Bold'  : 'Helvetica-Bold';
   const fontTitle = isAr ? 'AR-Title' : 'Helvetica-Bold'; // Line font — grand titles only
@@ -397,7 +401,7 @@ async function generateFinancialPDF(req, res) {
   drawRect(doc, nameBoxX, 40, 240, 80, null, BLUE, 2);
   const nameSize = orgName.length > 25 ? 10 : orgName.length > 15 ? 13 : 16;
   doc.font(fontTitle).fontSize(nameSize).fillColor(BLUE)
-    .text(fitText(doc, orgName || 'Association', 222), nameBoxX + 5, 62, { width: 230, align: isAr ? 'right' : 'center', lineBreak: false });
+    .text(fitText(doc, arw(orgName) || 'Association', 222), nameBoxX + 5, 62, { width: 230, align: isAr ? 'right' : 'center', lineBreak: false });
 
   // Logo box
   drawRect(doc, logoBoxX, 40, 110, 80, null, BLUE, 1);
@@ -433,10 +437,10 @@ async function generateFinancialPDF(req, res) {
     .text(`01/01/${year}  —  31/12/${year}`, 65, 296, { width: titleBoxW, align: 'center', lineBreak: false });
 
   doc.font(fontTitle).fontSize(13).fillColor('#374151')
-    .text(fitText(doc, orgName || '', CONTENT_W - 20), MARGIN, 380, { width: CONTENT_W, align: 'center', lineBreak: false });
+    .text(fitText(doc, arw(orgName) || '', CONTENT_W - 20), MARGIN, 380, { width: CONTENT_W, align: 'center', lineBreak: false });
   if (orgCity) {
     doc.font(fontReg).fontSize(11).fillColor('#6b7280')
-      .text(fitText(doc, orgCity, CONTENT_W - 20), MARGIN, 400, { width: CONTENT_W, align: 'center', lineBreak: false });
+      .text(fitText(doc, arw(orgCity), CONTENT_W - 20), MARGIN, 400, { width: CONTENT_W, align: 'center', lineBreak: false });
   }
 
   // ── PAGE 2: INFO TABLE ────────────────────────────────────────────────────────
@@ -446,8 +450,8 @@ async function generateFinancialPDF(req, res) {
   const col1W = 195;
   const col2W = CONTENT_W - col1W;
   const infoRows = [
-    [t.assoc_name, orgName || '-'],
-    [t.city, orgCity || '-'],
+    [t.assoc_name, arw(orgName) || '-'],
+    [t.city, arw(orgCity) || '-'],
     [t.email, org.email || '-'],
     [t.period_covered, `01/01/${year} - 31/12/${year}`],
     [t.emit_date, fmtDate(new Date())],
@@ -587,7 +591,7 @@ async function generateFinancialPDF(req, res) {
   for (let i = 0; i < pageCount; i++) {
     doc.switchToPage(i);
     drawRect(doc, 0, PAGE_H - 26, PAGE_W, 26, BLUE);
-    const footerOrg = fitText(doc, orgName || 'Association', CONTENT_W - 80);
+    const footerOrg = fitText(doc, arw(orgName) || 'Association', CONTENT_W - 80);
     if (isAr) {
       doc.font(fontReg).fontSize(8).fillColor('#bfdbfe')
         .text(`${t.page} ${i + 1} ${t.of} ${pageCount}`, MARGIN, PAGE_H - 17, { width: CONTENT_W, align: 'left', lineBreak: false });
