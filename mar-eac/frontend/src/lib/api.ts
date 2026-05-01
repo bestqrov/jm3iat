@@ -434,15 +434,24 @@ export const recurringApi = {
 };
 
 // ---- Export ----
+const downloadXlsx = async (url: string, filename: string) => {
+  const res = await api.get(url, { responseType: 'blob' });
+  const href = URL.createObjectURL(new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  const a = document.createElement('a');
+  a.href = href; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(href);
+};
+
 export const exportApi = {
-  members:           () => { window.open('/api/export/members', '_blank'); },
+  members:           () => downloadXlsx('/export/members', `membres_${Date.now()}.xlsx`),
   finance:           (from?: string, to?: string) => {
     const q = new URLSearchParams();
     if (from) q.set('from', from);
-    if (to) q.set('to', to);
-    window.open(`/api/export/finance?${q}`, '_blank');
+    if (to)   q.set('to', to);
+    return downloadXlsx(`/export/finance?${q}`, `finance_${Date.now()}.xlsx`);
   },
-  transportStudents: () => { window.open('/api/export/transport/students', '_blank'); },
+  transportStudents: () => downloadXlsx('/export/transport/students', `transport_eleves_${Date.now()}.xlsx`),
   invoice:           (txId: string) => { window.open(`/api/finance/${txId}/invoice`, '_blank'); },
 };
 
