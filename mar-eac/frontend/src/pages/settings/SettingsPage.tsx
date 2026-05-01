@@ -1064,9 +1064,10 @@ export const SettingsPage: React.FC = () => {
           }
 
           // Downgrade rows — only lower plans shown
-          const PLAN_LABELS: Record<string, { ar: string; fr: string; price: string }> = {
-            BASIC:    { ar: 'الأساسية',  fr: 'Basic',    price: '50 MAD/mois' },
-            STANDARD: { ar: 'القياسية',  fr: 'Standard', price: '150 MAD/mois' },
+          // Pricing aligned with landing page: BASIC=50 (جمعية عامة), STANDARD=100 (متخصصة), PREMIUM=250 (PRO)
+          const PLAN_LABELS: Record<string, { ar: string; fr: string; price: string; descAr: string; descFr: string }> = {
+            BASIC:    { ar: 'الأساسية',  fr: 'Régulière',   price: '50 MAD/mois',  descAr: 'جمعية عامة',                        descFr: 'Association classique' },
+            STANDARD: { ar: 'القياسية',  fr: 'Spécialisée', price: '100 MAD/mois', descAr: 'ماء / مشاريع / إنتاجية / رياضية',  descFr: 'Eau / Projets / Productif / Sportif' },
           };
           const currentLevel = PLAN_LEVELS[sub?.plan || 'BASIC'];
           const downgradePlans = Object.entries(PLAN_LABELS).filter(
@@ -1084,10 +1085,17 @@ export const SettingsPage: React.FC = () => {
                   {downgradePlans.map(([key, info]) => (
                     <div key={key} className="flex items-center justify-between px-4 py-3 gap-3">
                       <div>
-                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                          {lang === 'ar' ? info.ar : info.fr}
-                        </span>
-                        <span className="text-xs text-gray-400 ms-2">{info.price}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                            {lang === 'ar' ? info.ar : info.fr}
+                          </span>
+                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                            {info.price}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {lang === 'ar' ? info.descAr : info.descFr}
+                        </p>
                       </div>
                       {sub?.pendingPlan === key ? (
                         <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -1102,7 +1110,7 @@ export const SettingsPage: React.FC = () => {
                           <ArrowUpCircle size={12} className="rotate-180" />
                           {upgradingSub
                             ? (lang === 'ar' ? 'جاري...' : 'En cours...')
-                            : (lang === 'ar' ? `طلب تخفيض` : `Demander`)}
+                            : (lang === 'ar' ? 'طلب تخفيض' : 'Demander')}
                         </button>
                       )}
                     </div>
