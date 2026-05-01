@@ -458,10 +458,11 @@ async function generateFinancialPDF(req, res) {
   doc.addPage();
   let cy = MARGIN + 10;
 
-  // Page title
+  // Page title — for Arabic: year must come first in the string so RTL readers see "التقرير المالي 2025"
+  const pageTitleStr = isAr ? `${year}  ${ar(t.cover_title)}` : `${ar(t.cover_title)}  ${year}`;
   rect(doc, MARGIN, cy, CONTENT_W, 30, NAVY);
   doc.font(fontBold).fontSize(12).fillColor(C.white)
-    .text(fitText(doc, ar(t.cover_title) + `  ${year}`, CONTENT_W - 20), MARGIN + 10, cy + 9,
+    .text(fitText(doc, pageTitleStr, CONTENT_W - 20), MARGIN + 10, cy + 9,
       { width: CONTENT_W - 20, align: isAr ? 'right' : 'left', lineBreak: false });
   cy += 38;
 
@@ -541,7 +542,7 @@ async function generateFinancialPDF(req, res) {
   } else {
     incomeList.forEach((tx, i) => {
       const row = isAr
-        ? [fmtDate(tx.date), ar(translateCat(tx.category, true)), fmt(tx.amount), ar(payMode(tx.reference, true)), tx.reference || '-', tx.description || '-']
+        ? [fmtDate(tx.date), ar(translateCat(tx.category, true)), fmt(tx.amount), ar(payMode(tx.reference, true)), tx.reference || '-', ar(tx.description || '-')]
         : [translateCat(tx.category, false), fmtDate(tx.date), fmt(tx.amount), payMode(tx.reference, false), tx.reference || '-', tx.description || '-'];
       row['_c2'] = C.income;
       cy = checkPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
@@ -550,8 +551,9 @@ async function generateFinancialPDF(req, res) {
   }
   // Income total bar
   rect(doc, MARGIN, cy, CONTENT_W, 24, '#d1fae5', C.income, 1);
+  // Arabic: number first in string → RTL reader sees "المجموع : 1,500.00 MAD"
   const incTotalText = isAr
-    ? `MAD ${fmt(totalIncome)}  :${ar(t.total)}`
+    ? `MAD ${fmt(totalIncome)}  :  ${ar(t.total)}`
     : `${t.total} :  ${fmt(totalIncome)} MAD`;
   doc.font(fontBold).fontSize(10).fillColor(C.income)
     .text(incTotalText, MARGIN + 8, cy + 7,
@@ -574,7 +576,7 @@ async function generateFinancialPDF(req, res) {
   } else {
     expenseList.forEach((tx, i) => {
       const row = isAr
-        ? [fmtDate(tx.date), ar(translateCat(tx.category, true)), fmt(tx.amount), ar(payMode(tx.reference, true)), tx.reference || '-', tx.description || '-']
+        ? [fmtDate(tx.date), ar(translateCat(tx.category, true)), fmt(tx.amount), ar(payMode(tx.reference, true)), tx.reference || '-', ar(tx.description || '-')]
         : [translateCat(tx.category, false), fmtDate(tx.date), fmt(tx.amount), payMode(tx.reference, false), tx.reference || '-', tx.description || '-'];
       row['_c2'] = C.expense;
       cy = checkPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
@@ -584,7 +586,7 @@ async function generateFinancialPDF(req, res) {
   // Expense total bar
   rect(doc, MARGIN, cy, CONTENT_W, 24, '#fee2e2', C.expense, 1);
   const expTotalText = isAr
-    ? `MAD ${fmt(totalExpenses)}  :${ar(t.total)}`
+    ? `MAD ${fmt(totalExpenses)}  :  ${ar(t.total)}`
     : `${t.total} :  ${fmt(totalExpenses)} MAD`;
   doc.font(fontBold).fontSize(10).fillColor(C.expense)
     .text(expTotalText, MARGIN + 8, cy + 7,
@@ -648,8 +650,12 @@ async function generateFinancialPDF(req, res) {
       doc.font(fontBold).fontSize(12).fillColor(k.color)
         .text(k.value, kx + 6, cy + 22, { width: kpiW - 12, align: 'center', lineBreak: false });
       if (k.count !== undefined) {
+        // Arabic: "5  البيوعات عدد" → RTL reader sees "عدد البيوعات  5"
+        const countText = isAr
+          ? `${k.count}  ${ar(t.prod_sales_count)}`
+          : `${t.prod_sales_count}: ${k.count}`;
         doc.font(fontReg).fontSize(7.5).fillColor(C.neutral)
-          .text(k.count + ' ' + (isAr ? ar(t.prod_sales_count) : t.prod_sales_count), kx + 6, cy + 42,
+          .text(countText, kx + 6, cy + 42,
             { width: kpiW - 12, align: isAr ? 'right' : 'left', lineBreak: false });
       }
     });
