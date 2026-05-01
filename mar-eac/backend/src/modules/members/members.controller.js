@@ -1,5 +1,6 @@
 const prisma      = require('../../config/database');
 const axios       = require('axios');
+const cron        = require('node-cron');
 const { sendEmail } = require('../../utils/mailer');
 const { generateMemberCard, buildMemberCard } = require('../../utils/memberCardPdf');
 
@@ -275,4 +276,132 @@ const approve = async (req, res) => {
 // ── Download member e-card ───────────────────────────────────────────────────
 const getCard = (req, res) => generateMemberCard(req, res);
 
-module.exports = { getAll, getById, create, update, remove, getBoardMembers, getStats, approve, getCard };
+// ── Renew member subscription for current year ───────────────────────────────
+const renewMember = async (req, res) => {
+  try {
+    const orgId    = req.organization.id;
+    const memberId = req.params.id;
+    const currentYear = new Date().getFullYear();
+
+    const member = await prisma.member.findFirst({ where: { id: memberId, organizationId: orgId } });
+    if (!member) return res.status(404).json({ message: 'Member not found' });
+
+    const updated = await prisma.member.update({
+      where: { id: memberId },
+      data: { lastRenewalYear: currentYear, lastRenewalDate: new Date(), isActive: true },
+    });
+
+    // Fetch org info for notification
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true, nameAr: true, membershipFee: true, evolutionInstance: true, email: true },
+    });
+
+    const feeAr = org?.membershipFee ? `\n💰 الاشتراك: ${org.membershipFee} درهم` : '';
+    const msgAr =
+      `✅ تم تجديد انخراطك في جمعية "${org?.nameAr || org?.name}" لسنة ${currentYear}.\n` +
+      `مرحباً بك من جديد 🎉${feeAr}`;
+    const msgFr =
+      `✅ Votre adhésion à l'association "${org?.name}" a été renouvelée pour l'année ${currentYear}.\n` +
+      `Bienvenue à nouveau 🎉` +
+      (org?.membershipFee ? `\n💰 Cotisation : ${org.membershipFee} MAD` : '');
+
+    if (member.phone) {
+      sendWA(member.phone, msgAr, org?.evolutionInstance).catch(() => {});
+    } else if (member.email) {
+      const html = `<div style="font-family:sans-serif;max-width:520px;margin:auto;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+        <div style="background:#4f46e5;padding:24px;text-align:center">
+          <h1 style="color:#fff;margin:0;font-size:20px">${org?.nameAr || org?.name}</h1>
+          <p style="color:#c7d2fe;margin:6px 0 0;font-size:13px">تجديد الانخراط — ${currentYear}</p>
+        </div>
+        <div style="padding:24px">
+          <p style="font-size:15px">السلام عليكم <strong>${member.name}</strong>،</p>
+          <p style="font-size:14px;color:#374151">تم تجديد انخراطكم بنجاح لسنة <strong>${currentYear}</strong>.</p>
+          ${org?.membershipFee ? `<p style="color:#16a34a;font-weight:700;font-size:15px">💰 الاشتراك: ${org.membershipFee} درهم ✅</p>` : ''}
+          <p style="font-size:13px;color:#6b7280;text-align:center;margin-top:20px">شكراً لثقتكم · Merci pour votre confiance</p>
+        </div>
+      </div>`;
+      sendEmail(member.email, `✅ تجديد الانخراط ${currentYear} — ${org?.nameAr || org?.name}`, html).catch(() => {});
+    }
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── Weekly renewal reminder cron ─────────────────────────────────────────────
+// Runs every Monday at 09:00. For any org that has members who have NOT renewed
+// for the current year, send them a WhatsApp (or email fallback) reminder.
+// Tracks `renewalRemindedAt` to avoid double-sending in the same week.
+const scheduleRenewalReminders = () => {
+  cron.schedule('0 9 * * 1', async () => {
+    const currentYear = new Date().getFullYear();
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    try {
+      // Find all active members who haven't renewed this year and haven't been reminded in the last 7 days
+      const members = await prisma.member.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { lastRenewalYear: null },
+            { lastRenewalYear: { lt: currentYear } },
+          ],
+          OR: [
+            { renewalRemindedAt: null },
+            { renewalRemindedAt: { lt: oneWeekAgo } },
+          ],
+        },
+        include: { organization: { select: { name: true, nameAr: true, evolutionInstance: true, membershipFee: true } } },
+      });
+
+      for (const member of members) {
+        const org = member.organization;
+        const feeAr = org?.membershipFee ? `\n💰 الاشتراك السنوي: ${org.membershipFee} درهم` : '';
+        const daysLeft = Math.ceil((new Date(currentYear, 11, 31) - now) / (1000 * 60 * 60 * 24));
+        const msgAr =
+          `🔔 تذكير: تجديد الانخراط في جمعية "${org?.nameAr || org?.name}".\n` +
+          `سنة ${currentYear} لم يتجدد انخراطك بعد.${feeAr}\n` +
+          `تبقّى ${daysLeft} يوماً على نهاية السنة — جدد الآن قبل فوات الأوان!`;
+        const msgFr =
+          `🔔 Rappel : Renouvellement de votre adhésion à "${org?.name}".\n` +
+          `Votre adhésion pour ${currentYear} n'a pas encore été renouvelée.` +
+          (org?.membershipFee ? `\n💰 Cotisation : ${org.membershipFee} MAD` : '') +
+          `\nIl reste ${daysLeft} jour(s) — renouvelez avant la fin de l'année !`;
+
+        try {
+          if (member.phone) {
+            await sendWA(member.phone, msgAr, org?.evolutionInstance);
+          } else if (member.email) {
+            const html = `<div style="font-family:sans-serif;max-width:520px;margin:auto;border:1px solid #fbbf24;border-radius:12px;overflow:hidden">
+              <div style="background:#f59e0b;padding:20px;text-align:center">
+                <h1 style="color:#fff;margin:0;font-size:18px">🔔 تذكير تجديد الانخراط</h1>
+                <p style="color:#fef9c3;margin:4px 0 0;font-size:13px">${org?.nameAr || org?.name} — ${currentYear}</p>
+              </div>
+              <div style="padding:24px">
+                <p style="font-size:15px">السلام عليكم <strong>${member.name}</strong>،</p>
+                <p style="font-size:14px;color:#374151">لم يتجدد انخراطك لسنة <strong>${currentYear}</strong> بعد.</p>
+                ${org?.membershipFee ? `<p style="color:#d97706;font-weight:700">💰 الاشتراك: ${org.membershipFee} درهم</p>` : ''}
+                <p style="color:#dc2626;font-size:13px">⏳ تبقّى ${daysLeft} يوماً على نهاية السنة. جدد الآن!</p>
+                <p style="font-size:12px;color:#6b7280;margin-top:16px;text-align:center">شكراً — ${org?.name}</p>
+              </div>
+            </div>`;
+            await sendEmail(member.email, `🔔 تذكير تجديد الانخراط ${currentYear}`, html);
+          }
+          // Update remindedAt timestamp
+          await prisma.member.update({ where: { id: member.id }, data: { renewalRemindedAt: now } });
+        } catch (e) {
+          console.warn(`[renewal-cron] Failed to remind member ${member.id}:`, e.message);
+        }
+      }
+      console.log(`[renewal-cron] Sent renewal reminders to ${members.length} member(s).`);
+    } catch (err) {
+      console.error('[renewal-cron] Error:', err.message);
+    }
+  });
+  console.log('[Cron] Renewal reminder scheduler started (every Monday 09:00)');
+};
+
+module.exports = { getAll, getById, create, update, remove, getBoardMembers, getStats, approve, getCard, renewMember, scheduleRenewalReminders };

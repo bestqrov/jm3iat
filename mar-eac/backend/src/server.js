@@ -115,6 +115,8 @@ app.use((err, req, res, next) => {
 const { scheduleMonthlyReminders, scheduleBureauExpiryReminders } = require('./modules/reminders/reminders.controller');
 scheduleMonthlyReminders();
 scheduleBureauExpiryReminders();
+const { scheduleRenewalReminders } = require('./modules/members/members.controller');
+scheduleRenewalReminders();
 
 // Process automation rules + trial expiry reminders every day at 09:00
 const { processAutomationRules, sendTrialExpiryReminders } = require('./modules/superadmin/superadmin.controller');

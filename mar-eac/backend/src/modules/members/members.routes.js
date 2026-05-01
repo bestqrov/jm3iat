@@ -14,6 +14,7 @@ router.post('/',         logActivity('CREATE', 'MEMBER', (req, b) => `إضافة
 router.put('/:id',       logActivity('UPDATE', 'MEMBER', (req, b) => `تعديل منخرط: ${b?.name || ''}`),  ctrl.update);
 router.delete('/:id',    logActivity('DELETE', 'MEMBER', ()       => `حذف منخرط`),                       ctrl.remove);
 router.post('/:id/approve', logActivity('UPDATE', 'MEMBER', () => `قبول طلب انضمام`),                    ctrl.approve);
+router.post('/:id/renew',   logActivity('UPDATE', 'MEMBER', () => `تجديد الانخراط`),                       ctrl.renewMember);
 router.get('/:id/card',    ctrl.getCard);
 
 module.exports = router;

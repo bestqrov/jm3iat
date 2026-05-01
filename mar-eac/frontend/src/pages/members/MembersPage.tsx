@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Pencil, Trash2, Users, UserCheck, FileSpreadsheet, Clock, CheckCircle2, Receipt, Loader2, ExternalLink, CreditCard } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Users, UserCheck, FileSpreadsheet, Clock, CheckCircle2, Receipt, Loader2, ExternalLink, CreditCard, RefreshCw, AlertCircle } from 'lucide-react';
 import { membersApi, exportApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
@@ -21,6 +21,7 @@ export const MembersPage: React.FC = () => {
   const [saving, setSaving]     = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [renewingId, setRenewingId] = useState<string | null>(null);
   const [downloadingCardId, setDownloadingCardId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', phone: '', email: '', role: 'MEMBER', joinDate: '' });
   const [formError, setFormError] = useState('');
@@ -43,6 +44,19 @@ export const MembersPage: React.FC = () => {
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Error');
     } finally { setApprovingId(null); }
+  };
+
+  const currentYear = new Date().getFullYear();
+  const isRenewedThisYear = (m: any) => m.lastRenewalYear === currentYear;
+
+  const handleRenew = async (m: any) => {
+    setRenewingId(m.id);
+    try {
+      await membersApi.renew(m.id);
+      load();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Error');
+    } finally { setRenewingId(null); }
   };
 
   const handleDownloadCard = async (member: any) => {
@@ -132,7 +146,7 @@ export const MembersPage: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard
           title={lang === 'ar' ? 'المنخرطون النشطون' : 'Adhérents actifs'}
           value={members.length}
@@ -141,11 +155,25 @@ export const MembersPage: React.FC = () => {
           iconColor="text-emerald-600 dark:text-emerald-400"
         />
         <StatCard
-          title={lang === 'ar' ? 'طلبات في الانتظار' : 'Demandes en attente'}
+          title={lang === 'ar' ? 'طلبات في الانتظار' : 'En attente'}
           value={pending.length}
           icon={<Clock size={20} />}
           iconBg="bg-amber-100 dark:bg-amber-900/30"
           iconColor="text-amber-600 dark:text-amber-400"
+        />
+        <StatCard
+          title={lang === 'ar' ? `مجددون ${currentYear}` : `Renouvelés ${currentYear}`}
+          value={members.filter(isRenewedThisYear).length}
+          icon={<RefreshCw size={20} />}
+          iconBg="bg-blue-100 dark:bg-blue-900/30"
+          iconColor="text-blue-600 dark:text-blue-400"
+        />
+        <StatCard
+          title={lang === 'ar' ? 'لم يجددوا بعد' : 'Non renouvelés'}
+          value={members.filter(m => !isRenewedThisYear(m)).length}
+          icon={<AlertCircle size={20} />}
+          iconBg="bg-red-100 dark:bg-red-900/30"
+          iconColor="text-red-600 dark:text-red-400"
         />
       </div>
 
@@ -245,46 +273,69 @@ export const MembersPage: React.FC = () => {
               <thead><tr>
                 <th>{t('members.memberName')}</th>
                 <th>{t('members.phone')}</th>
-                <th>{t('members.email')}</th>
                 <th>{t('members.joinDate')}</th>
-                <th>{t('members.status')}</th>
+                <th>{lang === 'ar' ? `اشتراك ${currentYear}` : `Cotisation ${currentYear}`}</th>
                 <th>{t('common.actions')}</th>
               </tr></thead>
               <tbody>
-                {filtered.map((m) => (
-                  <tr key={m.id}>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
-                          <span className="text-primary-700 dark:text-primary-400 font-semibold text-xs">{m.name.charAt(0)}</span>
+                {filtered.map((m) => {
+                  const renewed = isRenewedThisYear(m);
+                  return (
+                    <tr key={m.id}>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${renewed ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+                            <span className={`font-semibold text-xs ${renewed ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>{m.name.charAt(0)}</span>
+                          </div>
+                          <div className="font-medium text-gray-900 dark:text-white">{m.name}</div>
                         </div>
-                        <div className="font-medium text-gray-900 dark:text-white">{m.name}</div>
-                      </div>
-                    </td>
-                    <td>{m.phone || '-'}</td>
-                    <td>{m.email || '-'}</td>
-                    <td>{formatDate(m.joinDate, lang)}</td>
-                    <td>
-                      <span className="badge-green">{t('members.active')}</span>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleDownloadCard(m)}
-                          disabled={downloadingCardId === m.id}
-                          title={lang === 'ar' ? 'تحميل البطاقة' : 'Télécharger la carte'}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors disabled:opacity-50"
-                        >
-                          {downloadingCardId === m.id
-                            ? <Loader2 size={15} className="animate-spin" />
-                            : <CreditCard size={15} />}
-                        </button>
-                        <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"><Pencil size={15} /></button>
-                        <button onClick={() => setDeleteId(m.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 size={15} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>{m.phone || '-'}</td>
+                      <td>{formatDate(m.joinDate, lang)}</td>
+                      <td>
+                        {renewed ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                            <CheckCircle2 size={11} />
+                            {lang === 'ar' ? `مجدد ${currentYear}` : `Renouvelé ${currentYear}`}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                            <AlertCircle size={11} />
+                            {lang === 'ar' ? 'لم يجدد' : 'Non renouvelé'}
+                          </span>
+                        )}
+                        {m.lastRenewalDate && (
+                          <div className="text-[10px] text-gray-400 mt-0.5">{formatDate(m.lastRenewalDate, lang)}</div>
+                        )}
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-1">
+                          {!renewed && (
+                            <button
+                              onClick={() => handleRenew(m)}
+                              disabled={renewingId === m.id}
+                              title={lang === 'ar' ? 'تجديد الانخراط' : 'Renouveler'}
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-700 transition-colors disabled:opacity-50"
+                            >
+                              {renewingId === m.id ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                              {lang === 'ar' ? 'تجديد' : 'Renouveler'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDownloadCard(m)}
+                            disabled={downloadingCardId === m.id}
+                            title={lang === 'ar' ? 'تحميل البطاقة' : 'Télécharger la carte'}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors disabled:opacity-50"
+                          >
+                            {downloadingCardId === m.id ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
+                          </button>
+                          <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"><Pencil size={15} /></button>
+                          <button onClick={() => setDeleteId(m.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 size={15} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
