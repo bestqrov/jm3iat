@@ -113,7 +113,7 @@ const T = {
     expense_detail:'الجدول التفصيلي للمصاريف',
     nature:   'الطبيعة / الفئة',
     date_inv: 'التاريخ',
-    amount:   'المبلغ (د.م)',
+    amount:   'المبلغ ب:د.م',
     pay_mode: 'طريقة الأداء',
     doc_ref:  'وثيقة الأداء',
     obs:      'ملاحظات',
@@ -141,7 +141,7 @@ const T = {
     prod_ev_count:  'الفعاليات',
     recurring_title: 'الدفعات المتكررة',
     rec_desc:     'الوصف',
-    rec_amount:   'المبلغ (د.م)',
+    rec_amount:   'المبلغ ب:د.م',
     rec_freq:     'التكرار',
     rec_next:     'الاستحقاق القادم',
     rec_type:     'النوع',
@@ -527,9 +527,7 @@ async function generateFinancialPDF(req, res) {
 
   // ── INCOME section ──────────────────────────────────────────────────────────
   cy = checkPage(doc, cy, 90);
-  const incTitle = isAr
-    ? ar(`${t.income_detail}  (${incomeList.length} ${t.operations})`)
-    : `${t.income_detail}  (${incomeList.length} ${t.operations})`;
+  const incTitle = isAr ? ar(t.income_detail) : t.income_detail;
   cy = sectionBar(doc, incTitle, cy, fontBold, isAr);
 
   cy = tableHeader(doc, txCols, cy, fontBold, isAr);
@@ -562,9 +560,7 @@ async function generateFinancialPDF(req, res) {
 
   // ── EXPENSE section ─────────────────────────────────────────────────────────
   cy = checkPage(doc, cy, 90);
-  const expTitle = isAr
-    ? ar(`${t.expense_detail}  (${expenseList.length} ${t.operations})`)
-    : `${t.expense_detail}  (${expenseList.length} ${t.operations})`;
+  const expTitle = isAr ? ar(t.expense_detail) : t.expense_detail;
   cy = sectionBar(doc, expTitle, cy, fontBold, isAr);
 
   cy = tableHeader(doc, txCols, cy, fontBold, isAr);
