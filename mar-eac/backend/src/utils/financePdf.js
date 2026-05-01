@@ -6,190 +6,150 @@ const fs = require('fs');
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
 
 // ── Fonts ──────────────────────────────────────────────────────────────────────
-const FONT_DIR = path.join(__dirname, '../assets/fonts');
-const FONT_AR        = path.join(FONT_DIR, 'Amiri-Regular.ttf'); // body text — proper Arabic shaping
-const FONT_AR_BOLD   = path.join(FONT_DIR, 'Amiri-Bold.ttf');    // bold labels
-const FONT_AR_TITLE  = path.join(FONT_DIR, 'Line.ttf');           // grand titles only
+const FONT_DIR     = path.join(__dirname, '../assets/fonts');
+const FONT_AR      = path.join(FONT_DIR, 'Amiri-Regular.ttf');   // body text
+const FONT_AR_BOLD = path.join(FONT_DIR, 'Amiri-Bold.ttf');      // headings / labels
+const FONT_AR_TITLE= path.join(FONT_DIR, 'Line.ttf');            // decorative — cover only
 
-// ── Constants ──────────────────────────────────────────────────────────────────
-const PAGE_W = 595.28;
-const PAGE_H = 841.89;
-const MARGIN = 38;
-const CONTENT_W = PAGE_W - MARGIN * 2;
-const BLUE = '#1a3a6b';
-const BLUE_LIGHT = '#e8eef7';
+// ── Page geometry ──────────────────────────────────────────────────────────────
+const PAGE_W   = 595.28;
+const PAGE_H   = 841.89;
+const MARGIN   = 38;
+const CONTENT_W= PAGE_W - MARGIN * 2;
 
-const COLORS = {
-  income: '#059669',
+// ── Palette ────────────────────────────────────────────────────────────────────
+const NAVY       = '#1a3a6b';
+const NAVY_LIGHT = '#e8eef7';
+const NAVY_MID   = '#2d5fa6';
+const C = {
+  income:  '#059669',
   expense: '#dc2626',
   neutral: '#6b7280',
-  light: '#f8fafc',
-  border: '#d1d5db',
-  white: '#ffffff',
+  light:   '#f8fafc',
+  border:  '#d1d5db',
+  white:   '#ffffff',
+  rowAlt:  '#f0f4ff',
+};
+
+// ── PDFKit RTL helper ──────────────────────────────────────────────────────────
+// PDFKit renders every string strictly LTR. Reversing word order makes Arabic
+// multi-word strings display in correct reading order for RTL readers.
+// Numbers and Latin words are naturally LTR so they stay readable after reversal.
+const arw = (str, isAr) => {
+  if (!isAr || !str) return String(str || '');
+  return String(str).split(' ').reverse().join(' ');
 };
 
 // ── Translations ───────────────────────────────────────────────────────────────
 const T = {
   fr: {
     cover_title: 'Rapport Financier',
-    cover_sub: 'التقرير المالي',
-    exercise: 'Exercice',
-    period: 'Période',
-    from: 'Du',
-    to: 'au',
-    assoc_name: "Nom de l'association",
-    city: 'Ville',
-    email: 'Email',
+    cover_sub:   'التقرير المالي',
+    exercise:    'Exercice',
+    assoc_name:  "Nom de l'association",
+    city:        'Ville',
+    email:       'Email',
     period_covered: 'Période couverte',
-    emit_date: "Date d'émission",
-    total_income: 'Total Recettes',
-    total_income_sub: 'مجموع الإيرادات',
+    emit_date:   "Date d'émission",
+    total_income:  'Total Recettes',
     total_expense: 'Total Dépenses',
-    total_expense_sub: 'مجموع المصاريف',
-    balance: 'Solde net',
-    balance_sub: 'الرصيد',
+    balance:       'Solde net',
     income_detail: 'Tableau détaillé des Recettes',
-    expense_detail: 'Tableau détaillé des Dépenses',
-    nature: 'Nature',
+    expense_detail:'Tableau détaillé des Dépenses',
+    nature:   'Nature / Catégorie',
     date_inv: 'Date',
-    amount: 'Montant',
+    amount:   'Montant (MAD)',
     pay_mode: 'Mode paiement',
-    doc_ref: 'N° Document',
-    obs: 'Observations',
+    doc_ref:  'N° Document',
+    obs:      'Observations',
     subtotal: 'Sous-total',
-    total: 'TOTAL',
-    budget_table: 'Tableau comparatif Budget / Réalisation',
-    components: 'Composantes',
-    budget_prev: 'Budget prévu (MAD)',
-    cost_real: 'Coût réalisation (MAD)',
-    solde: 'Solde (MAD)',
-    register: 'REGISTRE DES DÉPENSES',
-    init_balance: 'Solde initial',
-    desc: 'Description / Opération',
-    bank: 'Solde bancaire (MAD)',
-    expenses_col: 'Dépenses (MAD)',
-    sig_financial: 'Responsable financier',
-    sig_manage: 'Responsable de gestion',
-    sig_legal: 'Représentant légal',
-    sig_role1: 'Trésorier(e)',
-    sig_role3: 'Président(e)',
-    no_income: 'Aucune recette enregistrée pour cette période.',
+    total:    'TOTAL',
+    no_income:  'Aucune recette enregistrée pour cette période.',
     no_expense: 'Aucune dépense enregistrée.',
     operations: 'opérations',
-    logo: 'Logo',
-    footer_report: 'Rapport Financier',
+    logo:        'Logo',
+    footer_report:'Rapport Financier',
     page: 'Page',
-    of: '/',
-    sign_cachet: 'Signature & Cachet',
+    of:   '/',
+    sign_title: 'Signatures & Cachets',
+    treasurer:  'Trésorier(e)',
+    president:  'Président(e)',
   },
   ar: {
-    cover_title: 'التقرير المالي',
-    cover_sub: 'Rapport Financier',
-    exercise: 'السنة المالية',
-    period: 'الفترة',
-    from: 'من',
-    to: 'إلى',
-    assoc_name: 'اسم الجمعية',
-    city: 'المدينة',
-    email: 'البريد الإلكتروني',
-    period_covered: 'الفترة المشمولة',
-    emit_date: 'تاريخ الإصدار',
-    total_income: 'مجموع الإيرادات',
-    total_income_sub: 'Total Recettes',
+    cover_title:   'التقرير المالي',
+    cover_sub:     'Rapport Financier',
+    exercise:      'السنة المالية',
+    assoc_name:    'اسم الجمعية',
+    city:          'المدينة',
+    email:         'البريد الإلكتروني',
+    period_covered:'الفترة المشمولة',
+    emit_date:     'تاريخ الإصدار',
+    total_income:  'مجموع الإيرادات',
     total_expense: 'مجموع المصاريف',
-    total_expense_sub: 'Total Dépenses',
-    balance: 'الرصيد الصافي',
-    balance_sub: 'Solde net',
+    balance:       'الرصيد الصافي',
     income_detail: 'الجدول التفصيلي للإيرادات',
-    expense_detail: 'الجدول التفصيلي للمصاريف',
-    nature: 'الطبيعة',
+    expense_detail:'الجدول التفصيلي للمصاريف',
+    nature:   'الطبيعة / الفئة',
     date_inv: 'التاريخ',
-    amount: 'المبلغ',
+    amount:   'المبلغ (د.م)',
     pay_mode: 'طريقة الأداء',
-    doc_ref: 'وثيقة الأداء',
-    obs: 'ملاحظات',
+    doc_ref:  'وثيقة الأداء',
+    obs:      'ملاحظات',
     subtotal: 'المجموع الفرعي',
-    total: 'المجموع',
-    budget_table: 'الجدول المقارن: الميزانية / الإنجاز',
-    components: 'المكونات',
-    budget_prev: 'الميزانية المتوقعة (د.م)',
-    cost_real: 'تكلفة الإنجاز (د.م)',
-    solde: 'الرصيد (د.م)',
-    register: 'سجل المصاريف',
-    init_balance: 'الرصيد الأولي',
-    desc: 'وصف العملية',
-    bank: 'الحساب البنكي (د.م)',
-    expenses_col: 'المصاريف بالدرهم',
-    sig_financial: 'المسؤول المالي عن المشروع',
-    sig_manage: 'المسؤول عن تدبير المشروع',
-    sig_legal: 'الممثل القانوني',
-    sig_role1: 'أمين الصندوق',
-    sig_role3: 'الرئيس(ة)',
-    no_income: 'لا توجد إيرادات مسجلة لهذه الفترة.',
+    total:    'المجموع',
+    no_income:  'لا توجد إيرادات مسجلة لهذه الفترة.',
     no_expense: 'لا توجد مصاريف مسجلة.',
     operations: 'عملية',
-    logo: 'الشعار',
-    footer_report: 'التقرير المالي',
+    logo:        'الشعار',
+    footer_report:'التقرير المالي',
     page: 'صفحة',
-    of: '/',
-    sign_cachet: 'التوقيع والختم',
+    of:   '/',
+    sign_title: 'التوقيعات والأختام',
+    treasurer:  'أمين الصندوق',
+    president:  'الرئيس',
   },
 };
 
-// ── Category bilingual mapping ─────────────────────────────────────────────────
+// ── Category mapping ───────────────────────────────────────────────────────────
 const CAT_MAP = [
-  { fr: 'Cotisations',        ar: 'اشتراكات' },
-  { fr: 'Dons',               ar: 'تبرعات' },
-  { fr: 'Subventions',        ar: 'منح' },
+  { fr: 'Cotisations',           ar: 'اشتراكات' },
+  { fr: 'Dons',                  ar: 'تبرعات' },
+  { fr: 'Subventions',           ar: 'منح' },
   { fr: 'Fournitures de bureau', ar: 'لوازم مكتبية' },
-  { fr: 'Fournitures',        ar: 'لوازم مكتبية' },
-  { fr: 'Transport',          ar: 'نقل' },
-  { fr: 'Salaires',           ar: 'رواتب' },
-  { fr: 'Loyer',              ar: 'إيجار' },
-  { fr: 'Communication',      ar: 'تواصل' },
-  { fr: 'Formation',          ar: 'تكوين' },
-  { fr: 'Autres',             ar: 'أخرى' },
-  { fr: 'Autre',              ar: 'أخرى' },
+  { fr: 'Fournitures',           ar: 'لوازم' },
+  { fr: 'Transport',             ar: 'نقل' },
+  { fr: 'Salaires',              ar: 'رواتب' },
+  { fr: 'Loyer',                 ar: 'إيجار' },
+  { fr: 'Communication',         ar: 'تواصل' },
+  { fr: 'Formation',             ar: 'تكوين' },
+  { fr: 'Autres',                ar: 'أخرى' },
+  { fr: 'Autre',                 ar: 'أخرى' },
 ];
-
-function translateCategory(cat, isAr) {
+function translateCat(cat, isAr) {
   if (!cat) return isAr ? 'أخرى' : 'Autres';
-  // Legacy combined format "اشتراكات/Cotisations"
-  if (cat.includes('/')) {
-    const parts = cat.split('/');
-    return isAr ? parts[0] : parts[1];
-  }
+  if (cat.includes('/')) { const p = cat.split('/'); return isAr ? p[0] : p[1]; }
   for (const m of CAT_MAP) {
     if (cat === m.fr) return isAr ? m.ar : m.fr;
     if (cat === m.ar) return isAr ? m.ar : m.fr;
   }
-  return cat; // unknown category — return as stored
+  return cat;
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-
-const fmt = (n) =>
-  Number(n || 0).toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const fmtDate = (d) =>
-  d ? new Date(d).toLocaleDateString('fr-MA', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
-
-function getPaymentMode(ref, isAr) {
+function payMode(ref, isAr) {
   if (!ref) return isAr ? 'صندوق' : 'Espèces';
   const r = ref.toLowerCase();
-  if (r.includes('virement') || r.includes('avis') || r.includes('transfert') || r.includes('تحويل'))
-    return isAr ? 'تحويل بنكي' : 'Virement bancaire';
-  if (r.includes('cheque') || r.includes('chèque') || r.includes('شيك'))
-    return isAr ? 'شيك' : 'Chèque';
-  if (r.includes('espece') || r.includes('caisse') || r.includes('cash') || r.includes('صندوق'))
-    return isAr ? 'صندوق' : 'Espèces';
-  return isAr ? 'تحويل بنكي' : 'Virement bancaire';
+  if (r.includes('virement') || r.includes('transfert') || r.includes('تحويل')) return isAr ? 'تحويل بنكي' : 'Virement';
+  if (r.includes('cheque') || r.includes('chèque') || r.includes('شيك')) return isAr ? 'شيك' : 'Chèque';
+  return isAr ? 'صندوق' : 'Espèces';
 }
 
-function drawRect(doc, x, y, w, h, fill, stroke, lw = 0.5) {
+// ── Formatting ─────────────────────────────────────────────────────────────────
+const fmt = (n) => Number(n || 0).toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('fr-MA', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+
+// ── Low-level drawing ──────────────────────────────────────────────────────────
+function rect(doc, x, y, w, h, fill, stroke, lw = 0.5) {
   doc.save();
-  if (fill) doc.fillColor(fill);
+  if (fill)   doc.fillColor(fill);
   if (stroke) doc.strokeColor(stroke).lineWidth(lw);
   doc.rect(x, y, w, h);
   if (fill && stroke) doc.fillAndStroke();
@@ -197,214 +157,172 @@ function drawRect(doc, x, y, w, h, fill, stroke, lw = 0.5) {
   else if (stroke) doc.stroke();
   doc.restore();
 }
-
-function checkNewPage(doc, y, needed = 60) {
-  if (y + needed > PAGE_H - 55) {
-    doc.addPage();
-    return MARGIN + 10;
-  }
+function checkPage(doc, y, needed = 60) {
+  if (y + needed > PAGE_H - 60) { doc.addPage(); return MARGIN + 10; }
   return y;
 }
-
-// Fit text into a column width — truncate with ellipsis if needed
 function fitText(doc, text, maxW) {
-  if (!text) return '';
-  let s = String(text);
+  let s = String(text || '');
   if (doc.widthOfString(s) <= maxW) return s;
   while (s.length > 1 && doc.widthOfString(s + '…') > maxW) s = s.slice(0, -1);
   return s + '…';
 }
 
-// ── Table drawing (works for both LTR and RTL) ────────────────────────────────
+// ── Section bar ────────────────────────────────────────────────────────────────
+// Blue-tinted bar used as a visual section separator with a title inside.
+function sectionBar(doc, text, y, fontBold, isAr) {
+  rect(doc, MARGIN, y, CONTENT_W, 28, NAVY_LIGHT, NAVY, 1);
+  doc.font(fontBold).fontSize(11).fillColor(NAVY)
+    .text(fitText(doc, text, CONTENT_W - 24), MARGIN + 10, y + 8,
+      { width: CONTENT_W - 20, align: isAr ? 'right' : 'left', lineBreak: false });
+  return y + 34;
+}
 
-function drawTableHeader(doc, cols, y, isAr, fontBold, fontReg) {
-  const rowH = 24;
-  drawRect(doc, MARGIN, y, CONTENT_W, rowH, BLUE);
+// ── Table helpers ──────────────────────────────────────────────────────────────
+function tableHeader(doc, cols, y, fontBold, isAr) {
+  const H = 24;
+  rect(doc, MARGIN, y, CONTENT_W, H, NAVY);
   if (isAr) {
-    // RTL: draw columns right-to-left; reverse word order for proper Arabic display
     let x = MARGIN + CONTENT_W;
-    cols.forEach(({ label, w, align }) => {
+    cols.forEach(({ label, w }) => {
       x -= w;
-      doc.font(fontBold).fontSize(8.5).fillColor(COLORS.white)
-        .text(fitText(doc, label, w - 8), x + 3, y + 7, { width: w - 6, align: align || 'right', lineBreak: false });
+      doc.font(fontBold).fontSize(8.5).fillColor(C.white)
+        .text(fitText(doc, label, w - 6), x + 3, y + 7, { width: w - 6, align: 'right', lineBreak: false });
     });
   } else {
     let x = MARGIN;
-    cols.forEach(({ label, w, align }) => {
-      doc.font(fontBold).fontSize(8.5).fillColor(COLORS.white)
-        .text(fitText(doc, label, w - 8), x + 3, y + 7, { width: w - 6, align: align || 'left', lineBreak: false });
+    cols.forEach(({ label, w }) => {
+      doc.font(fontBold).fontSize(8.5).fillColor(C.white)
+        .text(fitText(doc, label, w - 6), x + 3, y + 7, { width: w - 6, align: 'left', lineBreak: false });
       x += w;
     });
   }
-  return y + rowH;
+  return y + H;
 }
 
-// Compute actual row height — wrap:true columns drive the height
-function calcRowH(doc, cols, values, fontReg) {
-  const PAD = 5;
-  let rowH = 22;
+function calcRowH(doc, cols, vals, fontReg) {
+  let h = 22;
   doc.font(fontReg).fontSize(8.5);
   cols.forEach(({ w, wrap }, i) => {
     if (!wrap) return;
-    const text = String(values[i] ?? '');
-    if (!text || text === '-') return;
-    rowH = Math.max(rowH, doc.heightOfString(text, { width: w - 8 }) + PAD * 2);
+    const s = String(vals[i] ?? '');
+    if (!s || s === '-') return;
+    h = Math.max(h, doc.heightOfString(s, { width: w - 8 }) + 10);
   });
-  return rowH;
+  return h;
 }
 
-function drawTableRow(doc, cols, values, y, stripe, isAr, fontReg) {
+function tableRow(doc, cols, vals, y, stripe, fontReg, isAr) {
   const PAD = 5;
-  const rowH = calcRowH(doc, cols, values, fontReg);
-
-  if (stripe) drawRect(doc, MARGIN, y, CONTENT_W, rowH, '#f0f4ff');
-  drawRect(doc, MARGIN, y, CONTENT_W, rowH, null, COLORS.border);
+  const h = calcRowH(doc, cols, vals, fontReg);
+  if (stripe) rect(doc, MARGIN, y, CONTENT_W, h, C.rowAlt);
+  rect(doc, MARGIN, y, CONTENT_W, h, null, C.border, 0.4);
 
   if (isAr) {
     let x = MARGIN + CONTENT_W;
-    cols.forEach(({ w, align, wrap }, i) => {
+    cols.forEach(({ w, wrap }, i) => {
       x -= w;
-      const raw = String(values[i] ?? '');
-      const color = values[`_color${i}`] || '#1e293b';
+      const raw = String(vals[i] ?? '');
+      const color = vals[`_c${i}`] || '#1e293b';
       doc.font(fontReg).fontSize(8.5).fillColor(color);
-      if (wrap) {
-        doc.text(raw || '-', x + 4, y + PAD, { width: w - 8, align: align || 'right', lineBreak: true });
-      } else {
-        const val = fitText(doc, raw, w - 8);
-        doc.text(val, x + 4, y + PAD, { width: w - 6, align: align || 'right', lineBreak: false });
-      }
+      if (wrap) doc.text(raw || '-', x + 4, y + PAD, { width: w - 8, align: 'right', lineBreak: true });
+      else      doc.text(fitText(doc, raw, w - 8), x + 4, y + PAD, { width: w - 6, align: 'right', lineBreak: false });
     });
   } else {
     let x = MARGIN;
-    cols.forEach(({ w, align, wrap }, i) => {
-      const raw = String(values[i] ?? '');
-      const color = values[`_color${i}`] || '#1e293b';
+    cols.forEach(({ w, wrap }, i) => {
+      const raw = String(vals[i] ?? '');
+      const color = vals[`_c${i}`] || '#1e293b';
       doc.font(fontReg).fontSize(8.5).fillColor(color);
-      if (wrap) {
-        doc.text(raw || '-', x + 4, y + PAD, { width: w - 8, align: align || 'left', lineBreak: true });
-      } else {
-        const val = fitText(doc, raw, w - 8);
-        doc.text(val, x + 4, y + PAD, { width: w - 6, align: align || 'left', lineBreak: false });
-      }
+      if (wrap) doc.text(raw || '-', x + 4, y + PAD, { width: w - 8, align: 'left', lineBreak: true });
+      else      doc.text(fitText(doc, raw, w - 8), x + 4, y + PAD, { width: w - 6, align: 'left', lineBreak: false });
       x += w;
     });
   }
-  return y + rowH;
+  return y + h;
 }
 
-function drawTotalRow(doc, cols, values, y, isAr, fontBold) {
-  const rowH = 24;
-  drawRect(doc, MARGIN, y, CONTENT_W, rowH, BLUE);
+function totalRow(doc, cols, vals, y, fontBold, isAr) {
+  const H = 24;
+  rect(doc, MARGIN, y, CONTENT_W, H, NAVY);
   if (isAr) {
     let x = MARGIN + CONTENT_W;
-    cols.forEach(({ w, align }, i) => {
+    cols.forEach(({ w }, i) => {
       x -= w;
-      doc.font(fontBold).fontSize(8.5).fillColor(COLORS.white)
-        .text(String(values[i] ?? ''), x + 3, y + 7, { width: w - 6, align: align || 'right', lineBreak: false });
+      doc.font(fontBold).fontSize(8.5).fillColor(C.white)
+        .text(String(vals[i] ?? ''), x + 3, y + 7, { width: w - 6, align: 'right', lineBreak: false });
     });
   } else {
     let x = MARGIN;
-    cols.forEach(({ w, align }, i) => {
-      doc.font(fontBold).fontSize(8.5).fillColor(COLORS.white)
-        .text(String(values[i] ?? ''), x + 3, y + 7, { width: w - 6, align: align || 'left', lineBreak: false });
+    cols.forEach(({ w }, i) => {
+      doc.font(fontBold).fontSize(8.5).fillColor(C.white)
+        .text(String(vals[i] ?? ''), x + 3, y + 7, { width: w - 6, align: 'left', lineBreak: false });
       x += w;
     });
   }
-  return y + rowH;
-}
-
-function sectionBar(doc, text, y, fontBold) {
-  drawRect(doc, MARGIN, y, CONTENT_W, 26, BLUE_LIGHT, BLUE, 1);
-  doc.font(fontBold).fontSize(10).fillColor(BLUE)
-    .text(fitText(doc, text, CONTENT_W - 24), MARGIN + 8, y + 8, { width: CONTENT_W - 16, align: 'center', lineBreak: false });
-  return y + 32;
+  return y + H;
 }
 
 // ── Main generator ─────────────────────────────────────────────────────────────
-
 async function generateFinancialPDF(req, res) {
   const orgId = req.organization.id;
-  const org = req.organization;
-  const year = parseInt(req.query.year) || new Date().getFullYear();
-  const lang = req.query.lang === 'ar' ? 'ar' : 'fr';
-  const isAr = lang === 'ar';
-  const t = T[lang];
+  const org   = req.organization;
+  const year  = parseInt(req.query.year) || new Date().getFullYear();
+  const lang  = req.query.lang === 'ar' ? 'ar' : 'fr';
+  const isAr  = lang === 'ar';
+  const t     = T[lang];
 
-  const startDate = new Date(year, 0, 1);
-  const endDate = new Date(year, 11, 31, 23, 59, 59);
+  // Convenience: wrap arw with isAr already bound
+  const ar = (str) => arw(str, isAr);
 
-  const [transactions, allIncome, allExpenses] = await Promise.all([
-    prisma.transaction.findMany({
-      where: { organizationId: orgId, date: { gte: startDate, lte: endDate } },
-      orderBy: { date: 'asc' },
-    }),
-    prisma.transaction.aggregate({
-      where: { organizationId: orgId, type: 'INCOME', date: { gte: startDate, lte: endDate } },
-      _sum: { amount: true },
-    }),
-    prisma.transaction.aggregate({
-      where: { organizationId: orgId, type: 'EXPENSE', date: { gte: startDate, lte: endDate } },
-      _sum: { amount: true },
-    }),
+  const start = new Date(year, 0, 1);
+  const end   = new Date(year, 11, 31, 23, 59, 59);
+
+  const [transactions, aggIncome, aggExpense] = await Promise.all([
+    prisma.transaction.findMany({ where: { organizationId: orgId, date: { gte: start, lte: end } }, orderBy: { date: 'asc' } }),
+    prisma.transaction.aggregate({ where: { organizationId: orgId, type: 'INCOME',  date: { gte: start, lte: end } }, _sum: { amount: true } }),
+    prisma.transaction.aggregate({ where: { organizationId: orgId, type: 'EXPENSE', date: { gte: start, lte: end } }, _sum: { amount: true } }),
   ]);
 
-  const totalIncome = allIncome._sum.amount || 0;
-  const totalExpenses = allExpenses._sum.amount || 0;
-  const balance = totalIncome - totalExpenses;
-  const incomeList = transactions.filter((x) => x.type === 'INCOME');
-  const expenseList = transactions.filter((x) => x.type === 'EXPENSE');
+  const totalIncome   = aggIncome._sum.amount  || 0;
+  const totalExpenses = aggExpense._sum.amount || 0;
+  const balance       = totalIncome - totalExpenses;
+  const incomeList    = transactions.filter(x => x.type === 'INCOME');
+  const expenseList   = transactions.filter(x => x.type === 'EXPENSE');
 
-  const expCats = {};
-  expenseList.forEach((tx) => {
-    const cat = tx.category || (isAr ? 'أخرى' : 'Autres');
-    if (!expCats[cat]) expCats[cat] = { items: [], total: 0 };
-    expCats[cat].items.push(tx);
-    expCats[cat].total += tx.amount;
-  });
-  const incCats = {};
-  incomeList.forEach((tx) => {
-    const cat = tx.category || (isAr ? 'إيرادات' : 'Recettes');
-    incCats[cat] = (incCats[cat] || 0) + tx.amount;
-  });
-
-  // Register fonts
+  // ── PDFDocument ───────────────────────────────────────────────────────────────
   const doc = new PDFDocument({ margin: MARGIN, size: 'A4', bufferPages: true });
-  doc.registerFont('AR', FONT_AR);
-  doc.registerFont('AR-Bold', FONT_AR_BOLD);
+  doc.registerFont('AR',       FONT_AR);
+  doc.registerFont('AR-Bold',  FONT_AR_BOLD);
   doc.registerFont('AR-Title', FONT_AR_TITLE);
 
-  // Resolve org fields for current language (fallback to French if Arabic not set)
+  // Org display fields (Arabic → French fallback)
   const orgName    = isAr ? (org.nameAr    || org.name    || '') : (org.name    || '');
   const orgCity    = isAr ? (org.cityAr    || org.city    || '') : (org.city    || '');
-  const orgRegion  = isAr ? (org.regionAr  || org.region  || '') : (org.region  || '');
   const orgAddress = isAr ? (org.addressAr || org.address || '') : (org.address || '');
 
-  // PDFKit renders text strictly LTR — reverse Arabic word order so multi-word
-  // strings display correctly (e.g. "جمعية اسمون" stored → rendered correctly).
-  const arw = (str) => isAr ? str.split(' ').reverse().join(' ') : str;
-
-  const fontReg   = isAr ? 'AR'       : 'Helvetica';
+  // Typography tokens — strict hierarchy
+  // fontTitle  → decorative Line.ttf — COVER MAIN TITLE only
+  // fontBold   → Amiri-Bold  — section headers, labels, column titles
+  // fontReg    → Amiri-Regular — all body / data text
+  const fontTitle = isAr ? 'AR-Title' : 'Helvetica-Bold';
   const fontBold  = isAr ? 'AR-Bold'  : 'Helvetica-Bold';
-  const fontTitle = isAr ? 'AR-Title' : 'Helvetica-Bold'; // Line font — grand titles only
-  const fontAlt     = isAr ? 'Helvetica' : 'AR';
-  const fontAltBold = isAr ? 'Helvetica-Bold' : 'AR-Bold';
+  const fontReg   = isAr ? 'AR'       : 'Helvetica';
+  const fontAlt   = isAr ? 'Helvetica': 'AR';         // secondary language label
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="rapport_financier_${year}.pdf"`);
   doc.pipe(res);
 
-  // ── PAGE 1: COVER ─────────────────────────────────────────────────────────────
-  const nameBoxX = isAr ? PAGE_W - 40 - 240 : 40;
-  const logoBoxX = isAr ? 40 : PAGE_W - 150;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PAGE 1 — COVER
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  // Association name box
-  drawRect(doc, nameBoxX, 40, 240, 80, null, BLUE, 2);
-  const nameSize = orgName.length > 25 ? 10 : orgName.length > 15 ? 13 : 16;
-  doc.font(fontTitle).fontSize(nameSize).fillColor(BLUE)
-    .text(fitText(doc, arw(orgName) || 'Association', 222), nameBoxX + 5, 62, { width: 230, align: isAr ? 'right' : 'center', lineBreak: false });
+  // Header band (full width)
+  rect(doc, 0, 0, PAGE_W, 120, NAVY);
 
-  // Logo box
-  drawRect(doc, logoBoxX, 40, 110, 80, null, BLUE, 1);
+  // Logo area (left in LTR, right in RTL)
+  const logoX = isAr ? PAGE_W - 120 : 0;
   let logoSrc = null;
   if (org.logo) {
     if (org.logo.startsWith('data:')) {
@@ -415,193 +333,278 @@ async function generateFinancialPDF(req, res) {
     }
   }
   if (logoSrc) {
-    try {
-      doc.image(logoSrc, logoBoxX + 5, 45, { width: 100, height: 60, fit: [100, 60], align: 'center', valign: 'center' });
-    } catch { /* fall back to placeholder if image is corrupt */ }
-  } else {
-    drawRect(doc, logoBoxX + 5, 45, 100, 60, null, '#93c5fd', 0.5);
-    doc.font(fontReg).fontSize(8).fillColor('#9ca3af')
-      .text(t.logo, logoBoxX + 5, 68, { width: 100, align: 'center', lineBreak: false });
+    try { doc.image(logoSrc, logoX + 10, 15, { width: 90, height: 90, fit: [90, 90], align: 'center', valign: 'center' }); } catch (_) {}
   }
 
-  // Center rounded title box
-  const titleBoxW = PAGE_W - 130;
-  doc.roundedRect(65, 168, titleBoxW, 165, 10).strokeColor(BLUE).lineWidth(1.5).stroke();
-  doc.font(fontTitle).fontSize(22).fillColor(BLUE)
-    .text(fitText(doc, t.cover_title, titleBoxW - 20), 65, 192, { width: titleBoxW, align: 'center', lineBreak: false });
-  doc.font(fontAlt).fontSize(14).fillColor('#374151')
-    .text(fitText(doc, t.cover_sub, titleBoxW - 20), 65, 228, { width: titleBoxW, align: 'center', lineBreak: false });
-  doc.font(fontTitle).fontSize(13).fillColor(BLUE)
-    .text(fitText(doc, isAr ? `${t.exercise} ${year}` : `${t.exercise} ${year}`, titleBoxW - 20), 65, 264, { width: titleBoxW, align: 'center', lineBreak: false });
-  doc.font(fontReg).fontSize(10).fillColor('#6b7280')
-    .text(`01/01/${year}  —  31/12/${year}`, 65, 296, { width: titleBoxW, align: 'center', lineBreak: false });
-
-  doc.font(fontTitle).fontSize(13).fillColor('#374151')
-    .text(fitText(doc, arw(orgName) || '', CONTENT_W - 20), MARGIN, 380, { width: CONTENT_W, align: 'center', lineBreak: false });
-  if (orgCity) {
-    doc.font(fontReg).fontSize(11).fillColor('#6b7280')
-      .text(fitText(doc, arw(orgCity), CONTENT_W - 20), MARGIN, 400, { width: CONTENT_W, align: 'center', lineBreak: false });
+  // Org name + city in header
+  const nameAreaX = isAr ? MARGIN : 120;
+  const nameAreaW = CONTENT_W - 90;
+  const nameSize  = orgName.length > 28 ? 11 : orgName.length > 18 ? 14 : 17;
+  doc.font(fontBold).fontSize(nameSize).fillColor(C.white)
+    .text(fitText(doc, ar(orgName) || ar('الجمعية'), nameAreaW - 10), nameAreaX, 28,
+      { width: nameAreaW, align: isAr ? 'right' : 'left', lineBreak: false });
+  if (orgCity || orgAddress) {
+    const sub = [orgCity, orgAddress].filter(Boolean).join(' — ');
+    doc.font(fontReg).fontSize(9).fillColor('#bfdbfe')
+      .text(fitText(doc, ar(sub), nameAreaW - 10), nameAreaX, 52,
+        { width: nameAreaW, align: isAr ? 'right' : 'left', lineBreak: false });
   }
+  doc.font(fontReg).fontSize(8.5).fillColor('#93c5fd')
+    .text(org.email || '', nameAreaX, 70,
+      { width: nameAreaW, align: isAr ? 'right' : 'left', lineBreak: false });
 
-  // ── PAGE 2: INFO TABLE ────────────────────────────────────────────────────────
+  // Central title box
+  const boxY = 148;
+  const boxH = 170;
+  doc.roundedRect(MARGIN + 20, boxY, CONTENT_W - 40, boxH, 12)
+    .strokeColor(NAVY).lineWidth(1.5).stroke();
+  rect(doc, MARGIN + 20, boxY, CONTENT_W - 40, 6, NAVY);      // top accent strip
+
+  // Main title — decorative font (fontTitle) for the Arabic cover title
+  doc.font(fontTitle).fontSize(26).fillColor(NAVY)
+    .text(fitText(doc, ar(t.cover_title), CONTENT_W - 80), MARGIN + 20, boxY + 26,
+      { width: CONTENT_W - 40, align: 'center', lineBreak: false });
+
+  // Sub-title in the other language
+  doc.font(fontAlt).fontSize(13).fillColor(NAVY_MID)
+    .text(fitText(doc, t.cover_sub, CONTENT_W - 80), MARGIN + 20, boxY + 68,
+      { width: CONTENT_W - 40, align: 'center', lineBreak: false });
+
+  // Year — bold Amiri (not decorative)
+  const yearLabel = isAr ? `${year}  ${ar(t.exercise)}` : `${t.exercise}  ${year}`;
+  doc.font(fontBold).fontSize(14).fillColor(NAVY)
+    .text(yearLabel, MARGIN + 20, boxY + 104,
+      { width: CONTENT_W - 40, align: 'center', lineBreak: false });
+
+  // Date range
+  doc.font(fontReg).fontSize(10).fillColor(C.neutral)
+    .text(`01/01/${year}  —  31/12/${year}`, MARGIN + 20, boxY + 128,
+      { width: CONTENT_W - 40, align: 'center', lineBreak: false });
+
+  // ── Summary KPI cards (income / expense / balance) ─────────────────────────
+  const cardY  = 350;
+  const cardW  = (CONTENT_W - 20) / 3;
+  const cards  = [
+    { label: t.total_income,   value: `${fmt(totalIncome)} MAD`,   bg: '#ecfdf5', border: C.income,  text: C.income  },
+    { label: t.total_expense,  value: `${fmt(totalExpenses)} MAD`, bg: '#fef2f2', border: C.expense, text: C.expense },
+    { label: t.balance,        value: `${fmt(balance)} MAD`,       bg: balance >= 0 ? '#eff6ff' : '#fef2f2', border: balance >= 0 ? NAVY_MID : C.expense, text: balance >= 0 ? NAVY : C.expense },
+  ];
+  cards.forEach((card, i) => {
+    const cx = isAr
+      ? MARGIN + (2 - i) * (cardW + 10)
+      : MARGIN + i * (cardW + 10);
+    rect(doc, cx, cardY, cardW, 80, card.bg, card.border, 1);
+    // Label
+    doc.font(fontBold).fontSize(9).fillColor(card.text)
+      .text(fitText(doc, ar(card.label), cardW - 16), cx + 8, cardY + 12,
+        { width: cardW - 16, align: isAr ? 'right' : 'left', lineBreak: false });
+    // Value
+    doc.font(fontBold).fontSize(15).fillColor(card.text)
+      .text(card.value, cx + 8, cardY + 32,
+        { width: cardW - 16, align: 'center', lineBreak: false });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PAGE 2 — INFO TABLE
+  // ═══════════════════════════════════════════════════════════════════════════
   doc.addPage();
   let cy = MARGIN + 10;
 
-  const col1W = 195;
+  // Page title
+  rect(doc, MARGIN, cy, CONTENT_W, 30, NAVY);
+  doc.font(fontBold).fontSize(12).fillColor(C.white)
+    .text(fitText(doc, ar(t.cover_title) + `  ${year}`, CONTENT_W - 20), MARGIN + 10, cy + 9,
+      { width: CONTENT_W - 20, align: isAr ? 'right' : 'left', lineBreak: false });
+  cy += 38;
+
+  // Info rows
+  const col1W = 190;
   const col2W = CONTENT_W - col1W;
   const infoRows = [
-    [t.assoc_name, arw(orgName) || '-'],
-    [t.city, arw(orgCity) || '-'],
-    [t.email, org.email || '-'],
-    [t.period_covered, `01/01/${year} - 31/12/${year}`],
-    [t.emit_date, fmtDate(new Date())],
+    [t.assoc_name,     ar(orgName) || '-'],
+    [t.city,           ar(orgCity) || '-'],
+    [t.email,          org.email   || '-'],
+    [t.period_covered, `01/01/${year} — 31/12/${year}`],
+    [t.emit_date,      fmtDate(new Date())],
   ];
   infoRows.forEach(([label, value], i) => {
-    const rh = 28;
-    const ry = cy + i * rh;
-    const labelBg = i % 2 === 0 ? BLUE : '#234580';
+    const rh  = 28;
+    const ry  = cy + i * rh;
+    const bgL = i % 2 === 0 ? NAVY : NAVY_MID;
+    const bgV = i % 2 === 0 ? C.white : '#f8fafc';
     if (isAr) {
-      // RTL: label column on the RIGHT, value column on the LEFT
-      drawRect(doc, MARGIN,          ry, col2W, rh, i % 2 === 0 ? '#ffffff' : '#f8fafc', BLUE);
-      drawRect(doc, MARGIN + col2W,  ry, col1W, rh, labelBg, BLUE);
-      doc.font(fontBold).fontSize(9).fillColor('#1e293b')
-        .text(fitText(doc, value, col2W - 14), MARGIN + 7, ry + 9, { width: col2W - 14, align: 'right', lineBreak: false });
-      doc.font(fontBold).fontSize(9).fillColor('#ffffff')
-        .text(label, MARGIN + col2W + 5, ry + 9, { width: col1W - 10, align: 'right', lineBreak: false });
+      // RTL: label on the RIGHT, value on the LEFT
+      rect(doc, MARGIN,          ry, col2W, rh, bgV, NAVY, 0.4);
+      rect(doc, MARGIN + col2W,  ry, col1W, rh, bgL, NAVY, 0.4);
+      doc.font(fontReg).fontSize(9).fillColor('#1e293b')
+        .text(fitText(doc, value, col2W - 14), MARGIN + 6, ry + 9,
+          { width: col2W - 12, align: 'right', lineBreak: false });
+      doc.font(fontBold).fontSize(9).fillColor(C.white)
+        .text(fitText(doc, ar(label), col1W - 10), MARGIN + col2W + 4, ry + 9,
+          { width: col1W - 8, align: 'right', lineBreak: false });
     } else {
-      // LTR: label column on the LEFT, value column on the RIGHT
-      drawRect(doc, MARGIN,          ry, col1W, rh, labelBg, BLUE);
-      drawRect(doc, MARGIN + col1W,  ry, col2W, rh, i % 2 === 0 ? '#ffffff' : '#f8fafc', BLUE);
-      doc.font(fontBold).fontSize(9).fillColor('#ffffff')
-        .text(label, MARGIN + 7, ry + 9, { width: col1W - 14, lineBreak: false });
-      doc.font(fontBold).fontSize(9).fillColor('#1e293b')
-        .text(fitText(doc, value, col2W - 14), MARGIN + col1W + 7, ry + 9, { width: col2W - 14, lineBreak: false });
+      rect(doc, MARGIN,          ry, col1W, rh, bgL, NAVY, 0.4);
+      rect(doc, MARGIN + col1W,  ry, col2W, rh, bgV, NAVY, 0.4);
+      doc.font(fontBold).fontSize(9).fillColor(C.white)
+        .text(fitText(doc, label, col1W - 14), MARGIN + 6, ry + 9,
+          { width: col1W - 12, lineBreak: false });
+      doc.font(fontReg).fontSize(9).fillColor('#1e293b')
+        .text(fitText(doc, value, col2W - 14), MARGIN + col1W + 6, ry + 9,
+          { width: col2W - 12, lineBreak: false });
     }
   });
-  cy += infoRows.length * 28 + 28;
+  cy += infoRows.length * 28 + 32;
 
-  // ── SHARED COLUMN LAYOUT ──────────────────────────────────────────────────────
-  // cW0=Nature  cW1=Date  cW2=Montant  cW3=Mode  cW4=Réf  cW5=Observations(wrap)
-  const cW1 = 52, cW2 = 62, cW3 = 82, cW4 = 62;
-  const cW5 = 130; // observations — wide, wraps freely
-  const cW0 = CONTENT_W - cW1 - cW2 - cW3 - cW4 - cW5; // Nature gets the rest (~131)
-  // RTL order (right→left): date | nature | amount | pay_mode | doc_ref | obs
+  // ── Column layout for transaction tables ────────────────────────────────────
+  const cW1 = 50, cW2 = 64, cW3 = 80, cW4 = 60, cW5 = 120;
+  const cW0 = CONTENT_W - cW1 - cW2 - cW3 - cW4 - cW5;
+  // RTL columns: rightmost = first logical column (التاريخ), then الطبيعة, etc.
   const txCols = isAr
     ? [
-        { label: t.date_inv, w: cW1, align: 'right' },
-        { label: t.nature,   w: cW0, align: 'right' },
-        { label: t.amount,   w: cW2, align: 'right' },
-        { label: t.pay_mode, w: cW3, align: 'right' },
-        { label: t.doc_ref,  w: cW4, align: 'right' },
-        { label: t.obs,      w: cW5, wrap: true },
+        { label: ar(t.date_inv), w: cW1 },
+        { label: ar(t.nature),   w: cW0 },
+        { label: ar(t.amount),   w: cW2 },
+        { label: ar(t.pay_mode), w: cW3 },
+        { label: ar(t.doc_ref),  w: cW4 },
+        { label: ar(t.obs),      w: cW5, wrap: true },
       ]
     : [
         { label: t.nature,   w: cW0 },
         { label: t.date_inv, w: cW1 },
-        { label: t.amount,   w: cW2, align: 'right' },
+        { label: t.amount,   w: cW2 },
         { label: t.pay_mode, w: cW3 },
         { label: t.doc_ref,  w: cW4 },
         { label: t.obs,      w: cW5, wrap: true },
       ];
 
-  // ── TABLEAU DÉTAILLÉ DES RECETTES ─────────────────────────────────────────────
-  cy = checkNewPage(doc, cy, 80);
-  drawRect(doc, MARGIN, cy, CONTENT_W, 28, '#d1fae5', COLORS.income, 1);
-  doc.font(fontTitle).fontSize(10).fillColor(COLORS.income)
-    .text(fitText(doc, isAr ? `${t.income_detail}  (${incomeList.length} ${t.operations})` : `${t.income_detail}  (${incomeList.length} ${t.operations})`, CONTENT_W - 24),
-      MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
-  cy += 28;
+  // ── INCOME section ──────────────────────────────────────────────────────────
+  cy = checkPage(doc, cy, 90);
+  const incTitle = isAr
+    ? ar(`${t.income_detail}  (${incomeList.length} ${t.operations})`)
+    : `${t.income_detail}  (${incomeList.length} ${t.operations})`;
+  cy = sectionBar(doc, incTitle, cy, fontBold, isAr);
 
-  cy = drawTableHeader(doc, txCols, cy, isAr, fontTitle, fontReg);
+  cy = tableHeader(doc, txCols, cy, fontBold, isAr);
 
   if (incomeList.length === 0) {
-    drawRect(doc, MARGIN, cy, CONTENT_W, 22, COLORS.light, COLORS.border);
-    doc.font(fontReg).fontSize(9).fillColor(COLORS.neutral)
-      .text(t.no_income, MARGIN + 8, cy + 6, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
-    cy += 22;
+    rect(doc, MARGIN, cy, CONTENT_W, 24, C.light, C.border, 0.4);
+    doc.font(fontReg).fontSize(9).fillColor(C.neutral)
+      .text(ar(t.no_income), MARGIN + 8, cy + 7,
+        { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
+    cy += 24;
   } else {
     incomeList.forEach((tx, i) => {
-      const nature = translateCategory(tx.category, isAr);
-      const obs = tx.description || '-';
-      // AR order matches columns: date | nature | amount | pay_mode | doc_ref | obs
       const row = isAr
-        ? [fmtDate(tx.date), nature, fmt(tx.amount), getPaymentMode(tx.reference, true), tx.reference || '-', obs]
-        : [nature, fmtDate(tx.date), fmt(tx.amount), getPaymentMode(tx.reference, false), tx.reference || '-', obs];
-      row['_color2'] = COLORS.income; // amount column is index 2 in both
-      cy = checkNewPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
-      cy = drawTableRow(doc, txCols, row, cy, i % 2 === 1, isAr, fontReg);
+        ? [fmtDate(tx.date), ar(translateCat(tx.category, true)), fmt(tx.amount), ar(payMode(tx.reference, true)), tx.reference || '-', tx.description || '-']
+        : [translateCat(tx.category, false), fmtDate(tx.date), fmt(tx.amount), payMode(tx.reference, false), tx.reference || '-', tx.description || '-'];
+      row['_c2'] = C.income;
+      cy = checkPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
+      cy = tableRow(doc, txCols, row, cy, i % 2 === 1, fontReg, isAr);
     });
   }
-  drawRect(doc, MARGIN, cy, CONTENT_W, 22, '#d1fae5', COLORS.income);
-  doc.font(fontBold).fontSize(9).fillColor(COLORS.income)
-    .text(`${t.total} : ${fmt(totalIncome)} MAD`, MARGIN + 6, cy + 6,
-      { width: CONTENT_W - 12, align: isAr ? 'left' : 'right', lineBreak: false });
+  // Income total bar
+  rect(doc, MARGIN, cy, CONTENT_W, 24, '#d1fae5', C.income, 1);
+  const incTotalText = isAr
+    ? `MAD ${fmt(totalIncome)}  :${ar(t.total)}`
+    : `${t.total} :  ${fmt(totalIncome)} MAD`;
+  doc.font(fontBold).fontSize(10).fillColor(C.income)
+    .text(incTotalText, MARGIN + 8, cy + 7,
+      { width: CONTENT_W - 16, align: isAr ? 'right' : 'right', lineBreak: false });
   cy += 30;
 
-  // ── TABLEAU DÉTAILLÉ DES DÉPENSES ─────────────────────────────────────────────
-  cy = checkNewPage(doc, cy, 80);
-  drawRect(doc, MARGIN, cy, CONTENT_W, 28, '#fee2e2', COLORS.expense, 1);
-  doc.font(fontTitle).fontSize(10).fillColor(COLORS.expense)
-    .text(fitText(doc, isAr ? `${t.expense_detail}  (${expenseList.length} ${t.operations})` : `${t.expense_detail}  (${expenseList.length} ${t.operations})`, CONTENT_W - 24),
-      MARGIN + 8, cy + 9, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
-  cy += 28;
+  // ── EXPENSE section ─────────────────────────────────────────────────────────
+  cy = checkPage(doc, cy, 90);
+  const expTitle = isAr
+    ? ar(`${t.expense_detail}  (${expenseList.length} ${t.operations})`)
+    : `${t.expense_detail}  (${expenseList.length} ${t.operations})`;
+  cy = sectionBar(doc, expTitle, cy, fontBold, isAr);
 
-  cy = drawTableHeader(doc, txCols, cy, isAr, fontTitle, fontReg);
+  cy = tableHeader(doc, txCols, cy, fontBold, isAr);
 
   if (expenseList.length === 0) {
-    drawRect(doc, MARGIN, cy, CONTENT_W, 22, COLORS.light, COLORS.border);
-    doc.font(fontReg).fontSize(9).fillColor(COLORS.neutral)
-      .text(t.no_expense, MARGIN + 8, cy + 6, { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
-    cy += 22;
+    rect(doc, MARGIN, cy, CONTENT_W, 24, C.light, C.border, 0.4);
+    doc.font(fontReg).fontSize(9).fillColor(C.neutral)
+      .text(ar(t.no_expense), MARGIN + 8, cy + 7,
+        { width: CONTENT_W - 16, align: isAr ? 'right' : 'left', lineBreak: false });
+    cy += 24;
   } else {
     expenseList.forEach((tx, i) => {
-      const nature = translateCategory(tx.category, isAr);
-      const obs = tx.description || '-';
-      // AR order matches columns: date | nature | amount | pay_mode | doc_ref | obs
       const row = isAr
-        ? [fmtDate(tx.date), nature, fmt(tx.amount), getPaymentMode(tx.reference, true), tx.reference || '-', obs]
-        : [nature, fmtDate(tx.date), fmt(tx.amount), getPaymentMode(tx.reference, false), tx.reference || '-', obs];
-      row['_color2'] = COLORS.expense; // amount column is index 2 in both
-      cy = checkNewPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
-      cy = drawTableRow(doc, txCols, row, cy, i % 2 === 1, isAr, fontReg);
+        ? [fmtDate(tx.date), ar(translateCat(tx.category, true)), fmt(tx.amount), ar(payMode(tx.reference, true)), tx.reference || '-', tx.description || '-']
+        : [translateCat(tx.category, false), fmtDate(tx.date), fmt(tx.amount), payMode(tx.reference, false), tx.reference || '-', tx.description || '-'];
+      row['_c2'] = C.expense;
+      cy = checkPage(doc, cy, calcRowH(doc, txCols, row, fontReg) + 4);
+      cy = tableRow(doc, txCols, row, cy, i % 2 === 1, fontReg, isAr);
     });
   }
-  drawRect(doc, MARGIN, cy, CONTENT_W, 22, '#fee2e2', COLORS.expense);
-  doc.font(fontBold).fontSize(9).fillColor(COLORS.expense)
-    .text(`${t.total} : ${fmt(totalExpenses)} MAD`, MARGIN + 6, cy + 6,
-      { width: CONTENT_W - 12, align: isAr ? 'left' : 'right', lineBreak: false });
-  cy += 30;
+  // Expense total bar
+  rect(doc, MARGIN, cy, CONTENT_W, 24, '#fee2e2', C.expense, 1);
+  const expTotalText = isAr
+    ? `MAD ${fmt(totalExpenses)}  :${ar(t.total)}`
+    : `${t.total} :  ${fmt(totalExpenses)} MAD`;
+  doc.font(fontBold).fontSize(10).fillColor(C.expense)
+    .text(expTotalText, MARGIN + 8, cy + 7,
+      { width: CONTENT_W - 16, align: 'right', lineBreak: false });
+  cy += 32;
 
-  // ── SOLDE NET ─────────────────────────────────────────────────────────────────
-  cy = checkNewPage(doc, cy, 50);
-  cy += 6;
-  const netColor = balance >= 0 ? COLORS.income : COLORS.expense;
-  const netBg    = balance >= 0 ? '#ecfdf5' : '#fef2f2';
+  // ── NET BALANCE ─────────────────────────────────────────────────────────────
+  cy = checkPage(doc, cy, 56);
+  const netColor  = balance >= 0 ? C.income  : C.expense;
+  const netBg     = balance >= 0 ? '#ecfdf5' : '#fef2f2';
   const netBorder = balance >= 0 ? '#6ee7b7' : '#fca5a5';
-  drawRect(doc, MARGIN, cy, CONTENT_W, 36, netBg, netBorder, 1.5);
-  const netLabel = isAr
-    ? `${fmt(balance)} MAD  :${t.balance}`
-    : `${t.balance} :  ${fmt(balance)} MAD`;
-  doc.font(fontBold).fontSize(13).fillColor(netColor)
-    .text(netLabel, MARGIN + 10, cy + 11, { width: CONTENT_W - 20, align: 'center', lineBreak: false });
-  cy += 36;
+  rect(doc, MARGIN, cy, CONTENT_W, 42, netBg, netBorder, 1.5);
+  // Label line
+  doc.font(fontBold).fontSize(11).fillColor(netColor)
+    .text(ar(t.balance), MARGIN + 12, cy + 7,
+      { width: CONTENT_W - 24, align: isAr ? 'right' : 'left', lineBreak: false });
+  // Value line (numbers stay LTR)
+  const balSign = balance >= 0 ? '+' : '';
+  doc.font(fontBold).fontSize(14).fillColor(netColor)
+    .text(`${balSign}${fmt(balance)} MAD`, MARGIN + 12, cy + 22,
+      { width: CONTENT_W - 24, align: 'center', lineBreak: false });
+  cy += 50;
 
-  // ── FOOTERS ───────────────────────────────────────────────────────────────────
+  // ── SIGNATURE BLOCK ─────────────────────────────────────────────────────────
+  cy = checkPage(doc, cy, 90);
+  cy += 10;
+  cy = sectionBar(doc, ar(t.sign_title), cy, fontBold, isAr);
+  const sigW = (CONTENT_W - 20) / 2;
+  [[t.treasurer, isAr ? MARGIN : MARGIN],
+   [t.president, isAr ? MARGIN + sigW + 20 : MARGIN + sigW + 20]].forEach(([role, x]) => {
+    rect(doc, x, cy, sigW, 60, '#fafafa', C.border, 0.5);
+    doc.font(fontBold).fontSize(9).fillColor(NAVY)
+      .text(ar(role), x + 8, cy + 8, { width: sigW - 16, align: isAr ? 'right' : 'left', lineBreak: false });
+    doc.font(fontReg).fontSize(8).fillColor(C.neutral)
+      .text(ar(t.sign_title), x + 8, cy + 22, { width: sigW - 16, align: isAr ? 'right' : 'left', lineBreak: false });
+    // Signature line
+    doc.moveTo(x + 16, cy + 50).lineTo(x + sigW - 16, cy + 50)
+      .strokeColor(C.border).lineWidth(0.6).stroke();
+  });
+  cy += 70;
+
+  // ── FOOTERS (all pages) ─────────────────────────────────────────────────────
   const pageCount = doc.bufferedPageRange().count;
   for (let i = 0; i < pageCount; i++) {
     doc.switchToPage(i);
-    drawRect(doc, 0, PAGE_H - 26, PAGE_W, 26, BLUE);
-    const footerOrg = fitText(doc, arw(orgName) || 'Association', CONTENT_W - 80);
+    rect(doc, 0, PAGE_H - 28, PAGE_W, 28, NAVY);
+    const footerName = fitText(doc, ar(orgName) || '', CONTENT_W - 100);
+    const footerReport = ar(t.footer_report);
+    const pageNum = isAr
+      ? `${pageCount} ${ar(t.of)} ${i + 1} ${ar(t.page)}`
+      : `${t.page} ${i + 1} ${t.of} ${pageCount}`;
     if (isAr) {
-      doc.font(fontReg).fontSize(8).fillColor('#bfdbfe')
-        .text(`${t.page} ${i + 1} ${t.of} ${pageCount}`, MARGIN, PAGE_H - 17, { width: CONTENT_W, align: 'left', lineBreak: false });
-      doc.font(fontBold).fontSize(8).fillColor('#bfdbfe')
-        .text(`${footerOrg}  —  ${t.footer_report} ${year}`, MARGIN, PAGE_H - 17, { width: CONTENT_W, align: 'right', lineBreak: false });
+      doc.font(fontReg).fontSize(7.5).fillColor('#93c5fd')
+        .text(pageNum, MARGIN, PAGE_H - 18, { width: CONTENT_W, align: 'left', lineBreak: false });
+      doc.font(fontBold).fontSize(7.5).fillColor('#bfdbfe')
+        .text(`${footerName}  —  ${footerReport} ${year}`, MARGIN, PAGE_H - 18,
+          { width: CONTENT_W, align: 'right', lineBreak: false });
     } else {
-      doc.font(fontBold).fontSize(8).fillColor('#bfdbfe')
-        .text(`${footerOrg}  —  ${t.footer_report} ${year}`, MARGIN, PAGE_H - 17, { width: CONTENT_W - 80, lineBreak: false });
-      doc.font(fontReg).fontSize(8).fillColor('#bfdbfe')
-        .text(`${t.page} ${i + 1} ${t.of} ${pageCount}`, MARGIN, PAGE_H - 17, { width: CONTENT_W, align: 'right', lineBreak: false });
+      doc.font(fontBold).fontSize(7.5).fillColor('#bfdbfe')
+        .text(`${footerName}  —  ${footerReport} ${year}`, MARGIN, PAGE_H - 18,
+          { width: CONTENT_W - 80, lineBreak: false });
+      doc.font(fontReg).fontSize(7.5).fillColor('#93c5fd')
+        .text(pageNum, MARGIN, PAGE_H - 18,
+          { width: CONTENT_W, align: 'right', lineBreak: false });
     }
   }
 
