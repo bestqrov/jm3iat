@@ -1,5 +1,7 @@
 const prisma = require('../../config/database');
 
+const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR'];
+
 const getSessions = async (req, res) => {
   try {
     const { meetingId } = req.params;
@@ -26,8 +28,27 @@ const createSession = async (req, res) => {
 
     const meeting = await prisma.meeting.findFirst({
       where: { id: meetingId, organizationId: req.organization.id },
+      include: { attendances: { include: { member: true } } },
     });
     if (!meeting) return res.status(404).json({ message: 'Meeting not found' });
+
+    // Quorum check: 50%+1 of board members must be present
+    const boardAttendances = meeting.attendances.filter((a) => BOARD_ROLES.includes(a.member?.role));
+    const boardTotal = boardAttendances.length;
+    const boardPresent = boardAttendances.filter((a) => a.present).length;
+    const quorum = Math.floor(boardTotal / 2) + 1;
+
+    if (boardTotal === 0 || boardPresent < quorum) {
+      return res.status(400).json({
+        code: 'QUORUM_NOT_MET',
+        message: boardTotal === 0
+          ? 'No board members added to this meeting'
+          : `Quorum not met: ${boardPresent}/${boardTotal} board members present (need ${quorum})`,
+        boardTotal,
+        boardPresent,
+        quorum,
+      });
+    }
 
     const session = await prisma.votingSession.create({
       data: { meetingId, title, description },
@@ -87,9 +108,17 @@ const getResults = async (req, res) => {
   try {
     const session = await prisma.votingSession.findUnique({
       where: { id: req.params.sessionId },
-      include: { votes: true },
+      include: {
+        votes: { include: { member: true } },
+        meeting: { include: { attendances: { include: { member: true } } } },
+      },
     });
     if (!session) return res.status(404).json({ message: 'Session not found' });
+
+    const boardAttendances = session.meeting.attendances.filter((a) => BOARD_ROLES.includes(a.member?.role));
+    const boardTotal = boardAttendances.length;
+    const boardPresent = boardAttendances.filter((a) => a.present).length;
+    const quorum = Math.floor(boardTotal / 2) + 1;
 
     const total = session.votes.length;
     const yes = session.votes.filter((v) => v.choice === 'YES').length;
@@ -98,11 +127,13 @@ const getResults = async (req, res) => {
 
     res.json({
       session,
+      quorum: { boardTotal, boardPresent, required: quorum, met: boardPresent >= quorum },
       results: {
         total,
         yes,
         no,
         abstain,
+        passed: yes > no,
         yesPercent: total ? Math.round((yes / total) * 100) : 0,
         noPercent: total ? Math.round((no / total) * 100) : 0,
         abstainPercent: total ? Math.round((abstain / total) * 100) : 0,
