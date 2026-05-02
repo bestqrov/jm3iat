@@ -69,6 +69,7 @@ app.use('/api/superadmin', require('./modules/superadmin/superadmin.routes'));
 app.use('/api/marketing',  require('./modules/marketing/marketing.routes'));
 app.use('/api/whatsapp',   require('./modules/whatsapp/whatsapp.routes'));
 app.use('/api/transport',  require('./modules/transport/transport.routes'));
+app.use('/api/sports',     require('./modules/sports/sports.routes'));
 app.use('/api/settings/staff', require('./modules/settings/staff.routes'));
 app.use('/api/activity',       require('./modules/activity/activity.routes'));
 app.use('/api/notifications',  require('./modules/notifications/notifications.routes'));

@@ -24,6 +24,7 @@ import { SuperAdminPage } from './pages/superadmin/SuperAdminPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import AssocPage from './pages/assoc/AssocPage';
 import { TransportPage } from './pages/transport/TransportPage';
+import { SportsPage } from './pages/sports/SportsPage';
 import { CalendarPage } from './pages/calendar/CalendarPage';
 import { ActivityPage } from './pages/activity/ActivityPage';
 import { RecurringPage } from './pages/recurring/RecurringPage';
@@ -79,6 +80,7 @@ const App: React.FC = () => {
                 <Route path="/water" element={<WaterPage />} />
                 <Route path="/assoc" element={<WaterReaderRoute><AssocPage /></WaterReaderRoute>} />
                 <Route path="/transport" element={<WaterReaderRoute><TransportPage /></WaterReaderRoute>} />
+                <Route path="/sports"    element={<WaterReaderRoute><SportsPage /></WaterReaderRoute>} />
                 <Route path="/reports" element={<WaterReaderRoute><ReportsPage /></WaterReaderRoute>} />
                 <Route path="/requests" element={<WaterReaderRoute><RequestsPage /></WaterReaderRoute>} />
                 <Route path="/reminders" element={<WaterReaderRoute><RemindersPage /></WaterReaderRoute>} />

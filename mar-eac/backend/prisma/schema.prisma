@@ -77,6 +77,11 @@ model Organization {
   transportPayments      TransportPayment[]
   transportAttendances   TransportAttendance[]
   transportExpenses      TransportExpense[]
+  // Sports module
+  sportPlayers     SportPlayer[]
+  sportTeams       SportTeam[]
+  sportTrainings   SportTraining[]
+  sportMatches     SportMatch[]
   // Pro features
   activityLogs       ActivityLog[]
   notifications      Notification[]
@@ -903,4 +908,107 @@ model BackupRecord {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   @@index([organizationId, createdAt])
+}
+
+// ── Sports Module ─────────────────────────────────────────────────────────────
+
+model SportTeam {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  name           String
+  category       String?  // U10, U12, U15, U18, SENIOR, FEMALE, MIXED
+  coachName      String?
+  coachPhone     String?
+  color          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  players      SportPlayer[]
+  trainings    SportTraining[]
+  matches      SportMatch[]
+}
+
+model SportPlayer {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String    @db.ObjectId
+  teamId         String?   @db.ObjectId
+  name           String
+  phone          String?
+  email          String?
+  dateOfBirth    DateTime?
+  position       String?   // GOALKEEPER, DEFENDER, MIDFIELDER, FORWARD
+  jerseyNumber   Int?
+  licenseNumber  String?
+  licenseExpiry  DateTime?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization              @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  team         SportTeam?                @relation(fields: [teamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  attendances  SportTrainingAttendance[]
+  matchStats   SportMatchStat[]
+}
+
+model SportTraining {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  teamId         String?  @db.ObjectId
+  date           DateTime
+  location       String?
+  duration       Int?
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  organization Organization              @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  team         SportTeam?                @relation(fields: [teamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  attendances  SportTrainingAttendance[]
+}
+
+model SportTrainingAttendance {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  trainingId String  @db.ObjectId
+  playerId   String  @db.ObjectId
+  present    Boolean @default(false)
+
+  training SportTraining @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  player   SportPlayer   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([trainingId, playerId])
+}
+
+model SportMatch {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  teamId         String?  @db.ObjectId
+  opponent       String
+  date           DateTime
+  location       String?
+  isHome         Boolean  @default(true)
+  scoreUs        Int?
+  scoreThem      Int?
+  status         String   @default("SCHEDULED")
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  team         SportTeam?     @relation(fields: [teamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stats        SportMatchStat[]
+}
+
+model SportMatchStat {
+  id            String @id @default(auto()) @map("_id") @db.ObjectId
+  matchId       String @db.ObjectId
+  playerId      String @db.ObjectId
+  goals         Int    @default(0)
+  assists       Int    @default(0)
+  yellowCards   Int    @default(0)
+  redCards      Int    @default(0)
+  minutesPlayed Int?
+
+  match  SportMatch  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player SportPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, playerId])
 }

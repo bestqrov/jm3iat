@@ -489,3 +489,30 @@ export const assetsApi = {
   update:   (id: string, data: any)     => api.put(`/assets/${id}`, data),
   remove:   (id: string)                => api.delete(`/assets/${id}`),
 };
+
+// ---- Sports ----
+export const sportsApi = {
+  getStats:   ()                              => api.get('/sports/stats'),
+  // Teams
+  getTeams:   ()                              => api.get('/sports/teams'),
+  createTeam: (data: any)                     => api.post('/sports/teams', data),
+  updateTeam: (id: string, data: any)         => api.put(`/sports/teams/${id}`, data),
+  deleteTeam: (id: string)                    => api.delete(`/sports/teams/${id}`),
+  // Players
+  getPlayers:   (params?: any)                => api.get('/sports/players', { params }),
+  createPlayer: (data: any)                   => api.post('/sports/players', data),
+  updatePlayer: (id: string, data: any)       => api.put(`/sports/players/${id}`, data),
+  deletePlayer: (id: string)                  => api.delete(`/sports/players/${id}`),
+  // Trainings
+  getTrainings:   (params?: any)              => api.get('/sports/trainings', { params }),
+  createTraining: (data: any)                 => api.post('/sports/trainings', data),
+  updateTraining: (id: string, data: any)     => api.put(`/sports/trainings/${id}`, data),
+  deleteTraining: (id: string)                => api.delete(`/sports/trainings/${id}`),
+  markAttendance: (data: any)                 => api.post('/sports/trainings/attendance', data),
+  // Matches
+  getMatches:     (params?: any)              => api.get('/sports/matches', { params }),
+  createMatch:    (data: any)                 => api.post('/sports/matches', data),
+  updateMatch:    (id: string, data: any)     => api.put(`/sports/matches/${id}`, data),
+  deleteMatch:    (id: string)                => api.delete(`/sports/matches/${id}`),
+  upsertMatchStat:(matchId: string, data: any)=> api.post(`/sports/matches/${matchId}/stats`, data),
+};
