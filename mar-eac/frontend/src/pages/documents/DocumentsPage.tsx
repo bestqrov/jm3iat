@@ -153,7 +153,7 @@ export const DocumentsPage: React.FC = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [form, setForm] = useState({ title: '', type: 'OTHER' });
+  const [form, setForm] = useState({ title: '', type: 'OTHER', documentDate: '' });
   const [file, setFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -173,7 +173,7 @@ export const DocumentsPage: React.FC = () => {
       await documentsApi.upload(file, form);
       setShowModal(false);
       setFile(null);
-      setForm({ title: '', type: 'OTHER' });
+      setForm({ title: '', type: 'OTHER', documentDate: '' });
       load();
     } catch (err: any) {
       alert(err.response?.data?.message || t('common.error'));
@@ -259,7 +259,11 @@ export const DocumentsPage: React.FC = () => {
                     <span className={typeColors[doc.type]}>{t(`documents.types.${doc.type}`)}</span>
                     <span className="text-xs text-gray-400">{formatFileSize(doc.size)}</span>
                   </div>
-                  <div className="text-xs text-gray-400 mb-3">{formatDate(doc.createdAt, lang)}</div>
+                  <div className="text-xs text-gray-400 mb-3">
+                    {doc.documentDate
+                      ? (lang === 'ar' ? `تاريخ الوثيقة: ${formatDate(doc.documentDate, lang)}` : `Date doc. : ${formatDate(doc.documentDate, lang)}`)
+                      : formatDate(doc.createdAt, lang)}
+                  </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleDownload(doc)} className="flex-1 btn-secondary text-xs py-1.5 justify-center">
                       <Download size={13} />{t('documents.download')}
@@ -396,6 +400,10 @@ export const DocumentsPage: React.FC = () => {
           <div>
             <label className="label">{t('documents.docTitle')}</label>
             <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">{lang === 'ar' ? 'تاريخ الوثيقة' : 'Date du document'}</label>
+            <input className="input" type="date" value={form.documentDate} onChange={(e) => setForm({ ...form, documentDate: e.target.value })} />
           </div>
           <div>
             <label className="label">{t('documents.type')}</label>

@@ -232,6 +232,7 @@ model Document {
   url            String
   filename       String?
   size           Int?
+  documentDate   DateTime?
   meetingId      String?  @db.ObjectId
   projectId      String?  @db.ObjectId
   createdAt      DateTime @default(now())

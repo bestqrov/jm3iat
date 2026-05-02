@@ -38,7 +38,7 @@ const upload = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-    const { title, type, meetingId, projectId } = req.body;
+    const { title, type, meetingId, projectId, documentDate } = req.body;
 
     const doc = await prisma.document.create({
       data: {
@@ -48,6 +48,7 @@ const upload = async (req, res) => {
         url: `/uploads/${req.file.filename}`,
         filename: req.file.originalname,
         size: req.file.size,
+        documentDate: documentDate ? new Date(documentDate) : null,
         meetingId: meetingId || null,
         projectId: projectId || null,
       },
