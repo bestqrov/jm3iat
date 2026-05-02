@@ -802,38 +802,6 @@ export const SettingsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Bureau creation date */}
-          <div>
-            <label className="label flex items-center gap-1.5">
-              <CalendarDays size={13} className="text-orange-500" />
-              {lang === 'ar' ? 'تاريخ إنشاء المكتب (للتذكير بالتجديد)' : 'Date de création du bureau (rappel renouvellement)'}
-            </label>
-            <input
-              className="input"
-              type="date"
-              value={infoFormFr.bureauCreationDate}
-              onChange={(e) => setInfoFormFr({ ...infoFormFr, bureauCreationDate: e.target.value })}
-            />
-            {org?.bureauCreationDate && (() => {
-              const termYears = (mandateDuration !== '' ? mandateDuration : org?.mandateDuration || 3) as number;
-              const expiry = new Date(org.bureauCreationDate);
-              expiry.setFullYear(expiry.getFullYear() + termYears);
-              const daysLeft = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-              return (
-                <p className={`text-xs mt-1 ${daysLeft <= 30 ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
-                  {lang === 'ar'
-                    ? `تنتهي صلاحية المكتب في: ${expiry.toLocaleDateString('ar-MA')} (${daysLeft > 0 ? `${daysLeft} ${arabicDays(daysLeft)} متبقية` : 'منتهية'})`
-                    : `Expiration du bureau : ${expiry.toLocaleDateString('fr-FR')} (${daysLeft > 0 ? `${daysLeft} jour(s) restant(s)` : 'expiré'})`}
-                </p>
-              );
-            })()}
-            <p className="text-xs text-gray-400 mt-1">
-              {lang === 'ar'
-                ? 'ستتلقى تذكيرات كل 4 أيام خلال الـ 30 يوماً الأخيرة قبل انتهاء مدة الانتداب'
-                : 'Rappels envoyés tous les 4 jours pendant les 30 derniers jours avant la fin du mandat'}
-            </p>
-          </div>
-
           {/* Mandate duration */}
           <div>
             <label className="label flex items-center gap-1.5">
@@ -878,6 +846,38 @@ export const SettingsPage: React.FC = () => {
                   : `Mandat de ${mandateDuration} an(s) — rappels envoyés avant expiration`}
               </p>
             )}
+          </div>
+
+          {/* Bureau creation date */}
+          <div>
+            <label className="label flex items-center gap-1.5">
+              <CalendarDays size={13} className="text-orange-500" />
+              {lang === 'ar' ? 'تاريخ إنشاء المكتب (للتذكير بالتجديد)' : 'Date de création du bureau (rappel renouvellement)'}
+            </label>
+            <input
+              className="input"
+              type="date"
+              value={infoFormFr.bureauCreationDate}
+              onChange={(e) => setInfoFormFr({ ...infoFormFr, bureauCreationDate: e.target.value })}
+            />
+            {org?.bureauCreationDate && (() => {
+              const termYears = (mandateDuration !== '' ? mandateDuration : org?.mandateDuration || 3) as number;
+              const expiry = new Date(org.bureauCreationDate);
+              expiry.setFullYear(expiry.getFullYear() + termYears);
+              const daysLeft = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+              return (
+                <p className={`text-xs mt-1 ${daysLeft <= 30 ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
+                  {lang === 'ar'
+                    ? `تنتهي صلاحية المكتب في: ${expiry.toLocaleDateString('ar-MA')} (${daysLeft > 0 ? `${daysLeft} ${arabicDays(daysLeft)} متبقية` : 'منتهية'})`
+                    : `Expiration du bureau : ${expiry.toLocaleDateString('fr-FR')} (${daysLeft > 0 ? `${daysLeft} jour(s) restant(s)` : 'expiré'})`}
+                </p>
+              );
+            })()}
+            <p className="text-xs text-gray-400 mt-1">
+              {lang === 'ar'
+                ? 'ستتلقى تذكيرات كل 4 أيام خلال الـ 30 يوماً الأخيرة قبل انتهاء مدة الانتداب'
+                : 'Rappels envoyés tous les 4 jours pendant les 30 derniers jours avant la fin du mandat'}
+            </p>
           </div>
 
           {/* Activities */}
