@@ -154,7 +154,7 @@ const scheduleMonthlyReminders = () => {
 };
 
 // Bureau expiry cron — every 4 days at 09:00
-// Sends a reminder/notification to any org whose bureauCreationDate + 3 years falls within 30 days
+// Sends a reminder/notification to any org whose bureauCreationDate + mandateDuration years falls within 30 days
 const scheduleBureauExpiryReminders = () => {
   cron.schedule('0 9 */4 * *', async () => {
     console.log('[Cron] Checking bureau expiry dates...');
@@ -169,8 +169,9 @@ const scheduleBureauExpiryReminders = () => {
       for (const org of orgs) {
         if (!org.subscription || ['EXPIRED', 'CANCELLED'].includes(org.subscription.status)) continue;
 
+        const termYears = org.mandateDuration || 3;
         const expiry = new Date(org.bureauCreationDate);
-        expiry.setFullYear(expiry.getFullYear() + 3);
+        expiry.setFullYear(expiry.getFullYear() + termYears);
 
         const msLeft = expiry.getTime() - now.getTime();
         const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));

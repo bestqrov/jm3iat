@@ -20,6 +20,7 @@ model Organization {
   description  String?
   foundingDate       DateTime?
   bureauCreationDate DateTime?
+  mandateDuration    Int?      // term length in years: 1, 2, 3, 4, or custom
   activities         String?
   adminHistory       String?
   // ── Arabic profile ──────────────────────────────

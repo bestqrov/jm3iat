@@ -55,6 +55,8 @@ export const SettingsPage: React.FC = () => {
     adminHistory: org?.adminHistory || '',
   });
 
+  const [mandateDuration, setMandateDuration] = useState<number | ''>(org?.mandateDuration || '');
+
   const [infoFormAr, setInfoFormAr] = useState({
     activitiesAr: org?.activitiesAr || '',
     adminHistoryAr: org?.adminHistoryAr || '',
@@ -192,11 +194,12 @@ export const SettingsPage: React.FC = () => {
         await authApi.updateOrganization({
           foundingDate: infoFormFr.foundingDate,
           bureauCreationDate: infoFormFr.bureauCreationDate,
+          mandateDuration: mandateDuration !== '' ? mandateDuration : null,
           activitiesAr: infoFormAr.activitiesAr,
           adminHistoryAr: infoFormAr.adminHistoryAr,
         });
       } else {
-        await authApi.updateOrganization(infoFormFr);
+        await authApi.updateOrganization({ ...infoFormFr, mandateDuration: mandateDuration !== '' ? mandateDuration : null });
       }
       showSuccess('info');
     } catch { setError('info'); } finally { setSaving(null); }
@@ -812,8 +815,9 @@ export const SettingsPage: React.FC = () => {
               onChange={(e) => setInfoFormFr({ ...infoFormFr, bureauCreationDate: e.target.value })}
             />
             {org?.bureauCreationDate && (() => {
+              const termYears = (mandateDuration !== '' ? mandateDuration : org?.mandateDuration || 3) as number;
               const expiry = new Date(org.bureauCreationDate);
-              expiry.setFullYear(expiry.getFullYear() + 3);
+              expiry.setFullYear(expiry.getFullYear() + termYears);
               const daysLeft = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
               return (
                 <p className={`text-xs mt-1 ${daysLeft <= 30 ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
@@ -825,9 +829,55 @@ export const SettingsPage: React.FC = () => {
             })()}
             <p className="text-xs text-gray-400 mt-1">
               {lang === 'ar'
-                ? 'ستتلقى تذكيرات كل 4 أيام خلال الـ 30 يوماً الأخيرة قبل انتهاء مدة 3 سنوات'
-                : 'Rappels envoyés tous les 4 jours pendant les 30 derniers jours avant l\'expiration (3 ans)'}
+                ? 'ستتلقى تذكيرات كل 4 أيام خلال الـ 30 يوماً الأخيرة قبل انتهاء مدة الانتداب'
+                : 'Rappels envoyés tous les 4 jours pendant les 30 derniers jours avant la fin du mandat'}
             </p>
+          </div>
+
+          {/* Mandate duration */}
+          <div>
+            <label className="label flex items-center gap-1.5">
+              <CalendarDays size={13} className="text-purple-500" />
+              {lang === 'ar' ? 'مدة الانتداب' : 'Durée du mandat'}
+            </label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {[1, 2, 3, 4].map((yr) => (
+                <button
+                  key={yr}
+                  type="button"
+                  onClick={() => setMandateDuration(mandateDuration === yr ? '' : yr)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    mandateDuration === yr
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-purple-400'
+                  }`}
+                >
+                  {yr} {lang === 'ar' ? 'سنة' : yr === 1 ? 'an' : 'ans'}
+                </button>
+              ))}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">{lang === 'ar' ? 'أخرى:' : 'Autre:'}</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  placeholder="…"
+                  value={![1,2,3,4,''].includes(mandateDuration as any) ? mandateDuration : ''}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value);
+                    setMandateDuration(isNaN(v) ? '' : v);
+                  }}
+                  className="input w-20 py-1.5 text-sm"
+                />
+              </div>
+            </div>
+            {mandateDuration !== '' && (
+              <p className="text-xs text-purple-500 mt-1.5">
+                {lang === 'ar'
+                  ? `مدة الانتداب: ${mandateDuration} سنة — ستصلك تذكيرات قبل انتهائها`
+                  : `Mandat de ${mandateDuration} an(s) — rappels envoyés avant expiration`}
+              </p>
+            )}
           </div>
 
           {/* Activities */}

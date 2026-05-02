@@ -198,7 +198,7 @@ const updateOrganization = async (req, res) => {
     const {
       name, email, phone, address, city, region, description, foundingDate, bureauCreationDate, activities, adminHistory,
       nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
-      bankName, bankAccount, bankRib, membershipFee, assocType,
+      bankName, bankAccount, bankRib, membershipFee, assocType, mandateDuration,
       whatsapp, facebook, instagram, tiktok, youtube,
     } = req.body;
     const orgId = req.user.organizationId;
@@ -215,6 +215,7 @@ const updateOrganization = async (req, res) => {
         nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
         bankName, bankAccount, bankRib,
         membershipFee: membershipFee !== undefined ? parseFloat(membershipFee) || null : undefined,
+        mandateDuration: mandateDuration !== undefined ? (parseInt(mandateDuration) || null) : undefined,
         ...(assocType ? { assocType } : {}),
         whatsapp, facebook, instagram, tiktok, youtube,
         ...(email ? { email } : {}),
