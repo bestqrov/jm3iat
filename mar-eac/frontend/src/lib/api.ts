@@ -69,7 +69,7 @@ export const meetingsApi = {
     fd.append('file', file);
     return api.post(`/meetings/${id}/pv/upload`, fd);
   },
-  generatePV: (id: string) => api.get(`/meetings/${id}/pv/generate`, { responseType: 'blob' }),
+  generatePV: (id: string, lang = 'ar') => api.get(`/meetings/${id}/pv/generate`, { responseType: 'blob', params: { lang } }),
   getStats: () => api.get('/meetings/stats'),
 };
 

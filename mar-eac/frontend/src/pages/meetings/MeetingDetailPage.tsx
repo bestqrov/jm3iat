@@ -109,7 +109,7 @@ export const MeetingDetailPage: React.FC = () => {
   const handleGeneratePV = async () => {
     if (!id) return;
     try {
-      const res = await meetingsApi.generatePV(id);
+      const res = await meetingsApi.generatePV(id, lang);
       downloadBlob(new Blob([res.data], { type: 'application/pdf' }), `PV_${meeting?.title}.pdf`);
     } catch {}
   };
