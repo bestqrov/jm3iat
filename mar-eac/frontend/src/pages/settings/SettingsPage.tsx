@@ -86,11 +86,10 @@ export const SettingsPage: React.FC = () => {
     } catch { setError('social'); } finally { setSaving(null); }
   };
 
-  const [profileForm, setProfileForm] = useState({
-    name: user?.name || '',
-    currentPassword: '',
-    newPassword: '',
-  });
+  const [profileForm, setProfileForm] = useState({ name: user?.name || '' });
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState(false);
 
   const [logoLocalPreview, setLogoLocalPreview] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -270,28 +269,46 @@ export const SettingsPage: React.FC = () => {
 
   const handleSaveProfile = async () => {
     setProfileError('');
-    // Client-side guard: if user is changing password, both fields are required
-    if (profileForm.newPassword && !profileForm.currentPassword) {
-      setProfileError(lang === 'ar' ? 'يرجى إدخال كلمة المرور الحالية' : 'Veuillez saisir le mot de passe actuel');
-      return;
-    }
-    if (profileForm.currentPassword && !profileForm.newPassword) {
-      setProfileError(lang === 'ar' ? 'يرجى إدخال كلمة المرور الجديدة' : 'Veuillez saisir le nouveau mot de passe');
-      return;
-    }
     setSaving('profile');
     try {
-      await authApi.updateProfile(profileForm);
+      await authApi.updateProfile({ name: profileForm.name });
       await refreshUser();
-      // Clear password fields after successful save
-      setProfileForm(p => ({ ...p, currentPassword: '', newPassword: '' }));
       showSuccess('profile');
     } catch (err: any) {
       const msg = err?.response?.data?.message;
-      setProfileError(
-        msg ||
-        (lang === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Erreur lors de la sauvegarde')
-      );
+      setProfileError(msg || (lang === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Erreur lors de la sauvegarde'));
+    } finally { setSaving(null); }
+  };
+
+  const handleChangePassword = async () => {
+    setPwError('');
+    setPwSuccess(false);
+    const { currentPassword, newPassword, confirmPassword } = pwForm;
+    if (!currentPassword) {
+      setPwError(lang === 'ar' ? 'يرجى إدخال كلمة المرور الحالية' : 'Veuillez saisir le mot de passe actuel');
+      return;
+    }
+    if (!newPassword) {
+      setPwError(lang === 'ar' ? 'يرجى إدخال كلمة المرور الجديدة' : 'Veuillez saisir le nouveau mot de passe');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPwError(lang === 'ar' ? 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل' : 'Le nouveau mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+    if (confirmPassword && confirmPassword !== newPassword) {
+      setPwError(lang === 'ar' ? 'كلمتا المرور غير متطابقتين' : 'Les mots de passe ne correspondent pas');
+      return;
+    }
+    setSaving('password');
+    try {
+      await authApi.updateProfile({ currentPassword, newPassword });
+      setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPwSuccess(true);
+      setTimeout(() => setPwSuccess(false), 4000);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      setPwError(msg || (lang === 'ar' ? 'حدث خطأ أثناء تغيير كلمة المرور' : 'Erreur lors du changement de mot de passe'));
     } finally { setSaving(null); }
   };
 
@@ -958,20 +975,32 @@ export const SettingsPage: React.FC = () => {
             <input className="input" value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} />
           </div>
 
-          {/* Password change section */}
-          <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3 bg-gray-50 dark:bg-gray-700/30">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              {lang === 'ar' ? 'تغيير كلمة المرور (اختياري)' : 'Changer le mot de passe (optionnel)'}
+          {/* Error + save for name */}
+          {profileError && (
+            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400 flex items-start gap-2">
+              <span className="flex-shrink-0 mt-0.5">⚠</span>
+              <span>{profileError}</span>
+            </div>
+          )}
+          <button onClick={handleSaveProfile} disabled={saving === 'profile'} className="btn-primary">
+            {saving === 'profile' ? t('common.loading') : t('common.save')}
+            {success === 'profile' && <span className="ms-1">✓</span>}
+          </button>
+
+          {/* ── Password change (separate section) ── */}
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-5 mt-2 space-y-3">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              {lang === 'ar' ? '🔑 تغيير كلمة المرور' : '🔑 Changer le mot de passe'}
             </p>
             <div>
               <label className="label">{lang === 'ar' ? 'كلمة المرور الحالية' : 'Mot de passe actuel'}</label>
               <input
                 className="input"
                 type="password"
-                autoComplete="current-password"
-                placeholder={lang === 'ar' ? 'اتركها فارغة إن لم تريد التغيير' : 'Laisser vide pour ne pas modifier'}
-                value={profileForm.currentPassword}
-                onChange={(e) => { setProfileError(''); setProfileForm({ ...profileForm, currentPassword: e.target.value }); }}
+                autoComplete="off"
+                placeholder={lang === 'ar' ? 'أدخل كلمة المرور الحالية' : 'Saisir le mot de passe actuel'}
+                value={pwForm.currentPassword}
+                onChange={(e) => { setPwError(''); setPwForm({ ...pwForm, currentPassword: e.target.value }); }}
               />
             </div>
             <div>
@@ -979,35 +1008,51 @@ export const SettingsPage: React.FC = () => {
               <input
                 className="input"
                 type="password"
-                autoComplete="new-password"
+                autoComplete="off"
                 placeholder={lang === 'ar' ? '8 أحرف على الأقل' : 'Minimum 8 caractères'}
-                value={profileForm.newPassword}
-                onChange={(e) => { setProfileError(''); setProfileForm({ ...profileForm, newPassword: e.target.value }); }}
+                value={pwForm.newPassword}
+                onChange={(e) => { setPwError(''); setPwForm({ ...pwForm, newPassword: e.target.value }); }}
               />
+              {pwForm.newPassword.length > 0 && pwForm.newPassword.length < 8 && (
+                <p className="text-xs text-amber-600 mt-1">⚠ {lang === 'ar' ? 'أقل من 8 أحرف' : 'Moins de 8 caractères'}</p>
+              )}
             </div>
-            {profileForm.newPassword && profileForm.newPassword.length < 8 && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
-                {lang === 'ar' ? '⚠ كلمة المرور قصيرة جداً (8 أحرف على الأقل)' : '⚠ Mot de passe trop court (min. 8 caractères)'}
-              </p>
+            <div>
+              <label className="label">{lang === 'ar' ? 'تأكيد كلمة المرور الجديدة' : 'Confirmer le nouveau mot de passe'}</label>
+              <input
+                className="input"
+                type="password"
+                autoComplete="off"
+                placeholder={lang === 'ar' ? 'أعد كتابة كلمة المرور الجديدة' : 'Répéter le nouveau mot de passe'}
+                value={pwForm.confirmPassword}
+                onChange={(e) => { setPwError(''); setPwForm({ ...pwForm, confirmPassword: e.target.value }); }}
+              />
+              {pwForm.confirmPassword.length > 0 && pwForm.confirmPassword !== pwForm.newPassword && (
+                <p className="text-xs text-red-500 mt-1">⚠ {lang === 'ar' ? 'كلمتا المرور غير متطابقتين' : 'Les mots de passe ne correspondent pas'}</p>
+              )}
+            </div>
+
+            {pwError && (
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400 flex items-start gap-2">
+                <span className="flex-shrink-0">⚠</span>
+                <span>{pwError}</span>
+              </div>
             )}
+            {pwSuccess && (
+              <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                <span>✓</span>
+                <span>{lang === 'ar' ? 'تم تغيير كلمة المرور بنجاح — استخدمها في تسجيل دخولك التالي' : 'Mot de passe changé avec succès — utilisez-le à votre prochaine connexion'}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleChangePassword}
+              disabled={saving === 'password' || !pwForm.currentPassword || !pwForm.newPassword || pwForm.newPassword.length < 8 || (!!pwForm.confirmPassword && pwForm.confirmPassword !== pwForm.newPassword)}
+              className="btn-primary"
+            >
+              {saving === 'password' ? t('common.loading') : (lang === 'ar' ? 'تغيير كلمة المرور' : 'Changer le mot de passe')}
+            </button>
           </div>
-
-          {/* Error message */}
-          {profileError && (
-            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400 flex items-start gap-2">
-              <span className="flex-shrink-0 mt-0.5">⚠</span>
-              <span>{profileError}</span>
-            </div>
-          )}
-
-          <button
-            onClick={handleSaveProfile}
-            disabled={saving === 'profile' || (!!profileForm.newPassword && profileForm.newPassword.length < 8)}
-            className="btn-primary"
-          >
-            {saving === 'profile' ? t('common.loading') : t('common.save')}
-            {success === 'profile' && <span className="ms-1">✓</span>}
-          </button>
         </div>
       </div>
 
