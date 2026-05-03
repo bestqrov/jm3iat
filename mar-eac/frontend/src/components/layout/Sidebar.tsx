@@ -6,7 +6,7 @@ import {
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
   Building2, FolderKanban, Layers, CreditCard, Bus,
   Activity, RefreshCw, Trophy, Landmark, Wallet, ClipboardList,
-  Send, BookOpen, Handshake,
+  Send, BookOpen, Store,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -111,7 +111,7 @@ const getOrgTheme = (modules: string[]): OrgTheme => {
     badgeBg: 'bg-teal-100 dark:bg-teal-900/30',
     badgeText: 'text-teal-700 dark:text-teal-300',
     stripeBg: 'linear-gradient(90deg, #0f766e, #0d9488)',
-    icon: <Handshake size={14} />,
+    icon: <Store size={14} />,
     labelFr: 'Coopérative',
     labelAr: 'تعاونية',
   };
@@ -256,7 +256,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
         ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',     icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]                            : []),
         ...(hasModule('TRANSPORT')  ? [{ to: '/transport', icon: <Bus size={18} />,         label: t('nav.transport') }]                        : []),
         ...(hasModule('SPORTS')     ? [{ to: '/sports',    icon: <Trophy size={18} />,      label: isAr ? 'الرياضة' : 'Sports' }]               : []),
-        ...(hasModule('COOP')       ? [{ to: '/coop',      icon: <Handshake size={18} />,   label: t('nav.coop') }]                             : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop',      icon: <Store size={18} />,   label: t('nav.coop') }]                             : []),
       ],
     }] : []),
 

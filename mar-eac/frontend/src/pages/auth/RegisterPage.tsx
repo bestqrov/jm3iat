@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Eye, EyeOff, CheckCircle, Building2, FolderKanban,
   Droplets, ShoppingBag, ChevronRight, ChevronLeft,
-  Bus, DatabaseBackup, MessageCircle, Shield, Trophy, Handshake,
+  Bus, DatabaseBackup, MessageCircle, Shield, Trophy, Store,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -77,7 +77,7 @@ const MODULES: ModuleDef[] = [
   },
   {
     key: 'COOP',
-    icon: <Handshake size={24} />,
+    icon: <Store size={24} />,
     labelAr: 'التعاونية',
     labelFr: 'Coopérative',
     descAr: 'تسيير الحصص الاجتماعية، المخزون، الفواتير والعروض',
