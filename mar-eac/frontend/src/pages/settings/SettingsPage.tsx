@@ -68,6 +68,11 @@ export const SettingsPage: React.FC = () => {
     bankAccount: org?.bankAccount || '',
     bankRib: org?.bankRib || '',
     membershipFee: org?.membershipFee != null ? String(org.membershipFee) : '',
+    ice: (org as any)?.ice || '',
+    registreCommerce: (org as any)?.registreCommerce || '',
+    identifiantFiscal: (org as any)?.identifiantFiscal || '',
+    capitalSocial: (org as any)?.capitalSocial != null ? String((org as any).capitalSocial) : '',
+    partsValeur: (org as any)?.partsValeur != null ? String((org as any).partsValeur) : '',
   });
 
   const [socialForm, setSocialForm] = useState({
@@ -639,6 +644,35 @@ export const SettingsPage: React.FC = () => {
                     ? 'ستظهر هذه الرسوم في صفحة الانضمام العامة للجمعية'
                     : 'Ce montant sera affiché sur la page publique de demande d\'adhésion'}
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Cooperative legal identifiers */}
+          <div className="card">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              {lang === 'ar' ? 'المعرفات القانونية (للتعاونيات)' : 'Identifiants légaux (Coopératives)'}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="label">ICE</label>
+                <input className="input font-mono" value={contactForm.ice} onChange={e => setContactForm({ ...contactForm, ice: e.target.value })} placeholder="000000000000000" maxLength={15} />
+              </div>
+              <div>
+                <label className="label">{lang === 'ar' ? 'المعرف الجبائي (IF)' : 'Identifiant Fiscal (IF)'}</label>
+                <input className="input font-mono" value={contactForm.identifiantFiscal} onChange={e => setContactForm({ ...contactForm, identifiantFiscal: e.target.value })} placeholder="00000000" />
+              </div>
+              <div>
+                <label className="label">{lang === 'ar' ? 'السجل التجاري (RC)' : 'Registre de Commerce (RC)'}</label>
+                <input className="input font-mono" value={contactForm.registreCommerce} onChange={e => setContactForm({ ...contactForm, registreCommerce: e.target.value })} placeholder="12345" />
+              </div>
+              <div>
+                <label className="label">{lang === 'ar' ? 'رأس المال الاجتماعي (درهم)' : 'Capital social (MAD)'}</label>
+                <input className="input" type="number" min="0" value={contactForm.capitalSocial} onChange={e => setContactForm({ ...contactForm, capitalSocial: e.target.value })} placeholder="50000" />
+              </div>
+              <div>
+                <label className="label">{lang === 'ar' ? 'قيمة الحصة الواحدة (درهم)' : 'Valeur d\'une part sociale (MAD)'}</label>
+                <input className="input" type="number" min="0" value={contactForm.partsValeur} onChange={e => setContactForm({ ...contactForm, partsValeur: e.target.value })} placeholder="100" />
               </div>
             </div>
           </div>

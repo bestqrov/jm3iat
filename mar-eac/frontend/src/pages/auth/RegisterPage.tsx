@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Eye, EyeOff, CheckCircle, Building2, FolderKanban,
   Droplets, ShoppingBag, ChevronRight, ChevronLeft,
-  Bus, DatabaseBackup, MessageCircle, Shield, Trophy,
+  Bus, DatabaseBackup, MessageCircle, Shield, Trophy, Handshake,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -11,7 +11,7 @@ import { translations } from '../../i18n';
 
 // ─── Selectable modules ────────────────────────────────────────────────────────
 
-type ModuleKey = 'PROJECTS' | 'WATER' | 'TRANSPORT' | 'SPORTS' | 'PRODUCTIVE';
+type ModuleKey = 'PROJECTS' | 'WATER' | 'TRANSPORT' | 'SPORTS' | 'PRODUCTIVE' | 'COOP';
 
 interface ModuleDef {
   key: ModuleKey;
@@ -74,6 +74,16 @@ const MODULES: ModuleDef[] = [
     descFr: 'Gestion de production, stocks, ventes et clients',
     color: 'border-emerald-200 text-emerald-600 bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-900/20',
     selectedColor: 'border-emerald-500 ring-emerald-400 bg-emerald-100 dark:bg-emerald-900/40',
+  },
+  {
+    key: 'COOP',
+    icon: <Handshake size={24} />,
+    labelAr: 'التعاونية',
+    labelFr: 'Coopérative',
+    descAr: 'تسيير الحصص الاجتماعية، المخزون، الفواتير والعروض',
+    descFr: 'Parts sociales, stock, factures, devis et bons de livraison',
+    color: 'border-teal-200 text-teal-600 bg-teal-50 dark:border-teal-700 dark:text-teal-400 dark:bg-teal-900/20',
+    selectedColor: 'border-teal-500 ring-teal-400 bg-teal-100 dark:bg-teal-900/40',
   },
 ];
 

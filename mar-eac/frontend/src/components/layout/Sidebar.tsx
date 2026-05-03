@@ -6,7 +6,7 @@ import {
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
   Building2, FolderKanban, Layers, CreditCard, Bus,
   Activity, RefreshCw, Trophy, Landmark, Wallet, ClipboardList,
-  Send, BookOpen,
+  Send, BookOpen, Handshake,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -47,6 +47,7 @@ const getOrgTheme = (modules: string[]): OrgTheme => {
   const hasProd   = modules.includes('PRODUCTIVE');
   const hasProj   = modules.includes('PROJECTS');
   const hasSports = modules.includes('SPORTS');
+  const hasCoop   = modules.includes('COOP');
 
   if (hasWater && hasProd) return {
     logoBg: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
@@ -102,6 +103,17 @@ const getOrgTheme = (modules: string[]): OrgTheme => {
     icon: <Trophy size={14} />,
     labelFr: 'Association sportive',
     labelAr: 'جمعية رياضية',
+  };
+  if (hasCoop) return {
+    logoBg: 'linear-gradient(135deg, #0f766e, #0d9488)',
+    activeClass: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 font-semibold',
+    activeBorder: '#0f766e',
+    badgeBg: 'bg-teal-100 dark:bg-teal-900/30',
+    badgeText: 'text-teal-700 dark:text-teal-300',
+    stripeBg: 'linear-gradient(90deg, #0f766e, #0d9488)',
+    icon: <Handshake size={14} />,
+    labelFr: 'Coopérative',
+    labelAr: 'تعاونية',
   };
   return {
     logoBg: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
@@ -234,7 +246,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     },
 
     // ── 6. Modules spécialisés ────────────────────────────────────────────────
-    ...(isFullAccess && (hasModule('PROJECTS') || hasModule('WATER') || hasModule('PRODUCTIVE') || hasModule('TRANSPORT') || hasModule('SPORTS')) ? [{
+    ...(isFullAccess && (hasModule('PROJECTS') || hasModule('WATER') || hasModule('PRODUCTIVE') || hasModule('TRANSPORT') || hasModule('SPORTS') || hasModule('COOP')) ? [{
       label: isAr ? 'الوحدات التخصصية' : 'Modules spécialisés',
       color: 'text-teal-500 dark:text-teal-400',
       dotColor: 'bg-teal-400',
@@ -244,6 +256,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
         ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',     icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]                            : []),
         ...(hasModule('TRANSPORT')  ? [{ to: '/transport', icon: <Bus size={18} />,         label: t('nav.transport') }]                        : []),
         ...(hasModule('SPORTS')     ? [{ to: '/sports',    icon: <Trophy size={18} />,      label: isAr ? 'الرياضة' : 'Sports' }]               : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop',      icon: <Handshake size={18} />,   label: t('nav.coop') }]                             : []),
       ],
     }] : []),
 

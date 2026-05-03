@@ -516,3 +516,27 @@ export const sportsApi = {
   deleteMatch:    (id: string)                => api.delete(`/sports/matches/${id}`),
   upsertMatchStat:(matchId: string, data: any)=> api.post(`/sports/matches/${matchId}/stats`, data),
 };
+
+// ---- Cooperatives ----
+export const coopApi = {
+  getStats:    ()                              => api.get('/coop/stats'),
+  getReports:  ()                              => api.get('/coop/reports'),
+  // Products
+  getProducts:    ()                           => api.get('/coop/products'),
+  createProduct:  (data: any)                  => api.post('/coop/products', data),
+  updateProduct:  (id: string, data: any)      => api.put(`/coop/products/${id}`, data),
+  deleteProduct:  (id: string)                 => api.delete(`/coop/products/${id}`),
+  // Stock movements
+  getMovements:   (params?: any)               => api.get('/coop/movements', { params }),
+  createMovement: (data: any)                  => api.post('/coop/movements', data),
+  deleteMovement: (id: string)                 => api.delete(`/coop/movements/${id}`),
+  // Member shares
+  getShares:    ()                             => api.get('/coop/shares'),
+  upsertShare:  (data: any)                    => api.post('/coop/shares', data),
+  deleteShare:  (id: string)                   => api.delete(`/coop/shares/${id}`),
+  // Invoices / Devis / BL
+  getInvoices:    (params?: any)               => api.get('/coop/invoices', { params }),
+  createInvoice:  (data: any)                  => api.post('/coop/invoices', data),
+  updateInvoice:  (id: string, data: any)      => api.put(`/coop/invoices/${id}`, data),
+  deleteInvoice:  (id: string)                 => api.delete(`/coop/invoices/${id}`),
+};

@@ -82,6 +82,16 @@ model Organization {
   sportTeams       SportTeam[]
   sportTrainings   SportTraining[]
   sportMatches     SportMatch[]
+  // Cooperatives module
+  ice               String?
+  registreCommerce  String?
+  identifiantFiscal String?
+  capitalSocial     Float?
+  partsValeur       Float?
+  coopStockProducts  CoopStockProduct[]
+  coopStockMovements CoopStockMovement[]
+  coopMemberShares   CoopMemberShare[]
+  coopInvoices       CoopInvoice[]
   // Pro features
   activityLogs       ActivityLog[]
   notifications      Notification[]
@@ -1011,4 +1021,89 @@ model SportMatchStat {
   player SportPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@unique([matchId, playerId])
+}
+
+// ── Cooperatives Module ───────────────────────────────────────────────────────
+
+model CoopStockProduct {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  name           String
+  nameAr         String?
+  unit           String   @default("unité")
+  category       String?
+  description    String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  movements    CoopStockMovement[]
+  invoiceItems CoopInvoiceItem[]
+}
+
+model CoopStockMovement {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  productId      String   @db.ObjectId
+  type           String   // IN | OUT | ADJUST
+  quantity       Float
+  unitPrice      Float?
+  date           DateTime @default(now())
+  reference      String?
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product      CoopStockProduct @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model CoopMemberShare {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String    @db.ObjectId
+  memberId       String    @db.ObjectId
+  memberName     String
+  sharesCount    Float     @default(0)
+  sharesPaid     Float     @default(0)
+  paidAt         DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([organizationId, memberId])
+}
+
+model CoopInvoice {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String    @db.ObjectId
+  type           String    @default("FACTURE") // DEVIS | FACTURE | BL
+  number         String
+  clientName     String
+  clientPhone    String?
+  clientAddress  String?
+  totalAmount    Float     @default(0)
+  status         String    @default("DRAFT") // DRAFT | SENT | PAID | CANCELLED
+  date           DateTime  @default(now())
+  dueDate        DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items        CoopInvoiceItem[]
+}
+
+model CoopInvoiceItem {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceId   String  @db.ObjectId
+  productId   String? @db.ObjectId
+  description String
+  quantity    Float
+  unitPrice   Float
+  subtotal    Float
+
+  invoice CoopInvoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product CoopStockProduct? @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
