@@ -1592,6 +1592,32 @@ const fr = {
   },
   coop: {
     title: 'Coopérative',
+    coopType: 'Type de coopérative',
+    coopTypes: {
+      AGRICULTURAL: { label: 'Agricole 🌾', desc: 'Production agricole, élevage, huiles, miel...' },
+      CRAFT:        { label: 'Artisanat 🎨', desc: 'Tapis, couture, poterie, produits argan...' },
+      FOOD:         { label: 'Alimentaire 🍯', desc: 'Couscous, pâtisseries, confitures, produits locaux...' },
+      SERVICES:     { label: 'Services 🛠️', desc: 'Transport, nettoyage, numérique, éducation...' },
+      HOUSING:      { label: 'Habitat 🏠', desc: 'Projets de logement coopératif' },
+      FISHING:      { label: 'Pêche maritime 🎣', desc: 'Commercialisation des produits de la mer' },
+      ECOMMERCE:    { label: 'E-commerce 💻', desc: 'Marketing digital et vente en ligne' },
+      OTHER:        { label: 'Autre', desc: "Autre type de coopérative" },
+    },
+    principles: {
+      title: 'Principes coopératifs',
+      items: [
+        '1 membre = 1 voix',
+        'Les bénéfices sont répartis entre membres',
+        'Coopération et solidarité',
+        'Autonomie et gouvernance démocratique',
+      ],
+    },
+    support: {
+      title: 'Organismes de soutien',
+      odco: { name: 'ODCO', desc: 'Office du Développement de la Coopération — référence pour l\'enregistrement' },
+      indh: { name: 'INDH', desc: 'Initiative Nationale pour le Développement Humain — soutien financier et technique' },
+      ada:  { name: 'ADA',  desc: "Agence de Développement Agricole — soutien aux coopératives agricoles" },
+    },
     tabs: {
       dashboard: 'Vue d\'ensemble',
       shares: 'Parts sociales',

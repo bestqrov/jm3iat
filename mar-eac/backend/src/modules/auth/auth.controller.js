@@ -200,7 +200,7 @@ const updateOrganization = async (req, res) => {
       nameAr, cityAr, regionAr, addressAr, descriptionAr, activitiesAr, adminHistoryAr,
       bankName, bankAccount, bankRib, membershipFee, assocType, mandateDuration,
       whatsapp, facebook, instagram, tiktok, youtube,
-      ice, registreCommerce, identifiantFiscal, capitalSocial, partsValeur,
+      ice, registreCommerce, identifiantFiscal, capitalSocial, partsValeur, coopType,
     } = req.body;
     const orgId = req.user.organizationId;
 
@@ -222,6 +222,7 @@ const updateOrganization = async (req, res) => {
         ice, registreCommerce, identifiantFiscal,
         capitalSocial: capitalSocial !== undefined ? (parseFloat(capitalSocial) || null) : undefined,
         partsValeur: partsValeur !== undefined ? (parseFloat(partsValeur) || null) : undefined,
+        ...(coopType !== undefined ? { coopType } : {}),
         ...(email ? { email } : {}),
         foundingDate: foundingDate ? new Date(foundingDate) : undefined,
         bureauCreationDate: bureauCreationDate ? new Date(bureauCreationDate) : undefined,

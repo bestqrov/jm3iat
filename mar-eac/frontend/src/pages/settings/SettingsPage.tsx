@@ -77,6 +77,7 @@ export const SettingsPage: React.FC = () => {
     identifiantFiscal: (org as any)?.identifiantFiscal || '',
     capitalSocial: (org as any)?.capitalSocial != null ? String((org as any).capitalSocial) : '',
     partsValeur: (org as any)?.partsValeur != null ? String((org as any).partsValeur) : '',
+    coopType: (org as any)?.coopType || '',
   });
 
   const [socialForm, setSocialForm] = useState({
@@ -652,11 +653,31 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Cooperative legal identifiers */}
+          {/* Cooperative legal identifiers — only shown for COOP module */}
+          {isCoop && (
           <div className="card">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              {lang === 'ar' ? 'المعرفات القانونية (للتعاونيات)' : 'Identifiants légaux (Coopératives)'}
+              {lang === 'ar' ? 'المعرفات القانونية للتعاونية' : 'Identifiants légaux — Coopérative'}
             </h3>
+            {/* Coop type */}
+            <div className="mb-4">
+              <label className="label">{lang === 'ar' ? 'نوع التعاونية' : 'Type de coopérative'}</label>
+              <select className="input" value={contactForm.coopType} onChange={e => setContactForm({ ...contactForm, coopType: e.target.value })}>
+                <option value="">{lang === 'ar' ? '— اختر النوع —' : '— Choisir le type —'}</option>
+                {[
+                  { key: 'AGRICULTURAL', ar: 'فلاحية 🌾',        fr: 'Agricole 🌾' },
+                  { key: 'CRAFT',        ar: 'صناعة تقليدية 🎨', fr: 'Artisanat 🎨' },
+                  { key: 'FOOD',         ar: 'غذائية 🍯',         fr: 'Alimentaire 🍯' },
+                  { key: 'SERVICES',     ar: 'خدمات 🛠️',          fr: 'Services 🛠️' },
+                  { key: 'HOUSING',      ar: 'سكن 🏠',            fr: 'Habitat 🏠' },
+                  { key: 'FISHING',      ar: 'صيد بحري 🎣',       fr: 'Pêche maritime 🎣' },
+                  { key: 'ECOMMERCE',    ar: 'تجارة إلكترونية 💻', fr: 'E-commerce 💻' },
+                  { key: 'OTHER',        ar: 'أخرى',               fr: 'Autre' },
+                ].map(ct => (
+                  <option key={ct.key} value={ct.key}>{lang === 'ar' ? ct.ar : ct.fr}</option>
+                ))}
+              </select>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="label">ICE</label>
@@ -680,6 +701,7 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
           </div>
+          )}
 
           <button onClick={handleSaveContact} disabled={saving === 'contact'} className="btn-primary">
             {saving === 'contact' ? t('common.loading') : t('common.save')}
