@@ -5,7 +5,7 @@ import {
   Bell, Droplets, ShoppingBag, Layers, Building2, FolderKanban,
   AlertCircle, CheckCircle, Wrench, Package, RefreshCw, Activity, Globe,
   Bus, MapPin, CreditCard, UserCheck, ArrowRightLeft, Sparkles, Crown,
-  ChevronDown, ChevronRight, Lock, X,
+  ChevronDown, ChevronRight, Lock, X, Store,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -98,6 +98,7 @@ export const DashboardPage: React.FC = () => {
   const hasProd      = hasModule('PRODUCTIVE');
   const hasProj      = hasModule('PROJECTS');
   const hasTransport = hasModule('TRANSPORT');
+  const hasCoop      = hasModule('COOP');
   const hasFinance   = mods.length > 0 || (sub?.plan && sub.plan !== 'BASIC');
 
   const trialDays = organization?.trialEndsAt ? getTrialDaysRemaining(organization.trialEndsAt) : null;
@@ -640,6 +641,38 @@ export const DashboardPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── COOP module — convert to cooperative ── */}
+      {hasCoop && (
+        <Link
+          to="/coop"
+          className="block rounded-2xl overflow-hidden border border-teal-200 dark:border-teal-800 hover:shadow-lg transition-shadow"
+          style={{ background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)' }}
+        >
+          <div className="p-5 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #0f766e, #0d9488)' }}>
+              <Store size={26} className="text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wide mb-0.5">
+                {isAr ? 'وحدة التعاونية' : 'Module Coopérative'}
+              </p>
+              <h3 className="text-base font-bold text-teal-900 dark:text-teal-100">
+                {isAr ? 'تحويل إلى تعاونية' : 'Convertir en coopérative'}
+              </h3>
+              <p className="text-xs text-teal-700 dark:text-teal-300 mt-0.5 truncate">
+                {isAr
+                  ? 'إدارة الحصص الاجتماعية، المخزون، الفواتير والتقارير'
+                  : 'Parts sociales, stock, factures, devis et rapports'}
+              </p>
+            </div>
+            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-teal-600 text-white">
+              {isAr ? '←' : '→'}
+            </div>
+          </div>
+        </Link>
       )}
 
       {/* ── Charts row ── */}
