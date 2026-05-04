@@ -7,6 +7,7 @@ import {
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { coopApi, membersApi, authApi } from '../../lib/api';
+import { translations } from '../../i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -81,6 +82,7 @@ export const CoopPage: React.FC = () => {
   const { t, lang } = useLanguage();
   const { organization, refreshUser } = useAuth();
   const ar = lang === 'ar';
+  const tr = translations[lang].coop as any;
 
   const [tab, setTab] = useState<Tab>('dashboard');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
@@ -283,7 +285,7 @@ export const CoopPage: React.FC = () => {
                 className="text-xs text-teal-100 hover:text-white flex items-center gap-1 transition-colors"
               >
                 {COOP_TYPES.find(c => c.key === (organization as any).coopType)?.emoji}{' '}
-                {(t('coop.coopTypes') as any)[(organization as any).coopType]?.label}
+                {tr.coopTypes?.[(organization as any).coopType]?.label}
                 <span className="opacity-60">✎</span>
               </button>
             ) : (
@@ -306,10 +308,10 @@ export const CoopPage: React.FC = () => {
 
       {/* ── Type selector modal ── */}
       {showTypeSelector && (
-        <Modal title={ar ? t('coop.coopType') as string : t('coop.coopType') as string} onClose={() => setShowTypeSelector(false)} wide>
+        <Modal title={t('coop.coopType')} onClose={() => setShowTypeSelector(false)} wide>
           <div className="grid grid-cols-2 gap-2">
             {COOP_TYPES.map(ct => {
-              const typeData = (t('coop.coopTypes') as any)[ct.key];
+              const typeData = tr.coopTypes?.[ct.key];
               const current = (organization as any)?.coopType === ct.key;
               return (
                 <button
@@ -397,10 +399,10 @@ export const CoopPage: React.FC = () => {
                 {/* Cooperative principles */}
                 <div className="bg-teal-50 dark:bg-teal-900/10 border border-teal-200 dark:border-teal-800 rounded-xl p-4">
                   <h4 className="font-semibold text-teal-800 dark:text-teal-200 text-sm mb-2 flex items-center gap-2">
-                    <span>⚖️</span>{(t('coop.principles') as any).title}
+                    <span>⚖️</span>{tr.principles?.title}
                   </h4>
                   <ul className="space-y-1">
-                    {((t('coop.principles') as any).items as string[]).map((item: string, i: number) => (
+                    {(tr.principles?.items as string[] || []).map((item: string, i: number) => (
                       <li key={i} className="text-xs text-teal-700 dark:text-teal-300 flex items-start gap-1.5">
                         <span className="text-teal-500 mt-0.5">✓</span>{item}
                       </li>
@@ -410,11 +412,11 @@ export const CoopPage: React.FC = () => {
                 {/* Support organizations */}
                 <div className="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4">
                   <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 text-sm mb-2 flex items-center gap-2">
-                    <span>🤝</span>{(t('coop.support') as any).title}
+                    <span>🤝</span>{tr.support?.title}
                   </h4>
                   <div className="space-y-2">
                     {(['odco', 'indh', 'ada'] as const).map(key => {
-                      const org = (t('coop.support') as any)[key];
+                      const org = tr.support?.[key];
                       return (
                         <div key={key} className="flex items-start gap-2">
                           <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded flex-shrink-0">{org.name}</span>
