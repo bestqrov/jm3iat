@@ -49,6 +49,10 @@ interface Organization {
   assocType?: string;
   trialEndsAt?: string;
   modules?: string[];
+  conversionStatus?: 'NONE' | 'PENDING_CONVERSION' | 'CONVERTED';
+  conversionRequestedAt?: string;
+  conversionApprovedAt?: string;
+  coopType?: string;
   subscription?: {
     plan: 'BASIC' | 'STANDARD' | 'PREMIUM';
     status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';

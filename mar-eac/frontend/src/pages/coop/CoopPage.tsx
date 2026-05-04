@@ -83,6 +83,8 @@ export const CoopPage: React.FC = () => {
   const { organization, refreshUser } = useAuth();
   const ar = lang === 'ar';
   const tr = translations[lang].coop as any;
+  const isConverted = (organization as any)?.conversionStatus === 'CONVERTED';
+  const currentYear = new Date().getFullYear();
 
   const [tab, setTab] = useState<Tab>('dashboard');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
@@ -705,68 +707,221 @@ export const CoopPage: React.FC = () => {
           {!reports && <div className="text-center py-16 text-gray-400">{ar ? 'جاري التحميل...' : 'Chargement...'}</div>}
           {reports && (
             <>
-              {/* Monthly revenue bar chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('coop.reports.monthlyRevenue')}</h3>
-                <div className="flex items-end gap-1 h-32">
-                  {reports.monthlyRevenue.map((v: number, i: number) => {
-                    const max = Math.max(...reports.monthlyRevenue, 1);
-                    const h = Math.round((v / max) * 100);
-                    return (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="text-[10px] text-gray-500 font-semibold">{v > 0 ? fmt(v) : ''}</div>
-                        <div className="w-full bg-indigo-500 rounded-t-sm" style={{ height: `${h}%`, minHeight: v > 0 ? '4px' : '0' }} />
-                        <div className="text-[9px] text-gray-400 rotate-0">{ar ? MONTHS_AR[i].slice(0,3) : MONTHS_FR[i]}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              {/* ── Comptable-grade annual report (converted coops only) ── */}
+              {isConverted && (
+                <div className="space-y-4" id="annual-report-print">
+                  {/* Report header */}
+                  <div className="rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)' }}>
+                    <p className="text-teal-100 text-xs uppercase tracking-widest mb-1">{ar ? 'التقرير السنوي' : 'RAPPORT ANNUEL'}</p>
+                    <h2 className="text-white font-bold text-xl">{organization?.nameAr || organization?.name}</h2>
+                    <p className="text-teal-100 text-sm mt-0.5">{ar ? `السنة المالية ${currentYear}` : `Exercice fiscal ${currentYear}`}</p>
+                    {(organization as any)?.ice && <p className="text-teal-200 text-xs mt-1">ICE: {(organization as any).ice}</p>}
+                    <button
+                      onClick={() => window.print()}
+                      className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm font-medium transition-colors"
+                    >
+                      🖨️ {ar ? 'طباعة / PDF' : 'Imprimer / PDF'}
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Invoice status */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('coop.reports.invoiceStatus')}</h3>
-                  <div className="space-y-2">
-                    {Object.entries(reports.invoicesByStatus).map(([s, cnt]) => (
-                      <div key={s} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{(t('coop.invoices') as any)[s]}</span>
-                        <span className={`text-sm font-bold ${s==='PAID' ? 'text-emerald-600' : s==='CANCELLED' ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'}`}>{cnt as number}</span>
+                  {/* ── 1. Compte de résultat (Income Statement) ── */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="bg-emerald-600 px-4 py-2.5 flex items-center gap-2">
+                      <TrendingUp size={16} className="text-white" />
+                      <h3 className="text-white font-bold text-sm">{ar ? 'حساب النتائج — رقم الأعمال' : 'Compte de Résultat — Chiffre d\'Affaires'}</h3>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{ar ? 'رقم الأعمال المحصَّل (فواتير مدفوعة)' : 'CA encaissé (factures payées)'}</span>
+                        <span className="font-bold text-emerald-600 text-base">{fmt(reports.totalRevenue)} MAD</span>
                       </div>
-                    ))}
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm text-gray-500">{ar ? 'مستحقات في الانتظار' : 'Créances en attente'}</span>
+                        <span className="font-semibold text-amber-600">{fmt(reports.pendingRevenue)} MAD</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 rounded-lg">
+                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{ar ? 'الرقم الإجمالي للأعمال' : 'CA Total (encaissé + attente)'}</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 text-lg">{fmt(reports.totalRevenue + reports.pendingRevenue)} MAD</span>
+                      </div>
+                    </div>
+                    {/* Monthly breakdown */}
+                    <div className="px-4 pb-4">
+                      <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">{ar ? 'التوزيع الشهري' : 'Répartition mensuelle'}</p>
+                      <div className="flex items-end gap-1 h-24">
+                        {reports.monthlyRevenue.map((v: number, i: number) => {
+                          const max = Math.max(...reports.monthlyRevenue, 1);
+                          const h = Math.round((v / max) * 100);
+                          return (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                              {v > 0 && <div className="text-[8px] text-gray-500 font-medium">{fmt(v)}</div>}
+                              <div className="w-full bg-emerald-500 rounded-t" style={{ height: `${h}%`, minHeight: v > 0 ? '3px' : '0' }} />
+                              <div className="text-[8px] text-gray-400">{ar ? MONTHS_AR[i].slice(0,3) : MONTHS_FR[i]}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── 2. État des parts sociales ── */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="bg-indigo-600 px-4 py-2.5 flex items-center gap-2">
+                      <Users size={16} className="text-white" />
+                      <h3 className="text-white font-bold text-sm">{ar ? 'حالة الحصص الاجتماعية ورأس المال' : 'État des Parts Sociales et Capital'}</h3>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { label: ar ? 'مجموع الحصص المكتتبة' : 'Parts souscrites', value: fmt(reports.totalShares), color: 'text-indigo-600' },
+                          { label: ar ? 'مجموع الحصص المدفوعة' : 'Parts libérées', value: fmt(reports.paidCapital / (shareValue || 1)), color: 'text-emerald-600' },
+                          { label: ar ? 'رأس المال المكتتب' : 'Capital souscrit', value: `${fmt(reports.totalCapital)} MAD`, color: 'text-indigo-700' },
+                          { label: ar ? 'رأس المال المدفوع' : 'Capital libéré', value: `${fmt(reports.paidCapital)} MAD`, color: 'text-emerald-700' },
+                        ].map((row, i) => (
+                          <div key={i} className="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3">
+                            <p className="text-xs text-gray-500 mb-1">{row.label}</p>
+                            <p className={`font-bold ${row.color}`}>{row.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-2">
+                        <div className="flex justify-between text-xs text-gray-500 mb-1">
+                          <span>{ar ? 'نسبة التحصيل' : 'Taux de libération'}</span>
+                          <span className="font-semibold text-emerald-600">{reports.totalCapital > 0 ? Math.round((reports.paidCapital / reports.totalCapital) * 100) : 0}%</span>
+                        </div>
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${reports.totalCapital > 0 ? (reports.paidCapital / reports.totalCapital) * 100 : 0}%` }} />
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-700">
+                        {ar ? `قيمة الحصة الواحدة: ${fmt(shareValue)} درهم` : `Valeur nominale d'une part : ${fmt(shareValue)} MAD`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── 3. État du stock ── */}
+                  {stats && stats.stockSummary.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <div className="bg-violet-600 px-4 py-2.5 flex items-center gap-2">
+                        <Package size={16} className="text-white" />
+                        <h3 className="text-white font-bold text-sm">{ar ? 'جرد المخزون — نهاية السنة' : 'Inventaire du Stock — Fin d\'exercice'}</h3>
+                      </div>
+                      <div className="p-4">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                              <th className="text-start py-2 text-xs text-gray-500 font-semibold">{ar ? 'المنتج' : 'Produit'}</th>
+                              <th className="text-center py-2 text-xs text-gray-500 font-semibold">{ar ? 'الرصيد' : 'Solde'}</th>
+                              <th className="text-end py-2 text-xs text-gray-500 font-semibold">{ar ? 'الوحدة' : 'Unité'}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                            {stats.stockSummary.map((p: any) => (
+                              <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                                <td className="py-2 font-medium text-gray-800 dark:text-gray-200">{p.name}</td>
+                                <td className="py-2 text-center">
+                                  <span className={`font-bold ${p.stock <= 0 ? 'text-red-600' : p.stock < 10 ? 'text-amber-600' : 'text-emerald-600'}`}>{fmt(p.stock)}</span>
+                                </td>
+                                <td className="py-2 text-end text-gray-500 text-xs">{p.unit}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 4. Situation des factures ── */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="bg-amber-600 px-4 py-2.5 flex items-center gap-2">
+                      <FileText size={16} className="text-white" />
+                      <h3 className="text-white font-bold text-sm">{ar ? 'حالة الوثائق التجارية' : 'Situation des Documents Commerciaux'}</h3>
+                    </div>
+                    <div className="p-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        {Object.entries(reports.invoicesByStatus).map(([s, cnt]) => (
+                          <div key={s} className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/40 rounded-lg px-3 py-2">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{tr.invoices?.[s] || s}</span>
+                            <span className={`font-bold text-sm ${s==='PAID' ? 'text-emerald-600' : s==='CANCELLED' ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}>{cnt as number}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── 5. Signature block (for tribunal) ── */}
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-5">
+                    <p className="text-xs text-gray-500 text-center mb-4">{ar ? '— للاستخدام الرسمي — يُودَع هذا التقرير في كتابة الضبط بالمحكمة التجارية المختصة —' : '— Usage officiel — Ce rapport est déposé au greffe du tribunal de commerce compétent —'}</p>
+                    <div className="grid grid-cols-2 gap-8">
+                      <div className="text-center">
+                        <div className="h-12 border-b border-gray-400 dark:border-gray-500 mb-2" />
+                        <p className="text-xs text-gray-500">{ar ? 'توقيع ومختم رئيس مجلس الإدارة' : 'Signature et cachet du Président du CA'}</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="h-12 border-b border-gray-400 dark:border-gray-500 mb-2" />
+                        <p className="text-xs text-gray-500">{ar ? 'توقيع المحاسب المعتمد' : 'Signature du Comptable agréé'}</p>
+                      </div>
+                    </div>
+                    <p className="text-center text-xs text-gray-400 mt-4">{ar ? `المرجع القانوني: القانون رقم 112.12 المتعلق بالتعاونيات — السنة المالية ${currentYear}` : `Référence légale : Loi n°112.12 relative aux coopératives — Exercice ${currentYear}`}</p>
                   </div>
                 </div>
+              )}
 
-                {/* Capital */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('coop.reports.capitalStatus')}</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-500">{t('coop.reports.paidCapital')}</span>
-                        <span className="font-semibold text-emerald-600">{fmt(reports.paidCapital)} MAD</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${reports.totalCapital > 0 ? (reports.paidCapital/reports.totalCapital)*100 : 0}%` }} />
-                      </div>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">{t('coop.reports.totalCapital')}</span>
-                      <span className="font-semibold text-indigo-600">{fmt(reports.totalCapital)} MAD</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">{t('coop.stats.totalShares')}</span>
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(reports.totalShares)}</span>
+              {/* ── Standard reports for non-converted orgs ── */}
+              {!isConverted && (
+                <>
+                  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('coop.reports.monthlyRevenue')}</h3>
+                    <div className="flex items-end gap-1 h-32">
+                      {reports.monthlyRevenue.map((v: number, i: number) => {
+                        const max = Math.max(...reports.monthlyRevenue, 1);
+                        const h = Math.round((v / max) * 100);
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                            <div className="text-[10px] text-gray-500 font-semibold">{v > 0 ? fmt(v) : ''}</div>
+                            <div className="w-full bg-indigo-500 rounded-t-sm" style={{ height: `${h}%`, minHeight: v > 0 ? '4px' : '0' }} />
+                            <div className="text-[9px] text-gray-400">{ar ? MONTHS_AR[i].slice(0,3) : MONTHS_FR[i]}</div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Summary totals */}
-              <div className="grid grid-cols-2 gap-3">
-                <StatCard label={ar ? 'رقم الأعمال الكلي' : 'CA total encaissé'} value={`${fmt(reports.totalRevenue)} MAD`} icon={<CheckCircle size={18} />} color="bg-emerald-100 text-emerald-600" />
-                <StatCard label={ar ? 'إيرادات في الانتظار' : 'CA en attente'} value={`${fmt(reports.pendingRevenue)} MAD`} icon={<Clock size={18} />} color="bg-amber-100 text-amber-600" />
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('coop.reports.invoiceStatus')}</h3>
+                      <div className="space-y-2">
+                        {Object.entries(reports.invoicesByStatus).map(([s, cnt]) => (
+                          <div key={s} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{tr.invoices?.[s] || s}</span>
+                            <span className={`text-sm font-bold ${s==='PAID' ? 'text-emerald-600' : s==='CANCELLED' ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'}`}>{cnt as number}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('coop.reports.capitalStatus')}</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-500">{t('coop.reports.paidCapital')}</span>
+                            <span className="font-semibold text-emerald-600">{fmt(reports.paidCapital)} MAD</span>
+                          </div>
+                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${reports.totalCapital > 0 ? (reports.paidCapital/reports.totalCapital)*100 : 0}%` }} />
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">{t('coop.reports.totalCapital')}</span>
+                          <span className="font-semibold text-indigo-600">{fmt(reports.totalCapital)} MAD</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <StatCard label={ar ? 'رقم الأعمال الكلي' : 'CA total encaissé'} value={`${fmt(reports.totalRevenue)} MAD`} icon={<CheckCircle size={18} />} color="bg-emerald-100 text-emerald-600" />
+                    <StatCard label={ar ? 'إيرادات في الانتظار' : 'CA en attente'} value={`${fmt(reports.pendingRevenue)} MAD`} icon={<Clock size={18} />} color="bg-amber-100 text-amber-600" />
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>

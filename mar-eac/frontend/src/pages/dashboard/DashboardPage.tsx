@@ -16,7 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import {
   membersApi, meetingsApi, financeApi, projectsApi,
-  remindersApi, waterApi, assocApi, transportApi,
+  remindersApi, waterApi, assocApi, transportApi, authApi,
 } from '../../lib/api';
 import { StatCard } from '../../components/ui/StatCard';
 import { formatCurrency, formatDate, getTrialDaysRemaining } from '../../lib/utils';
@@ -84,10 +84,11 @@ const getDashTheme = (modules: string[]): DashTheme => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const DashboardPage: React.FC = () => {
-  const { user, organization, isSuperAdmin, hasModule } = useAuth();
+  const { user, organization, isSuperAdmin, hasModule, refreshUser } = useAuth();
   const { t, lang } = useLanguage();
 
   if (isSuperAdmin) return <Navigate to="/superadmin" replace />;
+  if (organization?.conversionStatus === 'CONVERTED') return <Navigate to="/coop" replace />;
 
   const sub    = organization?.subscription;
   const mods   = organization?.modules ?? [];
@@ -119,9 +120,23 @@ export const DashboardPage: React.FC = () => {
 
   // ── Cooperative conversion ──
   const isPro = organization?.assocType === 'PRO' || (sub?.plan === 'PREMIUM' && (mods.length >= 4));
-  const [showCoopSection,  setShowCoopSection]  = useState(false);
-  const [showCoopSteps,    setShowCoopSteps]    = useState(false);
-  const [showUpgradeDialog,setShowUpgradeDialog]= useState(false);
+  const convStatus = (organization as any)?.conversionStatus as string | undefined;
+  const isConverted = convStatus === 'CONVERTED';
+  const isPendingConversion = convStatus === 'PENDING_CONVERSION';
+  const [showCoopSection,    setShowCoopSection]    = useState(false);
+  const [showCoopSteps,      setShowCoopSteps]      = useState(false);
+  const [showUpgradeDialog,  setShowUpgradeDialog]  = useState(false);
+  const [showConvirmModal,   setShowConvirmModal]   = useState(false);
+  const [conversionLoading,  setConversionLoading]  = useState(false);
+
+  const handleRequestConversion = async () => {
+    setConversionLoading(true);
+    try {
+      await authApi.requestConversion();
+      await refreshUser();
+      setShowConvirmModal(false);
+    } catch { /* ignore */ } finally { setConversionLoading(false); }
+  };
 
   const COOP_STEPS = isAr ? [
     { num: '01', title: 'قرار الجمعية العامة', duration: '1 يوم', color: 'bg-emerald-500',
@@ -372,8 +387,90 @@ export const DashboardPage: React.FC = () => {
                     : "⚠️ Avertissement : Ces étapes sont indicatives. Il est recommandé de consulter un juriste spécialisé ou l'ODCO pour un accompagnement adapté à votre situation."}
                 </p>
               </div>
+
+              {/* ── Conversion confirm CTA ── */}
+              {!isPendingConversion && !isConverted && (
+                <div className="mt-4 p-5 rounded-xl bg-rose-50 dark:bg-rose-900/20 border-2 border-rose-300 dark:border-rose-700 text-center">
+                  <p className="text-sm font-semibold text-rose-800 dark:text-rose-200 mb-1">
+                    {isAr ? '🏁 أنجزت جميع الخطوات؟' : '🏁 Toutes les étapes sont complétées ?'}
+                  </p>
+                  <p className="text-xs text-rose-600 dark:text-rose-400 mb-3">
+                    {isAr
+                      ? 'إذا أتممت التحويل القانوني وأردت إغلاق الجمعية نهائياً، أرسل طلب تأكيد إلى المشرف.'
+                      : "Si vous avez finalisé la conversion légale et souhaitez clôturer définitivement l'association, envoyez une demande de confirmation à l'administrateur."}
+                  </p>
+                  <button
+                    onClick={() => setShowConvirmModal(true)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm shadow-md transition-all"
+                  >
+                    <CheckCircle size={16} />
+                    {isAr ? 'تأكيد إغلاق الجمعية والتحويل للتعاونية' : "Confirmer la clôture et la conversion"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Pending conversion banner ── */}
+      {isPendingConversion && (
+        <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-5 flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+            <RefreshCw size={22} className="text-amber-600 dark:text-amber-400 animate-spin" style={{ animationDuration: '3s' }} />
+          </div>
+          <div>
+            <h4 className="font-bold text-amber-800 dark:text-amber-200 mb-1">
+              {isAr ? '⏳ طلب التحويل قيد المراجعة' : '⏳ Demande de conversion en cours d\'examen'}
+            </h4>
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              {isAr
+                ? 'تم إرسال طلبك بنجاح. سيراجعه المشرف العام ويُفعِّل وضع التعاونية الكامل عند الموافقة.'
+                : "Votre demande a bien été envoyée. L'administrateur va l'examiner et activera le mode coopérative complet à l'approbation."}
+            </p>
+            <p className="text-xs text-amber-500 mt-1">
+              {organization?.conversionRequestedAt
+                ? (isAr ? `تاريخ الطلب: ${new Date(organization.conversionRequestedAt).toLocaleDateString('ar-MA')}` : `Demandé le : ${new Date(organization.conversionRequestedAt).toLocaleDateString('fr-FR')}`)
+                : ''}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Conversion confirm modal ── */}
+      {showConvirmModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowConvirmModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-rose-500 to-red-600 px-6 py-5 flex items-center gap-3">
+              <AlertCircle size={24} className="text-white flex-shrink-0" />
+              <h3 className="text-white font-bold text-base">
+                {isAr ? 'تأكيد إغلاق الجمعية نهائياً' : "Confirmation de clôture définitive"}
+              </h3>
+              <button onClick={() => setShowConvirmModal(false)} className="ms-auto p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X size={16} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                {isAr
+                  ? 'بتأكيدك هذا، ستُرسَل طلب موافقة إلى المشرف العام. بعد الموافقة، ستتحول لوحة التحكم كلياً إلى وضع التعاونية ولن تتمكن من العودة إلى واجهة الجمعية.'
+                  : "En confirmant, une demande d'approbation sera envoyée à l'administrateur général. Après approbation, le tableau de bord basculera entièrement en mode coopérative et vous ne pourrez plus revenir à l'interface association."}
+              </p>
+              <div className="bg-rose-50 dark:bg-rose-900/20 rounded-xl p-3 text-xs text-rose-700 dark:text-rose-400">
+                {isAr ? '⚠️ هذا الإجراء لا رجعة فيه بعد موافقة المشرف.' : '⚠️ Cette action est irréversible après approbation de l\'administrateur.'}
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowConvirmModal(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700">
+                  {isAr ? 'إلغاء' : 'Annuler'}
+                </button>
+                <button
+                  onClick={handleRequestConversion}
+                  disabled={conversionLoading}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-sm font-bold transition-colors"
+                >
+                  {conversionLoading ? '...' : (isAr ? 'تأكيد الطلب' : 'Confirmer la demande')}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

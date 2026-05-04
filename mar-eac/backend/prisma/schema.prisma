@@ -89,6 +89,10 @@ model Organization {
   capitalSocial     Float?
   partsValeur       Float?
   coopType          String?
+  // Conversion flow: NONE (default) | PENDING_CONVERSION | CONVERTED
+  conversionStatus        String?   @default("NONE")
+  conversionRequestedAt   DateTime?
+  conversionApprovedAt    DateTime?
   coopStockProducts  CoopStockProduct[]
   coopStockMovements CoopStockMovement[]
   coopMemberShares   CoopMemberShare[]

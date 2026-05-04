@@ -1816,6 +1816,54 @@ const rejectDowngrade = async (req, res) => {
   }
 };
 
+// ── Conversion requests ───────────────────────────────────────────────────────
+
+const getConversionRequests = async (req, res) => {
+  try {
+    const orgs = await prisma.organization.findMany({
+      where: { conversionStatus: 'PENDING_CONVERSION' },
+      select: { id: true, name: true, nameAr: true, email: true, city: true, coopType: true, conversionRequestedAt: true, modules: true },
+      orderBy: { conversionRequestedAt: 'desc' },
+    });
+    res.json(orgs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const approveConversion = async (req, res) => {
+  try {
+    const org = await prisma.organization.update({
+      where: { id: req.params.orgId },
+      data: {
+        conversionStatus: 'CONVERTED',
+        conversionApprovedAt: new Date(),
+        modules: { push: 'COOP' },
+      },
+    });
+    // Ensure COOP is in modules (push can duplicate, so deduplicate)
+    const unique = [...new Set(org.modules)];
+    if (unique.length !== org.modules.length) {
+      await prisma.organization.update({ where: { id: org.id }, data: { modules: unique } });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const rejectConversion = async (req, res) => {
+  try {
+    await prisma.organization.update({
+      where: { id: req.params.orgId },
+      data: { conversionStatus: 'NONE', conversionRequestedAt: null },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getStats, getAnalytics, getFeatureUsage, getAIInsights,
   getOrganizations, getOrganization, updateSubscription, deleteOrganization,
@@ -1830,5 +1878,6 @@ module.exports = {
   getPlatformSettings, updatePlatformSettings,
   getSubscriptions,
   getDowngradeRequests, approveDowngrade, rejectDowngrade,
+  getConversionRequests, approveConversion, rejectConversion,
   getMarketingCampaigns, createMarketingCampaign, deleteMarketingCampaign, getTemplateMessages,
 };

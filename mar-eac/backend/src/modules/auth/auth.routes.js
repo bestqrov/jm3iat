@@ -14,5 +14,6 @@ router.post('/organization/logo', auth, tenant, upload.single('logo'), ctrl.uplo
 router.post('/subscription/upgrade', auth, ctrl.upgradeSubscription);
 router.post('/subscription/cancel-downgrade', auth, ctrl.cancelDowngrade);
 router.post('/addon/toggle', auth, tenant, ctrl.toggleAddon);
+router.post('/request-conversion', auth, tenant, ctrl.requestConversion);
 
 module.exports = router;

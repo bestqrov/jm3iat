@@ -141,6 +141,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
   const mods = organization?.modules ?? [];
   const orgTheme = getOrgTheme(mods);
   const isAr = lang === 'ar';
+  const isConverted = (organization as any)?.conversionStatus === 'CONVERTED';
 
   // For superadmin: determine active tab from query param
   const currentSATab = new URLSearchParams(location.search).get('tab') || 'dashboard';
@@ -184,8 +185,28 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
   ];
 
   // Water readers only see water
+  // Converted coops get a minimal cooperative-only sidebar
   const navGroups: NavGroup[] = isWaterReader ? [
     { label: '', items: [{ to: '/water', icon: <Droplets size={18} />, label: t('nav.water') }] },
+  ] : isConverted ? [
+    // ── CONVERTED cooperative: coop-only nav ───────────────────────────────────
+    {
+      label: isAr ? 'التعاونية' : 'Coopérative',
+      color: 'text-teal-500 dark:text-teal-400',
+      dotColor: 'bg-teal-400',
+      items: [
+        { to: '/coop',    icon: <Store size={18} />,      label: isAr ? 'لوحة التعاونية' : 'Tableau coopérative' },
+        { to: '/members', icon: <Users size={18} />,      label: isAr ? 'الأعضاء'        : 'Membres' },
+        { to: '/finance', icon: <DollarSign size={18} />, label: t('nav.finance') },
+        { to: '/documents', icon: <FileText size={18} />, label: t('nav.documents') },
+      ],
+    },
+    {
+      label: isAr ? 'الإعدادات' : 'Paramètres',
+      color: 'text-gray-400 dark:text-gray-500',
+      dotColor: 'bg-gray-400',
+      items: [{ to: '/settings', icon: <Settings size={18} />, label: t('nav.settings') }],
+    },
   ] : [
     // ── 1. Vue d'ensemble ──────────────────────────────────────────────────────
     {

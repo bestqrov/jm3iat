@@ -163,6 +163,8 @@ export const SuperAdminPage: React.FC = () => {
 
   // ─── States ────────────────────────────────────────────────────────────────
   const [downgradeCount, setDowngradeCount] = useState(0);
+  const [conversionRequests, setConversionRequests] = useState<any[]>([]);
+  const [conversionLoading, setConversionLoading] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -251,7 +253,30 @@ export const SuperAdminPage: React.FC = () => {
     } catch {}
   }, []);
 
-  useEffect(() => { loadStats(); loadDowngradeCount(); }, []);
+  const loadConversionRequests = useCallback(async () => {
+    try {
+      const r = await superadminApi.getConversionRequests();
+      setConversionRequests(r.data);
+    } catch {}
+  }, []);
+
+  const handleApproveConversion = async (orgId: string) => {
+    setConversionLoading(true);
+    try {
+      await superadminApi.approveConversion(orgId);
+      await loadConversionRequests();
+    } catch {} finally { setConversionLoading(false); }
+  };
+
+  const handleRejectConversion = async (orgId: string) => {
+    setConversionLoading(true);
+    try {
+      await superadminApi.rejectConversion(orgId);
+      await loadConversionRequests();
+    } catch {} finally { setConversionLoading(false); }
+  };
+
+  useEffect(() => { loadStats(); loadDowngradeCount(); loadConversionRequests(); }, []);
   useEffect(() => { if (activeTab === 'orgs') loadOrgs(); }, [activeTab, loadOrgs]);
   useEffect(() => { if (activeTab === 'payments') loadPayments(); }, [activeTab, loadPayments]);
   useEffect(() => { if (activeTab === 'users') loadUsers(); }, [activeTab, loadUsers]);
@@ -477,6 +502,7 @@ export const SuperAdminPage: React.FC = () => {
             </h1>
             <p className="text-xs text-gray-400">Mar E-A.C · SaaS Management Platform</p>
           </div>
+          <div className="flex items-center gap-2 flex-wrap">
           {downgradeCount > 0 && (
             <button
               onClick={() => setTab('subscriptions')}
@@ -490,6 +516,19 @@ export const SuperAdminPage: React.FC = () => {
               </span>
             </button>
           )}
+          {conversionRequests.length > 0 && (
+            <button
+              onClick={() => setTab('orgs')}
+              className="relative flex items-center gap-2 px-3 py-2 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-teal-700 dark:text-teal-400 rounded-xl transition-colors text-sm font-medium"
+            >
+              <span>🔄</span>
+              {isAr ? `${conversionRequests.length} طلب تحويل تعاونية` : `${conversionRequests.length} demande${conversionRequests.length > 1 ? 's' : ''} de conversion`}
+              <span className="absolute -top-1.5 -end-1.5 w-4 h-4 bg-teal-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {conversionRequests.length}
+              </span>
+            </button>
+          )}
+          </div>
         </div>
 
         {/* Scrollable page content */}
@@ -582,6 +621,52 @@ export const SuperAdminPage: React.FC = () => {
           {/* ════════════ ORGS TAB ════════════ */}
           {activeTab === 'orgs' && (
             <div className="space-y-4">
+
+              {/* ── Conversion requests panel ── */}
+              {conversionRequests.length > 0 && (
+                <div className="rounded-2xl border-2 border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/10 p-4 space-y-3">
+                  <h3 className="font-bold text-teal-800 dark:text-teal-200 flex items-center gap-2">
+                    <span>🔄</span>
+                    {isAr ? 'طلبات تحويل الجمعية إلى تعاونية' : "Demandes de conversion association → coopérative"}
+                    <span className="text-xs bg-teal-600 text-white px-2 py-0.5 rounded-full">{conversionRequests.length}</span>
+                  </h3>
+                  <div className="space-y-2">
+                    {conversionRequests.map((req: any) => (
+                      <div key={req.id} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-teal-200 dark:border-teal-700 flex items-center gap-4 flex-wrap">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 dark:text-white text-sm">{req.nameAr || req.name}</p>
+                          <p className="text-xs text-gray-500">{req.email} {req.city ? `· ${req.city}` : ''}</p>
+                          {req.coopType && (
+                            <p className="text-xs text-teal-600 dark:text-teal-400 mt-0.5">
+                              {isAr ? `نوع التعاونية: ${req.coopType}` : `Type: ${req.coopType}`}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {isAr ? 'طلب في: ' : 'Demandé le : '}
+                            {req.conversionRequestedAt ? new Date(req.conversionRequestedAt).toLocaleDateString(isAr ? 'ar-MA' : 'fr-FR') : '—'}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => handleApproveConversion(req.id)}
+                            disabled={conversionLoading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+                          >
+                            ✓ {isAr ? 'موافقة' : 'Approuver'}
+                          </button>
+                          <button
+                            onClick={() => handleRejectConversion(req.id)}
+                            disabled={conversionLoading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 text-xs font-semibold rounded-lg transition-colors"
+                          >
+                            ✕ {isAr ? 'رفض' : 'Rejeter'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   {isAr ? 'المنظمات' : 'Organisations'} <span className="text-sm font-normal text-gray-400">({orgsTotal})</span>

@@ -37,6 +37,7 @@ export const authApi = {
   cancelDowngrade:      ()             => api.post('/auth/subscription/cancel-downgrade'),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
   toggleAddon: (addon: string) => api.post('/auth/addon/toggle', { addon }),
+  requestConversion: () => api.post('/auth/request-conversion'),
 };
 
 // ---- Members ----
@@ -288,6 +289,11 @@ export const superadminApi = {
   getDowngradeRequests: ()                               => api.get('/superadmin/downgrade-requests'),
   approveDowngrade:     (orgId: string)                  => api.post(`/superadmin/downgrade-requests/${orgId}/approve`),
   rejectDowngrade:      (orgId: string)                  => api.post(`/superadmin/downgrade-requests/${orgId}/reject`),
+
+  // ── Conversion Requests ─────────────────────────────────────────────────────
+  getConversionRequests: ()              => api.get('/superadmin/conversion-requests'),
+  approveConversion:     (orgId: string) => api.post(`/superadmin/conversion-requests/${orgId}/approve`),
+  rejectConversion:      (orgId: string) => api.post(`/superadmin/conversion-requests/${orgId}/reject`),
 
   // ── Payments ────────────────────────────────────────────────────────────────
   getPayments:          (params?: any)                   => api.get('/superadmin/payments', { params }),

@@ -384,4 +384,24 @@ const toggleAddon = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, updateOrganization, uploadLogo, upgradeSubscription, cancelDowngrade, applyPlanChange, forgotPassword, toggleAddon };
+// ── Request conversion (association → cooperative) ────────────────────────────
+
+exports.requestConversion = async (req, res) => {
+  try {
+    const orgId = req.user.organizationId;
+    const org = await prisma.organization.findUnique({ where: { id: orgId } });
+    if (!org) return res.status(404).json({ message: 'Organization not found' });
+    if (org.conversionStatus === 'CONVERTED') return res.status(400).json({ message: 'Already converted' });
+    if (org.conversionStatus === 'PENDING_CONVERSION') return res.status(400).json({ message: 'Conversion already pending' });
+
+    await prisma.organization.update({
+      where: { id: orgId },
+      data: { conversionStatus: 'PENDING_CONVERSION', conversionRequestedAt: new Date() },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { register, login, getMe, updateProfile, updateOrganization, uploadLogo, upgradeSubscription, cancelDowngrade, applyPlanChange, forgotPassword, toggleAddon, requestConversion };

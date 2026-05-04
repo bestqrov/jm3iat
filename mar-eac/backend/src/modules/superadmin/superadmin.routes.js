@@ -26,6 +26,11 @@ router.get('/downgrade-requests',                             ctrl.getDowngradeR
 router.post('/downgrade-requests/:orgId/approve',             ctrl.approveDowngrade);
 router.post('/downgrade-requests/:orgId/reject',              ctrl.rejectDowngrade);
 
+// ── Conversion Requests (association → cooperative) ───────────────────────────
+router.get('/conversion-requests',                            ctrl.getConversionRequests);
+router.post('/conversion-requests/:orgId/approve',            ctrl.approveConversion);
+router.post('/conversion-requests/:orgId/reject',             ctrl.rejectConversion);
+
 // ── Payments ──────────────────────────────────────────────────────────────────
 router.get('/payments',                               ctrl.getPayments);
 router.post('/payments',  upload.single('receipt'),   ctrl.createPayment);
