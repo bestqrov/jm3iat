@@ -386,7 +386,7 @@ const toggleAddon = async (req, res) => {
 
 // ── Request conversion (association → cooperative) ────────────────────────────
 
-exports.requestConversion = async (req, res) => {
+const requestConversion = async (req, res) => {
   try {
     const orgId = req.user.organizationId;
     const org = await prisma.organization.findUnique({ where: { id: orgId } });
