@@ -119,7 +119,7 @@ export const DashboardPage: React.FC = () => {
   const [loading,            setLoading]             = useState(true);
 
   // ── Cooperative conversion ──
-  const isPro = organization?.assocType === 'PRO' || (sub?.plan === 'PREMIUM' && (mods.length >= 4));
+  const isPro = organization?.assocType === 'PRO' || sub?.plan === 'PREMIUM';
   const convStatus = (organization as any)?.conversionStatus as string | undefined;
   const isConverted = convStatus === 'CONVERTED';
   const isPendingConversion = convStatus === 'PENDING_CONVERSION';
