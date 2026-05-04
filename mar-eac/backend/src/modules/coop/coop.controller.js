@@ -1,9 +1,8 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../../config/database');
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-const orgId = (req) => req.user.organizationId;
+const orgId = (req) => req.organization.id;
 
 // Compute current stock level for each product
 async function computeStock(organizationId) {

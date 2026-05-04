@@ -1,10 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const { authenticate, requireModule } = require('../../middleware/auth');
+const router = require('express').Router();
 const ctrl = require('./coop.controller');
+const { auth }          = require('../../middleware/auth');
+const { tenant }        = require('../../middleware/tenant');
+const { requireModule } = require('../../middleware/module');
 
-router.use(authenticate);
-router.use(requireModule('COOP'));
+router.use(auth, tenant, requireModule('COOP'));
 
 // Stats
 router.get('/stats', ctrl.getStats);
