@@ -1584,7 +1584,7 @@ const ar = {
   coop: {
     title: 'التعاونية',
     tabs: {
-      dashboard: 'لوحة القيادة',
+      dashboard: 'نظرة عامة',
       shares: 'الحصص',
       stock: 'المخزون',
       invoices: 'الفواتير',

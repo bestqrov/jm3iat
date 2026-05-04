@@ -1593,7 +1593,7 @@ const fr = {
   coop: {
     title: 'Coopérative',
     tabs: {
-      dashboard: 'Tableau de bord',
+      dashboard: 'Vue d\'ensemble',
       shares: 'Parts sociales',
       stock: 'Stock',
       invoices: 'Factures',

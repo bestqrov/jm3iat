@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   LayoutDashboard, Package, ArrowDownUp, Users, FileText,
   BarChart2, Plus, Trash2, Edit2, X,
-  TrendingUp, AlertCircle, CheckCircle, Clock,
+  TrendingUp, AlertCircle, CheckCircle, Clock, Store,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -66,7 +66,7 @@ const StatusBadge: React.FC<{ status: string; t: any }> = ({ status, t }) => {
 
 export const CoopPage: React.FC = () => {
   const { t, lang } = useLanguage();
-  const { organization } = useAuth();
+  const { organization, refreshUser } = useAuth();
   const ar = lang === 'ar';
 
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -118,7 +118,7 @@ export const CoopPage: React.FC = () => {
     setReports(r.data);
   }, []);
 
-  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => { refreshUser().then(() => reload()); }, [reload]);
   useEffect(() => { if (tab === 'reports') loadReports(); }, [tab, loadReports]);
 
   // Load members for share form
@@ -240,11 +240,24 @@ export const CoopPage: React.FC = () => {
 
   return (
     <div className="p-4 space-y-4" dir={ar ? 'rtl' : 'ltr'}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('coop.title')}</h1>
-        {organization && (
-          <div className="text-xs text-gray-500 dark:text-gray-400 text-end">
+      {/* ── Branded header ── */}
+      <div
+        className="rounded-2xl p-5 flex items-center gap-4"
+        style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)' }}
+      >
+        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+          <Store size={26} className="text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-bold text-white">
+            {ar ? 'وحدة التعاونية' : 'Module Coopérative'}
+          </h1>
+          <p className="text-sm text-teal-100 mt-0.5">
+            {organization?.name}
+          </p>
+        </div>
+        {organization && ((organization as any).ice || (organization as any).identifiantFiscal) && (
+          <div className="text-xs text-teal-100 text-end hidden sm:block">
             {(organization as any).ice && <div>ICE: {(organization as any).ice}</div>}
             {(organization as any).identifiantFiscal && <div>IF: {(organization as any).identifiantFiscal}</div>}
           </div>
@@ -259,7 +272,7 @@ export const CoopPage: React.FC = () => {
             onClick={() => setTab(tb.key)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               tab === tb.key
-                ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                ? 'bg-white dark:bg-gray-700 text-teal-600 dark:text-teal-400 shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
             }`}
           >
@@ -279,6 +292,37 @@ export const CoopPage: React.FC = () => {
       {tab === 'dashboard' && (
         <div className="space-y-4">
           {loading && <div className="text-center text-gray-400 py-8">{ar ? 'جاري التحميل...' : 'Chargement...'}</div>}
+          {!loading && !stats && (
+            <div className="text-center py-12 text-gray-400">
+              <Store size={48} className="mx-auto mb-3 opacity-30" />
+              <p className="text-base font-medium">{ar ? 'تعذر تحميل البيانات' : 'Impossible de charger les données'}</p>
+              <button onClick={reload} className="mt-3 px-4 py-2 text-sm bg-teal-600 text-white rounded-xl hover:bg-teal-700">{ar ? 'إعادة المحاولة' : 'Réessayer'}</button>
+            </div>
+          )}
+          {stats && stats.activeProducts === 0 && stats.membersWithShares === 0 && stats.invoiceCount === 0 && (
+            <div className="rounded-2xl border-2 border-dashed border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/10 p-6 text-center">
+              <Store size={40} className="mx-auto mb-3 text-teal-400" />
+              <h3 className="text-base font-bold text-teal-800 dark:text-teal-200 mb-1">
+                {ar ? 'مرحباً بك في وحدة التعاونية 🎉' : 'Bienvenue dans le module Coopérative 🎉'}
+              </h3>
+              <p className="text-sm text-teal-600 dark:text-teal-400 mb-4">
+                {ar
+                  ? 'ابدأ بإضافة المنتجات، تسجيل الحصص الاجتماعية، وإنشاء الفواتير'
+                  : 'Commencez par ajouter des produits, enregistrer des parts sociales et créer des factures'}
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <button onClick={() => setTab('stock')} className="px-4 py-2 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700">
+                  {ar ? '+ إضافة منتج' : '+ Ajouter un produit'}
+                </button>
+                <button onClick={() => setTab('shares')} className="px-4 py-2 bg-white dark:bg-gray-800 border border-teal-300 text-teal-700 dark:text-teal-300 rounded-xl text-sm font-medium hover:bg-teal-50">
+                  {ar ? '+ إضافة حصة' : '+ Ajouter une part'}
+                </button>
+                <button onClick={() => setTab('invoices')} className="px-4 py-2 bg-white dark:bg-gray-800 border border-teal-300 text-teal-700 dark:text-teal-300 rounded-xl text-sm font-medium hover:bg-teal-50">
+                  {ar ? '+ إنشاء فاتورة' : '+ Créer une facture'}
+                </button>
+              </div>
+            </div>
+          )}
           {stats && (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
