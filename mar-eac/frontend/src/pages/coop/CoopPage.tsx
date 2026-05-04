@@ -15,7 +15,7 @@ interface Movement { id: string; productId: string; type: 'IN'|'OUT'|'ADJUST'; q
 interface Share { id: string; memberId: string; memberName: string; sharesCount: number; sharesPaid: number; paidAt?: string; notes?: string; }
 interface InvoiceItem { id?: string; productId?: string; description: string; quantity: number; unitPrice: number; subtotal: number; }
 interface Invoice { id: string; type: 'DEVIS'|'FACTURE'|'BL'; number: string; clientName: string; clientPhone?: string; clientAddress?: string; status: string; totalAmount: number; date: string; dueDate?: string; notes?: string; items: InvoiceItem[]; }
-interface Stats { activeProducts: number; membersWithShares: number; totalShares: number; paidShares: number; shareValue: number; capitalSocial: number; totalRevenue: number; pendingRevenue: number; lowStockProducts: number; stockSummary: {id:string;name:string;stock:number;unit:string}[]; }
+interface Stats { activeProducts: number; membersWithShares: number; totalShares: number; paidShares: number; shareValue: number; capitalSocial: number; totalRevenue: number; pendingRevenue: number; lowStockProducts: number; invoiceCount: number; stockSummary: {id:string;name:string;stock:number;unit:string}[]; }
 interface Member { id: string; name: string; }
 
 type Tab = 'dashboard'|'shares'|'stock'|'invoices'|'reports';
