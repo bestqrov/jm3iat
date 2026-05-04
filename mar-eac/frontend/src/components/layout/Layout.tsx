@@ -8,7 +8,7 @@ import { AlertTriangle, X, Zap, Clock } from 'lucide-react';
 import { getTrialDaysRemaining, arabicDays } from '../../lib/utils';
 
 export const Layout: React.FC = () => {
-  const { isAuthenticated, isLoading, organization } = useAuth();
+  const { isAuthenticated, isLoading, organization, hasModule } = useAuth();
   const { t, lang } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -26,6 +26,7 @@ export const Layout: React.FC = () => {
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
+  const isCoop = hasModule('COOP');
   const sub = (organization as any)?.subscription;
   const isTrial   = sub?.status === 'TRIAL';
   const isExpired = sub?.status === 'EXPIRED';
@@ -108,11 +109,11 @@ export const Layout: React.FC = () => {
             <p className={`text-sm flex-1 ${bureauExpired || bureauDaysLeft! <= 7 ? 'text-red-700 dark:text-red-300' : 'text-orange-700 dark:text-orange-300'}`}>
               {lang === 'ar'
                 ? bureauExpired
-                  ? <>⛔ <strong>انتهت صلاحية مكتب الجمعية</strong> — أصبح المكتب غير قانوني. يجب إجراء انتخابات لتجديد المكتب فوراً.</>
-                  : <>⚠️ <strong>سيصبح المكتب غير قانوني بعد {bureauDaysLeft} {arabicDays(bureauDaysLeft!)}</strong> ({bureauExpiry!.toLocaleDateString('ar-MA')}). يجب تجديد انتخاب المكتب قبل هذا التاريخ.</>
+                  ? <>⛔ <strong>{isCoop ? 'انتهت صلاحية مجلس الإدارة' : 'انتهت صلاحية مكتب الجمعية'}</strong> — أصبح المكتب غير قانوني. يجب إجراء انتخابات لتجديد المكتب فوراً.</>
+                  : <>⚠️ <strong>{isCoop ? 'سيصبح مجلس الإدارة غير قانوني' : 'سيصبح المكتب غير قانوني'} بعد {bureauDaysLeft} {arabicDays(bureauDaysLeft!)}</strong> ({bureauExpiry!.toLocaleDateString('ar-MA')}). يجب تجديد الانتخابات قبل هذا التاريخ.</>
                 : bureauExpired
-                  ? <>⛔ <strong>Le bureau de l&apos;association est expiré</strong> — le bureau est illégal. Des élections doivent être organisées immédiatement.</>
-                  : <>⚠️ <strong>Le bureau deviendra illégal dans {bureauDaysLeft} jour{bureauDaysLeft! > 1 ? 's' : ''}</strong> ({bureauExpiry!.toLocaleDateString('fr-FR')}). Le renouvellement du bureau doit être effectué avant cette date.</>}
+                  ? <>⛔ <strong>{isCoop ? "Le conseil d'administration est expiré" : "Le bureau de l'association est expiré"}</strong> — le bureau est illégal. Des élections doivent être organisées immédiatement.</>
+                  : <>⚠️ <strong>{isCoop ? "Le conseil d'administration deviendra illégal" : "Le bureau deviendra illégal"} dans {bureauDaysLeft} jour{bureauDaysLeft! > 1 ? 's' : ''}</strong> ({bureauExpiry!.toLocaleDateString('fr-FR')}). Le renouvellement doit être effectué avant cette date.</>}
             </p>
             <button onClick={() => setBannerDismissed(true)} className={`p-1 ${bureauExpired || bureauDaysLeft! <= 7 ? 'text-red-600 hover:text-red-800' : 'text-orange-500 hover:text-orange-700'}`}>
               <X size={16} />

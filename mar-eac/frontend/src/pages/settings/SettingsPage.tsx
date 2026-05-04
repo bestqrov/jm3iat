@@ -23,11 +23,15 @@ import { authApi, whatsappApi, backupApi, publicApi } from '../../lib/api';
 import { formatDate, arabicDays } from '../../lib/utils';
 
 export const SettingsPage: React.FC = () => {
-  const { user, organization, refreshUser } = useAuth();
+  const { user, organization, refreshUser, hasModule } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
   const org = organization as any;
+  const isCoop = hasModule('COOP');
+  const orgWord = isCoop
+    ? { ar: 'التعاونية', fr: 'la coopérative' }
+    : { ar: 'الجمعية', fr: "l'association" };
 
   // French profile
   const [orgFormFr, setOrgFormFr] = useState({
@@ -428,7 +432,7 @@ export const SettingsPage: React.FC = () => {
             <Building2 size={18} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">{t('settings.orgProfile')}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{isCoop ? (lang === 'ar' ? 'ملف التعاونية' : 'Profil de la coopérative') : t('settings.orgProfile')}</h3>
             <span className="inline-flex items-center gap-1 mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
               {lang === 'ar' ? '🇲🇦 الملف الشخصي العربي' : '🇫🇷 Profil Français'}
             </span>
@@ -469,7 +473,7 @@ export const SettingsPage: React.FC = () => {
             <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleLogoUpload} />
             <div className={`min-w-0 ${lang === 'ar' ? 'text-right' : ''}`}>
               <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
-                {lang === 'ar' ? 'شعار الجمعية' : 'Logo de l\'association'}
+                {lang === 'ar' ? `شعار ${orgWord.ar}` : `Logo de ${orgWord.fr}`}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">
                 {lang === 'ar' ? 'يظهر في التقارير والوثائق — PNG أو JPG' : 'Affiché dans les rapports · PNG ou JPG'}
@@ -486,8 +490,8 @@ export const SettingsPage: React.FC = () => {
             /* ── Arabic profile fields ── */
             <div className="space-y-4" dir="rtl">
               <div>
-                <label className="label text-right">اسم الجمعية بالعربية</label>
-                <input className="input text-right" value={orgFormAr.nameAr} onChange={(e) => setOrgFormAr({ ...orgFormAr, nameAr: e.target.value })} placeholder="اسم الجمعية" />
+                <label className="label text-right">{`اسم ${orgWord.ar} بالعربية`}</label>
+                <input className="input text-right" value={orgFormAr.nameAr} onChange={(e) => setOrgFormAr({ ...orgFormAr, nameAr: e.target.value })} placeholder={`اسم ${orgWord.ar}`} />
               </div>
               <div>
                 <label className="label text-right">العنوان</label>
@@ -510,14 +514,14 @@ export const SettingsPage: React.FC = () => {
               </div>
               <div>
                 <label className="label text-right">وصف مختصر</label>
-                <textarea className="input text-right" rows={2} value={orgFormAr.descriptionAr} onChange={(e) => setOrgFormAr({ ...orgFormAr, descriptionAr: e.target.value })} placeholder="وصف الجمعية" />
+                <textarea className="input text-right" rows={2} value={orgFormAr.descriptionAr} onChange={(e) => setOrgFormAr({ ...orgFormAr, descriptionAr: e.target.value })} placeholder={`وصف ${orgWord.ar}`} />
               </div>
             </div>
           ) : (
             /* ── French profile fields ── */
             <div className="space-y-4">
               <div>
-                <label className="label">{t('auth.orgName')}</label>
+                <label className="label">{isCoop ? 'Nom de la coopérative' : t('auth.orgName')}</label>
                 <input className="input" value={orgFormFr.name} onChange={(e) => setOrgFormFr({ ...orgFormFr, name: e.target.value })} />
               </div>
               <div>
@@ -578,7 +582,7 @@ export const SettingsPage: React.FC = () => {
           <div>
             <label className="label flex items-center gap-1.5">
               <Mail size={13} className="text-indigo-500" />
-              {lang === 'ar' ? 'البريد الإلكتروني للجمعية' : 'Email de l\'association'}
+              {lang === 'ar' ? `البريد الإلكتروني ${isCoop ? 'للتعاونية' : 'للجمعية'}` : `Email de ${orgWord.fr}`}
             </label>
             <input
               className="input"
@@ -641,7 +645,7 @@ export const SettingsPage: React.FC = () => {
                 />
                 <p className="text-xs text-gray-400 mt-1">
                   {lang === 'ar'
-                    ? 'ستظهر هذه الرسوم في صفحة الانضمام العامة للجمعية'
+                    ? `ستظهر هذه الرسوم في صفحة الانضمام العامة ${isCoop ? 'للتعاونية' : 'للجمعية'}`
                     : 'Ce montant sera affiché sur la page publique de demande d\'adhésion'}
                 </p>
               </div>
@@ -740,12 +744,12 @@ export const SettingsPage: React.FC = () => {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">
-              {lang === 'ar' ? 'ربط واتساب الجمعية' : 'Connexion WhatsApp'}
+              {lang === 'ar' ? `ربط واتساب ${orgWord.ar}` : 'Connexion WhatsApp'}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {lang === 'ar'
-                ? 'ربط رقم الجمعية لإرسال الرسائل والمراسلات منها مباشرة'
-                : 'Connectez le numéro de l\'association pour envoyer directement depuis lui'}
+                ? `ربط رقم ${orgWord.ar} لإرسال الرسائل والمراسلات منها مباشرة`
+                : `Connectez le numéro de ${orgWord.fr} pour envoyer directement depuis lui`}
             </p>
           </div>
         </div>
@@ -800,8 +804,8 @@ export const SettingsPage: React.FC = () => {
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
               {lang === 'ar'
-                ? 'الواتساب غير متصل — اضغط لربط رقم الجمعية'
-                : 'WhatsApp non connecté — cliquez pour lier le numéro de l\'association'}
+                ? `الواتساب غير متصل — اضغط لربط رقم ${orgWord.ar}`
+                : `WhatsApp non connecté — cliquez pour lier le numéro de ${orgWord.fr}`}
             </p>
             <button
               onClick={handleWaConnect}
@@ -811,7 +815,7 @@ export const SettingsPage: React.FC = () => {
               {waStatus === 'loading' ? <RefreshCw size={15} className="animate-spin" /> : <MessageCircle size={15} />}
               {waStatus === 'loading'
                 ? (lang === 'ar' ? 'جارٍ التحميل...' : 'Chargement...')
-                : (lang === 'ar' ? 'ربط واتساب الجمعية' : 'Connecter WhatsApp')}
+                : (lang === 'ar' ? `ربط واتساب ${orgWord.ar}` : 'Connecter WhatsApp')}
             </button>
           </div>
         )}
@@ -825,7 +829,7 @@ export const SettingsPage: React.FC = () => {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">
-              {lang === 'ar' ? 'معلومات الجمعية' : 'Informations de l\'association'}
+              {lang === 'ar' ? `معلومات ${orgWord.ar}` : `Informations de ${orgWord.fr}`}
             </h3>
             <p className="text-xs text-gray-400 mt-0.5">
               {lang === 'ar' ? 'التأسيس، الأنشطة، التاريخ الإداري' : 'Fondation, activités, historique administratif'}
@@ -838,7 +842,7 @@ export const SettingsPage: React.FC = () => {
           <div>
             <label className="label flex items-center gap-1.5">
               <CalendarDays size={13} className="text-teal-500" />
-              {lang === 'ar' ? 'تاريخ تأسيس الجمعية' : 'Date de création de l\'association'}
+              {lang === 'ar' ? `تاريخ تأسيس ${orgWord.ar}` : `Date de création de ${orgWord.fr}`}
             </label>
             <input
               className="input"
@@ -935,13 +939,13 @@ export const SettingsPage: React.FC = () => {
           <div {...(lang === 'ar' ? { dir: 'rtl' } : {})}>
             <label className={`label flex items-center gap-1.5 ${lang === 'ar' ? 'justify-end' : ''}`}>
               <Activity size={13} className="text-teal-500" />
-              {lang === 'ar' ? 'أنشطة الجمعية' : 'Activités de l\'association'}
+              {lang === 'ar' ? `أنشطة ${orgWord.ar}` : `Activités de ${orgWord.fr}`}
             </label>
             {lang === 'ar' ? (
               <textarea
                 className="input text-right"
                 rows={4}
-                placeholder="صف الأنشطة الرئيسية للجمعية: التنمية المحلية، التعليم، الصحة..."
+                placeholder={isCoop ? 'صف الأنشطة الرئيسية للتعاونية: الإنتاج، التسويق، التوزيع...' : 'صف الأنشطة الرئيسية للجمعية: التنمية المحلية، التعليم، الصحة...'}
                 value={infoFormAr.activitiesAr}
                 onChange={(e) => setInfoFormAr({ ...infoFormAr, activitiesAr: e.target.value })}
               />

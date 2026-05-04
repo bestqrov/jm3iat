@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Search, Pencil, Trash2, Users, UserCheck, FileSpreadsheet, Clock, CheckCircle2, Receipt, Loader2, ExternalLink, CreditCard, RefreshCw, AlertCircle } from 'lucide-react';
 import { membersApi, exportApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
@@ -10,6 +11,8 @@ import { formatDate } from '../../lib/utils';
 
 export const MembersPage: React.FC = () => {
   const { t, lang } = useLanguage();
+  const { hasModule } = useAuth();
+  const isCoop = hasModule('COOP');
   const [members, setMembers]   = useState<any[]>([]);
   const [pending, setPending]   = useState<any[]>([]);
   const [stats, setStats]       = useState<any>({});
@@ -131,7 +134,7 @@ export const MembersPage: React.FC = () => {
               {t('members.title')}
             </h2>
             <p className="text-purple-100 text-sm mt-0.5 opacity-90">
-              {lang === 'ar' ? 'قائمة منخرطي الجمعية' : 'Liste des adhérents de l\'association'}
+              {lang === 'ar' ? (isCoop ? 'قائمة أعضاء التعاونية' : 'قائمة منخرطي الجمعية') : (isCoop ? 'Liste des membres de la coopérative' : "Liste des adhérents de l'association")}
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
