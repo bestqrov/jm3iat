@@ -307,6 +307,19 @@ export const SuperAdminPage: React.FC = () => {
     } finally { setEditSaving(false); }
   };
 
+  const handleActivateCoop = async (orgId: string) => {
+    await superadminApi.activateAsCoop(orgId);
+    setEditingOrg(null);
+    await loadOrgs();
+  };
+
+  const handleDeactivateCoop = async (orgId: string) => {
+    if (!confirm(isAr ? 'إلغاء وضع التعاونية لهذا الحساب؟' : 'Désactiver le mode coopérative ?')) return;
+    await superadminApi.deactivateAsCoop(orgId);
+    setEditingOrg(null);
+    await loadOrgs();
+  };
+
   const deleteOrg = async () => {
     if (!deletingOrgId) return;
     setDeleteLoading(true);
@@ -980,6 +993,36 @@ export const SuperAdminPage: React.FC = () => {
               <input type="date" className={inp} value={editForm.expiresAt} onChange={e => setEditForm(f => ({ ...f, expiresAt: e.target.value }))} />
             </div>
           </div>
+
+          {/* Cooperative toggle */}
+          <div className="mt-4 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-900/10 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-teal-800 dark:text-teal-200">🌱 {isAr ? 'وضع التعاونية' : 'Mode Coopérative'}</p>
+                <p className="text-xs text-teal-600 dark:text-teal-400 mt-0.5">
+                  {editingOrg?.conversionStatus === 'CONVERTED'
+                    ? (isAr ? 'هذا الحساب مُفعَّل كتعاونية ✓' : 'Ce compte est activé en coopérative ✓')
+                    : (isAr ? 'تفعيل الحساب كتعاونية مباشرة' : 'Activer ce compte comme coopérative')}
+                </p>
+              </div>
+              {editingOrg?.conversionStatus === 'CONVERTED' ? (
+                <button
+                  onClick={() => handleDeactivateCoop(editingOrg.id)}
+                  className="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
+                >
+                  {isAr ? 'إلغاء التفعيل' : 'Désactiver'}
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleActivateCoop(editingOrg.id)}
+                  className="px-3 py-1.5 text-xs font-medium bg-teal-600 text-white hover:bg-teal-700 rounded-lg transition-colors"
+                >
+                  {isAr ? '🌱 تفعيل كتعاونية' : '🌱 Activer coop'}
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => setEditingOrg(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">{isAr ? 'إلغاء' : 'Annuler'}</button>
             <button onClick={saveEditOrg} disabled={editSaving} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">

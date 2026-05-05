@@ -294,6 +294,8 @@ export const superadminApi = {
   getConversionRequests: ()              => api.get('/superadmin/conversion-requests'),
   approveConversion:     (orgId: string) => api.post(`/superadmin/conversion-requests/${orgId}/approve`),
   rejectConversion:      (orgId: string) => api.post(`/superadmin/conversion-requests/${orgId}/reject`),
+  activateAsCoop:        (orgId: string) => api.post(`/superadmin/organizations/${orgId}/activate-coop`),
+  deactivateAsCoop:      (orgId: string) => api.post(`/superadmin/organizations/${orgId}/deactivate-coop`),
 
   // ── Payments ────────────────────────────────────────────────────────────────
   getPayments:          (params?: any)                   => api.get('/superadmin/payments', { params }),

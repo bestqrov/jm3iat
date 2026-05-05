@@ -30,6 +30,8 @@ router.post('/downgrade-requests/:orgId/reject',              ctrl.rejectDowngra
 router.get('/conversion-requests',                            ctrl.getConversionRequests);
 router.post('/conversion-requests/:orgId/approve',            ctrl.approveConversion);
 router.post('/conversion-requests/:orgId/reject',             ctrl.rejectConversion);
+router.post('/organizations/:orgId/activate-coop',            ctrl.activateAsCooperative);
+router.post('/organizations/:orgId/deactivate-coop',          ctrl.deactivateCooperative);
 
 // ── Payments ──────────────────────────────────────────────────────────────────
 router.get('/payments',                               ctrl.getPayments);

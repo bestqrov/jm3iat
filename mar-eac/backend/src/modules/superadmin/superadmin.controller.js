@@ -1852,6 +1852,32 @@ const approveConversion = async (req, res) => {
   }
 };
 
+const activateAsCooperative = async (req, res) => {
+  try {
+    const org = await prisma.organization.findUnique({ where: { id: req.params.orgId } });
+    if (!org) return res.status(404).json({ message: 'Organization not found' });
+    const modules = [...new Set([...(org.modules || []), 'COOP'])];
+    await prisma.organization.update({
+      where: { id: req.params.orgId },
+      data: { conversionStatus: 'CONVERTED', conversionApprovedAt: new Date(), modules },
+    });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+const deactivateCooperative = async (req, res) => {
+  try {
+    const org = await prisma.organization.findUnique({ where: { id: req.params.orgId } });
+    if (!org) return res.status(404).json({ message: 'Organization not found' });
+    const modules = (org.modules || []).filter((m: string) => m !== 'COOP');
+    await prisma.organization.update({
+      where: { id: req.params.orgId },
+      data: { conversionStatus: 'NONE', conversionApprovedAt: null, modules },
+    });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
 const rejectConversion = async (req, res) => {
   try {
     await prisma.organization.update({
@@ -1879,5 +1905,6 @@ module.exports = {
   getSubscriptions,
   getDowngradeRequests, approveDowngrade, rejectDowngrade,
   getConversionRequests, approveConversion, rejectConversion,
+  activateAsCooperative, deactivateCooperative,
   getMarketingCampaigns, createMarketingCampaign, deleteMarketingCampaign, getTemplateMessages,
 };
