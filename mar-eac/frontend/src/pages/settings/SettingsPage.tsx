@@ -1135,43 +1135,48 @@ export const SettingsPage: React.FC = () => {
         {/* ── Current pack card ── */}
         {sub && (() => {
           const modules: string[] = (org as any)?.modules ?? [];
+          const isCoopAccount = isCoop || (org as any)?.conversionStatus === 'CONVERTED';
+
           const MODULE_LABELS: Record<string, { fr: string; ar: string; icon: string; color: string }> = {
-            FINANCE:          { fr: 'Finance',           ar: 'المالية',          icon: '💰', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
-            PROJECTS:         { fr: 'Projets',           ar: 'المشاريع',         icon: '🏗️', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-            WATER:            { fr: 'Eau',               ar: 'الماء',            icon: '💧', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300' },
-            PRODUCTIVE:       { fr: 'Production',        ar: 'الإنتاج',          icon: '🏭', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
-            TRANSPORT:        { fr: 'Transport scolaire',ar: 'النقل المدرسي',    icon: '🚌', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
-            REPORTS:          { fr: 'Rapports',          ar: 'التقارير',         icon: '📊', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
-            REMINDERS:        { fr: 'Rappels',           ar: 'التذكيرات',        icon: '🔔', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
+            COOP:             { fr: 'Coopérative',        ar: 'التعاونية',        icon: '🌱', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' },
+            FINANCE:          { fr: 'Finance',            ar: 'المالية',          icon: '💰', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+            PROJECTS:         { fr: 'Projets',            ar: 'المشاريع',         icon: '🏗️', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+            WATER:            { fr: 'Eau',                ar: 'الماء',            icon: '💧', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300' },
+            PRODUCTIVE:       { fr: 'Production',         ar: 'الإنتاج',          icon: '🏭', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+            TRANSPORT:        { fr: 'Transport scolaire', ar: 'النقل المدرسي',    icon: '🚌', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+            REPORTS:          { fr: 'Rapports',           ar: 'التقارير',         icon: '📊', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
+            REMINDERS:        { fr: 'Rappels',            ar: 'التذكيرات',        icon: '🔔', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
           };
-          const ASSOC_TYPE_LABEL: Record<string, { fr: string; ar: string; icon: string }> = {
-            TRANSPORT:        { fr: 'Transport scolaire', ar: 'النقل المدرسي',   icon: '🚌' },
-            WATER:            { fr: 'Eau potable',        ar: 'الماء الشروب',    icon: '💧' },
-            PROJECTS:         { fr: 'Projets',            ar: 'مشاريع',          icon: '🏗️' },
-            PRODUCTIVE:       { fr: 'Coopérative',        ar: 'تعاونية إنتاجية', icon: '🏭' },
-            PRODUCTIVE_WATER: { fr: 'Eau & Production',   ar: 'ماء وإنتاج',      icon: '🌿' },
-            REGULAR:          { fr: 'Association classique', ar: 'جمعية عامة',   icon: '🏛️' },
-          };
-          // Derive assoc type from modules
-          const assocType = modules.includes('TRANSPORT') ? 'TRANSPORT'
-            : modules.includes('WATER') && modules.includes('PRODUCTIVE') ? 'PRODUCTIVE_WATER'
-            : modules.includes('WATER') ? 'WATER'
-            : modules.includes('PRODUCTIVE') ? 'PRODUCTIVE'
-            : modules.includes('PROJECTS') ? 'PROJECTS'
-            : 'REGULAR';
-          const typeInfo = ASSOC_TYPE_LABEL[assocType];
+
+          // Type label — coop gets its own identity
+          const typeInfo = isCoopAccount
+            ? { icon: '🌱', ar: 'تعاونية', fr: 'Coopérative' }
+            : modules.includes('TRANSPORT') ? { icon: '🚌', ar: 'النقل المدرسي',   fr: 'Transport scolaire' }
+            : modules.includes('WATER') && modules.includes('PRODUCTIVE') ? { icon: '🌿', ar: 'ماء وإنتاج', fr: 'Eau & Production' }
+            : modules.includes('WATER')       ? { icon: '💧', ar: 'الماء الشروب',    fr: 'Eau potable' }
+            : modules.includes('PRODUCTIVE')  ? { icon: '🏭', ar: 'تعاونية إنتاجية', fr: 'Coopérative' }
+            : modules.includes('PROJECTS')    ? { icon: '🏗️', ar: 'مشاريع',          fr: 'Projets' }
+            : { icon: '🏛️', ar: 'جمعية عامة', fr: 'Association classique' };
+
+          const borderColor = isCoopAccount ? 'border-teal-400 dark:border-teal-600' : 'border-emerald-400 dark:border-emerald-600';
+          const bgColor     = isCoopAccount ? 'bg-teal-50 dark:bg-teal-900/10'       : 'bg-emerald-50 dark:bg-emerald-900/10';
 
           return (
-            <div className="rounded-xl border-2 border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/10 p-4">
+            <div className={`rounded-xl border-2 ${borderColor} ${bgColor} p-4`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-xl">{typeInfo.icon}</span>
                     <span className="font-bold text-gray-900 dark:text-white text-base">
                       {lang === 'ar' ? typeInfo.ar : typeInfo.fr}
                     </span>
                     <span className={planBadge[sub.plan]}>{t(`settings.plans.${sub.plan}`)}</span>
                     <span className={statusBadge[sub.status]}>{t(`subscription.${sub.status.toLowerCase()}`)}</span>
+                    {isCoopAccount && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">
+                        {lang === 'ar' ? 'وضع التعاونية ✓' : 'Mode coopérative ✓'}
+                      </span>
+                    )}
                   </div>
                   {sub.expiresAt && (
                     <p className="text-xs text-gray-400 mb-2">
@@ -1190,6 +1195,24 @@ export const SettingsPage: React.FC = () => {
                           </span>
                         );
                       })}
+                    </div>
+                  )}
+                  {/* Coop features list */}
+                  {isCoopAccount && (
+                    <div className="mt-3 grid grid-cols-2 gap-1.5">
+                      {[
+                        { icon: '📋', ar: 'مجلس الإدارة (CA)',       fr: 'Conseil d\'Admin (CA)' },
+                        { icon: '🤝', ar: 'المشاريع والشراكات',       fr: 'Projets & Partenariats' },
+                        { icon: '💼', ar: 'الحصص الاجتماعية',         fr: 'Parts sociales' },
+                        { icon: '📦', ar: 'إدارة المخزون',             fr: 'Gestion du stock' },
+                        { icon: '🧾', ar: 'الفواتير والوثائق',          fr: 'Factures & Documents' },
+                        { icon: '📊', ar: 'تقرير محاسبي سنوي',         fr: 'Rapport annuel comptable' },
+                      ].map(f => (
+                        <div key={f.icon} className="flex items-center gap-1.5 text-xs text-teal-700 dark:text-teal-300">
+                          <span>{f.icon}</span>
+                          <span>{lang === 'ar' ? f.ar : f.fr}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -1231,11 +1254,91 @@ export const SettingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Plan section: contact banner for REGULAR, cards for specialized packs ── */}
+        {/* ── Plan section ── */}
         {(() => {
           const modules: string[] = (org as any)?.modules ?? [];
+          const isCoopAccount = isCoop || (org as any)?.conversionStatus === 'CONVERTED';
           const isRegular = modules.length === 0;
 
+          // Contact buttons reused below
+          const contactButtons = (
+            <div className="flex flex-wrap gap-2">
+              <a href={`mailto:${supportContact.email}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition-colors">
+                <Mail size={13} /> {supportContact.email}
+              </a>
+              {supportContact.whatsapp && (
+                <a href={`https://wa.me/${supportContact.whatsapp.replace(/\D/g, '')}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors">
+                  <MessageCircle size={13} /> WhatsApp
+                </a>
+              )}
+            </div>
+          );
+
+          // ── Cooperative account — dedicated info block ──────────────────
+          if (isCoopAccount) {
+            const currentLevel = PLAN_LEVELS[sub?.plan || 'BASIC'];
+            const COOP_PLAN_LABELS: Record<string, { ar: string; fr: string; price: string; descAr: string; descFr: string }> = {
+              BASIC:    { ar: 'الأساسية',  fr: 'Essentielle', price: '50 MAD/mois',  descAr: 'وحدات أساسية للتعاونية',         descFr: 'Modules de base' },
+              STANDARD: { ar: 'القياسية',  fr: 'Avancée',     price: '100 MAD/mois', descAr: 'مجلس الإدارة + المشاريع + التقارير', descFr: 'CA + Projets + Rapports' },
+            };
+            const downgradePlans = Object.entries(COOP_PLAN_LABELS).filter(([key]) => PLAN_LEVELS[key] < currentLevel);
+
+            return (
+              <div className="space-y-3">
+                {/* Downgrade options */}
+                {downgradePlans.length > 0 && (
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+                    <p className="px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                      {lang === 'ar' ? 'خيارات التخفيض' : 'Options de rétrogradation'}
+                    </p>
+                    {downgradePlans.map(([key, info]) => (
+                      <div key={key} className="flex items-center justify-between px-4 py-3 gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{lang === 'ar' ? info.ar : info.fr}</span>
+                            <span className="text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{info.price}</span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">{lang === 'ar' ? info.descAr : info.descFr}</p>
+                        </div>
+                        {sub?.pendingPlan === key ? (
+                          <span className="text-xs text-amber-600 flex items-center gap-1">⏳ {lang === 'ar' ? 'قيد الموافقة' : "En attente"}</span>
+                        ) : (
+                          <button onClick={() => handleUpgrade(key)} disabled={upgradingSub || !!sub?.pendingPlan}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors disabled:opacity-50">
+                            <ArrowUpCircle size={12} className="rotate-180" />
+                            {upgradingSub ? (lang === 'ar' ? 'جاري...' : 'En cours...') : (lang === 'ar' ? 'طلب تخفيض' : 'Demander')}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Coop contact banner */}
+                <div className="rounded-xl border border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20 p-4 flex flex-col gap-3">
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">🌱</span>
+                    <div>
+                      <p className="text-sm font-semibold text-teal-800 dark:text-teal-200">
+                        {lang === 'ar' ? 'هل تحتاج إلى ترقية باقة التعاونية؟' : 'Besoin de mettre à niveau votre pack coopérative ?'}
+                      </p>
+                      <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
+                        {lang === 'ar'
+                          ? 'تواصل معنا لإضافة وحدات متقدمة: التسويق الرقمي، التجارة الإلكترونية، التوصيل، والمزيد.'
+                          : 'Contactez-nous pour ajouter des modules avancés : marketing digital, e-commerce, livraison, et plus.'}
+                      </p>
+                    </div>
+                  </div>
+                  {contactButtons}
+                </div>
+              </div>
+            );
+          }
+
+          // ── Regular / no modules — contact to upgrade ──────────────────
           if (isRegular) {
             return (
               <div className="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 p-5 flex flex-col gap-4">
@@ -1243,9 +1346,7 @@ export const SettingsPage: React.FC = () => {
                   <span className="text-2xl">🚀</span>
                   <div>
                     <p className="font-semibold text-indigo-800 dark:text-indigo-300 text-sm">
-                      {lang === 'ar'
-                        ? 'هل تريد الترقية إلى باقة أعلى؟'
-                        : 'Vous souhaitez passer à un plan supérieur ?'}
+                      {lang === 'ar' ? 'هل تريد الترقية إلى باقة أعلى؟' : 'Vous souhaitez passer à un plan supérieur ?'}
                     </p>
                     <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
                       {lang === 'ar'
@@ -1255,22 +1356,15 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <a
-                    href={`mailto:${supportContact.email}`}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
-                  >
-                    <Mail size={15} />
-                    {supportContact.email}
+                  <a href={`mailto:${supportContact.email}`}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors">
+                    <Mail size={15} />{supportContact.email}
                   </a>
                   {supportContact.whatsapp && (
-                    <a
-                      href={`https://wa.me/${supportContact.whatsapp.replace(/\D/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
-                    >
-                      <MessageCircle size={15} />
-                      WhatsApp
+                    <a href={`https://wa.me/${supportContact.whatsapp.replace(/\D/g, '')}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors">
+                      <MessageCircle size={15} />WhatsApp
                     </a>
                   )}
                 </div>
@@ -1278,20 +1372,16 @@ export const SettingsPage: React.FC = () => {
             );
           }
 
-          // Downgrade rows — only lower plans shown
-          // Pricing aligned with landing page: BASIC=50 (جمعية عامة), STANDARD=100 (متخصصة), PREMIUM=250 (PRO)
+          // ── Specialized association — downgrade + contact ───────────────
           const PLAN_LABELS: Record<string, { ar: string; fr: string; price: string; descAr: string; descFr: string }> = {
-            BASIC:    { ar: 'الأساسية',  fr: 'Régulière',   price: '50 MAD/mois',  descAr: 'جمعية عامة',                        descFr: 'Association classique' },
-            STANDARD: { ar: 'القياسية',  fr: 'Spécialisée', price: '100 MAD/mois', descAr: 'ماء / مشاريع / إنتاجية / رياضية',  descFr: 'Eau / Projets / Productif / Sportif' },
+            BASIC:    { ar: 'الأساسية',  fr: 'Régulière',   price: '50 MAD/mois',  descAr: 'جمعية عامة',                       descFr: 'Association classique' },
+            STANDARD: { ar: 'القياسية',  fr: 'Spécialisée', price: '100 MAD/mois', descAr: 'ماء / مشاريع / إنتاجية / رياضية', descFr: 'Eau / Projets / Productif / Sportif' },
           };
           const currentLevel = PLAN_LEVELS[sub?.plan || 'BASIC'];
-          const downgradePlans = Object.entries(PLAN_LABELS).filter(
-            ([key]) => PLAN_LEVELS[key] < currentLevel
-          );
+          const downgradePlans = Object.entries(PLAN_LABELS).filter(([key]) => PLAN_LEVELS[key] < currentLevel);
 
           return (
             <div className="space-y-3">
-              {/* Downgrade options */}
               {downgradePlans.length > 0 && (
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                   <p className="px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">
@@ -1301,66 +1391,32 @@ export const SettingsPage: React.FC = () => {
                     <div key={key} className="flex items-center justify-between px-4 py-3 gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                            {lang === 'ar' ? info.ar : info.fr}
-                          </span>
-                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                            {info.price}
-                          </span>
+                          <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{lang === 'ar' ? info.ar : info.fr}</span>
+                          <span className="text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{info.price}</span>
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {lang === 'ar' ? info.descAr : info.descFr}
-                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">{lang === 'ar' ? info.descAr : info.descFr}</p>
                       </div>
                       {sub?.pendingPlan === key ? (
-                        <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                          ⏳ {lang === 'ar' ? 'في انتظار الموافقة' : "En attente d'approbation"}
-                        </span>
+                        <span className="text-xs text-amber-600 flex items-center gap-1">⏳ {lang === 'ar' ? 'في انتظار الموافقة' : "En attente d'approbation"}</span>
                       ) : (
-                        <button
-                          onClick={() => handleUpgrade(key)}
-                          disabled={upgradingSub || !!sub?.pendingPlan}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 transition-colors disabled:opacity-50"
-                        >
+                        <button onClick={() => handleUpgrade(key)} disabled={upgradingSub || !!sub?.pendingPlan}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors disabled:opacity-50">
                           <ArrowUpCircle size={12} className="rotate-180" />
-                          {upgradingSub
-                            ? (lang === 'ar' ? 'جاري...' : 'En cours...')
-                            : (lang === 'ar' ? 'طلب تخفيض' : 'Demander')}
+                          {upgradingSub ? (lang === 'ar' ? 'جاري...' : 'En cours...') : (lang === 'ar' ? 'طلب تخفيض' : 'Demander')}
                         </button>
                       )}
                     </div>
                   ))}
                 </div>
               )}
-
-              {/* Contact banner for pack type change */}
               <div className="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 p-4 flex flex-col gap-3">
                 <div className="flex items-start gap-2">
                   <span className="text-lg">🚀</span>
                   <p className="text-xs text-indigo-700 dark:text-indigo-300">
-                    {lang === 'ar'
-                      ? 'لتغيير نوع الباقة (ماء، إنتاج، نقل...) أو الترقية، تواصل معنا:'
-                      : 'Pour changer de type de pack ou upgrader, contactez-nous :'}
+                    {lang === 'ar' ? 'لتغيير نوع الباقة (ماء، إنتاج، نقل...) أو الترقية، تواصل معنا:' : 'Pour changer de type de pack ou upgrader, contactez-nous :'}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <a
-                    href={`mailto:${supportContact.email}`}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition-colors"
-                  >
-                    <Mail size={13} /> {supportContact.email}
-                  </a>
-                  {supportContact.whatsapp && (
-                    <a
-                      href={`https://wa.me/${supportContact.whatsapp.replace(/\D/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
-                    >
-                      <MessageCircle size={13} /> WhatsApp
-                    </a>
-                  )}
-                </div>
+                {contactButtons}
               </div>
             </div>
           );
