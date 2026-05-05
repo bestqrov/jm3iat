@@ -1277,63 +1277,24 @@ export const SettingsPage: React.FC = () => {
             </div>
           );
 
-          // ── Cooperative account — dedicated info block ──────────────────
+          // ── Cooperative account — contact banner only ──────────────────
           if (isCoopAccount) {
-            const currentLevel = PLAN_LEVELS[sub?.plan || 'BASIC'];
-            const COOP_PLAN_LABELS: Record<string, { ar: string; fr: string; price: string; descAr: string; descFr: string }> = {
-              BASIC:    { ar: 'الأساسية',  fr: 'Essentielle', price: '50 MAD/mois',  descAr: 'وحدات أساسية للتعاونية',         descFr: 'Modules de base' },
-              STANDARD: { ar: 'القياسية',  fr: 'Avancée',     price: '100 MAD/mois', descAr: 'مجلس الإدارة + المشاريع + التقارير', descFr: 'CA + Projets + Rapports' },
-            };
-            const downgradePlans = Object.entries(COOP_PLAN_LABELS).filter(([key]) => PLAN_LEVELS[key] < currentLevel);
-
             return (
-              <div className="space-y-3">
-                {/* Downgrade options */}
-                {downgradePlans.length > 0 && (
-                  <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-                    <p className="px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                      {lang === 'ar' ? 'خيارات التخفيض' : 'Options de rétrogradation'}
+              <div className="rounded-xl border border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20 p-4 flex flex-col gap-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg">🌱</span>
+                  <div>
+                    <p className="text-sm font-semibold text-teal-800 dark:text-teal-200">
+                      {lang === 'ar' ? 'هل تحتاج إلى ترقية باقة التعاونية؟' : 'Besoin de mettre à niveau votre pack coopérative ?'}
                     </p>
-                    {downgradePlans.map(([key, info]) => (
-                      <div key={key} className="flex items-center justify-between px-4 py-3 gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{lang === 'ar' ? info.ar : info.fr}</span>
-                            <span className="text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{info.price}</span>
-                          </div>
-                          <p className="text-xs text-gray-400 mt-0.5">{lang === 'ar' ? info.descAr : info.descFr}</p>
-                        </div>
-                        {sub?.pendingPlan === key ? (
-                          <span className="text-xs text-amber-600 flex items-center gap-1">⏳ {lang === 'ar' ? 'قيد الموافقة' : "En attente"}</span>
-                        ) : (
-                          <button onClick={() => handleUpgrade(key)} disabled={upgradingSub || !!sub?.pendingPlan}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors disabled:opacity-50">
-                            <ArrowUpCircle size={12} className="rotate-180" />
-                            {upgradingSub ? (lang === 'ar' ? 'جاري...' : 'En cours...') : (lang === 'ar' ? 'طلب تخفيض' : 'Demander')}
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                    <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
+                      {lang === 'ar'
+                        ? 'تواصل معنا لإضافة وحدات متقدمة: التسويق الرقمي، التجارة الإلكترونية، التوصيل، والمزيد.'
+                        : 'Contactez-nous pour ajouter des modules avancés : marketing digital, e-commerce, livraison, et plus.'}
+                    </p>
                   </div>
-                )}
-
-                {/* Coop contact banner */}
-                <div className="rounded-xl border border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20 p-4 flex flex-col gap-3">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">🌱</span>
-                    <div>
-                      <p className="text-sm font-semibold text-teal-800 dark:text-teal-200">
-                        {lang === 'ar' ? 'هل تحتاج إلى ترقية باقة التعاونية؟' : 'Besoin de mettre à niveau votre pack coopérative ?'}
-                      </p>
-                      <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
-                        {lang === 'ar'
-                          ? 'تواصل معنا لإضافة وحدات متقدمة: التسويق الرقمي، التجارة الإلكترونية، التوصيل، والمزيد.'
-                          : 'Contactez-nous pour ajouter des modules avancés : marketing digital, e-commerce, livraison, et plus.'}
-                      </p>
-                    </div>
-                  </div>
-                  {contactButtons}
                 </div>
+                {contactButtons}
               </div>
             );
           }
