@@ -1869,7 +1869,7 @@ const deactivateCooperative = async (req, res) => {
   try {
     const org = await prisma.organization.findUnique({ where: { id: req.params.orgId } });
     if (!org) return res.status(404).json({ message: 'Organization not found' });
-    const modules = (org.modules || []).filter((m: string) => m !== 'COOP');
+    const modules = (org.modules || []).filter((m) => m !== 'COOP');
     await prisma.organization.update({
       where: { id: req.params.orgId },
       data: { conversionStatus: 'NONE', conversionApprovedAt: null, modules },
