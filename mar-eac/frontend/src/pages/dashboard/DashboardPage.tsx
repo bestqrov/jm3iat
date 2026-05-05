@@ -128,6 +128,7 @@ export const DashboardPage: React.FC = () => {
   const [showUpgradeDialog,  setShowUpgradeDialog]  = useState(false);
   const [showConvirmModal,   setShowConvirmModal]   = useState(false);
   const [conversionLoading,  setConversionLoading]  = useState(false);
+  const [showComingSoon,     setShowComingSoon]      = useState(false);
 
   const handleRequestConversion = async () => {
     setConversionLoading(true);
@@ -283,7 +284,7 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-center gap-3">
             {/* Convert to cooperative button */}
             <button
-              onClick={() => isPro ? setShowCoopSection(v => !v) : setShowUpgradeDialog(true)}
+              onClick={() => setShowComingSoon(true)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all border ${
                 isPro
                   ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
@@ -936,6 +937,35 @@ export const DashboardPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* ── Coming soon modal ── */}
+      {showComingSoon && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowComingSoon(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #0f766e, #14b8a6)' }}>
+                <span className="text-3xl">🌱</span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                {isAr ? 'قريباً...' : 'Bientôt disponible'}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                {isAr
+                  ? 'ميزة التحويل إلى تعاونية قيد التطوير. سنُعلمك فور إطلاقها.'
+                  : 'La conversion en coopérative est en cours de développement. Vous serez notifié à son lancement.'}
+              </p>
+              <button
+                onClick={() => setShowComingSoon(false)}
+                className="mt-5 w-full py-2.5 rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'linear-gradient(135deg, #0f766e, #14b8a6)' }}
+              >
+                {isAr ? 'حسناً' : 'OK'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
