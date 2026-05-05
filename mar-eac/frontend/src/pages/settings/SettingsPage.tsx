@@ -122,8 +122,7 @@ export const SettingsPage: React.FC = () => {
   const [backupCreating,  setBackupCreating]  = useState(false);
 
   const hasBackup      = ((org as any)?.modules ?? []).includes('BACKUP');
-  const hasSmartMeter  = ((org as any)?.modules ?? []).includes('SMART_METER');
-  const [smartMeterToggling, setSmartMeterToggling] = useState(false);
+  const hasMarketing   = ((org as any)?.modules ?? []).includes('MARKETING');
 
   const loadBackups = async () => {
     if (!hasBackup) return;
@@ -141,14 +140,6 @@ export const SettingsPage: React.FC = () => {
       await backupApi.toggle();
       await refreshUser();
     } catch {} finally { setBackupToggling(false); }
-  };
-
-  const handleToggleSmartMeter = async () => {
-    setSmartMeterToggling(true);
-    try {
-      await authApi.toggleAddon('SMART_METER');
-      await refreshUser();
-    } catch {} finally { setSmartMeterToggling(false); }
   };
 
   const handleCreateBackup = async () => {
@@ -1563,57 +1554,129 @@ export const SettingsPage: React.FC = () => {
           )}
         </div>
 
-        {/* ── SMART_METER addon card ── */}
-        <div className={`rounded-xl border-2 p-4 transition-colors ${hasSmartMeter ? 'border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-900/10' : 'border-gray-200 dark:border-gray-700'}`}>
+        {/* ── MARKETING addon card ── */}
+        <div className={`rounded-xl border-2 p-4 transition-colors ${hasMarketing ? 'border-pink-400 dark:border-pink-500 bg-pink-50 dark:bg-pink-900/10' : 'border-gray-200 dark:border-gray-700'}`}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl ${hasSmartMeter ? 'bg-violet-100 dark:bg-violet-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                📷
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl ${hasMarketing ? 'bg-pink-100 dark:bg-pink-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                📣
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-0.5">
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {lang === 'ar' ? 'قراءة العدادات بالكاميرا (ذكاء اصطناعي)' : 'Lecture compteurs par caméra (IA)'}
+                    {lang === 'ar' ? 'باقة التسويق الرقمي' : 'Pack Marketing Digital'}
                   </span>
-                  <span className="text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-2 py-0.5 rounded-full font-medium">
-                    +49 MAD/mois
+                  <span className="text-xs bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 px-2 py-0.5 rounded-full font-medium">
+                    +59 MAD/mois
                   </span>
-                  {hasSmartMeter && (
+                  {hasMarketing ? (
                     <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                       <CheckCircle2 size={11} />{lang === 'ar' ? 'مفعّل' : 'Actif'}
+                    </span>
+                  ) : (
+                    <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
+                      {lang === 'ar' ? 'قريباً' : 'Bientôt'}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
                   {lang === 'ar'
-                    ? 'صوّر العداد بكاميرا هاتفك — الذكاء الاصطناعي يقرأ القيمة تلقائياً ويحسب الاستهلاك ويُنشئ الفاتورة'
-                    : 'Photographiez le compteur avec votre mobile — l\'IA lit la valeur, calcule la consommation et génère la facture automatiquement'}
+                    ? 'أرسل حملات واتساب وبريد إلكتروني لأعضائك، تتبّع الإحصائيات، وأدِر تواصل منظمتك من مكان واحد'
+                    : 'Envoyez des campagnes WhatsApp et email à vos membres, suivez les statistiques et gérez la communication depuis un seul endroit'}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {(lang === 'ar'
-                    ? ['📷 تصوير العداد', '🤖 قراءة آلية', '⚡ حساب فوري', '💧 فاتورة تلقائية']
-                    : ['📷 Photo compteur', '🤖 Lecture IA', '⚡ Calcul instantané', '💧 Facture auto']
+                    ? ['📱 حملات واتساب', '📧 نشرة بريدية', '📊 إحصائيات', '🎨 قوالب جاهزة', '🎯 استهداف الأعضاء']
+                    : ['📱 Campagnes WhatsApp', '📧 Newsletter', '📊 Statistiques', '🎨 Templates', '🎯 Ciblage membres']
                   ).map(f => (
                     <span key={f} className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{f}</span>
                   ))}
                 </div>
-                {!hasSmartMeter && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                    💡 {lang === 'ar'
-                      ? 'يتطلب تفعيل وحدة إدارة الماء — الرسوم تُطبَّق في الشهر القادم'
-                      : 'Nécessite le module Gestion de l\'eau activé — frais appliqués le mois prochain'}
-                  </p>
-                )}
               </div>
             </div>
-            {/* Toggle switch */}
-            <button
-              onClick={handleToggleSmartMeter}
-              disabled={smartMeterToggling}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${hasSmartMeter ? 'bg-violet-600' : 'bg-gray-200 dark:bg-gray-600'}`}
-            >
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${hasSmartMeter ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
+            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
+              {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
+            </span>
+          </div>
+        </div>
+
+        {/* ── REPORTS PRO addon card ── */}
+        <div className="rounded-xl border-2 border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 text-xl">
+                📊
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {lang === 'ar' ? 'التقارير المتقدمة' : 'Rapports Avancés'}
+                  </span>
+                  <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-2 py-0.5 rounded-full font-medium">
+                    +39 MAD/mois
+                  </span>
+                  <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
+                    {lang === 'ar' ? 'قريباً' : 'Bientôt'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
+                  {lang === 'ar'
+                    ? 'لوحات تحليلية مخصصة، مقارنة سنوية بالرسوم البيانية، تصدير Excel/PDF مُنسَّق، وتقارير قابلة للجدولة'
+                    : 'Tableaux de bord personnalisés, comparaison annuelle graphique, export Excel/PDF formaté et rapports planifiables'}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(lang === 'ar'
+                    ? ['📈 مقارنة سنوية', '📥 تصدير Excel', '📄 PDF مُنسَّق', '⏰ تقارير مجدولة']
+                    : ['📈 Comparaison annuelle', '📥 Export Excel', '📄 PDF formaté', '⏰ Rapports planifiés']
+                  ).map(f => (
+                    <span key={f} className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{f}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
+              {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
+            </span>
+          </div>
+        </div>
+
+        {/* ── SMS NOTIFICATIONS addon card ── */}
+        <div className="rounded-xl border-2 border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 text-xl">
+                💬
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {lang === 'ar' ? 'إشعارات SMS' : 'Notifications SMS'}
+                  </span>
+                  <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
+                    +29 MAD/mois
+                  </span>
+                  <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
+                    {lang === 'ar' ? 'قريباً' : 'Bientôt'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
+                  {lang === 'ar'
+                    ? 'أرسل إشعارات SMS تلقائية للأعضاء: تذكير الاجتماعات، تأكيد الدفع، تنبيهات الاشتراك، وإعلانات مهمة'
+                    : 'Envoyez des SMS automatiques aux membres : rappels réunions, confirmation paiement, alertes abonnement et annonces importantes'}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(lang === 'ar'
+                    ? ['📅 تذكير الاجتماعات', '✅ تأكيد الدفع', '⚠️ تنبيهات الاشتراك', '📢 إعلانات']
+                    : ['📅 Rappels réunions', '✅ Confirmation paiement', '⚠️ Alertes abonnement', '📢 Annonces']
+                  ).map(f => (
+                    <span key={f} className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{f}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
+              {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
+            </span>
           </div>
         </div>
       </div>
