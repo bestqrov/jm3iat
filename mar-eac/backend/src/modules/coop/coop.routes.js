@@ -34,4 +34,18 @@ router.delete('/invoices/:id',   ctrl.deleteInvoice);
 // Reports
 router.get('/reports',           ctrl.getReports);
 
+// Board meetings (مجلس الإدارة)
+router.get('/board-meetings',                              ctrl.getBoardMeetings);
+router.post('/board-meetings',                             ctrl.createBoardMeeting);
+router.put('/board-meetings/:id',                          ctrl.updateBoardMeeting);
+router.delete('/board-meetings/:id',                       ctrl.deleteBoardMeeting);
+router.post('/board-meetings/:id/decisions',               ctrl.addBoardDecision);
+router.put('/board-meetings/:id/decisions/:decisionId',    ctrl.updateBoardDecision);
+
+// Projects & partnerships (المشاريع والشراكات)
+router.get('/projects',          ctrl.getCoopProjects);
+router.post('/projects',         ctrl.createCoopProject);
+router.put('/projects/:id',      ctrl.updateCoopProject);
+router.delete('/projects/:id',   ctrl.deleteCoopProject);
+
 module.exports = router;

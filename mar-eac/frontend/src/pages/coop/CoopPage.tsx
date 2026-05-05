@@ -3,6 +3,7 @@ import {
   LayoutDashboard, Package, ArrowDownUp, Users, FileText,
   BarChart2, Plus, Trash2, Edit2, X,
   TrendingUp, AlertCircle, CheckCircle, Clock, Store,
+  Briefcase, CalendarDays, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,8 +19,17 @@ interface InvoiceItem { id?: string; productId?: string; description: string; qu
 interface Invoice { id: string; type: 'DEVIS'|'FACTURE'|'BL'; number: string; clientName: string; clientPhone?: string; clientAddress?: string; status: string; totalAmount: number; date: string; dueDate?: string; notes?: string; items: InvoiceItem[]; }
 interface Stats { activeProducts: number; membersWithShares: number; totalShares: number; paidShares: number; shareValue: number; capitalSocial: number; totalRevenue: number; pendingRevenue: number; lowStockProducts: number; invoiceCount: number; stockSummary: {id:string;name:string;stock:number;unit:string}[]; }
 interface Member { id: string; name: string; }
+interface BoardMeeting {
+  id: string; title: string; date: string; location?: string; agenda?: string;
+  pvContent?: string; status: string; sessionType?: string;
+  decisions: { id: string; description: string; assignedTo?: string; dueDate?: string; status: string }[];
+}
+interface CoopProject {
+  id: string; title: string; type: string; description?: string; status: string;
+  budget?: number; startDate?: string; endDate?: string; generalGoal?: string;
+}
 
-type Tab = 'dashboard'|'shares'|'stock'|'invoices'|'reports';
+type Tab = 'dashboard'|'board'|'projects'|'shares'|'stock'|'invoices'|'reports';
 
 // ── Modal wrapper ─────────────────────────────────────────────────────────────
 
@@ -97,15 +107,23 @@ export const CoopPage: React.FC = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [reports, setReports] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [boardMeetings, setBoardMeetings]   = useState<BoardMeeting[]>([]);
+  const [coopProjects, setCoopProjects]     = useState<CoopProject[]>([]);
+  const [expandedMeeting, setExpandedMeeting] = useState<string | null>(null);
 
   // Modal states
   const [productModal, setProductModal]   = useState(false);
   const [movementModal, setMovementModal] = useState(false);
   const [shareModal, setShareModal]       = useState(false);
   const [invoiceModal, setInvoiceModal]   = useState(false);
+  const [boardModal, setBoardModal]       = useState(false);
+  const [projectModal, setProjectModal]   = useState(false);
+  const [decisionModal, setDecisionModal] = useState<string | null>(null);
   const [editInvoice, setEditInvoice]     = useState<Invoice | null>(null);
   const [editProduct, setEditProduct]     = useState<Product | null>(null);
   const [editShare, setEditShare]         = useState<Share | null>(null);
+  const [editMeeting, setEditMeeting]     = useState<BoardMeeting | null>(null);
+  const [editProject, setEditProject]     = useState<CoopProject | null>(null);
 
   // Form states
   const [productForm, setProductForm] = useState({ name: '', nameAr: '', unit: 'unité', category: '' });
@@ -116,6 +134,9 @@ export const CoopPage: React.FC = () => {
   const [stockFilter, setStockFilter] = useState('');
   const [invoiceTypeFilter, setInvoiceTypeFilter] = useState('');
   const [error, setError] = useState('');
+  const [boardForm, setBoardForm] = useState({ title: '', sessionType: 'ORDINARY', date: '', location: '', agenda: '', pvContent: '' });
+  const [projectForm, setProjectForm] = useState({ title: '', type: 'INTERNE', description: '', partnerName: '', budget: '', startDate: '', endDate: '', status: 'PLANNED' });
+  const [decisionForm, setDecisionForm] = useState({ description: '', assignedTo: '', dueDate: '' });
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -137,8 +158,18 @@ export const CoopPage: React.FC = () => {
     setReports(r.data);
   }, []);
 
+  const loadBoard = useCallback(async () => {
+    try { const r = await coopApi.getBoardMeetings(); setBoardMeetings(r.data); } catch { /* ignore */ }
+  }, []);
+
+  const loadProjects = useCallback(async () => {
+    try { const r = await coopApi.getCoopProjects(); setCoopProjects(r.data); } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => { refreshUser().then(() => reload()); }, [reload]);
   useEffect(() => { if (tab === 'reports') loadReports(); }, [tab, loadReports]);
+  useEffect(() => { if (tab === 'board') loadBoard(); }, [tab, loadBoard]);
+  useEffect(() => { if (tab === 'projects') loadProjects(); }, [tab, loadProjects]);
 
   // Load members for share form
   useEffect(() => {
@@ -248,10 +279,78 @@ export const CoopPage: React.FC = () => {
     } catch { /* ignore */ } finally { setSavingType(false); }
   };
 
+  // ── Board meeting handlers ─────────────────────────────────────────────────
+
+  const openBoardModal = (m?: BoardMeeting) => {
+    if (m) {
+      setEditMeeting(m);
+      setBoardForm({ title: m.title, sessionType: m.sessionType || 'ORDINARY', date: m.date?.slice(0, 10) || '', location: m.location || '', agenda: m.agenda || '', pvContent: m.pvContent || '' });
+    } else {
+      setEditMeeting(null);
+      setBoardForm({ title: '', sessionType: 'ORDINARY', date: '', location: '', agenda: '', pvContent: '' });
+    }
+    setBoardModal(true);
+  };
+
+  const saveBoardMeeting = async () => {
+    try {
+      if (editMeeting) await coopApi.updateBoardMeeting(editMeeting.id, boardForm);
+      else await coopApi.createBoardMeeting(boardForm);
+      setBoardModal(false); loadBoard();
+    } catch (e: any) { setError(e.response?.data?.message || 'Error'); }
+  };
+
+  const deleteBoardMeeting = async (id: string) => {
+    if (!confirm(ar ? 'حذف هذا الاجتماع؟' : 'Supprimer cette réunion ?')) return;
+    await coopApi.deleteBoardMeeting(id); loadBoard();
+  };
+
+  const saveDecision = async () => {
+    if (!decisionModal || !decisionForm.description.trim()) return;
+    try {
+      await coopApi.addBoardDecision(decisionModal, decisionForm);
+      setDecisionModal(null); setDecisionForm({ description: '', assignedTo: '', dueDate: '' }); loadBoard();
+    } catch (e: any) { setError(e.response?.data?.message || 'Error'); }
+  };
+
+  const toggleDecisionStatus = async (meetingId: string, decisionId: string, currentStatus: string) => {
+    const next = currentStatus === 'DONE' ? 'PENDING' : 'DONE';
+    await coopApi.updateBoardDecision(meetingId, decisionId, { status: next }); loadBoard();
+  };
+
+  // ── Project handlers ───────────────────────────────────────────────────────
+
+  const openProjectModal = (p?: CoopProject) => {
+    if (p) {
+      setEditProject(p);
+      const partnerName = p.generalGoal?.startsWith('Partenaire: ') ? p.generalGoal.replace('Partenaire: ', '') : '';
+      setProjectForm({ title: p.title, type: p.type, description: p.description || '', partnerName, budget: p.budget ? String(p.budget) : '', startDate: p.startDate?.slice(0, 10) || '', endDate: p.endDate?.slice(0, 10) || '', status: p.status });
+    } else {
+      setEditProject(null);
+      setProjectForm({ title: '', type: 'INTERNE', description: '', partnerName: '', budget: '', startDate: '', endDate: '', status: 'PLANNED' });
+    }
+    setProjectModal(true);
+  };
+
+  const saveProject = async () => {
+    try {
+      if (editProject) await coopApi.updateCoopProject(editProject.id, projectForm);
+      else await coopApi.createCoopProject(projectForm);
+      setProjectModal(false); loadProjects();
+    } catch (e: any) { setError(e.response?.data?.message || 'Error'); }
+  };
+
+  const deleteProject = async (id: string) => {
+    if (!confirm(ar ? 'حذف هذا المشروع؟' : 'Supprimer ce projet ?')) return;
+    await coopApi.deleteCoopProject(id); loadProjects();
+  };
+
   // ── Tab bar ──────────────────────────────────────────────────────────────
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'dashboard', label: t('coop.tabs.dashboard'), icon: <LayoutDashboard size={16} /> },
+    { key: 'dashboard', label: ar ? 'لوحة القيادة' : 'Tableau de bord', icon: <LayoutDashboard size={16} /> },
+    { key: 'board',     label: ar ? 'مجلس الإدارة' : 'Conseil d\'Admin', icon: <CalendarDays size={16} /> },
+    { key: 'projects',  label: ar ? 'المشاريع'     : 'Projets',           icon: <Briefcase size={16} /> },
     { key: 'shares',    label: t('coop.tabs.shares'),    icon: <Users size={16} /> },
     { key: 'stock',     label: t('coop.tabs.stock'),     icon: <Package size={16} /> },
     { key: 'invoices',  label: t('coop.tabs.invoices'),  icon: <FileText size={16} /> },
@@ -697,6 +796,322 @@ export const CoopPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── BOARD MEETINGS (مجلس الإدارة) ──────────────────────────── */}
+      {tab === 'board' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">{ar ? 'اجتماعات مجلس الإدارة' : 'Réunions du Conseil d\'Administration'}</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{ar ? 'المحاضر، المقررات، ومتابعة القرارات' : 'Procès-verbaux, décisions et suivi'}</p>
+            </div>
+            <button onClick={() => openBoardModal()} className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700">
+              <Plus size={16} />{ar ? 'اجتماع جديد' : 'Nouvelle réunion'}
+            </button>
+          </div>
+
+          {boardMeetings.length === 0 && (
+            <div className="text-center py-16 text-gray-400">
+              <CalendarDays size={40} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm">{ar ? 'لا توجد اجتماعات مسجلة' : 'Aucune réunion enregistrée'}</p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {boardMeetings.map(mtg => {
+              const isOpen = expandedMeeting === mtg.id;
+              const statusColor = mtg.status === 'HELD' ? 'text-emerald-600 bg-emerald-50' : mtg.status === 'CANCELLED' ? 'text-red-600 bg-red-50' : 'text-amber-600 bg-amber-50';
+              return (
+                <div key={mtg.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                      <CalendarDays size={18} className="text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-900 dark:text-white text-sm">{mtg.title}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>
+                          {mtg.status === 'HELD' ? (ar ? 'منعقد' : 'Tenu') : mtg.status === 'CANCELLED' ? (ar ? 'ملغى' : 'Annulé') : (ar ? 'مجدول' : 'Planifié')}
+                        </span>
+                        {mtg.decisions.length > 0 && (
+                          <span className="text-xs text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 px-2 py-0.5 rounded-full">
+                            {mtg.decisions.length} {ar ? 'قرار' : 'décision(s)'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-3 flex-wrap">
+                        <span>📅 {fmtDate(mtg.date)}</span>
+                        {mtg.location && <span>📍 {mtg.location}</span>}
+                      </div>
+                      {mtg.agenda && <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">{ar ? 'جدول الأعمال: ' : 'Ordre du jour: '}{mtg.agenda}</p>}
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button onClick={() => openBoardModal(mtg)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500"><Edit2 size={14} /></button>
+                      <button onClick={() => deleteBoardMeeting(mtg.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500"><Trash2 size={14} /></button>
+                      <button onClick={() => setExpandedMeeting(isOpen ? null : mtg.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500">
+                        {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {isOpen && (
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-3 bg-gray-50 dark:bg-gray-800/50">
+                      {/* PV Content */}
+                      {mtg.pvContent && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{ar ? 'محضر الاجتماع' : 'Procès-verbal'}</h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">{mtg.pvContent}</p>
+                        </div>
+                      )}
+                      {/* Decisions */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300">{ar ? 'القرارات' : 'Décisions'}</h4>
+                          <button onClick={() => setDecisionModal(mtg.id)} className="text-xs text-teal-600 hover:text-teal-700 flex items-center gap-1">
+                            <Plus size={12} />{ar ? 'إضافة قرار' : 'Ajouter'}
+                          </button>
+                        </div>
+                        {mtg.decisions.length === 0 ? (
+                          <p className="text-xs text-gray-400 italic">{ar ? 'لا توجد قرارات مسجلة' : 'Aucune décision enregistrée'}</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {mtg.decisions.map(d => (
+                              <div key={d.id} className="flex items-start gap-2 text-xs">
+                                <button onClick={() => toggleDecisionStatus(mtg.id, d.id, d.status)} className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center ${d.status === 'DONE' ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 dark:border-gray-600'}`}>
+                                  {d.status === 'DONE' && <CheckCircle size={10} />}
+                                </button>
+                                <span className={`flex-1 ${d.status === 'DONE' ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}>{d.description}</span>
+                                {d.assignedTo && <span className="text-gray-400">→ {d.assignedTo}</span>}
+                                {d.dueDate && <span className="text-gray-400">{fmtDate(d.dueDate)}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {/* Mark as held */}
+                      {mtg.status === 'SCHEDULED' && (
+                        <button
+                          onClick={() => coopApi.updateBoardMeeting(mtg.id, { status: 'HELD' }).then(() => loadBoard())}
+                          className="text-xs text-emerald-600 hover:text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg"
+                        >
+                          ✓ {ar ? 'تسجيل كمنعقد' : 'Marquer comme tenu'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Board meeting modal */}
+          {boardModal && (
+            <Modal title={editMeeting ? (ar ? 'تعديل الاجتماع' : 'Modifier la réunion') : (ar ? 'اجتماع جديد' : 'Nouvelle réunion')} onClose={() => setBoardModal(false)} wide>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">{ar ? 'نوع الجلسة' : 'Type de séance'}</label>
+                    <select className="input" value={boardForm.sessionType} onChange={e => setBoardForm(f => ({ ...f, sessionType: e.target.value }))}>
+                      <option value="ORDINARY">{ar ? 'عادية' : 'Ordinaire'}</option>
+                      <option value="EXTRAORDINARY">{ar ? 'استثنائية' : 'Extraordinaire'}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">{ar ? 'التاريخ' : 'Date'}</label>
+                    <input type="date" className="input" value={boardForm.date} onChange={e => setBoardForm(f => ({ ...f, date: e.target.value }))} />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">{ar ? 'العنوان' : 'Titre'}</label>
+                  <input className="input" value={boardForm.title} onChange={e => setBoardForm(f => ({ ...f, title: e.target.value }))} placeholder={ar ? 'اجتماع عادي لمجلس الإدارة' : 'Réunion ordinaire du CA'} />
+                </div>
+                <div>
+                  <label className="label">{ar ? 'المكان' : 'Lieu'}</label>
+                  <input className="input" value={boardForm.location} onChange={e => setBoardForm(f => ({ ...f, location: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{ar ? 'جدول الأعمال' : 'Ordre du jour'}</label>
+                  <textarea className="input resize-none" rows={3} value={boardForm.agenda} onChange={e => setBoardForm(f => ({ ...f, agenda: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{ar ? 'محضر الاجتماع (PV)' : 'Procès-verbal (PV)'}</label>
+                  <textarea className="input resize-none" rows={4} value={boardForm.pvContent} onChange={e => setBoardForm(f => ({ ...f, pvContent: e.target.value }))} placeholder={ar ? 'نص المحضر الرسمي...' : 'Texte officiel du PV...'} />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button onClick={() => setBoardModal(false)} className="btn-secondary">{ar ? 'إلغاء' : 'Annuler'}</button>
+                  <button onClick={saveBoardMeeting} className="btn-primary">{ar ? 'حفظ' : 'Enregistrer'}</button>
+                </div>
+              </div>
+            </Modal>
+          )}
+
+          {/* Decision modal */}
+          {decisionModal && (
+            <Modal title={ar ? 'إضافة قرار' : 'Ajouter une décision'} onClose={() => setDecisionModal(null)}>
+              <div className="space-y-3">
+                <div>
+                  <label className="label">{ar ? 'نص القرار' : 'Décision'}</label>
+                  <textarea className="input resize-none" rows={3} value={decisionForm.description} onChange={e => setDecisionForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{ar ? 'مكلف بالتنفيذ' : 'Responsable'}</label>
+                  <input className="input" value={decisionForm.assignedTo} onChange={e => setDecisionForm(f => ({ ...f, assignedTo: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{ar ? 'أجل التنفيذ' : 'Échéance'}</label>
+                  <input type="date" className="input" value={decisionForm.dueDate} onChange={e => setDecisionForm(f => ({ ...f, dueDate: e.target.value }))} />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button onClick={() => setDecisionModal(null)} className="btn-secondary">{ar ? 'إلغاء' : 'Annuler'}</button>
+                  <button onClick={saveDecision} className="btn-primary">{ar ? 'حفظ' : 'Enregistrer'}</button>
+                </div>
+              </div>
+            </Modal>
+          )}
+        </div>
+      )}
+
+      {/* ── PROJECTS & PARTNERSHIPS (المشاريع والشراكات) ─────────────── */}
+      {tab === 'projects' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">{ar ? 'المشاريع والشراكات' : 'Projets & Partenariats'}</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{ar ? 'المشاريع الداخلية واتفاقيات الشراكة' : 'Projets internes et accords de partenariat'}</p>
+            </div>
+            <button onClick={() => openProjectModal()} className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700">
+              <Plus size={16} />{ar ? 'مشروع جديد' : 'Nouveau projet'}
+            </button>
+          </div>
+
+          {/* Stats row */}
+          {coopProjects.length > 0 && (
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: ar ? 'إجمالي المشاريع' : 'Total projets', value: coopProjects.length, color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400' },
+                { label: ar ? 'شراكات' : 'Partenariats', value: coopProjects.filter(p => p.type === 'PARTENARIAT').length, color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400' },
+                { label: ar ? 'قيد التنفيذ' : 'En cours', value: coopProjects.filter(p => p.status === 'IN_PROGRESS').length, color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' },
+              ].map(s => (
+                <div key={s.label} className={`rounded-xl p-3 ${s.color}`}>
+                  <div className="text-xl font-bold">{s.value}</div>
+                  <div className="text-xs mt-0.5">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {coopProjects.length === 0 && (
+            <div className="text-center py-16 text-gray-400">
+              <Briefcase size={40} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm">{ar ? 'لا توجد مشاريع مسجلة' : 'Aucun projet enregistré'}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {coopProjects.map(proj => {
+              const isPartnership = proj.type === 'PARTENARIAT';
+              const partnerName = proj.generalGoal?.startsWith('Partenaire: ') ? proj.generalGoal.replace('Partenaire: ', '') : '';
+              const statusMap: Record<string, { label: string; color: string }> = {
+                PLANNED:     { label: ar ? 'مخطط' : 'Planifié',     color: 'bg-gray-100 text-gray-700' },
+                IN_PROGRESS: { label: ar ? 'جاري' : 'En cours',     color: 'bg-blue-100 text-blue-700' },
+                COMPLETED:   { label: ar ? 'منجز' : 'Terminé',      color: 'bg-emerald-100 text-emerald-700' },
+                SUSPENDED:   { label: ar ? 'موقوف' : 'Suspendu',    color: 'bg-red-100 text-red-700' },
+              };
+              const st = statusMap[proj.status] || statusMap.PLANNED;
+              return (
+                <div key={proj.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-lg ${isPartnership ? '🤝' : '🏗️'}`}>{isPartnership ? '🤝' : '🏗️'}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white text-sm">{proj.title}</span>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button onClick={() => openProjectModal(proj)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500"><Edit2 size={13} /></button>
+                      <button onClick={() => deleteProject(proj.id)} className="p-1 hover:bg-red-50 rounded-lg text-red-500"><Trash2 size={13} /></button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${st.color}`}>{st.label}</span>
+                    <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full">
+                      {isPartnership ? (ar ? 'شراكة' : 'Partenariat') : (ar ? 'مشروع داخلي' : 'Projet interne')}
+                    </span>
+                  </div>
+                  {isPartnership && partnerName && (
+                    <div className="text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1 mb-1">
+                      🤝 {ar ? 'الشريك: ' : 'Partenaire: '}{partnerName}
+                    </div>
+                  )}
+                  {proj.description && <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{proj.description}</p>}
+                  <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+                    {proj.budget && <span>💰 {fmt(proj.budget)} MAD</span>}
+                    {proj.startDate && <span>📅 {fmtDate(proj.startDate)}</span>}
+                    {proj.endDate && <span>→ {fmtDate(proj.endDate)}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Project modal */}
+          {projectModal && (
+            <Modal title={editProject ? (ar ? 'تعديل المشروع' : 'Modifier') : (ar ? 'مشروع جديد' : 'Nouveau projet')} onClose={() => setProjectModal(false)} wide>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">{ar ? 'نوع المشروع' : 'Type'}</label>
+                    <select className="input" value={projectForm.type} onChange={e => setProjectForm(f => ({ ...f, type: e.target.value }))}>
+                      <option value="INTERNE">{ar ? 'مشروع داخلي' : 'Projet interne'}</option>
+                      <option value="PARTENARIAT">{ar ? 'اتفاقية شراكة' : 'Partenariat'}</option>
+                      <option value="FINANCEMENT">{ar ? 'طلب تمويل' : 'Financement'}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">{ar ? 'الحالة' : 'Statut'}</label>
+                    <select className="input" value={projectForm.status} onChange={e => setProjectForm(f => ({ ...f, status: e.target.value }))}>
+                      <option value="PLANNED">{ar ? 'مخطط' : 'Planifié'}</option>
+                      <option value="IN_PROGRESS">{ar ? 'جاري' : 'En cours'}</option>
+                      <option value="COMPLETED">{ar ? 'منجز' : 'Terminé'}</option>
+                      <option value="SUSPENDED">{ar ? 'موقوف' : 'Suspendu'}</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="label">{ar ? 'عنوان المشروع' : 'Titre du projet'}</label>
+                  <input className="input" value={projectForm.title} onChange={e => setProjectForm(f => ({ ...f, title: e.target.value }))} />
+                </div>
+                {projectForm.type === 'PARTENARIAT' && (
+                  <div>
+                    <label className="label">{ar ? 'اسم الشريك' : 'Nom du partenaire'}</label>
+                    <input className="input" value={projectForm.partnerName} onChange={e => setProjectForm(f => ({ ...f, partnerName: e.target.value }))} placeholder={ar ? 'وزارة، جمعية، مؤسسة...' : 'Ministère, ONG, entreprise...'} />
+                  </div>
+                )}
+                <div>
+                  <label className="label">{ar ? 'وصف' : 'Description'}</label>
+                  <textarea className="input resize-none" rows={3} value={projectForm.description} onChange={e => setProjectForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="label">{ar ? 'الميزانية (MAD)' : 'Budget (MAD)'}</label>
+                    <input type="number" className="input" value={projectForm.budget} onChange={e => setProjectForm(f => ({ ...f, budget: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="label">{ar ? 'تاريخ البداية' : 'Début'}</label>
+                    <input type="date" className="input" value={projectForm.startDate} onChange={e => setProjectForm(f => ({ ...f, startDate: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="label">{ar ? 'تاريخ النهاية' : 'Fin'}</label>
+                    <input type="date" className="input" value={projectForm.endDate} onChange={e => setProjectForm(f => ({ ...f, endDate: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button onClick={() => setProjectModal(false)} className="btn-secondary">{ar ? 'إلغاء' : 'Annuler'}</button>
+                  <button onClick={saveProject} className="btn-primary">{ar ? 'حفظ' : 'Enregistrer'}</button>
+                </div>
+              </div>
+            </Modal>
           )}
         </div>
       )}

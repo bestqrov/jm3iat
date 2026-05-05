@@ -164,6 +164,7 @@ model Meeting {
   location       String?
   agenda         String?
   status         String   @default("SCHEDULED")
+  meetingType    String?  @default("GA")
   pvUrl          String?
   pvContent      String?
   createdAt      DateTime @default(now())

@@ -545,4 +545,16 @@ export const coopApi = {
   createInvoice:  (data: any)                  => api.post('/coop/invoices', data),
   updateInvoice:  (id: string, data: any)      => api.put(`/coop/invoices/${id}`, data),
   deleteInvoice:  (id: string)                 => api.delete(`/coop/invoices/${id}`),
+  // Board meetings (مجلس الإدارة)
+  getBoardMeetings:   ()                                    => api.get('/coop/board-meetings'),
+  createBoardMeeting: (data: any)                           => api.post('/coop/board-meetings', data),
+  updateBoardMeeting: (id: string, data: any)               => api.put(`/coop/board-meetings/${id}`, data),
+  deleteBoardMeeting: (id: string)                          => api.delete(`/coop/board-meetings/${id}`),
+  addBoardDecision:   (id: string, data: any)               => api.post(`/coop/board-meetings/${id}/decisions`, data),
+  updateBoardDecision:(id: string, decisionId: string, data: any) => api.put(`/coop/board-meetings/${id}/decisions/${decisionId}`, data),
+  // Projects & partnerships (المشاريع والشراكات)
+  getCoopProjects:    ()                        => api.get('/coop/projects'),
+  createCoopProject:  (data: any)               => api.post('/coop/projects', data),
+  updateCoopProject:  (id: string, data: any)   => api.put(`/coop/projects/${id}`, data),
+  deleteCoopProject:  (id: string)              => api.delete(`/coop/projects/${id}`),
 };

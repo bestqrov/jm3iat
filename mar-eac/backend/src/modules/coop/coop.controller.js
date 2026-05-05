@@ -375,3 +375,148 @@ exports.getReports = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// ── Board meetings (مجلس الإدارة) ─────────────────────────────────────────────
+
+exports.getBoardMeetings = async (req, res) => {
+  try {
+    const meetings = await prisma.meeting.findMany({
+      where: { organizationId: orgId(req), meetingType: 'CA' },
+      include: { decisions: true },
+      orderBy: { date: 'desc' },
+    });
+    res.json(meetings);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.createBoardMeeting = async (req, res) => {
+  try {
+    const { title, date, location, agenda, pvContent, sessionType } = req.body;
+    const meeting = await prisma.meeting.create({
+      data: {
+        organizationId: orgId(req),
+        meetingType: 'CA',
+        title: title || (sessionType === 'ORDINARY' ? 'اجتماع عادي لمجلس الإدارة' : 'اجتماع استثنائي لمجلس الإدارة'),
+        date: new Date(date),
+        location: location || null,
+        agenda: agenda || null,
+        pvContent: pvContent || null,
+        status: 'SCHEDULED',
+      },
+    });
+    res.json(meeting);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.updateBoardMeeting = async (req, res) => {
+  try {
+    const { title, date, location, agenda, pvContent, status } = req.body;
+    const meeting = await prisma.meeting.update({
+      where: { id: req.params.id },
+      data: {
+        ...(title      && { title }),
+        ...(date       && { date: new Date(date) }),
+        ...(location   !== undefined && { location }),
+        ...(agenda     !== undefined && { agenda }),
+        ...(pvContent  !== undefined && { pvContent }),
+        ...(status     && { status }),
+      },
+      include: { decisions: true },
+    });
+    res.json(meeting);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.deleteBoardMeeting = async (req, res) => {
+  try {
+    await prisma.decision.deleteMany({ where: { meetingId: req.params.id } });
+    await prisma.meeting.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.addBoardDecision = async (req, res) => {
+  try {
+    const { description, assignedTo, dueDate } = req.body;
+    const decision = await prisma.decision.create({
+      data: {
+        meetingId: req.params.id,
+        description,
+        assignedTo: assignedTo || null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        status: 'PENDING',
+      },
+    });
+    res.json(decision);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.updateBoardDecision = async (req, res) => {
+  try {
+    const { status, description } = req.body;
+    const d = await prisma.decision.update({
+      where: { id: req.params.decisionId },
+      data: { ...(status && { status }), ...(description && { description }) },
+    });
+    res.json(d);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// ── Cooperative projects & partnerships ───────────────────────────────────────
+
+exports.getCoopProjects = async (req, res) => {
+  try {
+    const projects = await prisma.project.findMany({
+      where: { organizationId: orgId(req) },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(projects);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.createCoopProject = async (req, res) => {
+  try {
+    const { title, type, description, partnerName, budget, startDate, endDate, status, generalGoal } = req.body;
+    const project = await prisma.project.create({
+      data: {
+        organizationId: orgId(req),
+        title,
+        type: type || 'INTERNE',
+        description: description || null,
+        generalGoal: partnerName ? `Partenaire: ${partnerName}` : (generalGoal || null),
+        budget: budget ? parseFloat(budget) : null,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        status: status || 'PLANNED',
+      },
+    });
+    res.json(project);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.updateCoopProject = async (req, res) => {
+  try {
+    const { title, type, description, partnerName, budget, startDate, endDate, status, generalGoal } = req.body;
+    const project = await prisma.project.update({
+      where: { id: req.params.id },
+      data: {
+        ...(title       && { title }),
+        ...(type        && { type }),
+        ...(description !== undefined && { description }),
+        ...(budget      !== undefined && { budget: budget ? parseFloat(budget) : null }),
+        ...(startDate   && { startDate: new Date(startDate) }),
+        ...(endDate     && { endDate: new Date(endDate) }),
+        ...(status      && { status }),
+        ...(partnerName !== undefined && { generalGoal: partnerName ? `Partenaire: ${partnerName}` : (generalGoal || null) }),
+      },
+    });
+    res.json(project);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.deleteCoopProject = async (req, res) => {
+  try {
+    await prisma.project.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
