@@ -26,6 +26,7 @@ import AssocPage from './pages/assoc/AssocPage';
 import { TransportPage } from './pages/transport/TransportPage';
 import { SportsPage } from './pages/sports/SportsPage';
 import { CoopPage } from './pages/coop/CoopPage';
+import { CommercePage } from './pages/commerce/CommercePage';
 import { CalendarPage } from './pages/calendar/CalendarPage';
 import { ActivityPage } from './pages/activity/ActivityPage';
 import { RecurringPage } from './pages/recurring/RecurringPage';
@@ -83,6 +84,7 @@ const App: React.FC = () => {
                 <Route path="/transport" element={<WaterReaderRoute><TransportPage /></WaterReaderRoute>} />
                 <Route path="/sports"    element={<WaterReaderRoute><SportsPage /></WaterReaderRoute>} />
                 <Route path="/coop"     element={<WaterReaderRoute><CoopPage /></WaterReaderRoute>} />
+                <Route path="/commerce" element={<WaterReaderRoute><CommercePage /></WaterReaderRoute>} />
                 <Route path="/reports" element={<WaterReaderRoute><ReportsPage /></WaterReaderRoute>} />
                 <Route path="/requests" element={<WaterReaderRoute><RequestsPage /></WaterReaderRoute>} />
                 <Route path="/reminders" element={<WaterReaderRoute><RemindersPage /></WaterReaderRoute>} />

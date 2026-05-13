@@ -6,7 +6,7 @@ import {
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
   Building2, FolderKanban, Layers, CreditCard, Bus,
   Activity, RefreshCw, Trophy, Landmark, Wallet, ClipboardList,
-  Send, BookOpen, Store,
+  Send, BookOpen, Store, ShoppingCart,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -267,6 +267,15 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     },
 
     // ── 6. Modules spécialisés ────────────────────────────────────────────────
+    ...(isFullAccess && hasModule('COMMERCE') ? [{
+      label: isAr ? 'التجارة الإلكترونية' : 'Commerce',
+      color: 'text-blue-500 dark:text-blue-400',
+      dotColor: 'bg-blue-400',
+      items: [
+        { to: '/commerce', icon: <ShoppingCart size={18} />, label: isAr ? 'التجارة' : 'Commerce' },
+      ],
+    }] : []),
+
     ...(isFullAccess && (hasModule('PROJECTS') || hasModule('WATER') || hasModule('PRODUCTIVE') || hasModule('TRANSPORT') || hasModule('SPORTS') || hasModule('COOP')) ? [{
       label: isAr ? 'الوحدات التخصصية' : 'Modules spécialisés',
       color: 'text-teal-500 dark:text-teal-400',

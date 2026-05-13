@@ -560,3 +560,26 @@ export const coopApi = {
   updateCoopProject:  (id: string, data: any)   => api.put(`/coop/projects/${id}`, data),
   deleteCoopProject:  (id: string)              => api.delete(`/coop/projects/${id}`),
 };
+
+// ---- Commerce ----
+export const commerceApi = {
+  getStats:       ()                            => api.get('/commerce/stats'),
+  // Products
+  getProducts:    ()                            => api.get('/commerce/products'),
+  createProduct:  (data: any)                   => api.post('/commerce/products', data),
+  updateProduct:  (id: string, data: any)       => api.put(`/commerce/products/${id}`, data),
+  deleteProduct:  (id: string)                  => api.delete(`/commerce/products/${id}`),
+  // Warehouse / Stock
+  getStock:       ()                            => api.get('/commerce/stock'),
+  addStock:       (data: any)                   => api.post('/commerce/stock', data),
+  // Orders
+  getOrders:      (params?: any)                => api.get('/commerce/orders', { params }),
+  createOrder:    (data: any)                   => api.post('/commerce/orders', data),
+  updateOrder:    (id: string, data: any)       => api.put(`/commerce/orders/${id}`, data),
+  deleteOrder:    (id: string)                  => api.delete(`/commerce/orders/${id}`),
+  // Profits / COD
+  getProfits:     ()                            => api.get('/commerce/profits'),
+  // Payouts
+  getPayouts:     ()                            => api.get('/commerce/payouts'),
+  createPayout:   (data: any)                   => api.post('/commerce/payouts', data),
+};

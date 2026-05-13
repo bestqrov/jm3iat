@@ -97,6 +97,12 @@ model Organization {
   coopStockMovements CoopStockMovement[]
   coopMemberShares   CoopMemberShare[]
   coopInvoices       CoopInvoice[]
+  // Commerce module
+  commerceProducts      CommerceProduct[]
+  commerceStockMovements CommerceStockMovement[]
+  commerceOrders        CommerceOrder[]
+  commerceOrderProfits  CommerceOrderProfit[]
+  commercePayouts       CommercePayout[]
   // Pro features
   activityLogs       ActivityLog[]
   notifications      Notification[]
@@ -1099,6 +1105,122 @@ model CoopInvoice {
 
   organization Organization    @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   items        CoopInvoiceItem[]
+}
+
+// ── Commerce Module ───────────────────────────────────────────────────────────
+
+model CommerceProduct {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  name           String
+  nameAr         String?
+  description    String?
+  category       String?
+  sku            String?
+  costPrice      Float    @default(0)
+  sellingPrice   Float    @default(0)
+  commission     Float    @default(0)
+  unit           String   @default("pièce")
+  isActive       Boolean  @default(true)
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stockMovements CommerceStockMovement[]
+  orderItems     CommerceOrderItem[]
+}
+
+model CommerceStockMovement {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  productId      String   @db.ObjectId
+  type           String   // IN | OUT | ADJUST | RETURN
+  quantity       Float
+  unitCost       Float?
+  reference      String?
+  notes          String?
+  date           DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product      CommerceProduct @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model CommerceOrder {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String    @db.ObjectId
+  orderNumber    String
+  clientName     String
+  clientPhone    String?
+  clientAddress  String?
+  clientCity     String?
+  totalAmount    Float     @default(0)
+  codAmount      Float     @default(0)
+  shippingCost   Float     @default(0)
+  status         String    @default("PENDING")  // PENDING | CONFIRMED | SHIPPED | DELIVERED | RETURNED | CANCELLED
+  paymentStatus  String    @default("UNPAID")   // UNPAID | COD_COLLECTED | PAID
+  trackingNumber String?
+  carrier        String?
+  notes          String?
+  orderDate      DateTime  @default(now())
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items        CommerceOrderItem[]
+  profit       CommerceOrderProfit?
+}
+
+model CommerceOrderItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String  @db.ObjectId
+  productId String  @db.ObjectId
+  quantity  Float
+  unitPrice Float
+  costPrice Float   @default(0)
+  subtotal  Float
+
+  order   CommerceOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product CommerceProduct @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model CommerceOrderProfit {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  orderId        String   @unique @db.ObjectId
+  revenue        Float    @default(0)
+  cogs           Float    @default(0)
+  shippingCost   Float    @default(0)
+  platformFee    Float    @default(0)
+  netProfit      Float    @default(0)
+  isPaidOut      Boolean  @default(false)
+  payoutId       String?  @db.ObjectId
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order        CommerceOrder @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model CommercePayout {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String    @db.ObjectId
+  amount         Float
+  ordersCount    Int       @default(0)
+  method         String    @default("BANK_TRANSFER")
+  reference      String?
+  notes          String?
+  status         String    @default("PENDING")  // PENDING | PAID
+  periodStart    DateTime?
+  periodEnd      DateTime?
+  paidAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model CoopInvoiceItem {
