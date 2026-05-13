@@ -550,24 +550,45 @@ const updateSubscription = async (req, res) => {
     let newExpiresAt = expiresAt ? new Date(expiresAt) : undefined;
     if (action === 'EXTEND_TRIAL') {
       const current = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
-      const base = current?.expiresAt ? new Date(current.expiresAt) : new Date();
+      // Extend from today if already expired, otherwise extend from current expiry
+      const base = (current?.expiresAt && new Date(current.expiresAt) > new Date())
+        ? new Date(current.expiresAt)
+        : new Date();
       newExpiresAt = new Date(base.getTime() + 15 * 24 * 60 * 60 * 1000);
+    }
+
+    // Auto-determine status: if new expiresAt is in the future and no explicit status given,
+    // reset EXPIRED subscriptions back to TRIAL automatically
+    let resolvedStatus = status;
+    if (!resolvedStatus && newExpiresAt && newExpiresAt > new Date()) {
+      const current = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      if (current?.status === 'EXPIRED') {
+        resolvedStatus = 'TRIAL';
+      }
     }
 
     const sub = await prisma.subscription.upsert({
       where: { organizationId: orgId },
       update: {
-        ...(plan   ? { plan }   : {}),
-        ...(status ? { status } : {}),
-        expiresAt: newExpiresAt,
+        ...(plan             ? { plan }             : {}),
+        ...(resolvedStatus   ? { status: resolvedStatus } : {}),
+        ...(newExpiresAt !== undefined ? { expiresAt: newExpiresAt } : {}),
       },
       create: {
         organizationId: orgId,
         plan: plan || 'BASIC',
-        status: status || 'ACTIVE',
+        status: resolvedStatus || 'ACTIVE',
         expiresAt: newExpiresAt || null,
       },
     });
+
+    // Keep organization.trialEndsAt in sync with subscription.expiresAt
+    if (newExpiresAt !== undefined) {
+      await prisma.organization.update({
+        where: { id: orgId },
+        data: { trialEndsAt: newExpiresAt },
+      });
+    }
 
     res.json(sub);
   } catch (err) {
