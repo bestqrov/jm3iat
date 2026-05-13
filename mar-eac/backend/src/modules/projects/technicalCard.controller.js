@@ -48,7 +48,8 @@ const exportTechnicalCardPdf = async (req, res) => {
       prisma.organization.findUnique({
         where: { id: orgId },
         select: { name: true, nameAr: true, phone: true, address: true,
-                  addressAr: true, city: true, cityAr: true, foundingDate: true, logo: true },
+                  addressAr: true, city: true, cityAr: true, region: true, regionAr: true,
+                  foundingDate: true, logo: true, mandateDuration: true, bureauCreationDate: true },
       }),
     ]);
 

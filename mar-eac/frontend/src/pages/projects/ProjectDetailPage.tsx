@@ -581,174 +581,135 @@ export const ProjectDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Section: Entité étatique / الجهة المتلقية */}
-          <div className="card p-5">
-            <h4 className={`font-bold text-sm text-gray-700 dark:text-gray-300 mb-4 border-b pb-2 border-gray-200 dark:border-gray-700 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              {lang === 'ar' ? '🏛️ الجهة المتلقية للمشروع' : '🏛️ Entité étatique réceptrice'}
+          {/* ── SECTION 1: معلومات الجمعية (auto from profile + overrides) ── */}
+          <div className="card p-5 space-y-4" dir="rtl">
+            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">
+              📋 معلومات خاصة بالجمعية
             </h4>
-            <div className={`flex items-center gap-5 ${lang === 'ar' ? 'flex-row-reverse' : ''}`}>
-              {/* Logo preview */}
-              <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center bg-gray-50 dark:bg-gray-800 overflow-hidden flex-shrink-0">
-                {tc.etatLogoUrl
-                  ? <img src={tc.etatLogoUrl} alt="logo" className="w-full h-full object-contain p-1" />
-                  : <span className="text-3xl">🏛️</span>}
-              </div>
-              <div className="flex-1 space-y-2">
-                <p className={`text-xs text-gray-500 dark:text-gray-400 ${lang === 'ar' ? 'text-right' : ''}`}>
-                  {lang === 'ar'
-                    ? 'أضف شعار الجهة الحكومية أو الوزارة المتلقية للمشروع (INDH، الولاية، العمالة...)'
-                    : 'Ajoutez le logo de l\'entité gouvernementale ou du ministère récepteur du projet (INDH, Wilaya, Préfecture…)'}
-                </p>
-                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium cursor-pointer transition-colors">
-                  <span>📁</span>
-                  {lang === 'ar' ? 'رفع الشعار' : 'Uploader le logo'}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleEtatLogoUpload} />
-                </label>
-                {tc.etatLogoUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setTc((p: any) => ({ ...p, etatLogoUrl: '' }))}
-                    className="ms-2 text-xs text-red-500 hover:text-red-700"
-                  >
-                    {lang === 'ar' ? '✕ حذف' : '✕ Supprimer'}
-                  </button>
-                )}
-                <p className={`text-xs text-amber-600 dark:text-amber-400 ${lang === 'ar' ? 'text-right' : ''}`}>
-                  {lang === 'ar'
-                    ? 'سيظهر هذا الشعار في الجانب الأيسر من رأس صفحة البطاقة التقنية PDF'
-                    : 'Ce logo apparaîtra sur le côté gauche de l\'en-tête du PDF de la fiche technique'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Section: الصفة / Qualité du porteur */}
-          <div className="card p-5" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-            <h4 className={`font-bold text-sm text-gray-700 dark:text-gray-300 mb-4 border-b pb-2 border-gray-200 dark:border-gray-700 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              {lang === 'ar' ? 'الصفة' : 'Qualité du porteur'}
-            </h4>
-            <div className={`flex flex-wrap gap-5 ${lang === 'ar' ? 'justify-end' : 'justify-start'}`}>
-              {([
-                { ar: 'جمعية',                    fr: 'Association' },
-                { ar: 'تعاونية',                  fr: 'Coopérative' },
-                { ar: 'شباب حامل فكرة مشروع',    fr: 'Jeune porteur de projet' },
-              ] as const).map(opt => (
-                <label key={opt.ar} className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="holderType" value={opt.ar}
-                    checked={(tc.holderType || 'جمعية') === opt.ar}
-                    onChange={() => setTc((p: any) => ({ ...p, holderType: opt.ar }))}
-                    className="w-4 h-4 accent-primary-600" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{lang === 'ar' ? opt.ar : opt.fr}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Section: سلسلة المشروع / Chaîne de valeur */}
-          <div className="card p-5" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-            <h4 className={`font-bold text-sm text-gray-700 dark:text-gray-300 mb-4 border-b pb-2 border-gray-200 dark:border-gray-700 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              {lang === 'ar' ? 'سلسلة المشروع' : 'Chaîne de valeur du projet'}
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <input key={i} value={(tc.projectChain || [])[i] || ''} placeholder={`......... ${i + 1}`}
-                  onChange={e => {
-                    const arr = [...(tc.projectChain || Array(9).fill(''))];
-                    arr[i] = e.target.value;
-                    setTc((p: any) => ({ ...p, projectChain: arr }));
-                  }}
-                  className={`input text-sm ${lang === 'ar' ? 'text-right' : 'text-left'}`} />
-              ))}
-            </div>
-          </div>
-
-          {/* Section: معلومات الوحدة / Informations sur l'unité */}
-          <div className="card p-5" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-            <h4 className={`font-bold text-sm text-gray-700 dark:text-gray-300 mb-4 border-b pb-2 border-gray-200 dark:border-gray-700 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              {lang === 'ar' ? 'معلومات إضافية عن الوحدة' : 'Informations complémentaires sur l\'unité'}
-            </h4>
-            <div className="grid grid-cols-2 gap-4">
-              {([
-                { ar: 'الجماعة',            fr: 'Commune',                  key: 'commune' },
-                { ar: 'رقم السجل التعاوني', fr: 'N° registre coopératif',   key: 'regNumber' },
-                { ar: 'ر.ب.ت.و (للشباب)',  fr: 'ICE (jeunes porteurs)',     key: 'iceNumber' },
-              ] as const).map(({ ar, fr, key }) => (
-                <div key={key}>
-                  <label className={`block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>{lang === 'ar' ? ar : fr}</label>
-                  <input value={tc[key] || ''} onChange={e => setTc((p: any) => ({ ...p, [key]: e.target.value }))}
-                    className={`input w-full ${lang === 'ar' ? 'text-right' : 'text-left'}`} />
-                </div>
-              ))}
-              <div />
-              {([
-                { ar: 'أعضاء المكتب — ذكور', fr: 'Bureau — H',    key: 'boardMale' },
-                { ar: 'أعضاء المكتب — إناث', fr: 'Bureau — F',    key: 'boardFemale' },
-                { ar: 'الشركاء — ذكور',       fr: 'Associés — H', key: 'partnerMale' },
-                { ar: 'الشركاء — إناث',       fr: 'Associés — F', key: 'partnerFemale' },
-              ] as const).map(({ ar, fr, key }) => (
-                <div key={key}>
-                  <label className={`block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>{lang === 'ar' ? ar : fr}</label>
-                  <input type="number" min="0" value={tc[key] || ''} onChange={e => setTc((p: any) => ({ ...p, [key]: e.target.value }))}
-                    className={`input w-full ${lang === 'ar' ? 'text-right' : 'text-left'}`} />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Section: محتوى المشروع / Contenu du projet */}
-          <div className="card p-5 space-y-5" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-            <h4 className={`font-bold text-sm text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              {lang === 'ar' ? 'محتوى المشروع' : 'Contenu du projet'}
-            </h4>
-            {([
-              { ar: 'فكرة المشروع',                        fr: 'Idée du projet',                 key: 'projectIdea' },
-              { ar: 'إشكالية وجدوى المشروع',              fr: 'Problématique et faisabilité',   key: 'problemFeasibility' },
-              { ar: 'جانب الابتكار في المشروع',           fr: 'Aspect innovation du projet',    key: 'innovation' },
-              { ar: 'مكونات المشروع',                      fr: 'Composantes du projet',          key: 'components' },
-              { ar: 'أهداف المشروع والنتائج المنتظرة',   fr: 'Objectifs et résultats attendus', key: 'objectives' },
-            ] as const).map(({ ar, fr, key }) => (
-              <div key={key}>
-                <label className={`block text-sm font-medium text-primary-700 dark:text-primary-400 mb-2 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>{lang === 'ar' ? ar : fr}</label>
-                <textarea value={tc[key] || ''} onChange={e => setTc((p: any) => ({ ...p, [key]: e.target.value }))}
-                  rows={3} className={`input w-full resize-none ${lang === 'ar' ? 'text-right' : 'text-left'}`} />
-              </div>
-            ))}
-          </div>
-
-          {/* Section: التركيبة المالية / Structure financière */}
-          <div className="card p-5" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-            <h4 className={`font-bold text-sm text-gray-700 dark:text-gray-300 mb-4 border-b pb-2 border-gray-200 dark:border-gray-700 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              {lang === 'ar' ? 'التركيبة المالية' : 'Structure financière du projet'}
-            </h4>
-            <div className="grid grid-cols-2 gap-4">
+            <p className="text-xs text-gray-500 text-right">البيانات التالية تُجلب تلقائياً من ملف الجمعية. يمكنك تجاوز بعضها هنا إن لزم.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={`block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-                  {lang === 'ar' ? 'مساهمة حامل المشروع %' : 'Contribution du porteur %'}
-                </label>
-                <input type="number" min="0" max="100" value={tc.holderPct ?? 10}
-                  onChange={e => setTc((p: any) => ({ ...p, holderPct: e.target.value, indhPct: String(100 - Number(e.target.value)) }))}
-                  className={`input w-full ${lang === 'ar' ? 'text-right' : 'text-left'}`} />
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">الحي / الدوار (ب)</label>
+                <input value={tc.neighborhood || ''} onChange={e => setTc((p: any) => ({ ...p, neighborhood: e.target.value }))}
+                  placeholder="اسم الحي أو الدوار" className="input w-full text-right" />
               </div>
               <div>
-                <label className={`block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-                  {lang === 'ar' ? 'مساهمة المبادرة الوطنية للتنمية البشرية %' : 'Contribution INDH %'}
-                </label>
-                <input type="number" min="0" max="100" value={tc.indhPct ?? 90}
-                  onChange={e => setTc((p: any) => ({ ...p, indhPct: e.target.value, holderPct: String(100 - Number(e.target.value)) }))}
-                  className={`input w-full ${lang === 'ar' ? 'text-right' : 'text-left'}`} />
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">الجماعة (يُجلب من الملف)</label>
+                <input value={tc.commune || ''} onChange={e => setTc((p: any) => ({ ...p, commune: e.target.value }))}
+                  placeholder="تجاوز اسم الجماعة..." className="input w-full text-right" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">الإقليم (يُجلب من الملف)</label>
+                <input value={tc.province || ''} onChange={e => setTc((p: any) => ({ ...p, province: e.target.value }))}
+                  placeholder="تجاوز اسم الإقليم..." className="input w-full text-right" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">اسم رئيس(ة) الجمعية</label>
+                <input value={tc.presidentName || ''} onChange={e => setTc((p: any) => ({ ...p, presidentName: e.target.value }))}
+                  placeholder="اسم الرئيس/ة..." className="input w-full text-right" />
               </div>
             </div>
-            {project?.budget && (
-              <div className={`mt-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg text-sm ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-                <div className="text-gray-600 dark:text-gray-400">
-                  {lang === 'ar' ? 'التكلفة الإجمالية' : 'Coût total'}: <strong>{formatCurrency(project.budget, lang)}</strong>
-                </div>
-                <div className="mt-1 text-gray-600 dark:text-gray-400">
-                  {lang === 'ar' ? 'مساهمة حامل المشروع' : 'Contribution porteur'}: <strong className="text-emerald-600">{formatCurrency(Math.round(project.budget * (tc.holderPct ?? 10) / 100), lang)}</strong>
-                  {' · '}INDH: <strong className="text-primary-600">{formatCurrency(Math.round(project.budget * (tc.indhPct ?? 90) / 100), lang)}</strong>
-                </div>
-              </div>
-            )}
+          </div>
+
+          {/* ── SECTION 2: مكونات المشروع ── */}
+          <div className="card p-5 space-y-3" dir="rtl">
+            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">
+              🔧 مكونات المشروع
+            </h4>
+            <p className="text-xs text-gray-400 text-right">أدخل كل مكوّن في سطر منفصل — سيظهر في PDF كقائمة نقاط.</p>
+            <textarea
+              value={tc.components || ''}
+              onChange={e => setTc((p: any) => ({ ...p, components: e.target.value }))}
+              rows={4}
+              placeholder={'مكوّن 1\nمكوّن 2\nمكوّن 3'}
+              className="input w-full resize-none text-right"
+            />
+          </div>
+
+          {/* ── SECTION 3: مساهمة الشركاء ── */}
+          <div className="card p-5 space-y-3" dir="rtl">
+            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">
+              🤝 مساهمة الشركاء في المشروع
+            </h4>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-green-800 text-white">
+                    <th className="border border-gray-400 px-3 py-2 text-right">الشريك</th>
+                    <th className="border border-gray-400 px-3 py-2 text-center">المساهمة (د.م)</th>
+                    <th className="border border-gray-400 px-3 py-2 text-center">النسبة %</th>
+                    <th className="border border-gray-400 px-2 py-2 w-8"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {((tc.partners as any[]) || [{ name: '', amount: '', percentage: '' }]).map((p: any, i: number) => (
+                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <td className="border border-gray-300 px-2 py-1">
+                        <input value={p.name || ''} onChange={e => {
+                          const arr = [...((tc.partners as any[]) || [])];
+                          arr[i] = { ...arr[i], name: e.target.value };
+                          setTc((prev: any) => ({ ...prev, partners: arr }));
+                        }} className="w-full bg-transparent outline-none text-right text-sm" placeholder="اسم الشريك" />
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1">
+                        <input type="number" value={p.amount || ''} onChange={e => {
+                          const arr = [...((tc.partners as any[]) || [])];
+                          arr[i] = { ...arr[i], amount: e.target.value };
+                          setTc((prev: any) => ({ ...prev, partners: arr }));
+                        }} className="w-full bg-transparent outline-none text-center text-sm" placeholder="0" />
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1">
+                        <input type="number" value={p.percentage || ''} onChange={e => {
+                          const arr = [...((tc.partners as any[]) || [])];
+                          arr[i] = { ...arr[i], percentage: e.target.value };
+                          setTc((prev: any) => ({ ...prev, partners: arr }));
+                        }} className="w-full bg-transparent outline-none text-center text-sm" placeholder="0" />
+                      </td>
+                      <td className="border border-gray-300 px-1 py-1 text-center">
+                        <button onClick={() => {
+                          const arr = ((tc.partners as any[]) || []).filter((_: any, idx: number) => idx !== i);
+                          setTc((prev: any) => ({ ...prev, partners: arr.length ? arr : [{ name: '', amount: '', percentage: '' }] }));
+                        }} className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {/* Total row */}
+                  <tr className="bg-green-100 dark:bg-green-900/20 font-semibold">
+                    <td className="border border-gray-300 px-3 py-1.5 text-right text-sm">المجمـوع</td>
+                    <td className="border border-gray-300 px-3 py-1.5 text-center text-sm">
+                      {((tc.partners as any[]) || []).reduce((s: number, p: any) => s + (parseFloat(p.amount) || 0), 0).toLocaleString('ar-MA')}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-1.5 text-center text-sm">
+                      {((tc.partners as any[]) || []).reduce((s: number, p: any) => s + (parseFloat(p.percentage) || 0), 0)}%
+                    </td>
+                    <td className="border border-gray-300"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button
+              onClick={() => setTc((prev: any) => ({ ...prev, partners: [...((prev.partners as any[]) || []), { name: '', amount: '', percentage: '' }] }))}
+              className="text-sm text-green-700 hover:text-green-900 flex items-center gap-1"
+            >
+              + إضافة شريك
+            </button>
+          </div>
+
+          {/* ── SECTION 4: التكلفة الإجمالية ── */}
+          <div className="card p-5 space-y-3" dir="rtl">
+            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">
+              💰 التكلفة الإجمالية للمشروع
+            </h4>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                value={tc.totalCost || project?.budget || ''}
+                onChange={e => setTc((p: any) => ({ ...p, totalCost: e.target.value }))}
+                placeholder="0.00"
+                className="input flex-1 text-right"
+              />
+              <span className="text-sm text-gray-500">درهم مغربي</span>
+            </div>
           </div>
         </div>
       )}
