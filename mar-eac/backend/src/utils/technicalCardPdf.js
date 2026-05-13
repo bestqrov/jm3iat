@@ -16,6 +16,9 @@ const FONTS = {
 // ── Arabic text processor ─────────────────────────────────────────────────
 // Handles: Arabic letter shaping + proper RTL word/segment ordering
 // Segments are split into Arabic runs vs Latin/numeric runs, then reversed
+// Mirror map for bracket/parenthesis characters in RTL context
+const MIRROR = { '(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{', '<': '>', '>': '<' };
+
 const ar = (text) => {
   if (!text) return '';
   const input = String(text);
@@ -41,9 +44,11 @@ const ar = (text) => {
   }
   if (buf) runs.push({ text: buf, ar: mode === 'ar' });
 
-  // Reverse the run order for RTL display; keep each run's own content intact
+  // Reverse the run order for RTL display
   runs.reverse();
-  return runs.map(r => r.text).join('');
+
+  // Mirror brackets/parentheses so they face the correct direction after reversal
+  return runs.map(r => r.text.split('').map(ch => MIRROR[ch] ?? ch).join('')).join('');
 };
 
 const fmtDate = (d) => {
