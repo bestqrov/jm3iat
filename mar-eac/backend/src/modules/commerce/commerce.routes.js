@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const ctrl   = require('./commerce.controller');
-const { auth, tenant, requireModule } = require('../../middleware');
+const { auth }          = require('../../middleware/auth');
+const { tenant }        = require('../../middleware/tenant');
+const { requireModule } = require('../../middleware/module');
 
 router.use(auth, tenant, requireModule('COMMERCE'));
 
