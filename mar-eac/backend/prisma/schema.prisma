@@ -1163,6 +1163,7 @@ model CommerceOrder {
   trackingNumber String?
   carrier        String?
   notes          String?
+  source         String    @default("DASHBOARD") // DASHBOARD | STORE
   orderDate      DateTime  @default(now())
   shippedAt      DateTime?
   deliveredAt    DateTime?

@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const api = axios.create({ baseURL: '/api' });
 
+// No-auth instance for public store
+export const publicApi2 = axios.create({ baseURL: '/api' });
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -582,4 +585,12 @@ export const commerceApi = {
   // Payouts
   getPayouts:     ()                            => api.get('/commerce/payouts'),
   createPayout:   (data: any)                   => api.post('/commerce/payouts', data),
+};
+
+export const storeApi = {
+  getProducts:   (params?: any)                => publicApi2.get('/store/products', { params }),
+  getProduct:    (id: string)                  => publicApi2.get(`/store/products/${id}`),
+  getOrgs:       ()                            => publicApi2.get('/store/orgs'),
+  getCategories: ()                            => publicApi2.get('/store/categories'),
+  placeOrder:    (data: any)                   => publicApi2.post('/store/orders', data),
 };
