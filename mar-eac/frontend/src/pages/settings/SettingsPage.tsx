@@ -116,40 +116,7 @@ export const SettingsPage: React.FC = () => {
     publicApi.getSupportContact().then(r => setSupportContact(r.data)).catch(() => {});
   }, []);
 
-  // Backup extra
-  const [backupRecords,   setBackupRecords]   = useState<any[]>([]);
-  const [backupToggling,  setBackupToggling]  = useState(false);
-  const [backupCreating,  setBackupCreating]  = useState(false);
-
-  const hasBackup      = ((org as any)?.modules ?? []).includes('BACKUP');
   const hasMarketing   = ((org as any)?.modules ?? []).includes('MARKETING');
-
-  const loadBackups = async () => {
-    if (!hasBackup) return;
-    try {
-      const r = await backupApi.list();
-      setBackupRecords(r.data);
-    } catch {}
-  };
-
-  React.useEffect(() => { loadBackups(); }, [hasBackup]);
-
-  const handleToggleBackup = async () => {
-    setBackupToggling(true);
-    try {
-      await backupApi.toggle();
-      await refreshUser();
-    } catch {} finally { setBackupToggling(false); }
-  };
-
-  const handleCreateBackup = async () => {
-    setBackupCreating(true);
-    try {
-      backupApi.create();
-      await new Promise(r => setTimeout(r, 1500));
-      await loadBackups();
-    } catch {} finally { setBackupCreating(false); }
-  };
 
   // WhatsApp instance
   const [waStatus,       setWaStatus]       = useState<'idle' | 'loading' | 'connected' | 'disconnected'>('idle');
@@ -205,37 +172,9 @@ export const SettingsPage: React.FC = () => {
     } catch { setError('info'); } finally { setSaving(null); }
   };
 
-  const [downgradeTarget, setDowngradeTarget] = useState<string | null>(null);
-
   const PLAN_LEVELS: Record<string, number> = { BASIC: 1, STANDARD: 2, PREMIUM: 3 };
 
-  // Features lost per plan downgrade
-  const DOWNGRADE_LOSSES: Record<string, { icon: string; fr: string; ar: string }[]> = {
-    BASIC: [
-      { icon: '💰', fr: 'Gestion financière (recettes & dépenses)', ar: 'إدارة المالية (إيرادات ومصاريف)' },
-      { icon: '📊', fr: 'Rapports & statistiques avancées', ar: 'التقارير والإحصاءات المتقدمة' },
-      { icon: '💧', fr: 'Module eau (si activé)', ar: 'وحدة الماء (إن كانت مفعلة)' },
-      { icon: '🏗️', fr: 'Projets & demandes de financement', ar: 'المشاريع وطلبات التمويل' },
-      { icon: '🔔', fr: 'Rappels & notifications automatiques', ar: 'التذكيرات والإشعارات التلقائية' },
-      { icon: '🚌', fr: 'Transport scolaire (si activé)', ar: 'النقل المدرسي (إن كان مفعلاً)' },
-    ],
-    STANDARD: [
-      { icon: '💧', fr: 'Module eau (si activé)', ar: 'وحدة الماء (إن كانت مفعلة)' },
-      { icon: '🏗️', fr: 'Projets & demandes de financement', ar: 'المشاريع وطلبات التمويل' },
-      { icon: '🔔', fr: 'Rappels & notifications automatiques', ar: 'التذكيرات والإشعارات التلقائية' },
-      { icon: '🚌', fr: 'Transport scolaire (si activé)', ar: 'النقل المدرسي (إن كان مفعلاً)' },
-    ],
-  };
-
   const handleUpgrade = async (plan: string) => {
-    const currentLevel = PLAN_LEVELS[sub?.plan || 'BASIC'];
-    const targetLevel  = PLAN_LEVELS[plan];
-    const isDowngrade  = targetLevel < currentLevel && sub?.status !== 'TRIAL';
-
-    if (isDowngrade) {
-      setDowngradeTarget(plan);
-      return;
-    }
     await doUpgrade(plan);
   };
 
@@ -245,7 +184,7 @@ export const SettingsPage: React.FC = () => {
       await authApi.upgradeSubscription(plan);
       await refreshUser();
       showSuccess('sub');
-    } catch { } finally { setUpgradingSub(false); setDowngradeTarget(null); }
+    } catch { } finally { setUpgradingSub(false); }
   };
 
   const cancelPendingDowngrade = async () => {
@@ -1324,43 +1263,8 @@ export const SettingsPage: React.FC = () => {
             );
           }
 
-          // ── Specialized association — downgrade + contact ───────────────
-          const PLAN_LABELS: Record<string, { ar: string; fr: string; price: string; descAr: string; descFr: string }> = {
-            BASIC:    { ar: 'الأساسية',  fr: 'Régulière',   price: '50 MAD/mois',  descAr: 'جمعية عامة',                       descFr: 'Association classique' },
-            STANDARD: { ar: 'القياسية',  fr: 'Spécialisée', price: '100 MAD/mois', descAr: 'ماء / مشاريع / إنتاجية / رياضية', descFr: 'Eau / Projets / Productif / Sportif' },
-          };
-          const currentLevel = PLAN_LEVELS[sub?.plan || 'BASIC'];
-          const downgradePlans = Object.entries(PLAN_LABELS).filter(([key]) => PLAN_LEVELS[key] < currentLevel);
-
           return (
             <div className="space-y-3">
-              {downgradePlans.length > 0 && (
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-                  <p className="px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                    {lang === 'ar' ? 'خيارات التخفيض' : 'Options de rétrogradation'}
-                  </p>
-                  {downgradePlans.map(([key, info]) => (
-                    <div key={key} className="flex items-center justify-between px-4 py-3 gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{lang === 'ar' ? info.ar : info.fr}</span>
-                          <span className="text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{info.price}</span>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-0.5">{lang === 'ar' ? info.descAr : info.descFr}</p>
-                      </div>
-                      {sub?.pendingPlan === key ? (
-                        <span className="text-xs text-amber-600 flex items-center gap-1">⏳ {lang === 'ar' ? 'في انتظار الموافقة' : "En attente d'approbation"}</span>
-                      ) : (
-                        <button onClick={() => handleUpgrade(key)} disabled={upgradingSub || !!sub?.pendingPlan}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors disabled:opacity-50">
-                          <ArrowUpCircle size={12} className="rotate-180" />
-                          {upgradingSub ? (lang === 'ar' ? 'جاري...' : 'En cours...') : (lang === 'ar' ? 'طلب تخفيض' : 'Demander')}
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
               <div className="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 p-4 flex flex-col gap-3">
                 <div className="flex items-start gap-2">
                   <span className="text-lg">🚀</span>
@@ -1374,74 +1278,6 @@ export const SettingsPage: React.FC = () => {
           );
         })()}
       </div>
-
-      {/* ── Downgrade confirmation dialog ── */}
-      {downgradeTarget && (() => {
-        const losses = DOWNGRADE_LOSSES[downgradeTarget] || [];
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md">
-              {/* Header */}
-              <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl">⚠️</span>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white">
-                      {lang === 'ar' ? 'تأكيد تخفيض الباقة' : 'Confirmer la rétrogradation'}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {lang === 'ar'
-                        ? `سيتم الانتقال إلى الباقة ${downgradeTarget}`
-                        : `Passage au plan ${downgradeTarget}`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="p-5 space-y-4">
-                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
-                  {lang === 'ar' ? '⚠️ ستفقد الوصول إلى هذه الميزات فوراً:' : '⚠️ Vous perdrez immédiatement l\'accès à :'}
-                </p>
-                <ul className="space-y-2">
-                  {losses.map((l, i) => (
-                    <li key={i} className="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 bg-red-50 dark:bg-red-900/10 rounded-lg px-3 py-2">
-                      <span className="text-base flex-shrink-0">{l.icon}</span>
-                      <span>{lang === 'ar' ? l.ar : l.fr}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-700/40 rounded-lg px-3 py-2">
-                  {lang === 'ar'
-                    ? '💡 ستظل بياناتك محفوظة. يمكنك الترقية مجدداً في أي وقت لاستعادة الوصول.'
-                    : '💡 Vos données restent conservées. Vous pouvez rétrograder à tout moment pour récupérer l\'accès.'}
-                </p>
-              </div>
-
-              {/* Footer */}
-              <div className="p-5 pt-0 flex gap-3">
-                <button
-                  onClick={() => setDowngradeTarget(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  {lang === 'ar' ? 'إلغاء' : 'Annuler'}
-                </button>
-                <button
-                  onClick={() => doUpgrade(downgradeTarget)}
-                  disabled={upgradingSub}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  {upgradingSub
-                    ? (lang === 'ar' ? 'جاري...' : 'En cours...')
-                    : (lang === 'ar' ? 'تأكيد التخفيض' : 'Confirmer la rétrogradation')}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* ── 6. Options extras ── */}
       <div className="card p-5 space-y-4">
@@ -1460,10 +1296,10 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* ── BACKUP extra card ── */}
-        <div className={`rounded-xl border-2 p-4 transition-colors ${hasBackup ? 'border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10' : 'border-gray-200 dark:border-gray-700'}`}>
+        <div className="rounded-xl border-2 border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${hasBackup ? 'bg-indigo-100 dark:bg-indigo-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
+              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                 <span className="text-xl">💾</span>
               </div>
               <div>
@@ -1474,11 +1310,6 @@ export const SettingsPage: React.FC = () => {
                   <span className="text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">
                     +29 MAD/mois
                   </span>
-                  {hasBackup && (
-                    <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      <CheckCircle2 size={11} />{lang === 'ar' ? 'مفعّل' : 'Actif'}
-                    </span>
-                  )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
                   {lang === 'ar'
@@ -1492,66 +1323,10 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            {/* Toggle switch */}
-            <button
-              onClick={handleToggleBackup}
-              disabled={backupToggling}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${hasBackup ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-600'}`}
-            >
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${hasBackup ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
+            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
+              {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
+            </span>
           </div>
-
-          {/* Backup management (visible when enabled) */}
-          {hasBackup && (
-            <div className="mt-4 pt-4 border-t border-indigo-200 dark:border-indigo-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {lang === 'ar' ? `${backupRecords.length} نسخة احتياطية` : `${backupRecords.length} sauvegarde(s)`}
-                </span>
-                <button
-                  onClick={handleCreateBackup}
-                  disabled={backupCreating}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition-colors disabled:opacity-60"
-                >
-                  {backupCreating ? (
-                    <>{lang === 'ar' ? 'جاري التصدير...' : 'Exportation...'}</>
-                  ) : (
-                    <>{lang === 'ar' ? '⬇️ إنشاء نسخة الآن' : '⬇️ Créer une sauvegarde'}</>
-                  )}
-                </button>
-              </div>
-
-              {backupRecords.length > 0 ? (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {backupRecords.map((rec: any) => (
-                    <div key={rec.id} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg px-3 py-2 text-xs border border-gray-100 dark:border-gray-700">
-                      <div className="flex items-center gap-2">
-                        <span className="text-emerald-500">✓</span>
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">
-                          {new Date(rec.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-MA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-gray-400">
-                        {rec.createdByName && <span>{rec.createdByName}</span>}
-                        <span>{rec.sizeKb} KB</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-gray-400 text-center py-3">
-                  {lang === 'ar' ? 'لا توجد نسخ احتياطية بعد — اضغط إنشاء نسخة' : 'Aucune sauvegarde encore — cliquez sur Créer'}
-                </p>
-              )}
-
-              <p className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-700/40 rounded-lg px-3 py-2">
-                💡 {lang === 'ar'
-                  ? 'النسخة الاحتياطية تُنزَّل فوراً كملف JSON. احتفظ بها في مكان آمن.'
-                  : 'La sauvegarde est téléchargée immédiatement en JSON. Conservez-la dans un endroit sûr.'}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* ── MARKETING addon card ── */}
