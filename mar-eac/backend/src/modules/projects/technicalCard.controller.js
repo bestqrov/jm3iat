@@ -4,13 +4,25 @@ const { generateTechnicalCardPdf } = require('../../utils/technicalCardPdf');
 
 const getTechnicalCard = async (req, res) => {
   try {
-    const project = await prisma.project.findFirst({
-      where: { id: req.params.id, organizationId: req.organization.id },
-      select: { id: true, title: true, location: true, status: true,
-                budget: true, generalGoal: true, technicalCard: true },
-    });
+    const orgId = req.organization.id;
+    const [project, president] = await Promise.all([
+      prisma.project.findFirst({
+        where: { id: req.params.id, organizationId: orgId },
+        select: { id: true, title: true, location: true, status: true,
+                  budget: true, generalGoal: true, technicalCard: true },
+      }),
+      prisma.member.findFirst({
+        where: { organizationId: orgId, role: 'PRESIDENT', isActive: true },
+        select: { name: true },
+      }),
+    ]);
     if (!project) return res.status(404).json({ message: 'Project not found' });
-    res.json({ ...project, technicalCard: project.technicalCard || {} });
+    const tc = project.technicalCard || {};
+    // Inject president name from members if not already overridden in tc
+    if (!tc.presidentName && president?.name) {
+      tc.presidentName = president.name;
+    }
+    res.json({ ...project, technicalCard: tc });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -39,7 +51,7 @@ const exportTechnicalCardPdf = async (req, res) => {
     const { id } = req.params;
     const orgId  = req.organization.id;
 
-    const [project, org] = await Promise.all([
+    const [project, org, president] = await Promise.all([
       prisma.project.findFirst({
         where: { id, organizationId: orgId },
         select: { id: true, title: true, location: true, status: true,
@@ -51,9 +63,20 @@ const exportTechnicalCardPdf = async (req, res) => {
                   addressAr: true, city: true, cityAr: true, region: true, regionAr: true,
                   foundingDate: true, logo: true, mandateDuration: true, bureauCreationDate: true },
       }),
+      prisma.member.findFirst({
+        where: { organizationId: orgId, role: 'PRESIDENT', isActive: true },
+        select: { name: true },
+      }),
     ]);
 
     if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    // Merge president name into tc if not manually overridden
+    const tc = project.technicalCard && typeof project.technicalCard === 'object'
+      ? { ...project.technicalCard }
+      : {};
+    if (!tc.presidentName && president?.name) tc.presidentName = president.name;
+    project.technicalCard = tc;
 
     generateTechnicalCardPdf(project, org, res);
   } catch (err) {
