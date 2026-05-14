@@ -316,31 +316,21 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
-          {/* Association logo or themed placeholder */}
+          {/* Association logo or platform logo */}
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden"
-            style={{ background: organization?.logo ? 'transparent' : orgTheme.logoBg }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden bg-white"
           >
-            {organization?.logo ? (
-              <img
-                src={organization.logo}
-                alt="logo"
-                className="w-full h-full object-contain p-0.5"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  (e.currentTarget.parentElement as HTMLElement).style.background = orgTheme.logoBg;
-                  const span = document.createElement('span');
-                  span.className = 'font-bold text-sm text-white';
-                  span.textContent = 'MA';
-                  e.currentTarget.parentElement?.appendChild(span);
-                }}
-              />
-            ) : (
-              <span className="font-bold text-sm text-white">MA</span>
-            )}
+            <img
+              src={organization?.logo || '/logo-saas.png'}
+              alt="logo"
+              className="w-full h-full object-contain p-0.5"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/logo-saas.png';
+              }}
+            />
           </div>
           <div className="min-w-0">
-            <div className="font-bold text-gray-900 dark:text-white text-sm">Mar E-A.C</div>
+            <div className="font-bold text-gray-900 dark:text-white text-sm">Minassatona</div>
             {organization && (
               <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{organization.name}</div>
             )}
