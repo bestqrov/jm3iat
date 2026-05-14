@@ -93,10 +93,8 @@ export const CoopLandingPage: React.FC = () => {
       <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-800' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                <Leaf size={16} className="text-white" />
-              </div>
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" alt="Minassatona" className="h-9 w-9 object-contain" />
               <div>
                 <span className="font-bold text-gray-900 dark:text-white">Minassatona</span>
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium leading-none mt-0.5">
