@@ -748,7 +748,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => setPlan3Y(false)}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${!plan3Y ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
               >
-                {isAr ? 'سنوي' : 'Annuel'}
+                {isAr ? 'شهري' : 'Mensuel'}
               </button>
               <button
                 onClick={() => setPlan3Y(true)}
@@ -809,34 +809,24 @@ export const LandingPage: React.FC = () => {
 
                     {/* Price */}
                     {(() => {
-                      const base = parseInt(pack.price);
-                      const perMonth = Math.round(base / 12);
-                      const total3Y = Math.round(base * 3 * 0.65);
-                      const perYear3Y = Math.round(base * 0.65);
-                      const perMonth3Y = Math.round(perYear3Y / 12);
+                      const base = parseInt(pack.price); // already monthly
+                      const total3Y = Math.round(base * 36 * 0.65);
+                      const perMonth3Y = Math.round(base * 0.65);
                       return (
                         <div className="mb-5">
                           <div className={`flex items-baseline gap-1 ${isAr ? 'flex-row-reverse justify-end' : ''}`}>
                             <span className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                              {plan3Y ? total3Y : base}
+                              {plan3Y ? perMonth3Y : base}
                             </span>
                             <span className="text-sm text-gray-500 dark:text-gray-400">
-                              {plan3Y
-                                ? (isAr ? ' د.م / 3 سنوات' : ' MAD / 3 ans')
-                                : (isAr ? ' د.م/سنة' : ' MAD/an')}
+                              {isAr ? ' د.م/شهر' : ' MAD/mois'}
                             </span>
                           </div>
-                          {/* Monthly breakdown */}
-                          <p className="text-xs text-primary-600 dark:text-primary-400 font-semibold mt-1">
-                            {isAr
-                              ? `(${plan3Y ? perMonth3Y : perMonth} د.م/شهر)`
-                              : `(${plan3Y ? perMonth3Y : perMonth} MAD/mois)`}
-                          </p>
                           {plan3Y && (
                             <div className={`flex items-center gap-2 mt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
-                              <span className="text-xs text-gray-400 line-through">{base * 3} {isAr ? 'د.م' : 'MAD'}</span>
+                              <span className="text-xs text-gray-400 line-through">{base} {isAr ? 'د.م' : 'MAD'}</span>
                               <span className="text-xs text-green-600 dark:text-green-400 font-semibold">
-                                {isAr ? `(${perYear3Y} د.م/سنة)` : `(${perYear3Y} MAD/an)`}
+                                {isAr ? `إجمالي 3 سنوات: ${total3Y} د.م` : `Total 3 ans : ${total3Y} MAD`}
                               </span>
                             </div>
                           )}
@@ -903,11 +893,11 @@ export const LandingPage: React.FC = () => {
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {plan3Y
                     ? (isAr
-                        ? 'اشتراك 3 سنوات · توفير 35% · تنبيه تجديد قبل شهر من الانتهاء · الدفع عبر تحويل بنكي أو CashPlus'
-                        : 'Abonnement 3 ans · Économie de 35% · Rappel de renouvellement 1 mois avant · Paiement par virement ou CashPlus')
+                        ? 'اشتراك 3 سنوات · توفير 35% على السعر الشهري · تنبيه تجديد قبل شهر من الانتهاء · الدفع عبر تحويل بنكي أو CashPlus'
+                        : 'Abonnement 3 ans · Économie de 35% sur le prix mensuel · Rappel 1 mois avant · Paiement par virement ou CashPlus')
                     : (isAr
-                        ? 'اشتراك سنوي · الدفع عبر تحويل بنكي أو CashPlus · تنبيه تجديد قبل شهر من الانتهاء'
-                        : 'Abonnement annuel · Paiement par virement ou CashPlus · Rappel de renouvellement 1 mois avant')}
+                        ? 'اشتراك شهري · الدفع عبر تحويل بنكي أو CashPlus · تنبيه تجديد قبل الانتهاء'
+                        : 'Abonnement mensuel · Paiement par virement ou CashPlus · Rappel avant expiration')}
                 </p>
               </div>
             </div>
