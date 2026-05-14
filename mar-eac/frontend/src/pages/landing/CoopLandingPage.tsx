@@ -98,7 +98,9 @@ export const CoopLandingPage: React.FC = () => {
               </div>
               <div>
                 <span className="font-bold text-gray-900 dark:text-white">Minassatona</span>
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mr-2">· {isAr ? 'التعاونيات' : 'Coopératives'}</span>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium leading-none mt-0.5">
+                  {isAr ? 'حصري للتعاونيات المغربية' : 'Exclusif coopératives marocaines'}
+                </p>
               </div>
             </div>
 
@@ -165,14 +167,11 @@ export const CoopLandingPage: React.FC = () => {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
-            <span className="inline-flex items-center gap-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
-              <Sparkles size={12} />{isAr ? 'حصري للتعاونيات المغربية' : 'Exclusif coopératives marocaines'}
-            </span>
             <h1 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white leading-tight mb-8">
               {isAr ? (
-                <>أنتجوا فقط —<br /><span className="text-emerald-600">نحن نبيع لكم 🤝</span></>
+                <>أنتجوا فقط —<br /><span className="text-emerald-600">نحن نبيع منتجاتكم 🤝</span></>
               ) : (
-                <>Produisez seulement —<br /><span className="text-emerald-600">nous vendons pour vous 🤝</span></>
+                <>Produisez seulement —<br /><span className="text-emerald-600">nous vendons vos produits 🤝</span></>
               )}
             </h1>
           </div>
@@ -189,8 +188,8 @@ export const CoopLandingPage: React.FC = () => {
           <div className="text-center max-w-3xl mx-auto">
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
               {isAr
-                ? 'منصة ذكية تُدير تعاونيتك وتبيع منتجاتك في متجر إلكتروني وطني (ودولي) — بدون خبرة تقنية، بدون تكاليف إضافية.'
-                : 'Une plateforme intelligente qui gère votre coopérative et vend vos produits dans une boutique nationale (et internationale) — sans compétence technique, sans frais supplémentaires.'}
+                ? 'منصة ذكية تُدير تعاونيتك وتبيع منتجاتك في متجر إلكتروني وطني ودولي — بدون خبرة تقنية، بدون تكاليف إضافية.'
+                : 'Une plateforme intelligente qui gère votre coopérative et vend vos produits dans une boutique nationale et internationale — sans compétence technique, sans frais supplémentaires.'}
             </p>
             <div className="flex flex-wrap justify-center gap-4 mb-10">
               <button onClick={() => setShowForm(true)}
@@ -215,107 +214,13 @@ export const CoopLandingPage: React.FC = () => {
           <div className="mt-8 max-w-4xl mx-auto grid grid-cols-3 gap-4">
             {[
               { icon: '📦', value: isAr ? '+500 منتج' : '+500 produits', label: isAr ? 'في المتجر' : 'en boutique' },
-              { icon: '🏪', value: isAr ? 'متجر وطني' : 'Boutique nationale', label: isAr ? 'lkhdmano.cloud' : 'lkhdmano.cloud' },
+              { icon: '🤝', value: '+120', label: isAr ? 'تعاونية شريكة' : 'coopératives partenaires' },
               { icon: '💵', value: 'COD', label: isAr ? 'دفع عند الاستلام' : 'Paiement livraison' },
             ].map((s, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 text-center shadow-sm">
                 <div className="text-3xl mb-2">{s.icon}</div>
                 <p className="font-black text-gray-900 dark:text-white">{s.value}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PROBLEM / SOLUTION ── */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
-              {isAr ? 'هل تعاني من هذه المشاكل؟' : 'Souffrez-vous de ces problèmes ?'}
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400">
-              {isAr ? 'المشكلة الكبرى لكل تعاونية: الإنتاج ممتاز، لكن التسويق والبيع صعب' : 'Le vrai défi : une production excellente, mais ventes & marketing restent difficiles'}
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-2xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-2xl">😰</span>
-                <h3 className="font-bold text-red-800 dark:text-red-300 text-lg">{isAr ? 'قبل المنصة' : 'Avant la plateforme'}</h3>
-              </div>
-              <ul className="space-y-3">
-                {(isAr ? [
-                  'منتجات رائعة تبقى في المستودع بدون مشترين',
-                  'لا وجود رقمي — لا موقع، لا متجر إلكتروني',
-                  'التسويق يحتاج خبرة وميزانية كبيرة',
-                  'صعوبة الوصول للزبائن خارج المنطقة الجغرافية',
-                  'ضياع الوقت في الإدارة بدل التركيز على الإنتاج',
-                ] : [
-                  'Excellents produits qui restent en stock sans acheteurs',
-                  'Aucune présence digitale — pas de site, pas de boutique',
-                  'Le marketing nécessite expertise et budget',
-                  'Impossible d\'atteindre des clients hors région',
-                  'Temps perdu en gestion au lieu de la production',
-                ]).map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-red-700 dark:text-red-300">
-                    <span className="text-red-400 mt-0.5 flex-shrink-0 font-bold">✗</span>{item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-2xl">🚀</span>
-                <h3 className="font-bold text-emerald-800 dark:text-emerald-300 text-lg">{isAr ? 'مع منصتنا' : 'Avec notre plateforme'}</h3>
-              </div>
-              <ul className="space-y-3">
-                {(isAr ? [
-                  'متجر إلكتروني جاهز على lkhdmano.cloud — في دقائق',
-                  'منتجاتك تصل لزبائن من جميع مدن المغرب',
-                  'الطلبيات تصلك مباشرة، الدفع عند الاستلام (COD)',
-                  'تتبع المخزون، الأرباح، والمدفوعات في لوحة واحدة',
-                  'أنتم تركزون على الإنتاج، نحن نتكفل بالباقي',
-                ] : [
-                  'Boutique prête sur lkhdmano.cloud — en quelques minutes',
-                  'Produits accessibles dans toutes les villes du Maroc',
-                  'Commandes directes, paiement à la livraison (COD)',
-                  'Suivi stock, bénéfices et paiements dans un tableau de bord',
-                  'Vous produisez, nous gérons ventes & marketing',
-                ]).map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-emerald-700 dark:text-emerald-300">
-                    <CheckCircle size={15} className="text-emerald-500 mt-0.5 flex-shrink-0" />{item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section id="how" className="py-20 bg-white dark:bg-gray-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
-              {isAr ? 'كيف يعمل النظام؟ — 3 خطوات فقط' : '3 étapes seulement'}
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-8">
-            {(isAr ? [
-              { icon: '✅', title: 'سجّل وأرسل منتجاتك', desc: 'سجّل تعاونيتك، احصل على الموافقة، ثم أرسل منتجاتك إلى مستودعنا — هذا كل شيء من جهتك' },
-              { icon: '📣', title: 'فريقنا يتكفل بالباقي', desc: 'فريقنا يضيف منتجاتك في المتجر، ينشئ الإعلانات، ويسوّق لها عبر القنوات الرقمية' },
-              { icon: '💰', title: 'نبيع ونُحوّل لك المال', desc: 'نبيع منتجاتك، نُرسلها للزبون، نحصّل المبلغ، ونُحوّل أرباحك مباشرة إلى حسابك' },
-            ] : [
-              { icon: '✅', title: 'Inscrivez-vous & envoyez vos produits', desc: 'Inscrivez votre coopérative, obtenez l\'approbation, puis envoyez vos produits à notre entrepôt — c\'est tout de votre côté' },
-              { icon: '📣', title: 'Notre équipe s\'occupe du reste', desc: 'Notre équipe ajoute vos produits à la boutique, crée les publicités et assure la promotion digitale' },
-              { icon: '💰', title: 'On vend & on vire vos gains', desc: 'On vend vos produits, on les livre au client, on encaisse et on transfère vos bénéfices directement sur votre compte' },
-            ]).map((s, i) => (
-              <div key={i} className="flex flex-col items-center text-center bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700">
-                <div className="text-5xl mb-5">{s.icon}</div>
-                <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">{s.title}</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -427,6 +332,100 @@ export const CoopLandingPage: React.FC = () => {
               ? '🤝 تعاونيتك تُنتج — منصتنا تُسيّر وتبيع'
               : '🤝 Votre coopérative produit — notre plateforme gère et vend'}
           </p>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section id="how" className="py-20 bg-white dark:bg-gray-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
+              {isAr ? 'كيف يعمل النظام؟ — 3 خطوات فقط' : '3 étapes seulement'}
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-8">
+            {(isAr ? [
+              { icon: '✅', title: 'سجّل وأرسل منتجاتك', desc: 'سجّل تعاونيتك، احصل على الموافقة، ثم أرسل منتجاتك إلى مستودعنا — هذا كل شيء من جهتك' },
+              { icon: '📣', title: 'فريقنا يتكفل بالباقي', desc: 'فريقنا يضيف منتجاتك في المتجر، ينشئ الإعلانات، ويسوّق لها عبر القنوات الرقمية' },
+              { icon: '💰', title: 'نبيع ونُحوّل لك المال', desc: 'نبيع منتجاتك، نُرسلها للزبون، نحصّل المبلغ، ونُحوّل أرباحك مباشرة إلى حسابك' },
+            ] : [
+              { icon: '✅', title: 'Inscrivez-vous & envoyez vos produits', desc: 'Inscrivez votre coopérative, obtenez l\'approbation, puis envoyez vos produits à notre entrepôt — c\'est tout de votre côté' },
+              { icon: '📣', title: 'Notre équipe s\'occupe du reste', desc: 'Notre équipe ajoute vos produits à la boutique, crée les publicités et assure la promotion digitale' },
+              { icon: '💰', title: 'On vend & on vire vos gains', desc: 'On vend vos produits, on les livre au client, on encaisse et on transfère vos bénéfices directement sur votre compte' },
+            ]).map((s, i) => (
+              <div key={i} className="flex flex-col items-center text-center bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700">
+                <div className="text-5xl mb-5">{s.icon}</div>
+                <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">{s.title}</h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PROBLEM / SOLUTION ── */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
+              {isAr ? 'هل تعاني من هذه المشاكل؟' : 'Souffrez-vous de ces problèmes ?'}
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400">
+              {isAr ? 'المشكلة الكبرى لكل تعاونية: الإنتاج ممتاز، لكن التسويق والبيع صعب' : 'Le vrai défi : une production excellente, mais ventes & marketing restent difficiles'}
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-2xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-2xl">😰</span>
+                <h3 className="font-bold text-red-800 dark:text-red-300 text-lg">{isAr ? 'قبل المنصة' : 'Avant la plateforme'}</h3>
+              </div>
+              <ul className="space-y-3">
+                {(isAr ? [
+                  'منتجات رائعة تبقى في المستودع بدون مشترين',
+                  'لا وجود رقمي — لا موقع، لا متجر إلكتروني',
+                  'التسويق يحتاج خبرة وميزانية كبيرة',
+                  'صعوبة الوصول للزبائن خارج المنطقة الجغرافية',
+                  'ضياع الوقت في الإدارة بدل التركيز على الإنتاج',
+                ] : [
+                  'Excellents produits qui restent en stock sans acheteurs',
+                  'Aucune présence digitale — pas de site, pas de boutique',
+                  'Le marketing nécessite expertise et budget',
+                  'Impossible d\'atteindre des clients hors région',
+                  'Temps perdu en gestion au lieu de la production',
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-red-700 dark:text-red-300">
+                    <span className="text-red-400 mt-0.5 flex-shrink-0 font-bold">✗</span>{item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-2xl">🚀</span>
+                <h3 className="font-bold text-emerald-800 dark:text-emerald-300 text-lg">{isAr ? 'مع منصتنا' : 'Avec notre plateforme'}</h3>
+              </div>
+              <ul className="space-y-3">
+                {(isAr ? [
+                  'متجر إلكتروني جاهز على lkhdmano.cloud — في دقائق',
+                  'منتجاتك تصل لزبائن من جميع مدن المغرب',
+                  'الطلبيات تصلك مباشرة، الدفع عند الاستلام (COD)',
+                  'تتبع المخزون، الأرباح، والمدفوعات في لوحة واحدة',
+                  'أنتم تركزون على الإنتاج، نحن نتكفل بالباقي',
+                ] : [
+                  'Boutique prête sur lkhdmano.cloud — en quelques minutes',
+                  'Produits accessibles dans toutes les villes du Maroc',
+                  'Commandes directes, paiement à la livraison (COD)',
+                  'Suivi stock, bénéfices et paiements dans un tableau de bord',
+                  'Vous produisez, nous gérons ventes & marketing',
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-emerald-700 dark:text-emerald-300">
+                    <CheckCircle size={15} className="text-emerald-500 mt-0.5 flex-shrink-0" />{item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
