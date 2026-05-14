@@ -422,8 +422,8 @@ export const LandingPage: React.FC = () => {
           {/* ── Banner image — switches by language ── */}
           <div className="w-full rounded-2xl overflow-hidden shadow-2xl shadow-primary-200/40 dark:shadow-primary-900/30 border border-white/70 dark:border-gray-700 mb-10">
             <img
-              src={isAr ? '/hero-banner.jpeg' : '/hero-banner-fr.jpeg'}
-              alt={isAr ? 'منصة جمعيتي — لوحة التحكم' : 'Minassatona — Tableau de bord'}
+              src={isAr ? '/nbnr.png' : '/nbffr.png'}
+              alt={isAr ? 'منصتنا — لوحة التحكم' : 'Minassatona — Tableau de bord'}
               className="w-full h-auto object-cover block"
             />
           </div>
@@ -961,6 +961,15 @@ export const LandingPage: React.FC = () => {
                 ? 'المشكلة الكبرى لكل تعاونية: الإنتاج ممتاز، لكن التسويق والبيع صعب. نحن حللنا هذه المعادلة.'
                 : 'Le vrai défi de chaque coopérative : une production excellente, mais le marketing et la vente restent difficiles. Nous avons résolu cette équation.'}
             </p>
+          </div>
+
+          {/* Banner image */}
+          <div className="w-full rounded-2xl overflow-hidden shadow-xl shadow-emerald-100/50 dark:shadow-emerald-900/20 border border-emerald-100 dark:border-emerald-900 mb-16">
+            <img
+              src={isAr ? '/nbnr.png' : '/nbffr.png'}
+              alt={isAr ? 'منصتنا — للتعاونيات' : 'Minassatona — Coopératives'}
+              className="w-full h-auto object-cover block"
+            />
           </div>
 
           {/* Problem vs Solution */}

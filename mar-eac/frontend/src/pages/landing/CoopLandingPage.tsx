@@ -199,8 +199,17 @@ export const CoopLandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Preview mockup */}
-          <div className="mt-14 max-w-4xl mx-auto grid grid-cols-3 gap-4">
+          {/* Banner image */}
+          <div className="mt-14 w-full rounded-2xl overflow-hidden shadow-2xl shadow-emerald-200/40 dark:shadow-emerald-900/30 border border-white/70 dark:border-gray-700">
+            <img
+              src={isAr ? '/nbnr.png' : '/nbffr.png'}
+              alt={isAr ? 'منصتنا — للتعاونيات' : 'Minassatona — Coopératives'}
+              className="w-full h-auto object-cover block"
+            />
+          </div>
+
+          {/* Stats row */}
+          <div className="mt-8 max-w-4xl mx-auto grid grid-cols-3 gap-4">
             {[
               { icon: '📦', value: isAr ? '+500 منتج' : '+500 produits', label: isAr ? 'في المتجر' : 'en boutique' },
               { icon: '🏪', value: isAr ? 'متجر وطني' : 'Boutique nationale', label: isAr ? 'lkhdmano.cloud' : 'lkhdmano.cloud' },
