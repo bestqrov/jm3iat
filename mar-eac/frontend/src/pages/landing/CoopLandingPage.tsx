@@ -325,27 +325,108 @@ export const CoopLandingPage: React.FC = () => {
       {/* ── FEATURES ── */}
       <section className="py-20 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
+          <div className="text-center mb-4">
+            <span className="inline-block bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full mb-4">
               {isAr ? 'كل ما تحتاجه تعاونيتك' : 'Tout ce dont votre coopérative a besoin'}
+            </span>
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
+              {isAr ? 'تسيير ذكي + تسويق احترافي — في منصة واحدة' : 'Gestion intelligente + Marketing pro — en une seule plateforme'}
             </h2>
+            <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-14">
+              {isAr
+                ? 'نجمع بين نظام تسيير متكامل لتعاونيتك ومستودع حقيقي مع فريق تسويق — لأن نجاحك يحتاج الاثنين معاً'
+                : 'Nous combinons un système de gestion complet et un entrepôt réel avec une équipe marketing — car votre succès nécessite les deux'}
+            </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: <Store size={22} />, color: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600', title: isAr ? 'متجر إلكتروني جاهز' : 'Boutique en ligne', desc: isAr ? 'عرض منتجاتك على lkhdmano.cloud — بدون أي إعداد تقني' : 'Vos produits sur lkhdmano.cloud — sans configuration' },
-              { icon: <Package size={22} />, color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600', title: isAr ? 'إدارة المخزون' : 'Gestion du stock', desc: isAr ? 'تتبع الكميات المتوفرة، التنبيهات عند النفاد، سجل الحركات' : 'Suivez les quantités, alertes rupture, historique des mouvements' },
-              { icon: <ShoppingCart size={22} />, color: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600', title: isAr ? 'إدارة الطلبيات' : 'Gestion des commandes', desc: isAr ? 'استقبل وتتبع الطلبيات، أكد أو ألغِ — بنقرة واحدة' : 'Recevez, suivez, confirmez ou annulez les commandes en 1 clic' },
-              { icon: <TrendingUp size={22} />, color: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600', title: isAr ? 'تتبع الأرباح' : 'Suivi des bénéfices', desc: isAr ? 'حساب تلقائي للأرباح الصافية بعد خصم التكاليف' : 'Calcul automatique du bénéfice net après déduction des coûts' },
-              { icon: <Users size={22} />, color: 'bg-teal-50 dark:bg-teal-900/20 text-teal-600', title: isAr ? 'إدارة الأعضاء' : 'Gestion des membres', desc: isAr ? 'ملفات الأعضاء، الاشتراكات، حضور الاجتماعات والمحاضر' : 'Fiches membres, cotisations, présence aux réunions' },
-              { icon: <BarChart2 size={22} />, color: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600', title: isAr ? 'تقارير وإحصاءات' : 'Rapports & statistiques', desc: isAr ? 'تقارير شاملة بالعربية والفرنسية — قابلة للتصدير PDF' : 'Rapports complets en arabe & français — exportables PDF' },
-            ].map((f, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-all">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${f.color}`}>{f.icon}</div>
-                <h3 className="font-bold text-gray-900 dark:text-white mb-2">{f.title}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{f.desc}</p>
+
+          {/* Two columns: Gestion | Marketing */}
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+
+            {/* Gestion column */}
+            <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                  <BarChart2 size={20} />
+                </div>
+                <div>
+                  <p className="font-black text-gray-900 dark:text-white">
+                    {isAr ? 'نظام التسيير' : 'Système de gestion'}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {isAr ? 'أدر تعاونيتك رقمياً بالكامل' : 'Gérez votre coopérative 100% digitalement'}
+                  </p>
+                </div>
               </div>
-            ))}
+              <ul className="space-y-3">
+                {(isAr ? [
+                  { icon: <Users size={15} />, text: 'إدارة الأعضاء، الانخراطات، والمدفوعات' },
+                  { icon: <Package size={15} />, text: 'المنتجات والمخزون وحركة البضاعة' },
+                  { icon: <ShoppingCart size={15} />, text: 'متابعة الطلبيات والمبيعات لحظة بلحظة' },
+                  { icon: <TrendingUp size={15} />, text: 'تقارير الأرباح الصافية بصيغة PDF' },
+                  { icon: <Shield size={15} />, text: 'المالية الكاملة — إيرادات، مصاريف، رصيد' },
+                  { icon: <BarChart2 size={15} />, text: 'الاجتماعات والمحاضر والوثائق الرسمية' },
+                ] : [
+                  { icon: <Users size={15} />, text: 'Membres, adhésions & paiements' },
+                  { icon: <Package size={15} />, text: 'Produits, stock & mouvements de marchandises' },
+                  { icon: <ShoppingCart size={15} />, text: 'Suivi commandes & ventes en temps réel' },
+                  { icon: <TrendingUp size={15} />, text: 'Rapports de bénéfices nets en PDF' },
+                  { icon: <Shield size={15} />, text: 'Finances complètes — recettes, dépenses, solde' },
+                  { icon: <BarChart2 size={15} />, text: 'Réunions, PV & documents officiels' },
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300">
+                    <span className="text-blue-500 flex-shrink-0">{item.icon}</span>
+                    {item.text}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Marketing & Warehouse column */}
+            <div className="bg-white dark:bg-gray-800 rounded-3xl border border-emerald-200 dark:border-emerald-800 p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600">
+                  <Store size={20} />
+                </div>
+                <div>
+                  <p className="font-black text-gray-900 dark:text-white">
+                    {isAr ? 'المستودع والتسويق' : 'Entrepôt & Marketing'}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {isAr ? 'نحن نتكفل — أنتم تُنتجون فقط' : 'On s\'occupe de tout — vous produisez seulement'}
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-3">
+                {(isAr ? [
+                  { icon: <Truck size={15} />, text: 'مستودعنا يستقبل منتجاتك ويحفظها باحترافية' },
+                  { icon: <Star size={15} />, text: 'فريقنا يصوّر المنتجات ويكتب أوصافاً جذابة' },
+                  { icon: <TrendingUp size={15} />, text: 'إعلانات ممولة على السوشيال ميديا لكل منتج' },
+                  { icon: <ShoppingCart size={15} />, text: 'استقبال الطلبيات، التغليف، والتسليم للزبون' },
+                  { icon: <Shield size={15} />, text: 'تحصيل المبالغ وتحويل أرباحك لحسابك مباشرة' },
+                  { icon: <ArrowRight size={15} />, text: 'تقارير المبيعات والأرباح بشكل دوري' },
+                ] : [
+                  { icon: <Truck size={15} />, text: 'Notre entrepôt reçoit et stocke vos produits' },
+                  { icon: <Star size={15} />, text: 'Notre équipe photographie et rédige des fiches produits attractives' },
+                  { icon: <TrendingUp size={15} />, text: 'Publicités payantes sur les réseaux sociaux pour chaque produit' },
+                  { icon: <ShoppingCart size={15} />, text: 'Réception commandes, emballage et livraison au client' },
+                  { icon: <Shield size={15} />, text: 'Encaissement et virement de vos bénéfices directement' },
+                  { icon: <ArrowRight size={15} />, text: 'Rapports de ventes et bénéfices périodiques' },
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300">
+                    <span className="text-emerald-500 flex-shrink-0">{item.icon}</span>
+                    {item.text}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
+
+          {/* Bottom tagline */}
+          <p className="text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+            {isAr
+              ? '🤝 تعاونيتك تُنتج — منصتنا تُسيّر وتبيع'
+              : '🤝 Votre coopérative produit — notre plateforme gère et vend'}
+          </p>
         </div>
       </section>
 
