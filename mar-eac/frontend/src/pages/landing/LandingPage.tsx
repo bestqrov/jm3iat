@@ -342,7 +342,7 @@ export const LandingPage: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="Minassatona" className="h-9 w-9 object-contain" />
+              <img src="/logo-saas.png" alt="Minassatona" className="h-9 w-9 object-contain" />
               <span className="font-bold text-xl text-gray-900 dark:text-white">Minassatona</span>
             </div>
 
@@ -1235,7 +1235,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="Minassatona" className="h-8 w-8 object-contain" />
+              <img src="/logo-saas.png" alt="Minassatona" className="h-8 w-8 object-contain" />
               <div>
                 <div className="font-bold text-white">Minassatona</div>
                 <div className="text-xs text-gray-500">
