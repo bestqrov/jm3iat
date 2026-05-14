@@ -536,11 +536,28 @@ const getOrganization = async (req, res) => {
 
 const updateSubscription = async (req, res) => {
   try {
-    const { assocType, status, expiresAt, action } = req.body;
+    const { assocType, assocTypes, status, expiresAt, action } = req.body;
     const orgId = req.params.id;
 
-    const plan    = assocType ? (ASSOC_TYPE_PLAN[assocType]    || 'BASIC') : undefined;
-    const modules = assocType ? (ASSOC_TYPE_MODULES[assocType] || [])       : undefined;
+    // Support both single assocType (legacy) and assocTypes[] (multi-select)
+    let plan, modules;
+    if (assocTypes && Array.isArray(assocTypes) && assocTypes.length > 0) {
+      // Compute modules as union of all selected types
+      const moduleSet = new Set();
+      assocTypes.filter(t => t !== 'REGULAR').forEach(t => {
+        (ASSOC_TYPE_MODULES[t] || []).forEach(m => moduleSet.add(m));
+      });
+      modules = [...moduleSet];
+      // Plan = highest plan among selected types
+      const planOrder = { BASIC: 1, STANDARD: 2, PREMIUM: 3 };
+      plan = assocTypes.reduce((best, t) => {
+        const p = ASSOC_TYPE_PLAN[t] || 'BASIC';
+        return (planOrder[p] || 0) > (planOrder[best] || 0) ? p : best;
+      }, 'BASIC');
+    } else if (assocType) {
+      plan    = ASSOC_TYPE_PLAN[assocType]    || 'BASIC';
+      modules = ASSOC_TYPE_MODULES[assocType] || [];
+    }
 
     if (modules !== undefined) {
       await prisma.organization.update({ where: { id: orgId }, data: { modules } });

@@ -56,25 +56,36 @@ const ASSOC_TYPES: {
   { key: 'TRANSPORT',        price: 179, labelFr: 'Transport scolaire',        labelAr: 'النقل المدرسي',     icon: <Bus size={13} />,         badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',   dot: '#ea580c' },
 ];
 
+// Returns which type keys are active given current modules
+const getSelectedTypes = (modules: string[] = []): AssocTypeKey[] => {
+  const types: AssocTypeKey[] = [];
+  if (modules.includes('PROJECTS'))   types.push('PROJECTS');
+  if (modules.includes('WATER'))      types.push('WATER');
+  if (modules.includes('PRODUCTIVE')) types.push('PRODUCTIVE');
+  if (modules.includes('TRANSPORT'))  types.push('TRANSPORT');
+  if (types.length === 0)             types.push('REGULAR');
+  return types;
+};
+
+// Kept for backwards compat (used in stats/distribution)
 const getAssocType = (modules: string[] = []): AssocTypeKey => {
-  const hasProd      = modules.includes('PRODUCTIVE');
-  const hasWater     = modules.includes('WATER');
-  const hasProj      = modules.includes('PROJECTS');
-  const hasTransport = modules.includes('TRANSPORT');
-  if (hasProd && hasWater) return 'PRODUCTIVE_WATER';
-  if (hasProd)      return 'PRODUCTIVE';
-  if (hasWater)     return 'WATER';
-  if (hasProj)      return 'PROJECTS';
-  if (hasTransport) return 'TRANSPORT';
-  return 'REGULAR';
+  const types = getSelectedTypes(modules);
+  if (types.includes('PRODUCTIVE') && types.includes('WATER')) return 'PRODUCTIVE_WATER';
+  return types[0] ?? 'REGULAR';
 };
 
 const AssocTypeBadge: React.FC<{ modules: string[]; isAr: boolean }> = ({ modules, isAr }) => {
-  const key = getAssocType(modules);
-  const cfg = ASSOC_TYPES.find(t => t.key === key)!;
+  const types = getSelectedTypes(modules);
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.badge}`}>
-      {cfg.icon} {isAr ? cfg.labelAr : cfg.labelFr}
+    <span className="inline-flex flex-wrap gap-1">
+      {types.map(key => {
+        const cfg = ASSOC_TYPES.find(t => t.key === key)!;
+        return (
+          <span key={key} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.badge}`}>
+            {cfg.icon} {isAr ? cfg.labelAr : cfg.labelFr}
+          </span>
+        );
+      })}
     </span>
   );
 };
@@ -181,7 +192,7 @@ export const SuperAdminPage: React.FC = () => {
   const [deletingOrgId, setDeletingOrgId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [editForm, setEditForm] = useState({ assocType: '', status: '', expiresAt: '' });
+  const [editForm, setEditForm] = useState({ assocTypes: ['REGULAR'] as string[], status: '', expiresAt: '' });
   const [editSaving, setEditSaving] = useState(false);
 
   // Payments state
@@ -290,9 +301,19 @@ export const SuperAdminPage: React.FC = () => {
   const openEditOrg = (org: any) => {
     setEditingOrg(org);
     setEditForm({
-      assocType: getAssocType(org.modules),
+      assocTypes: getSelectedTypes(org.modules),
       status: org.subscription?.status || 'TRIAL',
       expiresAt: org.subscription?.expiresAt ? org.subscription.expiresAt.slice(0, 10) : '',
+    });
+  };
+
+  const toggleAssocType = (key: string) => {
+    setEditForm(f => {
+      if (key === 'REGULAR') return { ...f, assocTypes: ['REGULAR'] };
+      const without = f.assocTypes.filter(t => t !== 'REGULAR');
+      const has = without.includes(key);
+      const next = has ? without.filter(t => t !== key) : [...without, key];
+      return { ...f, assocTypes: next.length === 0 ? ['REGULAR'] : next };
     });
   };
 
@@ -300,7 +321,11 @@ export const SuperAdminPage: React.FC = () => {
     if (!editingOrg) return;
     setEditSaving(true);
     try {
-      await superadminApi.updateSubscription(editingOrg.id, editForm);
+      await superadminApi.updateSubscription(editingOrg.id, {
+        assocTypes: editForm.assocTypes,
+        status: editForm.status,
+        expiresAt: editForm.expiresAt,
+      });
       setEditingOrg(null);
       await loadOrgs();
       await loadStats();
@@ -977,10 +1002,36 @@ export const SuperAdminPage: React.FC = () => {
         <Modal isOpen={!!editingOrg} onClose={() => setEditingOrg(null)} title={isAr ? `تعديل اشتراك: ${editingOrg.name}` : `Modifier abonnement : ${editingOrg.name}`}>
           <div className="space-y-4">
             <div>
-              <label className={lbl}>{isAr ? 'نوع الجمعية' : 'Type d\'association'}</label>
-              <select className={inp} value={editForm.assocType} onChange={e => setEditForm(f => ({ ...f, assocType: e.target.value }))}>
-                {ASSOC_TYPES.map(t => <option key={t.key} value={t.key}>{isAr ? t.labelAr : t.labelFr}</option>)}
-              </select>
+              <label className={lbl}>{isAr ? 'نوع الجمعية (اختيار متعدد)' : 'Type d\'association (multi-sélection)'}</label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {ASSOC_TYPES.filter(t => t.key !== 'PRODUCTIVE_WATER').map(t => {
+                  const active = editForm.assocTypes.includes(t.key);
+                  return (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => toggleAssocType(t.key)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all text-right ${
+                        active
+                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <span className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center text-xs ${
+                        active ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-gray-300 dark:border-gray-600'
+                      }`}>
+                        {active && '✓'}
+                      </span>
+                      <span className="flex items-center gap-1.5">{t.icon} {isAr ? t.labelAr : t.labelFr}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {editForm.assocTypes.length > 1 && (
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2 flex items-center gap-1">
+                  ✓ {editForm.assocTypes.filter(t => t !== 'REGULAR').join(' + ')}
+                </p>
+              )}
             </div>
             <div>
               <label className={lbl}>{isAr ? 'الحالة' : 'Statut'}</label>
