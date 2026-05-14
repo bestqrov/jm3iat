@@ -631,8 +631,22 @@ export const LandingPage: React.FC = () => {
                 {isAr ? 'مستجدات المنصة:' : 'Nouveautés :'}
               </span>
               {(isAr
-                ? ['طلب الانضمام الإلكتروني', 'بطاقة المنخرط الرقمية', 'الممتلكات', 'البطاقة التقنية للمشاريع']
-                : ["Adhésion en ligne", "Carte d'adhérent numérique", "Gestion des actifs", "Fiche technique PDF"]
+                ? [
+                    '🛒 التجارة الإلكترونية',
+                    '🏪 متجر عام للتعاونيات',
+                    '📦 إدارة المخزون والطلبيات',
+                    '💰 تتبع الأرباح والمدفوعات',
+                    '📋 البطاقة التقنية للمشاريع',
+                    '🔧 اختيار متعدد لنوع الجمعية',
+                  ]
+                : [
+                    '🛒 Module Commerce',
+                    '🏪 Boutique publique coopératives',
+                    '📦 Stocks & commandes',
+                    '💰 Suivi bénéfices & paiements',
+                    '📋 Fiche technique projets PDF',
+                    '🔧 Multi-sélection type association',
+                  ]
               ).map((label, i) => (
                 <span key={i} className="text-xs bg-white dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-700 px-2.5 py-1 rounded-full font-medium">
                   {label}
