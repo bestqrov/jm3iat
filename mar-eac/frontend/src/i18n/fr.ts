@@ -1321,7 +1321,7 @@ const fr = {
     hero: {
       badge: 'Essai gratuit 15 jours — sans carte bancaire',
       title: 'Gérez votre association avec',
-      titleBrand: 'Jam3iyati',
+      titleBrand: 'Minassatona',
       subtitle: 'Une plateforme digitale pour gérer membres, finances et rapports en toute simplicité',
       ctaPrimary: 'Essai gratuit (15 jours)',
       ctaSecondary: 'Voir la démo',
@@ -1346,7 +1346,7 @@ const fr = {
     },
     solution: {
       badge: 'La solution',
-      title: 'Jam3iyati transforme votre gestion en système digital',
+      title: 'Minassatona transforme votre gestion en système digital',
       subtitle: 'Un système complet qui regroupe tous vos besoins en un seul endroit',
     },
     features: {
@@ -1417,7 +1417,7 @@ const fr = {
         {
           name: 'Mohammed El Idrissi',
           role: 'Président — Association Développement, Marrakech',
-          text: 'Jam3iyati a complètement transformé notre façon de travailler. On perdait des heures en paperasse, maintenant tout est centralisé.',
+          text: 'Minassatona a complètement transformé notre façon de travailler. On perdait des heures en paperasse, maintenant tout est centralisé.',
         },
         {
           name: 'Fatima Benali',
@@ -1459,7 +1459,7 @@ const fr = {
     },
     finalCta: {
       title: "Commencez aujourd'hui et développez votre association",
-      subtitle: "Rejoignez des centaines d'associations qui font confiance à Jam3iyati",
+      subtitle: "Rejoignez des centaines d'associations qui font confiance à Minassatona",
       cta: "Démarrer l'essai gratuit",
       login: 'Se connecter',
     },

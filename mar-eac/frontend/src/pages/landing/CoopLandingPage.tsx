@@ -97,7 +97,7 @@ export const CoopLandingPage: React.FC = () => {
                 <Leaf size={16} className="text-white" />
               </div>
               <div>
-                <span className="font-bold text-gray-900 dark:text-white">Jam3iyati</span>
+                <span className="font-bold text-gray-900 dark:text-white">Minassatona</span>
                 <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mr-2">· {isAr ? 'التعاونيات' : 'Coopératives'}</span>
               </div>
             </div>
@@ -455,7 +455,7 @@ export const CoopLandingPage: React.FC = () => {
 
       {/* ── Footer ── */}
       <footer className="bg-gray-900 text-white py-10 px-4 text-center text-sm text-gray-400">
-        <p className="mb-2">Jam3iyati · {isAr ? 'للتعاونيات والجمعيات المغربية' : 'Pour les coopératives & associations marocaines'}</p>
+        <p className="mb-2">Minassatona · {isAr ? 'للتعاونيات والجمعيات المغربية' : 'Pour les coopératives & associations marocaines'}</p>
         <div className="flex justify-center gap-4 flex-wrap">
           <Link to="/" className="hover:text-white">{isAr ? 'صفحة الجمعيات' : 'Page associations'}</Link>
           <Link to="/login" className="hover:text-white">{isAr ? 'تسجيل الدخول' : 'Connexion'}</Link>

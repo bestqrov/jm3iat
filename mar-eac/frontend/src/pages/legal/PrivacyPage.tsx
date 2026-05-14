@@ -13,7 +13,7 @@ const content = {
       {
         icon: 'Shield',
         title: '1. مقدمة',
-        content: `تُعدّ هذه السياسة جزءاً من الشروط العامة لاستخدام منصة جمعيتي (Jam3iyati)، وهي منصة رقمية متخصصة في إدارة الجمعيات المغربية. بمجرد إنشائك لحساب أو استخدامك للمنصة، فإنك توافق على الشروط الواردة في هذه السياسة.
+        content: `تُعدّ هذه السياسة جزءاً من الشروط العامة لاستخدام منصة جمعيتي (Minassatona)، وهي منصة رقمية متخصصة في إدارة الجمعيات المغربية. بمجرد إنشائك لحساب أو استخدامك للمنصة، فإنك توافق على الشروط الواردة في هذه السياسة.
 
 تلتزم شركة جمعيتي بحماية المعلومات الشخصية التي تشاركها معنا، وتعمل وفق المبادئ المعمول بها في مجال حماية البيانات.`,
       },
@@ -136,9 +136,9 @@ const content = {
       {
         icon: 'Shield',
         title: '1. Introduction',
-        content: `La présente politique fait partie des conditions générales d'utilisation de la plateforme Jam3iyati, une plateforme digitale spécialisée dans la gestion des associations marocaines. En créant un compte ou en utilisant la plateforme, vous acceptez les termes décrits dans cette politique.
+        content: `La présente politique fait partie des conditions générales d'utilisation de la plateforme Minassatona, une plateforme digitale spécialisée dans la gestion des associations marocaines. En créant un compte ou en utilisant la plateforme, vous acceptez les termes décrits dans cette politique.
 
-Jam3iyati s'engage à protéger les informations personnelles que vous partagez avec nous, et opère conformément aux principes en vigueur en matière de protection des données.`,
+Minassatona s'engage à protéger les informations personnelles que vous partagez avec nous, et opère conformément aux principes en vigueur en matière de protection des données.`,
       },
       {
         icon: 'Eye',
@@ -189,7 +189,7 @@ Nous ne vendons ni ne partageons aucune information personnelle à des tiers à 
       {
         icon: 'Bell',
         title: '5. Cookies',
-        content: `La plateforme Jam3iyati utilise des cookies aux fins suivantes :
+        content: `La plateforme Minassatona utilise des cookies aux fins suivantes :
 
 • **Cookies essentiels :** maintien de votre session de connexion et des préférences de langue
 • **Cookies analytiques :** compréhension de l'utilisation de la plateforme pour l'améliorer (données agrégées et anonymisées)

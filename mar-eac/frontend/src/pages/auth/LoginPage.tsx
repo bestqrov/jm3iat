@@ -58,7 +58,7 @@ export const LoginPage: React.FC = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/logo-saas.png" alt="Jam3iyati" className="h-28 w-auto mx-auto mb-2 drop-shadow-md" />
+          <img src="/logo-saas.png" alt="Minassatona" className="h-28 w-auto mx-auto mb-2 drop-shadow-md" />
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{t('appTagline')}</p>
         </div>
 

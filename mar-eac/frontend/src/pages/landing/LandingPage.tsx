@@ -290,7 +290,7 @@ export const LandingPage: React.FC = () => {
         { name: 'يوسف الحسني', role: 'مدير جمعية الماء — تيزنيت', text: 'وحدة إدارة وتدبير الماء رائعة، تتبع الفواتير والقراءات أصبح سهلاً جداً.', stars: 5 },
       ]
     : [
-        { name: 'Mohammed El Idrissi', role: 'Président — Association Développement, Marrakech', text: "Jam3iyati a transformé notre façon de travailler. On perdait des heures en paperasse, maintenant tout est centralisé.", stars: 5 },
+        { name: 'Mohammed El Idrissi', role: 'Président — Association Développement, Marrakech', text: "Minassatona a transformé notre façon de travailler. On perdait des heures en paperasse, maintenant tout est centralisé.", stars: 5 },
         { name: 'Fatima Benali', role: 'Responsable financière — Association Espoir, Agadir', text: 'Les rapports financiers prennent maintenant des minutes au lieu de journées. Excellent !', stars: 5 },
         { name: 'Youssef El Hassani', role: "Directeur — Association de l'eau, Tiznit", text: "Le module de gestion d'eau est remarquable, le suivi est devenu très simple.", stars: 5 },
       ];
@@ -342,8 +342,8 @@ export const LandingPage: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-2.5">
-              <img src="/logo-saas.png" alt="Jam3iyati" className="h-8 w-8 rounded-lg object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              <span className="font-bold text-xl text-gray-900 dark:text-white">Jam3iyati</span>
+              <img src="/logo-saas.png" alt="Minassatona" className="h-8 w-8 rounded-lg object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <span className="font-bold text-xl text-gray-900 dark:text-white">Minassatona</span>
             </div>
 
             {/* Desktop nav */}
@@ -423,7 +423,7 @@ export const LandingPage: React.FC = () => {
           <div className="w-full rounded-2xl overflow-hidden shadow-2xl shadow-primary-200/40 dark:shadow-primary-900/30 border border-white/70 dark:border-gray-700 mb-10">
             <img
               src={isAr ? '/hero-banner.jpeg' : '/hero-banner-fr.jpeg'}
-              alt={isAr ? 'منصة جمعيتي — لوحة التحكم' : 'Jam3iyati — Tableau de bord'}
+              alt={isAr ? 'منصة جمعيتي — لوحة التحكم' : 'Minassatona — Tableau de bord'}
               className="w-full h-auto object-cover block"
             />
           </div>
@@ -444,7 +444,7 @@ export const LandingPage: React.FC = () => {
             ) : (
               <>
                 Gérez votre association avec{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-600">Jam3iyati</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-600">Minassatona</span>
               </>
             )}
           </h1>
@@ -557,7 +557,7 @@ export const LandingPage: React.FC = () => {
             {isAr ? 'الحل' : 'La solution'}
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            {isAr ? 'جمعيتي يحول التسيير لنظام رقمي' : 'Jam3iyati transforme votre gestion en système digital'}
+            {isAr ? 'جمعيتي يحول التسيير لنظام رقمي' : 'Minassatona transforme votre gestion en système digital'}
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-16">
             {isAr ? 'نظام شامل يجمع كل احتياجات جمعيتك في مكان واحد' : 'Un système complet qui regroupe tous vos besoins en un seul endroit'}
@@ -567,7 +567,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <div className="bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900 rounded-2xl p-6 text-start">
               <div className="text-red-500 font-bold text-sm mb-4 flex items-center gap-2">
-                <X size={16} /> {isAr ? 'قبل جمعيتي' : 'Avant Jam3iyati'}
+                <X size={16} /> {isAr ? 'قبل جمعيتي' : 'Avant Minassatona'}
               </div>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 {(isAr
@@ -583,7 +583,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <div className="bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-900 rounded-2xl p-6 text-start">
               <div className="text-green-600 font-bold text-sm mb-4 flex items-center gap-2">
-                <CheckCircle size={16} /> {isAr ? 'مع جمعيتي' : 'Avec Jam3iyati'}
+                <CheckCircle size={16} /> {isAr ? 'مع جمعيتي' : 'Avec Minassatona'}
               </div>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 {(isAr
@@ -1200,7 +1200,7 @@ export const LandingPage: React.FC = () => {
             {isAr ? 'ابدأ اليوم وخلي جمعيتك تتطور' : "Commencez aujourd'hui et développez votre association"}
           </h2>
           <p className="text-primary-200 text-lg mb-10">
-            {isAr ? 'انضم إلى مئات الجمعيات التي تثق في جمعيتي' : "Rejoignez des centaines d'associations qui font confiance à Jam3iyati"}
+            {isAr ? 'انضم إلى مئات الجمعيات التي تثق في جمعيتي' : "Rejoignez des centaines d'associations qui font confiance à Minassatona"}
           </p>
           <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 ${isAr ? 'sm:flex-row-reverse' : ''}`}>
             <Link
@@ -1226,9 +1226,9 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <img src="/logo-saas.png" alt="Jam3iyati" className="h-8 w-8 rounded-lg object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <img src="/logo-saas.png" alt="Minassatona" className="h-8 w-8 rounded-lg object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               <div>
-                <div className="font-bold text-white">Jam3iyati</div>
+                <div className="font-bold text-white">Minassatona</div>
                 <div className="text-xs text-gray-500">
                   {isAr ? 'تدبير الجمعيات والتعاونيات المغربية' : 'Tadbir — Gestion des associations et coopératives marocaines'}
                 </div>
@@ -1250,7 +1250,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="text-xs text-gray-600">
-              © {new Date().getFullYear()} Jam3iyati. {isAr ? 'جميع الحقوق محفوظة' : 'Tous droits réservés'}
+              © {new Date().getFullYear()} Minassatona. {isAr ? 'جميع الحقوق محفوظة' : 'Tous droits réservés'}
             </div>
           </div>
         </div>

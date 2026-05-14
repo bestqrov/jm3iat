@@ -13,7 +13,7 @@ const content = {
       {
         icon: 'FileText',
         title: '1. قبول الشروط',
-        content: `بإنشائك لحساب على منصة جمعيتي (Jam3iyati) أو استخدامك لأي من خدماتها، فإنك تؤكد أنك قرأت هذه الشروط وفهمتها ووافقت على الالتزام بها.
+        content: `بإنشائك لحساب على منصة جمعيتي (Minassatona) أو استخدامك لأي من خدماتها، فإنك تؤكد أنك قرأت هذه الشروط وفهمتها ووافقت على الالتزام بها.
 
 إذا كنت تمثّل جمعية أو منظمة، فإنك تؤكد أن لديك الصلاحية القانونية للموافقة على هذه الشروط باسمها.
 
@@ -164,14 +164,14 @@ const content = {
   },
   fr: {
     title: "Conditions d'utilisation",
-    subtitle: 'Veuillez lire attentivement ces conditions avant d\'utiliser la plateforme Jam3iyati',
+    subtitle: 'Veuillez lire attentivement ces conditions avant d\'utiliser la plateforme Minassatona',
     updated: 'Dernière mise à jour : 1er janvier 2025',
     backHome: 'Retour à l\'accueil',
     sections: [
       {
         icon: 'FileText',
         title: '1. Acceptation des conditions',
-        content: `En créant un compte sur la plateforme Jam3iyati ou en utilisant l'un de ses services, vous confirmez avoir lu, compris et accepté les présentes conditions.
+        content: `En créant un compte sur la plateforme Minassatona ou en utilisant l'un de ses services, vous confirmez avoir lu, compris et accepté les présentes conditions.
 
 Si vous représentez une association ou une organisation, vous confirmez disposer de l'autorité légale pour accepter ces conditions en son nom.
 
@@ -180,7 +180,7 @@ Si vous n'acceptez pas l'une de ces conditions, veuillez vous abstenir d'utilise
       {
         icon: 'FileText',
         title: '2. Description du service',
-        content: `Jam3iyati est une plateforme digitale complète permettant aux associations marocaines de gérer leurs affaires administratives et financières. Les services proposés comprennent :
+        content: `Minassatona est une plateforme digitale complète permettant aux associations marocaines de gérer leurs affaires administratives et financières. Les services proposés comprennent :
 
 • **Gestion des membres :** inscription des adhérents, suivi des cotisations et des données
 • **Finances :** suivi des recettes et dépenses, génération de rapports financiers
@@ -191,7 +191,7 @@ Si vous n'acceptez pas l'une de ces conditions, veuillez vous abstenir d'utilise
 • **Transport scolaire :** gestion des bus, élèves et abonnements
 • **Rapports :** génération de rapports littéraires et financiers imprimables
 
-Jam3iyati se réserve le droit de modifier, ajouter ou suspendre tout service avec préavis.`,
+Minassatona se réserve le droit de modifier, ajouter ou suspendre tout service avec préavis.`,
       },
       {
         icon: 'Users',
@@ -247,7 +247,7 @@ Après paiement, le reçu doit être téléversé sur la plateforme. L'activatio
       {
         icon: 'Ban',
         title: '6. Utilisations interdites',
-        content: `Il est interdit d'utiliser la plateforme Jam3iyati aux fins suivantes :
+        content: `Il est interdit d'utiliser la plateforme Minassatona aux fins suivantes :
 
 • Publier tout contenu illégal, offensant ou trompeur
 • Violer les droits de propriété intellectuelle d'un tiers
@@ -262,7 +262,7 @@ Toute violation de ces dispositions nous autorise à suspendre ou résilier votr
       {
         icon: 'AlertTriangle',
         title: '7. Limitation de responsabilité',
-        content: `Jam3iyati ne saurait être tenu responsable de :
+        content: `Minassatona ne saurait être tenu responsable de :
 
 • Toute perte ou dommage résultant d'une interruption de service due à des causes indépendantes de notre volonté (force majeure, problèmes avec l'hébergeur…)
 • L'exactitude des données saisies par les utilisateurs sur la plateforme
@@ -289,7 +289,7 @@ En cas de suspension d'urgence pour violation, aucun remboursement des frais d'a
         icon: 'Scale',
         title: '9. Propriété intellectuelle',
         content: `**Notre propriété :**
-Tous les éléments de la plateforme (logo, design, code source, bases de données) sont la propriété exclusive de Jam3iyati et sont protégés par les lois sur la propriété intellectuelle en vigueur.
+Tous les éléments de la plateforme (logo, design, code source, bases de données) sont la propriété exclusive de Minassatona et sont protégés par les lois sur la propriété intellectuelle en vigueur.
 
 **Votre propriété :**
 Toutes les données que vous saisissez sur la plateforme (informations des membres, registres financiers…) restent votre propriété exclusive. Nous ne revendiquons aucun droit sur celles-ci.`,
