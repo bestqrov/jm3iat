@@ -106,7 +106,7 @@ export const CoopLandingPage: React.FC = () => {
 
             <div className="hidden md:flex items-center gap-6">
               <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                {isAr ? 'للجمعيات' : 'Pour les associations'}
+                {isAr ? 'الرئيسية' : 'Accueil'}
               </Link>
               <a href="#how" className="text-sm text-gray-600 dark:text-gray-400 hover:text-emerald-600 transition-colors">
                 {isAr ? 'كيف يعمل' : 'Comment ça marche'}
@@ -140,7 +140,7 @@ export const CoopLandingPage: React.FC = () => {
         </div>
         {menuOpen && (
           <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-4 py-4 space-y-3">
-            <Link to="/" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'للجمعيات' : 'Pour les associations'}</Link>
+            <Link to="/" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'الرئيسية' : 'Accueil'}</Link>
             <a href="#how" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'كيف يعمل' : 'Comment ça marche'}</a>
             <a href="#pricing" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'الأسعار' : 'Tarifs'}</a>
             <div className="pt-2 flex flex-col gap-2">
@@ -546,7 +546,7 @@ export const CoopLandingPage: React.FC = () => {
       <footer className="bg-gray-900 text-white py-10 px-4 text-center text-sm text-gray-400">
         <p className="mb-2">Minassatona · {isAr ? 'للتعاونيات والجمعيات المغربية' : 'Pour les coopératives & associations marocaines'}</p>
         <div className="flex justify-center gap-4 flex-wrap">
-          <Link to="/" className="hover:text-white">{isAr ? 'صفحة الجمعيات' : 'Page associations'}</Link>
+          <Link to="/" className="hover:text-white">{isAr ? 'الرئيسية' : 'Accueil'}</Link>
           <Link to="/login" className="hover:text-white">{isAr ? 'تسجيل الدخول' : 'Connexion'}</Link>
           <Link to="/privacy" className="hover:text-white">{isAr ? 'الخصوصية' : 'Confidentialité'}</Link>
         </div>
