@@ -342,46 +342,81 @@ export const CoopLandingPage: React.FC = () => {
 
       {/* ── PRICING ── */}
       <section id="pricing" className="py-20 bg-white dark:bg-gray-950">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="inline-block bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full mb-4">
             {isAr ? 'الأسعار' : 'Tarifs'}
           </span>
           <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
-            {isAr ? 'باقة عروض تناسب حجم تعاونيتك' : 'Un pack adapté à votre coopérative'}
+            {isAr ? 'باقة واحدة — كل شيء متاح' : 'Un seul pack — tout inclus'}
           </h2>
-          <p className="text-emerald-600 dark:text-emerald-400 font-semibold mb-10">
-            💡 {isAr ? 'بثمن انخراط فرد واحد استفد من مميزات المنصة' : 'Pour le prix d\'une adhésion, profitez de toute la plateforme'}
+          <p className="text-gray-500 dark:text-gray-400 mb-10">
+            💡 {isAr ? 'بثمن انخراط فرد واحد تستفيد من كامل المنصة' : 'Pour le prix d\'une adhésion, toute la plateforme est à vous'}
           </p>
-          <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            {(isAr ? [
-              { name: 'تعاونية إنتاجية', price: '100', badge: 'الأكثر طلباً ⭐', features: ['إدارة المنتجات والمخزون', 'متجر إلكتروني في lkhdmano.cloud', 'إدارة الطلبيات والأرباح', 'إدارة الأعضاء والاجتماعات', 'المالية والفواتير', 'تقارير PDF'], popular: true },
-              { name: 'تعاونية ماء + إنتاج', price: '150', badge: '', features: ['كل مميزات التعاونية الإنتاجية', 'إدارة شبكة الماء', 'قراءة العدادات', 'فواتير الماء'], popular: false },
-            ] : [
-              { name: 'Coopérative productive', price: '100', badge: 'Plus populaire ⭐', features: ['Gestion produits & stock', 'Boutique sur lkhdmano.cloud', 'Commandes & bénéfices', 'Membres & réunions', 'Finances & factures', 'Rapports PDF'], popular: true },
-              { name: 'Coopérative Eau + Production', price: '150', badge: '', features: ['Tout le pack productif', 'Réseau d\'eau', 'Relevés de compteurs', 'Factures eau'], popular: false },
-            ]).map((pack, i) => (
-              <div key={i} className={`rounded-2xl border-2 overflow-hidden ${pack.popular ? 'border-emerald-400 shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}>
-                {pack.popular && <div className="bg-emerald-600 text-white text-xs font-bold text-center py-2">{pack.badge}</div>}
-                <div className="p-6">
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-3">{pack.name}</h3>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-4xl font-extrabold text-gray-900 dark:text-white">{pack.price}</span>
-                    <span className="text-gray-500 dark:text-gray-400 text-sm">{isAr ? ' د.م/شهر' : ' MAD/mois'}</span>
-                  </div>
-                  <ul className="space-y-2 my-5">
-                    {pack.features.map((f, j) => (
-                      <li key={j} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                        <CheckCircle size={13} className="text-emerald-500 flex-shrink-0" />{f}
-                      </li>
-                    ))}
-                  </ul>
-                  <button onClick={() => setShowForm(true)}
-                    className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${pack.popular ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'border-2 border-emerald-200 hover:border-emerald-400 text-emerald-700 dark:text-emerald-400'}`}>
-                    {isAr ? 'ابدأ مجاناً 15 يوم' : 'Essai gratuit 15 jours'}
-                  </button>
-                </div>
+
+          {/* Single pricing card */}
+          <div className="relative rounded-3xl border-2 border-emerald-400 shadow-2xl overflow-hidden bg-white dark:bg-gray-900 text-right mx-auto max-w-md">
+            <div className="bg-emerald-600 text-white text-xs font-bold text-center py-2.5 tracking-wide">
+              {isAr ? '⭐ الباقة الوحيدة — وصول كامل' : '⭐ Pack unique — accès complet'}
+            </div>
+            <div className="p-8">
+              {/* Price */}
+              <div className="flex items-baseline gap-1 justify-center mb-2">
+                <span className="text-6xl font-black text-gray-900 dark:text-white">70</span>
+                <span className="text-gray-500 dark:text-gray-400 text-lg">{isAr ? ' د.م/شهر' : ' MAD/mois'}</span>
               </div>
-            ))}
+              <p className="text-center text-xs text-gray-400 mb-8">
+                {isAr ? 'تجربة مجانية 15 يوم · بدون بطاقة بنكية' : 'Essai gratuit 15 jours · Sans carte bancaire'}
+              </p>
+
+              {/* What you get — management value */}
+              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3 text-center">
+                {isAr ? 'ماذا تشمل الباقة' : 'Ce que comprend le pack'}
+              </p>
+              <ul className="space-y-2.5 mb-8">
+                {(isAr ? [
+                  'إدارة الأعضاء والانخراطات والمدفوعات',
+                  'المالية الكاملة — إيرادات، مصاريف، تقارير',
+                  'الاجتماعات والمحاضر والقرارات',
+                  'إدارة الوثائق والملفات الرسمية',
+                  'المنتجات والمخزون وحركة البضاعة',
+                  'متابعة الطلبيات والمبيعات في الوقت الفعلي',
+                  'تقارير الأرباح بصيغة PDF',
+                  'الممتلكات: عقارات، سيارات، تجهيزات',
+                  'دعم بالعربية على واتساب',
+                ] : [
+                  'Gestion membres, adhésions & paiements',
+                  'Finances complètes — recettes, dépenses, rapports',
+                  'Réunions, PV et décisions',
+                  'Documents & dossiers officiels',
+                  'Produits, stock & mouvements de marchandises',
+                  'Suivi commandes & ventes en temps réel',
+                  'Rapports de bénéfices en PDF',
+                  'Actifs : immobilier, véhicules, équipements',
+                  'Support en arabe via WhatsApp',
+                ]).map((f, i) => (
+                  <li key={i} className="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300">
+                    <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />{f}
+                  </li>
+                ))}
+              </ul>
+
+              <button onClick={() => setShowForm(true)}
+                className="w-full py-4 rounded-2xl font-black text-base bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-lg hover:-translate-y-0.5">
+                {isAr ? 'ابدأ مجاناً ←' : 'Commencer gratuitement →'}
+              </button>
+            </div>
+          </div>
+
+          {/* Store commission note */}
+          <div className="mt-8 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-6 py-5 text-center max-w-md mx-auto">
+            <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mb-1">
+              🏪 {isAr ? 'المتجر — عمولة على المبيعات فقط' : 'Boutique — commission sur ventes uniquement'}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              {isAr
+                ? 'نتولى نحن التسويق والإعلان وجلب المشترين — أنتم فقط تضمنون الجودة. نأخذ عمولة بسيطة عند كل عملية بيع ناجحة.'
+                : 'Nous gérons la publicité, le marketing et l\'acquisition des acheteurs — vous garantissez seulement la qualité. On prend une commission simple à chaque vente réussie.'}
+            </p>
           </div>
         </div>
       </section>
