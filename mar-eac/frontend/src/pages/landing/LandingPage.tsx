@@ -714,9 +714,14 @@ export const LandingPage: React.FC = () => {
             <span className="inline-block bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-semibold px-3 py-1 rounded-full mb-4">
               {isAr ? 'الأسعار' : 'Tarifs'}
             </span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3">
               {isAr ? 'باقة عروض تناسب نوع و حجم جمعيتك' : 'Un pack adapté à votre type d\'association'}
             </h2>
+            <p className="text-base font-semibold text-primary-600 dark:text-primary-400 mb-3">
+              {isAr
+                ? '💡 بثمن انخراط فرد واحد استفد من مميزات المنصة'
+                : '💡 Pour le prix d\'une seule adhésion, profitez de toute la plateforme'}
+            </p>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto mb-6">
               {isAr
                 ? 'اختر الباقة المناسبة — تجربة مجانية 15 يوم بدون التزام'
@@ -791,8 +796,10 @@ export const LandingPage: React.FC = () => {
                     {/* Price */}
                     {(() => {
                       const base = parseInt(pack.price);
+                      const perMonth = Math.round(base / 12);
                       const total3Y = Math.round(base * 3 * 0.65);
                       const perYear3Y = Math.round(base * 0.65);
+                      const perMonth3Y = Math.round(perYear3Y / 12);
                       return (
                         <div className="mb-5">
                           <div className={`flex items-baseline gap-1 ${isAr ? 'flex-row-reverse justify-end' : ''}`}>
@@ -805,6 +812,12 @@ export const LandingPage: React.FC = () => {
                                 : (isAr ? ' د.م/سنة' : ' MAD/an')}
                             </span>
                           </div>
+                          {/* Monthly breakdown */}
+                          <p className="text-xs text-primary-600 dark:text-primary-400 font-semibold mt-1">
+                            {isAr
+                              ? `(${plan3Y ? perMonth3Y : perMonth} د.م/شهر)`
+                              : `(${plan3Y ? perMonth3Y : perMonth} MAD/mois)`}
+                          </p>
                           {plan3Y && (
                             <div className={`flex items-center gap-2 mt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
                               <span className="text-xs text-gray-400 line-through">{base * 3} {isAr ? 'د.م' : 'MAD'}</span>
