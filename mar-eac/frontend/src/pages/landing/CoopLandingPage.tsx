@@ -168,17 +168,29 @@ export const CoopLandingPage: React.FC = () => {
             <span className="inline-flex items-center gap-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
               <Sparkles size={12} />{isAr ? 'حصري للتعاونيات المغربية' : 'Exclusif coopératives marocaines'}
             </span>
-            <h1 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white leading-tight mb-6">
+            <h1 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white leading-tight mb-8">
               {isAr ? (
                 <>أنتجوا فقط —<br /><span className="text-emerald-600">نحن نبيع لكم 🤝</span></>
               ) : (
                 <>Produisez seulement —<br /><span className="text-emerald-600">nous vendons pour vous 🤝</span></>
               )}
             </h1>
+          </div>
+
+          {/* Banner image — right after the hero heading */}
+          <div className="w-full rounded-2xl overflow-hidden shadow-2xl shadow-emerald-200/40 dark:shadow-emerald-900/30 border border-white/70 dark:border-gray-700 mb-12">
+            <img
+              src={isAr ? '/nbnr.png' : '/nbffr.png'}
+              alt={isAr ? 'منصتنا — للتعاونيات' : 'Minassatona — Coopératives'}
+              className="w-full h-auto object-cover block"
+            />
+          </div>
+
+          <div className="text-center max-w-3xl mx-auto">
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
               {isAr
-                ? 'منصة ذكية تُدير تعاونيتك وتبيع منتجاتك في متجر إلكتروني وطني — بدون خبرة تقنية، بدون تكاليف إضافية.'
-                : 'Une plateforme intelligente qui gère votre coopérative et vend vos produits dans une boutique nationale — sans compétence technique, sans frais supplémentaires.'}
+                ? 'منصة ذكية تُدير تعاونيتك وتبيع منتجاتك في متجر إلكتروني وطني (ودولي) — بدون خبرة تقنية، بدون تكاليف إضافية.'
+                : 'Une plateforme intelligente qui gère votre coopérative et vend vos produits dans une boutique nationale (et internationale) — sans compétence technique, sans frais supplémentaires.'}
             </p>
             <div className="flex flex-wrap justify-center gap-4 mb-10">
               <button onClick={() => setShowForm(true)}
@@ -197,15 +209,6 @@ export const CoopLandingPage: React.FC = () => {
                 : ['✅ 15 jours gratuits', '✅ Sans carte bancaire', '✅ Support en arabe']
               ).map((t, i) => <span key={i}>{t}</span>)}
             </div>
-          </div>
-
-          {/* Banner image */}
-          <div className="mt-14 w-full rounded-2xl overflow-hidden shadow-2xl shadow-emerald-200/40 dark:shadow-emerald-900/30 border border-white/70 dark:border-gray-700">
-            <img
-              src={isAr ? '/nbnr.png' : '/nbffr.png'}
-              alt={isAr ? 'منصتنا — للتعاونيات' : 'Minassatona — Coopératives'}
-              className="w-full h-auto object-cover block"
-            />
           </div>
 
           {/* Stats row */}
@@ -301,19 +304,16 @@ export const CoopLandingPage: React.FC = () => {
           </div>
           <div className="grid sm:grid-cols-3 gap-8">
             {(isAr ? [
-              { step: '١', icon: '✅', title: 'سجّل وأرسل منتجاتك', desc: 'سجّل تعاونيتك، احصل على الموافقة، ثم أرسل منتجاتك إلى مستودعنا — هذا كل شيء من جهتك' },
-              { step: '٢', icon: '📣', title: 'فريقنا يتكفل بالباقي', desc: 'فريقنا يضيف منتجاتك في المتجر، ينشئ الإعلانات، ويسوّق لها عبر القنوات الرقمية' },
-              { step: '٣', icon: '💰', title: 'نبيع ونُحوّل لك المال', desc: 'نبيع منتجاتك، نُرسلها للزبون، نحصّل المبلغ، ونُحوّل أرباحك مباشرة إلى حسابك' },
+              { icon: '✅', title: 'سجّل وأرسل منتجاتك', desc: 'سجّل تعاونيتك، احصل على الموافقة، ثم أرسل منتجاتك إلى مستودعنا — هذا كل شيء من جهتك' },
+              { icon: '📣', title: 'فريقنا يتكفل بالباقي', desc: 'فريقنا يضيف منتجاتك في المتجر، ينشئ الإعلانات، ويسوّق لها عبر القنوات الرقمية' },
+              { icon: '💰', title: 'نبيع ونُحوّل لك المال', desc: 'نبيع منتجاتك، نُرسلها للزبون، نحصّل المبلغ، ونُحوّل أرباحك مباشرة إلى حسابك' },
             ] : [
-              { step: '1', icon: '✅', title: 'Inscrivez-vous & envoyez vos produits', desc: 'Inscrivez votre coopérative, obtenez l\'approbation, puis envoyez vos produits à notre entrepôt — c\'est tout de votre côté' },
-              { step: '2', icon: '📣', title: 'Notre équipe s\'occupe du reste', desc: 'Notre équipe ajoute vos produits à la boutique, crée les publicités et assure la promotion digitale' },
-              { step: '3', icon: '💰', title: 'On vend & on vire vos gains', desc: 'On vend vos produits, on les livre au client, on encaisse et on transfère vos bénéfices directement sur votre compte' },
+              { icon: '✅', title: 'Inscrivez-vous & envoyez vos produits', desc: 'Inscrivez votre coopérative, obtenez l\'approbation, puis envoyez vos produits à notre entrepôt — c\'est tout de votre côté' },
+              { icon: '📣', title: 'Notre équipe s\'occupe du reste', desc: 'Notre équipe ajoute vos produits à la boutique, crée les publicités et assure la promotion digitale' },
+              { icon: '💰', title: 'On vend & on vire vos gains', desc: 'On vend vos produits, on les livre au client, on encaisse et on transfère vos bénéfices directement sur votre compte' },
             ]).map((s, i) => (
               <div key={i} className="flex flex-col items-center text-center bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-xl mb-4 shadow-lg">
-                  {s.step}
-                </div>
-                <div className="text-4xl mb-4">{s.icon}</div>
+                <div className="text-5xl mb-5">{s.icon}</div>
                 <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">{s.title}</h4>
                 <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{s.desc}</p>
               </div>
