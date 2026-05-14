@@ -301,13 +301,13 @@ export const CoopLandingPage: React.FC = () => {
           </div>
           <div className="grid sm:grid-cols-3 gap-8">
             {(isAr ? [
-              { step: '١', icon: '📦', title: 'أضف منتجاتك', desc: 'أدخل منتجاتك بالاسم، الصورة، السعر، والمخزون المتوفر — في دقائق فقط' },
-              { step: '٢', icon: '🏪', title: 'تظهر في المتجر فوراً', desc: 'منتجاتك تُعرض تلقائياً في متجر lkhdmano.cloud أمام آلاف الزبائن في جميع المدن' },
-              { step: '٣', icon: '💰', title: 'استلم طلبياتك وأرباحك', desc: 'الزبون يطلب، أنت تُرسل، والمنصة تتبع الأرباح والمدفوعات لك تلقائياً' },
+              { step: '١', icon: '✅', title: 'سجّل وأرسل منتجاتك', desc: 'سجّل تعاونيتك، احصل على الموافقة، ثم أرسل منتجاتك إلى مستودعنا — هذا كل شيء من جهتك' },
+              { step: '٢', icon: '📣', title: 'فريقنا يتكفل بالباقي', desc: 'فريقنا يضيف منتجاتك في المتجر، ينشئ الإعلانات، ويسوّق لها عبر القنوات الرقمية' },
+              { step: '٣', icon: '💰', title: 'نبيع ونُحوّل لك المال', desc: 'نبيع منتجاتك، نُرسلها للزبون، نحصّل المبلغ، ونُحوّل أرباحك مباشرة إلى حسابك' },
             ] : [
-              { step: '1', icon: '📦', title: 'Ajoutez vos produits', desc: 'Saisissez nom, photo, prix et stock — en quelques minutes seulement' },
-              { step: '2', icon: '🏪', title: 'Visibles immédiatement', desc: 'Vos produits s\'affichent automatiquement sur lkhdmano.cloud devant des milliers de clients' },
-              { step: '3', icon: '💰', title: 'Recevez commandes & bénéfices', desc: 'Le client commande, vous expédiez, la plateforme suit bénéfices et paiements automatiquement' },
+              { step: '1', icon: '✅', title: 'Inscrivez-vous & envoyez vos produits', desc: 'Inscrivez votre coopérative, obtenez l\'approbation, puis envoyez vos produits à notre entrepôt — c\'est tout de votre côté' },
+              { step: '2', icon: '📣', title: 'Notre équipe s\'occupe du reste', desc: 'Notre équipe ajoute vos produits à la boutique, crée les publicités et assure la promotion digitale' },
+              { step: '3', icon: '💰', title: 'On vend & on vire vos gains', desc: 'On vend vos produits, on les livre au client, on encaisse et on transfère vos bénéfices directement sur votre compte' },
             ]).map((s, i) => (
               <div key={i} className="flex flex-col items-center text-center bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-xl mb-4 shadow-lg">

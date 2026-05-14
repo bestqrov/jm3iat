@@ -1044,13 +1044,13 @@ export const LandingPage: React.FC = () => {
               {/* connector line */}
               <div className="hidden sm:block absolute top-10 left-1/6 right-1/6 h-0.5 bg-emerald-200 dark:bg-emerald-800 z-0" style={{ left: '20%', right: '20%' }} />
               {(isAr ? [
-                { step: '١', icon: '📦', title: 'أضف منتجاتك', desc: 'أدخل منتجاتك بالاسم، الصورة، السعر، والمخزون المتوفر — في دقائق فقط' },
-                { step: '٢', icon: '🏪', title: 'تظهر في المتجر فوراً', desc: 'منتجاتك تُعرض تلقائياً في متجر lkhdmano.cloud أمام آلاف الزبائن' },
-                { step: '٣', icon: '💰', title: 'استلم طلبياتك وأرباحك', desc: 'الزبون يطلب، أنت تُرسل، والمنصة تتبع الأرباح والمدفوعات لك' },
+                { step: '١', icon: '✅', title: 'سجّل وأرسل منتجاتك', desc: 'سجّل تعاونيتك، احصل على الموافقة، ثم أرسل منتجاتك إلى مستودعنا — هذا كل شيء من جهتك' },
+                { step: '٢', icon: '📣', title: 'فريقنا يتكفل بالباقي', desc: 'فريقنا يضيف منتجاتك في المتجر، ينشئ الإعلانات، ويسوّق لها عبر القنوات الرقمية' },
+                { step: '٣', icon: '💰', title: 'نبيع ونُحوّل لك المال', desc: 'نبيع منتجاتك، نُرسلها للزبون، نحصّل المبلغ، ونُحوّل أرباحك مباشرة إلى حسابك' },
               ] : [
-                { step: '1', icon: '📦', title: 'Ajoutez vos produits', desc: 'Saisissez nom, photo, prix et stock disponible — en quelques minutes' },
-                { step: '2', icon: '🏪', title: 'Visibles immédiatement', desc: 'Vos produits s\'affichent automatiquement sur lkhdmano.cloud devant des milliers de clients' },
-                { step: '3', icon: '💰', title: 'Recevez commandes & bénéfices', desc: 'Le client commande, vous expédiez, la plateforme suit bénéfices et paiements pour vous' },
+                { step: '1', icon: '✅', title: 'Inscrivez-vous & envoyez vos produits', desc: 'Inscrivez votre coopérative, obtenez l\'approbation, puis envoyez vos produits à notre entrepôt — c\'est tout de votre côté' },
+                { step: '2', icon: '📣', title: 'Notre équipe s\'occupe du reste', desc: 'Notre équipe ajoute vos produits à la boutique, crée les publicités et assure la promotion digitale' },
+                { step: '3', icon: '💰', title: 'On vend & on vire vos gains', desc: 'On vend vos produits, on les livre au client, on encaisse et on transfère vos bénéfices directement sur votre compte' },
               ]).map((s, i) => (
                 <div key={i} className="relative z-10 flex flex-col items-center text-center bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-lg mb-4 shadow-lg">
