@@ -1,0 +1,557 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  CheckCircle, Globe, Menu, X, Sparkles, ChevronDown,
+  Package, ShoppingCart, TrendingUp, Users, Shield, Truck,
+  Star, ArrowRight, Store, BarChart2, Leaf,
+} from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
+
+const COOP_TYPES_AR = [
+  'تعاونية إنتاجية', 'تعاونية زراعية', 'تعاونية حرفية',
+  'تعاونية صيد بحري', 'تعاونية خدماتية', 'تعاونية للنساء',
+  'تعاونية فلاحية', 'أخرى',
+];
+const COOP_TYPES_FR = [
+  'Coopérative productive', 'Coopérative agricole', 'Coopérative artisanale',
+  'Coopérative de pêche', 'Coopérative de services', 'Coopérative féminine',
+  'Coopérative agropastorale', 'Autre',
+];
+
+export const CoopLandingPage: React.FC = () => {
+  const { lang, dir, setLang } = useLanguage();
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  const isAr = lang === 'ar';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [formStep, setFormStep] = useState<1 | 2>(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [form, setForm] = useState({
+    coopName: '', coopType: '', coopCity: '', coopRegion: '',
+    membersCount: '', phone: '',
+    adminName: '', adminEmail: '', password: '', confirmPassword: '',
+  });
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.password !== form.confirmPassword) {
+      setSubmitError(isAr ? 'كلمتا المرور غير متطابقتين' : 'Les mots de passe ne correspondent pas');
+      return;
+    }
+    setSubmitting(true); setSubmitError('');
+    try {
+      await register({
+        orgName:    form.coopName,
+        orgEmail:   form.adminEmail,
+        orgPhone:   form.phone,
+        orgCity:    form.coopCity,
+        orgRegion:  form.coopRegion,
+        adminName:  form.adminName,
+        adminEmail: form.adminEmail,
+        password:   form.password,
+        modules:    ['PRODUCTIVE'],
+      });
+      navigate('/dashboard');
+    } catch (err: any) {
+      setSubmitError(err.response?.data?.message || (isAr ? 'حدث خطأ' : 'Une erreur est survenue'));
+    } finally { setSubmitting(false); }
+  };
+
+  const inp = `w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-all`;
+  const lbl = `block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5`;
+
+  const faqs = isAr ? [
+    { q: 'هل أحتاج خبرة تقنية لاستخدام المنصة؟', a: 'لا إطلاقاً. المنصة مصممة خصيصاً للتعاونيات المغربية — بسيطة ويمكن لأي شخص إدارتها.' },
+    { q: 'كيف يصل المشترون لمنتجاتي؟', a: 'منتجاتك تُعرض فوراً في متجر lkhdmano.cloud الذي يزوره زبائن من جميع المدن المغربية.' },
+    { q: 'ما هو نظام الدفع؟', a: 'الدفع عند الاستلام (COD) — الزبون يدفع عند تسلّم المنتج. آمن وسهل لك وللزبون.' },
+    { q: 'هل يمكنني إدارة المخزون؟', a: 'نعم. تتبع المخزون، الطلبيات الواردة، الأرباح، والمدفوعات — كل شيء في لوحة تحكم واحدة.' },
+  ] : [
+    { q: 'Faut-il des compétences techniques ?', a: 'Absolument pas. La plateforme est conçue pour les coopératives marocaines — simple, accessible à tous.' },
+    { q: 'Comment les clients trouvent mes produits ?', a: 'Vos produits apparaissent immédiatement sur lkhdmano.cloud, visité par des clients de toutes les villes du Maroc.' },
+    { q: 'Quel est le système de paiement ?', a: 'Paiement à la livraison (COD) — le client paie à la réception. Sécurisé et simple pour vous et le client.' },
+    { q: 'Puis-je gérer mon stock ?', a: 'Oui. Suivez stock, commandes entrantes, bénéfices et paiements — tout dans un seul tableau de bord.' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-gray-950" dir={dir}>
+
+      {/* ── Nav ── */}
+      <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-800' : 'bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <Leaf size={16} className="text-white" />
+              </div>
+              <div>
+                <span className="font-bold text-gray-900 dark:text-white">Jam3iyati</span>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mr-2">· {isAr ? 'التعاونيات' : 'Coopératives'}</span>
+              </div>
+            </div>
+
+            <div className="hidden md:flex items-center gap-6">
+              <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                {isAr ? 'للجمعيات' : 'Pour les associations'}
+              </Link>
+              <a href="#how" className="text-sm text-gray-600 dark:text-gray-400 hover:text-emerald-600 transition-colors">
+                {isAr ? 'كيف يعمل' : 'Comment ça marche'}
+              </a>
+              <a href="#pricing" className="text-sm text-gray-600 dark:text-gray-400 hover:text-emerald-600 transition-colors">
+                {isAr ? 'الأسعار' : 'Tarifs'}
+              </a>
+              <a href="#faq" className="text-sm text-gray-600 dark:text-gray-400 hover:text-emerald-600 transition-colors">
+                {isAr ? 'الأسئلة الشائعة' : 'FAQ'}
+              </a>
+            </div>
+
+            <div className="hidden md:flex items-center gap-3">
+              <button onClick={() => setLang(isAr ? 'fr' : 'ar')}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-emerald-300 hover:text-emerald-600 transition-all">
+                <Globe size={14} />{isAr ? 'FR' : 'عر'}
+              </button>
+              <Link to="/login" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors px-3 py-1.5">
+                {isAr ? 'تسجيل الدخول' : 'Connexion'}
+              </Link>
+              <button onClick={() => setShowForm(true)}
+                className="text-sm bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
+                {isAr ? 'سجّل تعاونيتك' : 'Inscrire ma coopérative'}
+              </button>
+            </div>
+
+            <button className="md:hidden p-2 rounded-lg text-gray-600 dark:text-gray-400" onClick={() => setMenuOpen(v => !v)}>
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
+        {menuOpen && (
+          <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-4 py-4 space-y-3">
+            <Link to="/" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'للجمعيات' : 'Pour les associations'}</Link>
+            <a href="#how" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'كيف يعمل' : 'Comment ça marche'}</a>
+            <a href="#pricing" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'الأسعار' : 'Tarifs'}</a>
+            <div className="pt-2 flex flex-col gap-2">
+              <button onClick={() => { setLang(isAr ? 'fr' : 'ar'); setMenuOpen(false); }} className="flex items-center gap-2 text-sm text-gray-600 py-2">
+                <Globe size={14} />{isAr ? 'Français' : 'العربية'}
+              </button>
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="block text-center py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg">
+                {isAr ? 'تسجيل الدخول' : 'Connexion'}
+              </Link>
+              <button onClick={() => { setShowForm(true); setMenuOpen(false); }}
+                className="block w-full text-center py-2.5 text-sm bg-emerald-600 text-white rounded-lg font-medium">
+                {isAr ? 'سجّل تعاونيتك' : 'Inscrire ma coopérative'}
+              </button>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* ── HERO ── */}
+      <section className="relative pt-24 pb-16 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-emerald-200 dark:bg-emerald-900/20 rounded-full blur-3xl opacity-40" />
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-teal-200 dark:bg-teal-900/20 rounded-full blur-3xl opacity-30" />
+        </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto">
+            <span className="inline-flex items-center gap-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
+              <Sparkles size={12} />{isAr ? 'حصري للتعاونيات المغربية' : 'Exclusif coopératives marocaines'}
+            </span>
+            <h1 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white leading-tight mb-6">
+              {isAr ? (
+                <>أنتجوا فقط —<br /><span className="text-emerald-600">نحن نبيع لكم 🤝</span></>
+              ) : (
+                <>Produisez seulement —<br /><span className="text-emerald-600">nous vendons pour vous 🤝</span></>
+              )}
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
+              {isAr
+                ? 'منصة ذكية تُدير تعاونيتك وتبيع منتجاتك في متجر إلكتروني وطني — بدون خبرة تقنية، بدون تكاليف إضافية.'
+                : 'Une plateforme intelligente qui gère votre coopérative et vend vos produits dans une boutique nationale — sans compétence technique, sans frais supplémentaires.'}
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 mb-10">
+              <button onClick={() => setShowForm(true)}
+                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-4 rounded-2xl text-base shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+                {isAr ? 'سجّل تعاونيتك مجاناً' : 'Inscrire ma coopérative gratuitement'}
+                <ArrowRight size={18} className={isAr ? 'rotate-180' : ''} />
+              </button>
+              <a href="https://lkhdmano.cloud/store" target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 border-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-medium px-6 py-4 rounded-2xl text-base transition-all">
+                <Store size={18} />{isAr ? 'شاهد المتجر العام' : 'Voir la boutique'}
+              </a>
+            </div>
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+              {(isAr
+                ? ['✅ تجربة مجانية 15 يوم', '✅ بدون بطاقة بنكية', '✅ دعم بالعربية']
+                : ['✅ 15 jours gratuits', '✅ Sans carte bancaire', '✅ Support en arabe']
+              ).map((t, i) => <span key={i}>{t}</span>)}
+            </div>
+          </div>
+
+          {/* Preview mockup */}
+          <div className="mt-14 max-w-4xl mx-auto grid grid-cols-3 gap-4">
+            {[
+              { icon: '📦', value: isAr ? '+500 منتج' : '+500 produits', label: isAr ? 'في المتجر' : 'en boutique' },
+              { icon: '🏪', value: isAr ? 'متجر وطني' : 'Boutique nationale', label: isAr ? 'lkhdmano.cloud' : 'lkhdmano.cloud' },
+              { icon: '💵', value: 'COD', label: isAr ? 'دفع عند الاستلام' : 'Paiement livraison' },
+            ].map((s, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 text-center shadow-sm">
+                <div className="text-3xl mb-2">{s.icon}</div>
+                <p className="font-black text-gray-900 dark:text-white">{s.value}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PROBLEM / SOLUTION ── */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
+              {isAr ? 'هل تعاني من هذه المشاكل؟' : 'Souffrez-vous de ces problèmes ?'}
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400">
+              {isAr ? 'المشكلة الكبرى لكل تعاونية: الإنتاج ممتاز، لكن التسويق والبيع صعب' : 'Le vrai défi : une production excellente, mais ventes & marketing restent difficiles'}
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-2xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-2xl">😰</span>
+                <h3 className="font-bold text-red-800 dark:text-red-300 text-lg">{isAr ? 'قبل المنصة' : 'Avant la plateforme'}</h3>
+              </div>
+              <ul className="space-y-3">
+                {(isAr ? [
+                  'منتجات رائعة تبقى في المستودع بدون مشترين',
+                  'لا وجود رقمي — لا موقع، لا متجر إلكتروني',
+                  'التسويق يحتاج خبرة وميزانية كبيرة',
+                  'صعوبة الوصول للزبائن خارج المنطقة الجغرافية',
+                  'ضياع الوقت في الإدارة بدل التركيز على الإنتاج',
+                ] : [
+                  'Excellents produits qui restent en stock sans acheteurs',
+                  'Aucune présence digitale — pas de site, pas de boutique',
+                  'Le marketing nécessite expertise et budget',
+                  'Impossible d\'atteindre des clients hors région',
+                  'Temps perdu en gestion au lieu de la production',
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-red-700 dark:text-red-300">
+                    <span className="text-red-400 mt-0.5 flex-shrink-0 font-bold">✗</span>{item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-2xl">🚀</span>
+                <h3 className="font-bold text-emerald-800 dark:text-emerald-300 text-lg">{isAr ? 'مع منصتنا' : 'Avec notre plateforme'}</h3>
+              </div>
+              <ul className="space-y-3">
+                {(isAr ? [
+                  'متجر إلكتروني جاهز على lkhdmano.cloud — في دقائق',
+                  'منتجاتك تصل لزبائن من جميع مدن المغرب',
+                  'الطلبيات تصلك مباشرة، الدفع عند الاستلام (COD)',
+                  'تتبع المخزون، الأرباح، والمدفوعات في لوحة واحدة',
+                  'أنتم تركزون على الإنتاج، نحن نتكفل بالباقي',
+                ] : [
+                  'Boutique prête sur lkhdmano.cloud — en quelques minutes',
+                  'Produits accessibles dans toutes les villes du Maroc',
+                  'Commandes directes, paiement à la livraison (COD)',
+                  'Suivi stock, bénéfices et paiements dans un tableau de bord',
+                  'Vous produisez, nous gérons ventes & marketing',
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-emerald-700 dark:text-emerald-300">
+                    <CheckCircle size={15} className="text-emerald-500 mt-0.5 flex-shrink-0" />{item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section id="how" className="py-20 bg-white dark:bg-gray-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
+              {isAr ? 'كيف يعمل النظام؟ — 3 خطوات فقط' : '3 étapes seulement'}
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-8">
+            {(isAr ? [
+              { step: '١', icon: '📦', title: 'أضف منتجاتك', desc: 'أدخل منتجاتك بالاسم، الصورة، السعر، والمخزون المتوفر — في دقائق فقط' },
+              { step: '٢', icon: '🏪', title: 'تظهر في المتجر فوراً', desc: 'منتجاتك تُعرض تلقائياً في متجر lkhdmano.cloud أمام آلاف الزبائن في جميع المدن' },
+              { step: '٣', icon: '💰', title: 'استلم طلبياتك وأرباحك', desc: 'الزبون يطلب، أنت تُرسل، والمنصة تتبع الأرباح والمدفوعات لك تلقائياً' },
+            ] : [
+              { step: '1', icon: '📦', title: 'Ajoutez vos produits', desc: 'Saisissez nom, photo, prix et stock — en quelques minutes seulement' },
+              { step: '2', icon: '🏪', title: 'Visibles immédiatement', desc: 'Vos produits s\'affichent automatiquement sur lkhdmano.cloud devant des milliers de clients' },
+              { step: '3', icon: '💰', title: 'Recevez commandes & bénéfices', desc: 'Le client commande, vous expédiez, la plateforme suit bénéfices et paiements automatiquement' },
+            ]).map((s, i) => (
+              <div key={i} className="flex flex-col items-center text-center bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-xl mb-4 shadow-lg">
+                  {s.step}
+                </div>
+                <div className="text-4xl mb-4">{s.icon}</div>
+                <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">{s.title}</h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
+              {isAr ? 'كل ما تحتاجه تعاونيتك' : 'Tout ce dont votre coopérative a besoin'}
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { icon: <Store size={22} />, color: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600', title: isAr ? 'متجر إلكتروني جاهز' : 'Boutique en ligne', desc: isAr ? 'عرض منتجاتك على lkhdmano.cloud — بدون أي إعداد تقني' : 'Vos produits sur lkhdmano.cloud — sans configuration' },
+              { icon: <Package size={22} />, color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600', title: isAr ? 'إدارة المخزون' : 'Gestion du stock', desc: isAr ? 'تتبع الكميات المتوفرة، التنبيهات عند النفاد، سجل الحركات' : 'Suivez les quantités, alertes rupture, historique des mouvements' },
+              { icon: <ShoppingCart size={22} />, color: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600', title: isAr ? 'إدارة الطلبيات' : 'Gestion des commandes', desc: isAr ? 'استقبل وتتبع الطلبيات، أكد أو ألغِ — بنقرة واحدة' : 'Recevez, suivez, confirmez ou annulez les commandes en 1 clic' },
+              { icon: <TrendingUp size={22} />, color: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600', title: isAr ? 'تتبع الأرباح' : 'Suivi des bénéfices', desc: isAr ? 'حساب تلقائي للأرباح الصافية بعد خصم التكاليف' : 'Calcul automatique du bénéfice net après déduction des coûts' },
+              { icon: <Users size={22} />, color: 'bg-teal-50 dark:bg-teal-900/20 text-teal-600', title: isAr ? 'إدارة الأعضاء' : 'Gestion des membres', desc: isAr ? 'ملفات الأعضاء، الاشتراكات، حضور الاجتماعات والمحاضر' : 'Fiches membres, cotisations, présence aux réunions' },
+              { icon: <BarChart2 size={22} />, color: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600', title: isAr ? 'تقارير وإحصاءات' : 'Rapports & statistiques', desc: isAr ? 'تقارير شاملة بالعربية والفرنسية — قابلة للتصدير PDF' : 'Rapports complets en arabe & français — exportables PDF' },
+            ].map((f, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-all">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${f.color}`}>{f.icon}</div>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-2">{f.title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="pricing" className="py-20 bg-white dark:bg-gray-950">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="inline-block bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full mb-4">
+            {isAr ? 'الأسعار' : 'Tarifs'}
+          </span>
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
+            {isAr ? 'باقة عروض تناسب حجم تعاونيتك' : 'Un pack adapté à votre coopérative'}
+          </h2>
+          <p className="text-emerald-600 dark:text-emerald-400 font-semibold mb-10">
+            💡 {isAr ? 'بثمن انخراط فرد واحد استفد من مميزات المنصة' : 'Pour le prix d\'une adhésion, profitez de toute la plateforme'}
+          </p>
+          <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            {(isAr ? [
+              { name: 'تعاونية إنتاجية', price: '100', badge: 'الأكثر طلباً ⭐', features: ['إدارة المنتجات والمخزون', 'متجر إلكتروني في lkhdmano.cloud', 'إدارة الطلبيات والأرباح', 'إدارة الأعضاء والاجتماعات', 'المالية والفواتير', 'تقارير PDF'], popular: true },
+              { name: 'تعاونية ماء + إنتاج', price: '150', badge: '', features: ['كل مميزات التعاونية الإنتاجية', 'إدارة شبكة الماء', 'قراءة العدادات', 'فواتير الماء'], popular: false },
+            ] : [
+              { name: 'Coopérative productive', price: '100', badge: 'Plus populaire ⭐', features: ['Gestion produits & stock', 'Boutique sur lkhdmano.cloud', 'Commandes & bénéfices', 'Membres & réunions', 'Finances & factures', 'Rapports PDF'], popular: true },
+              { name: 'Coopérative Eau + Production', price: '150', badge: '', features: ['Tout le pack productif', 'Réseau d\'eau', 'Relevés de compteurs', 'Factures eau'], popular: false },
+            ]).map((pack, i) => (
+              <div key={i} className={`rounded-2xl border-2 overflow-hidden ${pack.popular ? 'border-emerald-400 shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}>
+                {pack.popular && <div className="bg-emerald-600 text-white text-xs font-bold text-center py-2">{pack.badge}</div>}
+                <div className="p-6">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-3">{pack.name}</h3>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-4xl font-extrabold text-gray-900 dark:text-white">{pack.price}</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">{isAr ? ' د.م/شهر' : ' MAD/mois'}</span>
+                  </div>
+                  <ul className="space-y-2 my-5">
+                    {pack.features.map((f, j) => (
+                      <li key={j} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                        <CheckCircle size={13} className="text-emerald-500 flex-shrink-0" />{f}
+                      </li>
+                    ))}
+                  </ul>
+                  <button onClick={() => setShowForm(true)}
+                    className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${pack.popular ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'border-2 border-emerald-200 hover:border-emerald-400 text-emerald-700 dark:text-emerald-400'}`}>
+                    {isAr ? 'ابدأ مجاناً 15 يوم' : 'Essai gratuit 15 jours'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section id="faq" className="py-20 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white text-center mb-12">
+            {isAr ? 'الأسئلة الشائعة' : 'Questions fréquentes'}
+          </h2>
+          <div className="space-y-3">
+            {faqs.map((faq, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <button className="w-full flex items-center justify-between px-6 py-4 text-right" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                  <span className="font-semibold text-gray-900 dark:text-white text-sm">{faq.q}</span>
+                  <ChevronDown size={16} className={`text-gray-400 flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                </button>
+                {openFaq === i && <div className="px-6 pb-4 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{faq.a}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ── */}
+      <section className="py-20 bg-gradient-to-br from-emerald-600 to-teal-700 text-white text-center">
+        <div className="max-w-2xl mx-auto px-4">
+          <h2 className="text-3xl font-black mb-4">{isAr ? 'ابدأ اليوم — مجاناً' : 'Commencez aujourd\'hui — gratuitement'}</h2>
+          <p className="text-emerald-100 mb-8">{isAr ? 'تجربة مجانية 15 يوم · بدون بطاقة بنكية · دعم بالعربية' : '15 jours gratuits · Sans carte bancaire · Support en arabe'}</p>
+          <button onClick={() => setShowForm(true)}
+            className="inline-flex items-center gap-2 bg-white text-emerald-700 font-bold px-8 py-4 rounded-2xl text-base hover:shadow-xl transition-all hover:-translate-y-0.5">
+            {isAr ? 'سجّل تعاونيتك الآن ←' : 'Inscrire ma coopérative →'}
+          </button>
+        </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="bg-gray-900 text-white py-10 px-4 text-center text-sm text-gray-400">
+        <p className="mb-2">Jam3iyati · {isAr ? 'للتعاونيات والجمعيات المغربية' : 'Pour les coopératives & associations marocaines'}</p>
+        <div className="flex justify-center gap-4 flex-wrap">
+          <Link to="/" className="hover:text-white">{isAr ? 'صفحة الجمعيات' : 'Page associations'}</Link>
+          <Link to="/login" className="hover:text-white">{isAr ? 'تسجيل الدخول' : 'Connexion'}</Link>
+          <Link to="/privacy" className="hover:text-white">{isAr ? 'الخصوصية' : 'Confidentialité'}</Link>
+        </div>
+      </footer>
+
+      {/* ── REGISTRATION MODAL ── */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir={dir}>
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black">{isAr ? 'تسجيل تعاونيتك' : 'Inscrire votre coopérative'}</h2>
+                  <p className="text-emerald-100 text-xs mt-0.5">{isAr ? 'تجربة مجانية 15 يوم — بدون التزام' : 'Essai gratuit 15 jours — sans engagement'}</p>
+                </div>
+                <button onClick={() => { setShowForm(false); setFormStep(1); setSubmitError(''); }}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                  <X size={16} />
+                </button>
+              </div>
+              {/* Steps */}
+              <div className="flex items-center gap-2 mt-4">
+                {[1, 2].map(s => (
+                  <div key={s} className={`flex items-center gap-2 ${s < 2 ? 'flex-1' : ''}`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${formStep >= s ? 'bg-white text-emerald-600' : 'bg-white/30 text-white'}`}>{s}</div>
+                    <span className="text-xs text-emerald-100 hidden sm:block">
+                      {s === 1 ? (isAr ? 'معلومات التعاونية' : 'Infos coopérative') : (isAr ? 'حساب المسؤول' : 'Compte responsable')}
+                    </span>
+                    {s < 2 && <div className={`flex-1 h-0.5 rounded-full ${formStep > s ? 'bg-white' : 'bg-white/30'}`} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={formStep === 1 ? (e) => { e.preventDefault(); setFormStep(2); } : handleSubmit}
+              className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+
+              {formStep === 1 ? (
+                <>
+                  <div>
+                    <label className={lbl}>{isAr ? 'اسم التعاونية *' : 'Nom de la coopérative *'}</label>
+                    <input className={inp} required value={form.coopName} onChange={e => set('coopName', e.target.value)}
+                      placeholder={isAr ? 'تعاونية الأطلس للزيتون...' : 'Coopérative Atlas Olive...'} />
+                  </div>
+                  <div>
+                    <label className={lbl}>{isAr ? 'نوع النشاط *' : 'Type d\'activité *'}</label>
+                    <select className={inp} required value={form.coopType} onChange={e => set('coopType', e.target.value)}>
+                      <option value="">{isAr ? '-- اختر نوع التعاونية --' : '-- Choisir le type --'}</option>
+                      {(isAr ? COOP_TYPES_AR : COOP_TYPES_FR).map((t, i) => (
+                        <option key={i} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={lbl}>{isAr ? 'المدينة *' : 'Ville *'}</label>
+                      <input className={inp} required value={form.coopCity} onChange={e => set('coopCity', e.target.value)}
+                        placeholder={isAr ? 'مراكش' : 'Marrakech'} />
+                    </div>
+                    <div>
+                      <label className={lbl}>{isAr ? 'الجهة' : 'Région'}</label>
+                      <input className={inp} value={form.coopRegion} onChange={e => set('coopRegion', e.target.value)}
+                        placeholder={isAr ? 'سوس ماسة' : 'Souss-Massa'} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={lbl}>{isAr ? 'عدد الأعضاء' : 'Nombre de membres'}</label>
+                      <input className={inp} type="number" min="1" value={form.membersCount} onChange={e => set('membersCount', e.target.value)}
+                        placeholder="12" />
+                    </div>
+                    <div>
+                      <label className={lbl}>{isAr ? 'رقم الهاتف *' : 'Téléphone *'}</label>
+                      <input className={inp} required type="tel" value={form.phone} onChange={e => set('phone', e.target.value)}
+                        placeholder="06XXXXXXXX" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className={lbl}>{isAr ? 'اسم المسؤول *' : 'Nom du responsable *'}</label>
+                    <input className={inp} required value={form.adminName} onChange={e => set('adminName', e.target.value)}
+                      placeholder={isAr ? 'محمد الأمين...' : 'Mohammed El Amine...'} />
+                  </div>
+                  <div>
+                    <label className={lbl}>{isAr ? 'البريد الإلكتروني *' : 'Email *'}</label>
+                    <input className={inp} required type="email" value={form.adminEmail} onChange={e => set('adminEmail', e.target.value)}
+                      placeholder="coop@example.com" />
+                  </div>
+                  <div>
+                    <label className={lbl}>{isAr ? 'كلمة المرور *' : 'Mot de passe *'}</label>
+                    <input className={inp} required type="password" minLength={6} value={form.password} onChange={e => set('password', e.target.value)}
+                      placeholder="••••••••" />
+                  </div>
+                  <div>
+                    <label className={lbl}>{isAr ? 'تأكيد كلمة المرور *' : 'Confirmer le mot de passe *'}</label>
+                    <input className={inp} required type="password" value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)}
+                      placeholder="••••••••" />
+                  </div>
+                  {submitError && (
+                    <p className="text-xs text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-xl">{submitError}</p>
+                  )}
+                </>
+              )}
+            </form>
+
+            <div className="px-6 pb-6 flex gap-3">
+              {formStep === 2 && (
+                <button type="button" onClick={() => setFormStep(1)}
+                  className="flex-1 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
+                  {isAr ? '← رجوع' : '← Retour'}
+                </button>
+              )}
+              <button
+                onClick={formStep === 1 ? (e: any) => { e.preventDefault(); if (form.coopName && form.coopType && form.coopCity && form.phone) setFormStep(2); } : handleSubmit}
+                disabled={submitting}
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50">
+                {submitting
+                  ? (isAr ? 'جاري التسجيل...' : 'Inscription...')
+                  : formStep === 1
+                    ? (isAr ? 'التالي ←' : 'Suivant →')
+                    : (isAr ? '✅ إنشاء الحساب' : '✅ Créer le compte')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

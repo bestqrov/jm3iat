@@ -357,6 +357,9 @@ export const LandingPage: React.FC = () => {
               <a href="#faq" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
                 {isAr ? 'الأسئلة الشائعة' : 'FAQ'}
               </a>
+              <Link to="/cooperatives" className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium transition-colors border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-full">
+                🌱 {isAr ? 'للتعاونيات' : 'Coopératives'}
+              </Link>
             </div>
 
             <div className="hidden md:flex items-center gap-3">
@@ -388,6 +391,9 @@ export const LandingPage: React.FC = () => {
             <a href="#features" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'المميزات' : 'Fonctionnalités'}</a>
             <a href="#pricing" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'الأسعار' : 'Tarifs'}</a>
             <a href="#faq" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-600 dark:text-gray-400 py-2">{isAr ? 'الأسئلة الشائعة' : 'FAQ'}</a>
+            <Link to="/cooperatives" onClick={() => setMenuOpen(false)} className="block text-sm text-emerald-600 dark:text-emerald-400 font-medium py-2">
+              🌱 {isAr ? 'للتعاونيات' : 'Coopératives'}
+            </Link>
             <div className="pt-2 flex flex-col gap-2">
               <button onClick={() => { setLang(isAr ? 'fr' : 'ar'); setMenuOpen(false); }} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 py-2">
                 <Globe size={14} /> {isAr ? 'Passer en Français' : 'التبديل للعربية'}

@@ -34,6 +34,7 @@ import { AssetsPage } from './pages/assets/AssetsPage';
 import { PublicProfilePage } from './pages/public/PublicProfilePage';
 import { StorePage } from './pages/store/StorePage';
 import { LandingPage } from './pages/landing/LandingPage';
+import { CoopLandingPage } from './pages/landing/CoopLandingPage';
 import { PrivacyPage } from './pages/legal/PrivacyPage';
 import { TermsPage } from './pages/legal/TermsPage';
 
@@ -63,6 +64,7 @@ const App: React.FC = () => {
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/store" element={<StorePage />} />
+              <Route path="/cooperatives" element={<CoopLandingPage />} />
 
               {/* SuperAdmin — standalone layout (no global sidebar) */}
               <Route path="/superadmin" element={
