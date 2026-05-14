@@ -63,6 +63,7 @@ export const CoopLandingPage: React.FC = () => {
         adminEmail: form.adminEmail,
         password:   form.password,
         modules:    ['PRODUCTIVE'],
+        assocType:  'PRODUCTIVE',
       });
       navigate('/dashboard');
     } catch (err: any) {

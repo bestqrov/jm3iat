@@ -91,6 +91,7 @@ interface RegisterData {
   adminEmail: string;
   password: string;
   modules?: string[];
+  assocType?: string;
 }
 
 const AuthContext = createContext<AuthContextType>({
