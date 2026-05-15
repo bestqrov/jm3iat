@@ -5,6 +5,7 @@ const { tenant } = require('../../middleware/tenant');
 const upload = require('../../utils/multer');
 
 router.post('/register', ctrl.register);
+router.get('/validate-promo', ctrl.validatePromoCode);
 router.post('/login', ctrl.login);
 router.post('/forgot-password', ctrl.forgotPassword);
 router.get('/me', auth, ctrl.getMe);

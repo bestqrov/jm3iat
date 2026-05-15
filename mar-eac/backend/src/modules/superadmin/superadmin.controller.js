@@ -1027,11 +1027,126 @@ const deletePack = async (req, res) => {
   }
 };
 
+// ─── Promo Sellers ────────────────────────────────────────────────────────────
+
+const getPromoSellers = async (req, res) => {
+  try {
+    const sellers = await prisma.promoSeller.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        promoCodes: { select: { id: true, code: true, usedCount: true } },
+        _count: { select: { usages: true } },
+      },
+    });
+    const result = await Promise.all(sellers.map(async (s) => {
+      const agg = await prisma.promoCodeUsage.aggregate({
+        where: { sellerId: s.id },
+        _sum: { commissionAmount: true },
+      });
+      const unpaid = await prisma.promoCodeUsage.aggregate({
+        where: { sellerId: s.id, isPaid: false },
+        _sum: { commissionAmount: true },
+      });
+      return {
+        ...s,
+        totalUses: s._count.usages,
+        totalBenefice: agg._sum.commissionAmount || 0,
+        unpaidBenefice: unpaid._sum.commissionAmount || 0,
+      };
+    }));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const createPromoSeller = async (req, res) => {
+  try {
+    const { name, email, phone, bankName, bankAccount, bankHolder, commissionPerUse, notes } = req.body;
+    if (!name || !email || !phone) return res.status(400).json({ message: 'name, email and phone are required' });
+    const seller = await prisma.promoSeller.create({
+      data: {
+        name, email, phone,
+        bankName: bankName || null,
+        bankAccount: bankAccount || null,
+        bankHolder: bankHolder || null,
+        commissionPerUse: parseFloat(commissionPerUse) || 0,
+        notes: notes || null,
+      },
+    });
+    res.status(201).json(seller);
+  } catch (err) {
+    if (err.code === 'P2002') return res.status(400).json({ message: 'Email already exists' });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const updatePromoSeller = async (req, res) => {
+  try {
+    const { name, email, phone, bankName, bankAccount, bankHolder, commissionPerUse, notes, isActive } = req.body;
+    const seller = await prisma.promoSeller.update({
+      where: { id: req.params.sellerId },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(email !== undefined && { email }),
+        ...(phone !== undefined && { phone }),
+        ...(bankName !== undefined && { bankName }),
+        ...(bankAccount !== undefined && { bankAccount }),
+        ...(bankHolder !== undefined && { bankHolder }),
+        ...(commissionPerUse !== undefined && { commissionPerUse: parseFloat(commissionPerUse) }),
+        ...(notes !== undefined && { notes }),
+        ...(isActive !== undefined && { isActive }),
+      },
+    });
+    res.json(seller);
+  } catch (err) {
+    if (err.code === 'P2002') return res.status(400).json({ message: 'Email already exists' });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const deletePromoSeller = async (req, res) => {
+  try {
+    await prisma.promoSeller.delete({ where: { id: req.params.sellerId } });
+    res.json({ message: 'Seller deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const getPromoSellerUsages = async (req, res) => {
+  try {
+    const usages = await prisma.promoCodeUsage.findMany({
+      where: { sellerId: req.params.sellerId },
+      orderBy: { usedAt: 'desc' },
+      include: { promoCode: { select: { code: true } } },
+    });
+    res.json(usages);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const markSellerPaid = async (req, res) => {
+  try {
+    await prisma.promoCodeUsage.updateMany({
+      where: { sellerId: req.params.sellerId, isPaid: false },
+      data: { isPaid: true },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // ─── Promo Codes ─────────────────────────────────────────────────────────────
 
 const getPromoCodes = async (req, res) => {
   try {
-    const codes = await prisma.promoCode.findMany({ orderBy: { createdAt: 'desc' } });
+    const codes = await prisma.promoCode.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { seller: { select: { id: true, name: true, email: true } } },
+    });
     res.json(codes);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -1040,7 +1155,7 @@ const getPromoCodes = async (req, res) => {
 
 const createPromoCode = async (req, res) => {
   try {
-    const { code, description, discountType, discountValue, maxUses, expiresAt, applicableTo } = req.body;
+    const { code, description, discountType, discountValue, maxUses, expiresAt, applicableTo, sellerId, commissionOverride } = req.body;
     const promo = await prisma.promoCode.create({
       data: {
         code: code.toUpperCase(),
@@ -1050,7 +1165,10 @@ const createPromoCode = async (req, res) => {
         maxUses: maxUses ? parseInt(maxUses) : null,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         applicableTo: applicableTo || [],
+        sellerId: sellerId || null,
+        commissionOverride: commissionOverride != null ? parseFloat(commissionOverride) : null,
       },
+      include: { seller: { select: { id: true, name: true, email: true } } },
     });
     res.status(201).json(promo);
   } catch (err) {
@@ -1061,14 +1179,17 @@ const createPromoCode = async (req, res) => {
 
 const updatePromoCode = async (req, res) => {
   try {
-    const { isActive, expiresAt, maxUses } = req.body;
+    const { isActive, expiresAt, maxUses, sellerId, commissionOverride } = req.body;
     const promo = await prisma.promoCode.update({
       where: { id: req.params.promoId },
       data: {
         ...(isActive !== undefined && { isActive }),
         ...(expiresAt !== undefined && { expiresAt: expiresAt ? new Date(expiresAt) : null }),
         ...(maxUses !== undefined && { maxUses: maxUses ? parseInt(maxUses) : null }),
+        ...(sellerId !== undefined && { sellerId: sellerId || null }),
+        ...(commissionOverride !== undefined && { commissionOverride: commissionOverride != null ? parseFloat(commissionOverride) : null }),
       },
+      include: { seller: { select: { id: true, name: true, email: true } } },
     });
     res.json(promo);
   } catch (err) {
@@ -1934,6 +2055,7 @@ module.exports = {
   getPayments, createPayment, uploadPaymentReceipt, deletePayment,
   getUsers, toggleUser, resetUserPassword,
   seedDefaultPacks, getPacks, createPack, updatePack, deletePack,
+  getPromoSellers, createPromoSeller, updatePromoSeller, deletePromoSeller, getPromoSellerUsages, markSellerPaid,
   getPromoCodes, createPromoCode, updatePromoCode, deletePromoCode,
   getEmailCampaigns, createEmailCampaign, sendEmailCampaign, deleteEmailCampaign,
   getWhatsAppMessages, sendWhatsAppMessage, sendBulkWhatsApp,

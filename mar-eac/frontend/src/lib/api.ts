@@ -28,6 +28,7 @@ export default api;
 export const authApi = {
   login: (email: string, password: string) => api.post('/auth/login', { email, password }),
   register: (data: any) => api.post('/auth/register', data),
+  validatePromoCode: (code: string, assocType?: string) => api.get('/auth/validate-promo', { params: { code, assocType } }),
   getMe: () => api.get('/auth/me'),
   updateProfile: (data: any) => api.put('/auth/profile', data),
   updateOrganization: (data: any) => api.put('/auth/organization', data),
@@ -321,6 +322,14 @@ export const superadminApi = {
   createPack:           (data: any)                      => api.post('/superadmin/packs', data),
   updatePack:           (packId: string, data: any)      => api.put(`/superadmin/packs/${packId}`, data),
   deletePack:           (packId: string)                 => api.delete(`/superadmin/packs/${packId}`),
+
+  // ── Promo Sellers ───────────────────────────────────────────────────────────
+  getPromoSellers:          ()                                    => api.get('/superadmin/promo-sellers'),
+  createPromoSeller:        (data: any)                          => api.post('/superadmin/promo-sellers', data),
+  updatePromoSeller:        (sellerId: string, data: any)        => api.put(`/superadmin/promo-sellers/${sellerId}`, data),
+  deletePromoSeller:        (sellerId: string)                   => api.delete(`/superadmin/promo-sellers/${sellerId}`),
+  getPromoSellerUsages:     (sellerId: string)                   => api.get(`/superadmin/promo-sellers/${sellerId}/usages`),
+  markSellerPaid:           (sellerId: string)                   => api.post(`/superadmin/promo-sellers/${sellerId}/mark-paid`),
 
   // ── Promo Codes ─────────────────────────────────────────────────────────────
   getPromoCodes:        ()                               => api.get('/superadmin/promo-codes'),

@@ -51,6 +51,14 @@ router.post('/packs',                                 ctrl.createPack);
 router.put('/packs/:packId',                          ctrl.updatePack);
 router.delete('/packs/:packId',                       ctrl.deletePack);
 
+// ── Promo Sellers ──────────────────────────────────────────────────────────────
+router.get('/promo-sellers',                          ctrl.getPromoSellers);
+router.post('/promo-sellers',                         ctrl.createPromoSeller);
+router.put('/promo-sellers/:sellerId',                ctrl.updatePromoSeller);
+router.delete('/promo-sellers/:sellerId',             ctrl.deletePromoSeller);
+router.get('/promo-sellers/:sellerId/usages',         ctrl.getPromoSellerUsages);
+router.post('/promo-sellers/:sellerId/mark-paid',     ctrl.markSellerPaid);
+
 // ── Promo Codes ────────────────────────────────────────────────────────────────
 router.get('/promo-codes',                            ctrl.getPromoCodes);
 router.post('/promo-codes',                           ctrl.createPromoCode);

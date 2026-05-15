@@ -92,6 +92,7 @@ interface RegisterData {
   password: string;
   modules?: string[];
   assocType?: string;
+  promoCode?: string;
 }
 
 const AuthContext = createContext<AuthContextType>({

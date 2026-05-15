@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Eye, EyeOff, CheckCircle, Building2, FolderKanban,
   Droplets, ShoppingBag, ChevronRight, ChevronLeft,
   Bus, DatabaseBackup, MessageCircle, Shield, Trophy, Store,
+  Tag, Loader2, XCircle,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { translations } from '../../i18n';
+import { authApi } from '../../lib/api';
 
 // ─── Selectable modules ────────────────────────────────────────────────────────
 
@@ -158,6 +160,12 @@ export const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // ── Promo code ──
+  const [promoCode, setPromoCode] = useState('');
+  const [promoState, setPromoState] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
+  const [promoInfo, setPromoInfo] = useState<{ discountType: string; discountValue: number } | null>(null);
+  const promoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const set = (field: string, val: string) => setForm((f) => ({ ...f, [field]: val }));
 
   const toggleModule = (key: ModuleKey) =>
@@ -168,6 +176,26 @@ export const RegisterPage: React.FC = () => {
 
   const buildModules = () => [...Array.from(selectedModules), ...Array.from(selectedAddons)];
 
+  const handlePromoChange = (val: string) => {
+    const upper = val.toUpperCase();
+    setPromoCode(upper);
+    setPromoState('idle');
+    setPromoInfo(null);
+    if (promoTimer.current) clearTimeout(promoTimer.current);
+    if (!upper) return;
+    setPromoState('checking');
+    promoTimer.current = setTimeout(async () => {
+      try {
+        const res = await authApi.validatePromoCode(upper);
+        setPromoState('valid');
+        setPromoInfo({ discountType: res.data.discountType, discountValue: res.data.discountValue });
+      } catch {
+        setPromoState('invalid');
+        setPromoInfo(null);
+      }
+    }, 600);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -177,7 +205,11 @@ export const RegisterPage: React.FC = () => {
     }
     setLoading(true);
     try {
-      await register({ ...form, modules: buildModules() });
+      await register({
+        ...form,
+        modules: buildModules(),
+        promoCode: promoState === 'valid' ? promoCode : undefined,
+      });
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || t('common.error'));
@@ -509,6 +541,43 @@ export const RegisterPage: React.FC = () => {
                       value={form.confirmPassword} onChange={(e) => set('confirmPassword', e.target.value)}
                     />
                   </div>
+                </div>
+
+                {/* Promo code */}
+                <div className="mt-4">
+                  <label className="label flex items-center gap-1.5">
+                    <Tag size={13} className="text-indigo-500" />
+                    {isAr ? 'كود الخصم (اختياري)' : 'Code de réduction (optionnel)'}
+                  </label>
+                  <div className="relative">
+                    <input
+                      className={`input pe-10 font-mono tracking-widest uppercase ${
+                        promoState === 'valid' ? 'border-emerald-400 ring-1 ring-emerald-300' :
+                        promoState === 'invalid' ? 'border-red-400 ring-1 ring-red-300' : ''
+                      }`}
+                      value={promoCode}
+                      onChange={e => handlePromoChange(e.target.value)}
+                      placeholder={isAr ? 'أدخل الكود هنا' : 'Entrez votre code'}
+                      maxLength={20}
+                      dir="ltr"
+                    />
+                    <span className="absolute inset-y-0 end-3 flex items-center pointer-events-none">
+                      {promoState === 'checking' && <Loader2 size={15} className="animate-spin text-gray-400" />}
+                      {promoState === 'valid' && <CheckCircle size={15} className="text-emerald-500" />}
+                      {promoState === 'invalid' && <XCircle size={15} className="text-red-500" />}
+                    </span>
+                  </div>
+                  {promoState === 'valid' && promoInfo && (
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                      <CheckCircle size={11} />
+                      {isAr
+                        ? `كود صالح — خصم ${promoInfo.discountValue}${promoInfo.discountType === 'PERCENTAGE' ? '%' : ' MAD'}`
+                        : `Code valide — réduction de ${promoInfo.discountValue}${promoInfo.discountType === 'PERCENTAGE' ? '%' : ' MAD'}`}
+                    </p>
+                  )}
+                  {promoState === 'invalid' && (
+                    <p className="text-xs text-red-500 mt-1">{isAr ? 'الكود غير صالح أو منتهي الصلاحية' : 'Code invalide ou expiré'}</p>
+                  )}
                 </div>
 
                 {/* Final recap */}

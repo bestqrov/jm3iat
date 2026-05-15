@@ -8,24 +8,47 @@ const register = async (req, res) => {
   try {
     const {
       orgName, orgEmail, orgPhone, orgCity, orgRegion, bureauCreationDate,
-      adminName, adminEmail, password, modules, assocType,
+      adminName, adminEmail, password, modules, assocType, promoCode,
     } = req.body;
 
     if (!orgName || !orgEmail || !adminName || !adminEmail || !password) {
       return res.status(400).json({ message: 'Required fields missing' });
     }
 
-    // Check if org email already used
     const existingOrg = await prisma.organization.findUnique({ where: { email: orgEmail } });
     if (existingOrg) return res.status(409).json({ message: 'Organization email already registered' });
 
     const existingUser = await prisma.user.findUnique({ where: { email: adminEmail } });
     if (existingUser) return res.status(409).json({ message: 'Admin email already registered' });
 
+    // Validate promo code if provided
+    let validPromo = null;
+    if (promoCode) {
+      const now = new Date();
+      validPromo = await prisma.promoCode.findFirst({
+        where: {
+          code: promoCode.toUpperCase(),
+          isActive: true,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          OR: [{ maxUses: null }, { maxUses: { gt: prisma.promoCode.fields.usedCount } }],
+        },
+        include: { seller: true },
+      });
+      // Re-check maxUses manually since Prisma nested field comparison is not supported
+      if (validPromo && validPromo.maxUses !== null && validPromo.usedCount >= validPromo.maxUses) {
+        validPromo = null;
+      }
+      if (validPromo && validPromo.applicableTo.length > 0) {
+        const type = assocType || 'REGULAR';
+        if (!validPromo.applicableTo.includes(type)) validPromo = null;
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    const trialDays = 15;
     const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 15);
+    trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
 
     const result = await prisma.$transaction(async (tx) => {
       const org = await tx.organization.create({
@@ -55,13 +78,36 @@ const register = async (req, res) => {
       const subscription = await tx.subscription.create({
         data: {
           organizationId: org.id,
-          plan: 'PREMIUM', // full access during trial
+          plan: 'PREMIUM',
           status: 'TRIAL',
           expiresAt: trialEndsAt,
         },
       });
 
-      return { org, user, subscription };
+      if (validPromo) {
+        const commissionAmount =
+          validPromo.commissionOverride != null
+            ? validPromo.commissionOverride
+            : validPromo.seller?.commissionPerUse || 0;
+
+        await tx.promoCodeUsage.create({
+          data: {
+            promoCodeId: validPromo.id,
+            sellerId: validPromo.sellerId || null,
+            organizationId: org.id,
+            orgName: orgName,
+            discountAmount: validPromo.discountValue,
+            commissionAmount,
+          },
+        });
+
+        await tx.promoCode.update({
+          where: { id: validPromo.id },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
+
+      return { org, user, subscription, appliedPromo: validPromo };
     });
 
     const token = generateToken({ id: result.user.id, role: result.user.role });
@@ -79,10 +125,45 @@ const register = async (req, res) => {
         ...result.org,
         subscription: result.subscription,
       },
+      appliedPromo: result.appliedPromo
+        ? {
+            code: result.appliedPromo.code,
+            discountType: result.appliedPromo.discountType,
+            discountValue: result.appliedPromo.discountValue,
+          }
+        : null,
     });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ message: 'Server error during registration' });
+  }
+};
+
+const validatePromoCode = async (req, res) => {
+  try {
+    const { code, assocType } = req.query;
+    if (!code) return res.status(400).json({ message: 'code is required' });
+
+    const now = new Date();
+    const promo = await prisma.promoCode.findFirst({
+      where: { code: code.toUpperCase(), isActive: true },
+    });
+
+    if (!promo) return res.status(404).json({ valid: false, message: 'Code invalide' });
+    if (promo.expiresAt && promo.expiresAt < now) return res.status(400).json({ valid: false, message: 'Code expiré' });
+    if (promo.maxUses !== null && promo.usedCount >= promo.maxUses) return res.status(400).json({ valid: false, message: 'Code épuisé' });
+    if (promo.applicableTo.length > 0 && assocType && !promo.applicableTo.includes(assocType)) {
+      return res.status(400).json({ valid: false, message: 'Code non applicable à ce type' });
+    }
+
+    res.json({
+      valid: true,
+      code: promo.code,
+      discountType: promo.discountType,
+      discountValue: promo.discountValue,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -404,4 +485,4 @@ const requestConversion = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, updateOrganization, uploadLogo, upgradeSubscription, cancelDowngrade, applyPlanChange, forgotPassword, toggleAddon, requestConversion };
+module.exports = { register, login, getMe, updateProfile, updateOrganization, uploadLogo, upgradeSubscription, cancelDowngrade, applyPlanChange, forgotPassword, toggleAddon, requestConversion, validatePromoCode };

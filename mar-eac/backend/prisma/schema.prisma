@@ -97,6 +97,7 @@ model Organization {
   coopStockMovements CoopStockMovement[]
   coopMemberShares   CoopMemberShare[]
   coopInvoices       CoopInvoice[]
+  promoCodeUsages    PromoCodeUsage[]
   // Commerce module
   commerceProducts      CommerceProduct[]
   commerceStockMovements CommerceStockMovement[]
@@ -628,19 +629,55 @@ model Pack {
   updatedAt   DateTime @updatedAt
 }
 
+model PromoSeller {
+  id                String           @id @default(auto()) @map("_id") @db.ObjectId
+  name              String
+  email             String           @unique
+  phone             String
+  bankName          String?
+  bankAccount       String?
+  bankHolder        String?
+  commissionPerUse  Float            @default(0)
+  isActive          Boolean          @default(true)
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  promoCodes        PromoCode[]
+  usages            PromoCodeUsage[]
+}
+
 model PromoCode {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  code          String    @unique
-  description   String?
-  discountType  String    @default("PERCENTAGE") // PERCENTAGE, FIXED
-  discountValue Float
-  maxUses       Int?
-  usedCount     Int       @default(0)
-  expiresAt     DateTime?
-  isActive      Boolean   @default(true)
-  applicableTo  String[]  @default([]) // assoc types it applies to, empty = all
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                 String           @id @default(auto()) @map("_id") @db.ObjectId
+  code               String           @unique
+  description        String?
+  discountType       String           @default("PERCENTAGE")
+  discountValue      Float
+  maxUses            Int?
+  usedCount          Int              @default(0)
+  expiresAt          DateTime?
+  isActive           Boolean          @default(true)
+  applicableTo       String[]         @default([])
+  sellerId           String?          @db.ObjectId
+  commissionOverride Float?
+  seller             PromoSeller?     @relation(fields: [sellerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  usages             PromoCodeUsage[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model PromoCodeUsage {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  promoCodeId      String       @db.ObjectId
+  sellerId         String?      @db.ObjectId
+  organizationId   String       @db.ObjectId
+  orgName          String
+  discountAmount   Float        @default(0)
+  commissionAmount Float        @default(0)
+  isPaid           Boolean      @default(false)
+  usedAt           DateTime     @default(now())
+  promoCode        PromoCode    @relation(fields: [promoCodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  seller           PromoSeller? @relation(fields: [sellerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model EmailCampaign {
