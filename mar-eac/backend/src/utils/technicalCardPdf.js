@@ -308,7 +308,7 @@ const generateTechnicalCardPdf = (project, org, res) => {
   // ══════════════════════════════════════════════════════════════════════════
 
   doc.font(F_BOLD).fontSize(10.5).fillColor(DARK_GREEN);
-  doc.text(ar('امضـاء : رئيس )ة ( الجمعية'), ML, y, {
+  doc.text(ar('امضـاء : رئيس )ة( الجمعية'), ML, y, {
     width: CW * 0.45, align: 'right', lineBreak: false,
   });
 
