@@ -110,6 +110,11 @@ export const CoopProductionPage: React.FC = () => {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [load]);
 
   // Compute stock per product from movements
   const stockByProduct = useMemo(() => {

@@ -221,6 +221,13 @@ export const CoopPage: React.FC = () => {
   useEffect(() => { if (tab === 'production') loadProductions(); }, [tab, loadProductions]);
   useEffect(() => { if (tab === 'ventes') loadVentes(); }, [tab, loadVentes]);
 
+  // Reload stats whenever the page becomes visible (user returns from another tab/page)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') reload(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [reload]);
+
   // Load members for share form
   useEffect(() => {
     if (shareModal) {

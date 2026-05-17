@@ -624,21 +624,45 @@ exports.updateProduction = async (req, res) => {
       },
     });
 
-    // Auto-create stock IN movement when batch is completed and has a linked product
-    if (!wasCompleted && nowCompleted && prod.productId) {
-      const qty = prod.actualQty ?? prod.plannedQty;
-      await prisma.coopStockMovement.create({
-        data: {
-          organizationId: orgId(req),
-          productId: prod.productId,
-          type: 'IN',
-          quantity: qty,
-          unitPrice: qty > 0 ? prod.productionCost / qty : 0,
-          reference: prod.batchNumber,
-          notes: `Ajout automatique depuis production ${prod.batchNumber}`,
-          date: new Date(),
-        },
-      });
+    // Auto-create stock IN movement when batch is completed
+    if (!wasCompleted && nowCompleted) {
+      let linkedProductId = prod.productId;
+
+      // If no catalog product is linked, find or create one by name
+      if (!linkedProductId && prod.productName) {
+        const existing = await prisma.coopStockProduct.findFirst({
+          where: { organizationId: orgId(req), name: prod.productName },
+        });
+        if (existing) {
+          linkedProductId = existing.id;
+        } else {
+          const created = await prisma.coopStockProduct.create({
+            data: { organizationId: orgId(req), name: prod.productName, unit: 'unité' },
+          });
+          linkedProductId = created.id;
+        }
+        // Link the production to the resolved product
+        await prisma.coopProduction.update({
+          where: { id: prod.id },
+          data: { productId: linkedProductId },
+        });
+      }
+
+      if (linkedProductId) {
+        const qty = (prod.actualQty ?? prod.plannedQty) || 0;
+        await prisma.coopStockMovement.create({
+          data: {
+            organizationId: orgId(req),
+            productId: linkedProductId,
+            type: 'IN',
+            quantity: qty,
+            unitPrice: qty > 0 ? prod.productionCost / qty : 0,
+            reference: prod.batchNumber,
+            notes: `إنتاج مكتمل — ${prod.batchNumber}`,
+            date: new Date(),
+          },
+        });
+      }
     }
 
     res.json(prod);
