@@ -495,45 +495,35 @@ export const CoopPage: React.FC = () => {
           )}
           {stats && (
             <>
-              {/* Principles + Support row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Cooperative principles */}
-                <div className="bg-teal-50 dark:bg-teal-900/10 border border-teal-200 dark:border-teal-800 rounded-xl p-4">
-                  <h4 className="font-semibold text-teal-800 dark:text-teal-200 text-sm mb-2 flex items-center gap-2">
-                    <span>⚖️</span>{tr.principles?.title}
-                  </h4>
-                  <ul className="space-y-1">
-                    {(tr.principles?.items as string[] || []).map((item: string, i: number) => (
-                      <li key={i} className="text-xs text-teal-700 dark:text-teal-300 flex items-start gap-1.5">
-                        <span className="text-teal-500 mt-0.5">✓</span>{item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                {/* Support organizations */}
-                <div className="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4">
-                  <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 text-sm mb-2 flex items-center gap-2">
-                    <span>🤝</span>{tr.support?.title}
-                  </h4>
-                  <div className="space-y-2">
-                    {(['odco', 'indh', 'ada'] as const).map(key => {
-                      const org = tr.support?.[key];
-                      return (
-                        <div key={key} className="flex items-start gap-2">
-                          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded flex-shrink-0">{org.name}</span>
-                          <span className="text-xs text-indigo-700 dark:text-indigo-300 leading-tight">{org.desc}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+              {/* ── Quick Actions ── */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: ar ? 'منتج جديد' : 'Nouveau produit', icon: <Package size={18} />, color: 'bg-indigo-500 hover:bg-indigo-600', action: () => { setTab('stock'); setTimeout(() => openProductModal(), 50); } },
+                  { label: ar ? 'حركة مخزون' : 'Mouvement stock', icon: <ArrowDownUp size={18} />, color: 'bg-emerald-500 hover:bg-emerald-600', action: () => setMovementModal(true) },
+                  { label: ar ? 'حصة اجتماعية' : 'Part sociale', icon: <Users size={18} />, color: 'bg-violet-500 hover:bg-violet-600', action: () => { setTab('shares'); setTimeout(() => openShareModal(), 50); } },
+                  { label: ar ? 'فاتورة جديدة' : 'Nouvelle facture', icon: <FileText size={18} />, color: 'bg-amber-500 hover:bg-amber-600', action: () => { setTab('invoices'); setTimeout(() => openInvoiceModal(), 50); } },
+                ].map((a, i) => (
+                  <button key={i} onClick={a.action} className={`${a.color} text-white rounded-xl p-3 flex flex-col items-center gap-2 text-xs font-semibold transition-colors shadow-sm`}>
+                    <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">{a.icon}</div>
+                    {a.label}
+                  </button>
+                ))}
               </div>
 
+              {/* ── KPI Cards ── */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <StatCard label={t('coop.stats.activeProducts')} value={stats.activeProducts} icon={<Package size={18} />} color="bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" />
-                <StatCard label={t('coop.stats.membersWithShares')} value={stats.membersWithShares} icon={<Users size={18} />} color="bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400" />
-                <StatCard label={t('coop.stats.totalRevenue')} value={`${fmt(stats.totalRevenue)} MAD`} icon={<TrendingUp size={18} />} color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" />
-                <StatCard label={t('coop.stats.pendingRevenue')} value={`${fmt(stats.pendingRevenue)} MAD`} icon={<Clock size={18} />} color="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" />
+                <button onClick={() => setTab('stock')} className="text-start w-full">
+                  <StatCard label={t('coop.stats.activeProducts')} value={stats.activeProducts} icon={<Package size={18} />} color="bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" />
+                </button>
+                <button onClick={() => setTab('shares')} className="text-start w-full">
+                  <StatCard label={t('coop.stats.membersWithShares')} value={stats.membersWithShares} icon={<Users size={18} />} color="bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400" />
+                </button>
+                <button onClick={() => setTab('invoices')} className="text-start w-full">
+                  <StatCard label={t('coop.stats.totalRevenue')} value={`${fmt(stats.totalRevenue)} MAD`} icon={<TrendingUp size={18} />} color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" />
+                </button>
+                <button onClick={() => setTab('invoices')} className="text-start w-full">
+                  <StatCard label={t('coop.stats.pendingRevenue')} value={`${fmt(stats.pendingRevenue)} MAD`} icon={<Clock size={18} />} color="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" />
+                </button>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <StatCard label={t('coop.stats.totalShares')} value={fmt(stats.totalShares)} icon={<BarChart2 size={18} />} color="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" />
@@ -542,21 +532,183 @@ export const CoopPage: React.FC = () => {
                 <StatCard label={t('coop.stats.lowStock')} value={stats.lowStockProducts} icon={<AlertCircle size={18} />} color={stats.lowStockProducts > 0 ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 text-gray-500'} />
               </div>
 
-              {/* Stock summary */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('coop.products.title')}</h3>
-                <div className="space-y-2">
-                  {stats.stockSummary.slice(0, 6).map(p => (
-                    <div key={p.id} className="flex items-center gap-3">
-                      <div className="flex-1 text-sm text-gray-700 dark:text-gray-300">{p.name}</div>
-                      <div className={`text-sm font-semibold ${p.stock <= 0 ? 'text-red-600' : p.stock < 10 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                        {fmt(p.stock)} {p.unit}
+              {/* ── Smart Alerts ── */}
+              {(stats.lowStockProducts > 0 || invoices.some(i => i.status === 'SENT')) && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+                    <AlertCircle size={16} className="text-amber-500" />
+                    {ar ? 'تنبيهات' : 'Alertes'}
+                  </h3>
+                  {stats.stockSummary.filter(p => p.stock <= 5).map(p => (
+                    <button key={p.id} onClick={() => setTab('stock')}
+                      className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors text-start">
+                      <div className="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                        <Package size={14} className="text-red-600 dark:text-red-400" />
                       </div>
-                      <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${p.stock <= 0 ? 'bg-red-500' : p.stock < 10 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, (p.stock / 100) * 100)}%` }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-red-800 dark:text-red-300 truncate">{p.name}</div>
+                        <div className="text-xs text-red-500">{ar ? `مخزون منخفض: ${fmt(p.stock)} ${p.unit}` : `Stock bas: ${fmt(p.stock)} ${p.unit}`}</div>
                       </div>
-                    </div>
+                      <ChevronRight size={14} className="text-red-400 flex-shrink-0" />
+                    </button>
                   ))}
+                  {invoices.filter(i => i.status === 'SENT').slice(0, 3).map(inv => (
+                    <button key={inv.id} onClick={() => setTab('invoices')}
+                      className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors text-start">
+                      <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                        <FileText size={14} className="text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-amber-800 dark:text-amber-300 truncate">{inv.clientName} — {inv.number}</div>
+                        <div className="text-xs text-amber-500">{ar ? `في انتظار الدفع: ${fmt(inv.totalAmount)} MAD` : `En attente de paiement: ${fmt(inv.totalAmount)} MAD`}</div>
+                      </div>
+                      <ChevronRight size={14} className="text-amber-400 flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Charts + Activity ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                {/* Shares donut */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-4">{ar ? 'رأس المال الاجتماعي' : 'Capital Social'}</h3>
+                  {stats.totalShares > 0 ? (() => {
+                    const pct = Math.round((stats.paidShares / stats.totalShares) * 100);
+                    const r = 36; const circ = 2 * Math.PI * r;
+                    const dash = (pct / 100) * circ;
+                    return (
+                      <div className="flex items-center gap-6">
+                        <div className="relative flex-shrink-0">
+                          <svg width="96" height="96" viewBox="0 0 96 96">
+                            <circle cx="48" cy="48" r={r} fill="none" stroke="currentColor" className="text-gray-100 dark:text-gray-700" strokeWidth="10" />
+                            <circle cx="48" cy="48" r={r} fill="none" stroke="currentColor" className="text-teal-500" strokeWidth="10"
+                              strokeDasharray={`${dash} ${circ}`} strokeDashoffset={circ * 0.25} strokeLinecap="round" />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">{pct}%</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2 flex-1">
+                          <div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{ar ? 'إجمالي الحصص' : 'Parts totales'}</div>
+                            <div className="font-bold text-gray-900 dark:text-white">{fmt(stats.totalShares)}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{ar ? 'المدفوعة' : 'Payées'}</div>
+                            <div className="font-bold text-emerald-600">{fmt(stats.paidShares)}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{ar ? 'رأس المال' : 'Capital'}</div>
+                            <div className="font-bold text-indigo-600">{fmt(stats.capitalSocial)} MAD</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })() : (
+                    <div className="text-center py-6 text-gray-400 text-sm">{ar ? 'لا توجد حصص بعد' : 'Aucune part enregistrée'}</div>
+                  )}
+                </div>
+
+                {/* Recent invoices */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{ar ? 'آخر الفواتير' : 'Dernières factures'}</h3>
+                    <button onClick={() => setTab('invoices')} className="text-xs text-teal-600 hover:underline">{ar ? 'الكل' : 'Voir tout'}</button>
+                  </div>
+                  {invoices.length === 0 ? (
+                    <div className="text-center py-6 text-gray-400 text-sm">{ar ? 'لا توجد فواتير بعد' : 'Aucune facture'}</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {invoices.slice(0, 4).map(inv => (
+                        <div key={inv.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold
+                            ${inv.type === 'FACTURE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                            : inv.type === 'DEVIS'   ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                     : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
+                            {inv.type.slice(0, 1)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-gray-900 dark:text-white truncate">{inv.clientName}</div>
+                            <div className="text-xs text-gray-400">{inv.number} · {fmtDate(inv.date)}</div>
+                          </div>
+                          <div className="text-end flex-shrink-0">
+                            <div className="text-xs font-semibold text-gray-800 dark:text-gray-200">{fmt(inv.totalAmount)} MAD</div>
+                            <StatusBadge status={inv.status} t={t} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Stock + Recent movements ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                {/* Stock levels with bar chart */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{t('coop.products.title')}</h3>
+                    <button onClick={() => setTab('stock')} className="text-xs text-teal-600 hover:underline">{ar ? 'إدارة' : 'Gérer'}</button>
+                  </div>
+                  {stats.stockSummary.length === 0 ? (
+                    <div className="text-center py-6 text-gray-400 text-sm">{t('coop.products.noProducts')}</div>
+                  ) : (() => {
+                    const maxStock = Math.max(...stats.stockSummary.map(p => p.stock), 1);
+                    return (
+                      <div className="space-y-3">
+                        {stats.stockSummary.slice(0, 6).map(p => (
+                          <div key={p.id} className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-700 dark:text-gray-300 truncate flex-1">{p.name}</span>
+                              <span className={`text-xs font-semibold ms-2 flex-shrink-0 ${p.stock <= 0 ? 'text-red-600' : p.stock <= 5 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                {fmt(p.stock)} {p.unit}
+                              </span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${p.stock <= 0 ? 'bg-red-500' : p.stock <= 5 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                style={{ width: `${Math.max(2, (p.stock / maxStock) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Recent movements */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{ar ? 'آخر الحركات' : 'Derniers mouvements'}</h3>
+                    <button onClick={() => setTab('stock')} className="text-xs text-teal-600 hover:underline">{ar ? 'الكل' : 'Voir tout'}</button>
+                  </div>
+                  {movements.length === 0 ? (
+                    <div className="text-center py-6 text-gray-400 text-sm">{ar ? 'لا توجد حركات بعد' : 'Aucun mouvement'}</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {movements.slice(0, 5).map(mv => (
+                        <div key={mv.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0
+                            ${mv.type === 'IN' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                            : mv.type === 'OUT' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                                                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+                            <ArrowDownUp size={12} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-gray-900 dark:text-white truncate">{mv.product?.name || '—'}</div>
+                            <div className="text-xs text-gray-400">{fmtDate(mv.date)}{mv.reference ? ` · ${mv.reference}` : ''}</div>
+                          </div>
+                          <div className={`text-xs font-semibold flex-shrink-0 ${mv.type === 'IN' ? 'text-emerald-600' : mv.type === 'OUT' ? 'text-red-600' : 'text-gray-600'}`}>
+                            {mv.type === 'IN' ? '+' : mv.type === 'OUT' ? '-' : '~'}{fmt(mv.quantity)} {mv.product?.unit}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </>
