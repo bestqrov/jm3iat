@@ -145,60 +145,23 @@ const generateTechnicalCardPdf = (project, org, res) => {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
-  // TOP-RIGHT IDENTIFICATION BLOCK
-  // ══════════════════════════════════════════════════════════════════════════
-
-  const neighborhood = tc.neighborhood || '';
-  const commune      = tc.commune || org?.cityAr || org?.city || '';
-  const province     = tc.province || org?.regionAr || org?.region || '';
-  const orgNameAr    = org?.nameAr || org?.name || '';
-
-  const INFO_W = 260;
-  const INFO_X = W - MR - INFO_W;
-  let iy = 34;
-
-  const infoLine = (label, value) => {
-    doc.font(F_BOLD).fontSize(9).fillColor(DARK_GREEN);
-    doc.text(ar(`${label} : (`), INFO_X, iy, { width: INFO_W - 4, align: 'right', lineBreak: false });
-    doc.font(F_BODY).fontSize(9).fillColor(TEXT);
-    doc.text(ar(`${value || '...'}`), INFO_X, iy, { width: INFO_W - 70, align: 'right', lineBreak: false });
-    doc.font(F_BOLD).fontSize(9).fillColor(DARK_GREEN);
-    doc.text(ar(')'), INFO_X, iy, { width: 20, align: 'left', lineBreak: false });
-    iy += 15;
-  };
-
-  // Simpler single-call approach — renders the whole line at once
-  const infoLineFull = (label, value) => {
-    const line = `${label} : ( ${value || '...'} )`;
-    doc.font(F_BOLD).fontSize(9).fillColor(TEXT);
-    doc.text(ar(line), INFO_X, iy, { width: INFO_W, align: 'right', lineBreak: false });
-    iy += 15;
-  };
-
-  infoLineFull('جمعية', orgNameAr);
-  infoLineFull('ب', neighborhood);
-  infoLineFull('جماعة', commune);
-  infoLineFull('اقليـم', province);
-
-  // ══════════════════════════════════════════════════════════════════════════
   // CENTERED PAGE TITLE
   // ══════════════════════════════════════════════════════════════════════════
 
   const TITLE_X = ML;
-  const TITLE_W = CW - INFO_W - 12;
+  const TITLE_W = CW;
   const TITLE_Y = 36;
-  const TITLE_H = 38;
+  const TITLE_H = 44;
 
   box(TITLE_X, TITLE_Y, TITLE_W, TITLE_H, LIGHT_GREEN, DARK_GREEN);
-  // Double border effect
   box(TITLE_X + 2, TITLE_Y + 2, TITLE_W - 4, TITLE_H - 4, null, MID_GREEN);
 
-  doc.font(F_BOLD).fontSize(15).fillColor(DARK_GREEN);
-  doc.text(ar('بطاقة تقنية للمشروع'), TITLE_X + 4, TITLE_Y + 10, {
+  doc.font(F_BOLD).fontSize(17).fillColor(DARK_GREEN);
+  doc.text(ar('بطاقة تقنية للمشروع'), TITLE_X + 4, TITLE_Y + 13, {
     width: TITLE_W - 8, align: 'center', lineBreak: false,
   });
 
-  let y = Math.max(iy, TITLE_Y + TITLE_H) + 10;
+  let y = TITLE_Y + TITLE_H + 14;
 
   // ══════════════════════════════════════════════════════════════════════════
   // SECTION 1 — معلومات خاصة بالجمعية
