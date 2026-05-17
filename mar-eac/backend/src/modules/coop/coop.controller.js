@@ -487,6 +487,13 @@ exports.createCoopProject = async (req, res) => {
   try {
     const { title, type, status, description, location, code, manager,
             generalGoal, specificGoals, beneficiaries, partnerName, budget, startDate, endDate } = req.body;
+    const parsedBudget = budget ? parseFloat(budget) : null;
+    // Auto-initialise the technical card (fiche technique) with project data
+    const technicalCard = {
+      totalCost: parsedBudget || '',
+      components: '',
+      partners: [{ name: '', amount: '', percentage: '' }],
+    };
     const project = await prisma.project.create({
       data: {
         organizationId: orgId(req),
@@ -500,9 +507,10 @@ exports.createCoopProject = async (req, res) => {
         generalGoal: generalGoal || (partnerName ? `Partenaire: ${partnerName}` : null),
         specificGoals: specificGoals || null,
         beneficiaries: beneficiaries || null,
-        budget: budget ? parseFloat(budget) : null,
+        budget: parsedBudget,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
+        technicalCard,
       },
     });
     res.json(project);
