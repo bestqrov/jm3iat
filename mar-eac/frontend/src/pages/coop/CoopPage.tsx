@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ArrowDownUp, Users, FileText,
   BarChart2, Plus, Trash2, Edit2, X,
@@ -109,12 +110,15 @@ const COOP_TYPES = [
 export const CoopPage: React.FC = () => {
   const { t, lang } = useLanguage();
   const { organization, refreshUser } = useAuth();
+  const [searchParams] = useSearchParams();
   const ar = lang === 'ar';
   const tr = translations[lang].coop as any;
   const isConverted = (organization as any)?.conversionStatus === 'CONVERTED';
   const currentYear = new Date().getFullYear();
 
-  const [tab, setTab] = useState<Tab>('dashboard');
+  const validTabs: Tab[] = ['dashboard','board','projects','shares','stock','invoices','reports','production','ventes'];
+  const initialTab = (searchParams.get('tab') as Tab | null);
+  const [tab, setTab] = useState<Tab>(validTabs.includes(initialTab as Tab) ? initialTab as Tab : 'dashboard');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [savingType, setSavingType] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);

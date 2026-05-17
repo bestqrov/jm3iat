@@ -6,7 +6,7 @@ import {
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
   Building2, FolderKanban, Layers, CreditCard, Bus,
   Activity, RefreshCw, Trophy, Landmark, Wallet, ClipboardList,
-  Send, BookOpen, Store, ShoppingCart,
+  Send, BookOpen, Store, ShoppingCart, Factory, TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -195,10 +195,12 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
       color: 'text-teal-500 dark:text-teal-400',
       dotColor: 'bg-teal-400',
       items: [
-        { to: '/coop',    icon: <Store size={18} />,      label: isAr ? 'لوحة التعاونية' : 'Tableau coopérative' },
-        { to: '/members', icon: <Users size={18} />,      label: isAr ? 'الأعضاء'        : 'Membres' },
-        { to: '/finance', icon: <DollarSign size={18} />, label: t('nav.finance') },
-        { to: '/documents', icon: <FileText size={18} />, label: t('nav.documents') },
+        { to: '/coop',                icon: <Store size={18} />,      label: isAr ? 'لوحة التعاونية' : 'Tableau coopérative', tab: 'dashboard' },
+        { to: '/coop?tab=production', icon: <Factory size={18} />,    label: isAr ? 'الإنتاج'        : 'Production',          tab: 'production' },
+        { to: '/coop?tab=ventes',     icon: <TrendingUp size={18} />, label: isAr ? 'المبيعات'       : 'Ventes',              tab: 'ventes' },
+        { to: '/members',             icon: <Users size={18} />,      label: isAr ? 'الأعضاء'        : 'Membres' },
+        { to: '/finance',             icon: <DollarSign size={18} />, label: t('nav.finance') },
+        { to: '/documents',           icon: <FileText size={18} />,   label: t('nav.documents') },
       ],
     },
     {
@@ -286,7 +288,9 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
         ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',     icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]                            : []),
         ...(hasModule('TRANSPORT')  ? [{ to: '/transport', icon: <Bus size={18} />,         label: t('nav.transport') }]                        : []),
         ...(hasModule('SPORTS')     ? [{ to: '/sports',    icon: <Trophy size={18} />,      label: isAr ? 'الرياضة' : 'Sports' }]               : []),
-        ...(hasModule('COOP')       ? [{ to: '/coop',      icon: <Store size={18} />,   label: t('nav.coop') }]                             : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop',                icon: <Store size={18} />,      label: t('nav.coop'),                  tab: 'dashboard' }]  : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop?tab=production', icon: <Factory size={18} />,    label: isAr ? 'الإنتاج'  : 'Production', tab: 'production' }] : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop?tab=ventes',     icon: <TrendingUp size={18} />, label: isAr ? 'المبيعات' : 'Ventes',      tab: 'ventes' }]     : []),
       ],
     }] : []),
 
