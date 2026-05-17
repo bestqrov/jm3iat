@@ -406,6 +406,112 @@ export const CoopProductionPage: React.FC = () => {
           </span>
         </div>
 
+        {/* ── Stock analytics ── */}
+        {movements.length > 0 && (() => {
+          const totalIn    = movements.filter(m => m.type === 'IN').reduce((s, m) => s + m.quantity, 0);
+          const totalOut   = movements.filter(m => m.type === 'OUT').reduce((s, m) => s + m.quantity, 0);
+          const netStock   = totalIn - totalOut;
+          const valueIn    = movements.filter(m => m.type === 'IN').reduce((s, m) => s + m.quantity * (m.unitPrice || 0), 0);
+          const valueOut   = movements.filter(m => m.type === 'OUT').reduce((s, m) => s + m.quantity * (m.unitPrice || 0), 0);
+          const storeShips = movements.filter(m => m.reference === 'STORE_SHIPMENT').reduce((s, m) => s + m.quantity, 0);
+
+          // Bar chart data: per product
+          const chartData = products.map(p => ({
+            name: p.name.length > 10 ? p.name.slice(0, 10) + '…' : p.name,
+            inQty:  movements.filter(m => m.productId === p.id && m.type === 'IN').reduce((s, m) => s + m.quantity, 0),
+            outQty: movements.filter(m => m.productId === p.id && m.type === 'OUT').reduce((s, m) => s + m.quantity, 0),
+          })).filter(d => d.inQty > 0 || d.outQty > 0);
+          const maxVal = Math.max(...chartData.map(d => Math.max(d.inQty, d.outQty)), 1);
+
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                {ar ? 'تحليلات المخزون' : 'Analytiques du stock'}
+              </h3>
+
+              {/* KPI row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: ar ? 'إجمالي الدخول' : 'Total entrées',  value: fmt(totalIn),    sub: `${fmt(valueIn)} MAD`,   color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/10', border: 'border-emerald-200 dark:border-emerald-800' },
+                  { label: ar ? 'إجمالي الخروج' : 'Total sorties',  value: fmt(totalOut),   sub: `${fmt(valueOut)} MAD`,   color: 'text-red-500',     bg: 'bg-red-50 dark:bg-red-900/10',         border: 'border-red-200 dark:border-red-800' },
+                  { label: ar ? 'الرصيد الحالي' : 'Solde actuel',   value: fmt(netStock),   sub: netStock >= 0 ? (ar ? 'مخزون موجب' : 'Stock positif') : (ar ? 'عجز!' : 'Déficit!'), color: netStock >= 0 ? 'text-teal-600' : 'text-red-600', bg: 'bg-teal-50 dark:bg-teal-900/10', border: 'border-teal-200 dark:border-teal-800' },
+                  { label: ar ? 'مُرسَل للمتجر' : 'Envoyé magasin', value: fmt(storeShips), sub: ar ? 'إجمالي الإرساليات' : 'Total expéditions', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/10', border: 'border-violet-200 dark:border-violet-800' },
+                ].map(k => (
+                  <div key={k.label} className={`rounded-xl border p-3 ${k.bg} ${k.border}`}>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{k.label}</div>
+                    <div className={`text-xl font-bold ${k.color}`}>{k.value}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">{k.sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bar chart: IN vs OUT per product */}
+              {chartData.length > 0 && (
+                <div>
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">
+                    {ar ? 'دخول / خروج لكل منتج' : 'Entrées / Sorties par produit'}
+                  </div>
+                  <div className="flex items-end gap-2 h-28 overflow-x-auto pb-1">
+                    {chartData.map((d, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1 min-w-[48px] flex-1">
+                        <div className="flex items-end gap-0.5 h-20 w-full justify-center">
+                          {/* IN bar */}
+                          <div className="flex flex-col items-center justify-end w-5">
+                            <div
+                              className="w-full rounded-t-sm bg-emerald-400 dark:bg-emerald-500 transition-all"
+                              style={{ height: `${(d.inQty / maxVal) * 76}px`, minHeight: d.inQty > 0 ? '3px' : '0' }}
+                              title={`IN: ${fmt(d.inQty)}`}
+                            />
+                          </div>
+                          {/* OUT bar */}
+                          <div className="flex flex-col items-center justify-end w-5">
+                            <div
+                              className="w-full rounded-t-sm bg-red-400 dark:bg-red-500 transition-all"
+                              style={{ height: `${(d.outQty / maxVal) * 76}px`, minHeight: d.outQty > 0 ? '3px' : '0' }}
+                              title={`OUT: ${fmt(d.outQty)}`}
+                            />
+                          </div>
+                        </div>
+                        <div className="text-[9px] text-gray-400 text-center leading-tight w-full truncate">{d.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Legend */}
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <span className="w-3 h-3 rounded-sm bg-emerald-400 inline-block" />
+                      {ar ? 'دخول' : 'Entrées'}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <span className="w-3 h-3 rounded-sm bg-red-400 inline-block" />
+                      {ar ? 'خروج' : 'Sorties'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Efficiency ratio */}
+              {totalIn > 0 && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500 dark:text-gray-400">{ar ? 'نسبة استخدام المخزون' : 'Taux d\'utilisation du stock'}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">{Math.round((totalOut / totalIn) * 100)}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-teal-400 to-teal-600"
+                      style={{ width: `${Math.min(100, (totalOut / totalIn) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="text-[10px] text-gray-400">
+                    {ar ? `${fmt(totalOut)} وحدة تم تصريفها من أصل ${fmt(totalIn)} دخلت` : `${fmt(totalOut)} unités écoulées sur ${fmt(totalIn)} entrées`}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* ── Product stock cards ── */}
         {products.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 text-center py-12 text-gray-400">
