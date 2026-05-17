@@ -48,4 +48,23 @@ router.post('/projects',         ctrl.createCoopProject);
 router.put('/projects/:id',      ctrl.updateCoopProject);
 router.delete('/projects/:id',   ctrl.deleteCoopProject);
 
+// Production (دورات الإنتاج)
+router.get('/productions',        ctrl.getProductions);
+router.post('/productions',       ctrl.createProduction);
+router.put('/productions/:id',    ctrl.updateProduction);
+router.delete('/productions/:id', ctrl.deleteProduction);
+
+// Clients
+router.get('/clients',        ctrl.getClients);
+router.post('/clients',       ctrl.createClient);
+router.put('/clients/:id',    ctrl.updateClient);
+router.delete('/clients/:id', ctrl.deleteClient);
+
+// Sales / Ventes
+router.get('/sales',        ctrl.getSales);
+router.get('/sales/stats',  ctrl.getSalesStats);
+router.post('/sales',       ctrl.createSale);
+router.put('/sales/:id',    ctrl.updateSale);
+router.delete('/sales/:id', ctrl.deleteSale);
+
 module.exports = router;

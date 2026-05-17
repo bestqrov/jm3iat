@@ -29,7 +29,25 @@ interface CoopProject {
   budget?: number; startDate?: string; endDate?: string; generalGoal?: string;
 }
 
-type Tab = 'dashboard'|'board'|'projects'|'shares'|'stock'|'invoices'|'reports';
+interface ProductionInput { productId?: string; description: string; quantity: number; unit: string; product?: { name: string } }
+interface CoopProduction {
+  id: string; batchNumber: string; productId?: string; productName: string;
+  status: string; plannedQty: number; actualQty?: number; productionCost: number;
+  startDate?: string; endDate?: string; notes?: string;
+  product?: { name: string; unit: string };
+  inputs: ProductionInput[];
+}
+
+interface CoopClient { id: string; name: string; phone?: string; email?: string; address?: string; city?: string; notes?: string; }
+interface SaleItem { productId?: string; description: string; quantity: number; unitPrice: number; subtotal: number; product?: { name: string; unit: string } }
+interface CoopSale {
+  id: string; saleNumber: string; clientId?: string; clientName: string;
+  date: string; status: string; totalAmount: number; discount: number;
+  paidAmount: number; paymentMethod?: string; notes?: string;
+  client?: CoopClient; items: SaleItem[];
+}
+
+type Tab = 'dashboard'|'board'|'projects'|'shares'|'stock'|'invoices'|'reports'|'production'|'ventes';
 
 // ── Modal wrapper ─────────────────────────────────────────────────────────────
 
@@ -110,20 +128,31 @@ export const CoopPage: React.FC = () => {
   const [boardMeetings, setBoardMeetings]   = useState<BoardMeeting[]>([]);
   const [coopProjects, setCoopProjects]     = useState<CoopProject[]>([]);
   const [expandedMeeting, setExpandedMeeting] = useState<string | null>(null);
+  const [productions, setProductions]       = useState<CoopProduction[]>([]);
+  const [clients, setClients]               = useState<CoopClient[]>([]);
+  const [sales, setSales]                   = useState<CoopSale[]>([]);
+  const [salesStats, setSalesStats]         = useState<any>(null);
+  const [ventesSubTab, setVentesSubTab]     = useState<'sales'|'clients'>('sales');
 
   // Modal states
-  const [productModal, setProductModal]   = useState(false);
-  const [movementModal, setMovementModal] = useState(false);
-  const [shareModal, setShareModal]       = useState(false);
-  const [invoiceModal, setInvoiceModal]   = useState(false);
-  const [boardModal, setBoardModal]       = useState(false);
-  const [projectModal, setProjectModal]   = useState(false);
-  const [decisionModal, setDecisionModal] = useState<string | null>(null);
-  const [editInvoice, setEditInvoice]     = useState<Invoice | null>(null);
-  const [editProduct, setEditProduct]     = useState<Product | null>(null);
-  const [editShare, setEditShare]         = useState<Share | null>(null);
-  const [editMeeting, setEditMeeting]     = useState<BoardMeeting | null>(null);
-  const [editProject, setEditProject]     = useState<CoopProject | null>(null);
+  const [productModal, setProductModal]         = useState(false);
+  const [movementModal, setMovementModal]       = useState(false);
+  const [shareModal, setShareModal]             = useState(false);
+  const [invoiceModal, setInvoiceModal]         = useState(false);
+  const [boardModal, setBoardModal]             = useState(false);
+  const [projectModal, setProjectModal]         = useState(false);
+  const [productionModal, setProductionModal]   = useState(false);
+  const [clientModal, setClientModal]           = useState(false);
+  const [saleModal, setSaleModal]               = useState(false);
+  const [decisionModal, setDecisionModal]       = useState<string | null>(null);
+  const [editInvoice, setEditInvoice]           = useState<Invoice | null>(null);
+  const [editProduct, setEditProduct]           = useState<Product | null>(null);
+  const [editShare, setEditShare]               = useState<Share | null>(null);
+  const [editMeeting, setEditMeeting]           = useState<BoardMeeting | null>(null);
+  const [editProject, setEditProject]           = useState<CoopProject | null>(null);
+  const [editProduction, setEditProduction]     = useState<CoopProduction | null>(null);
+  const [editClient, setEditClient]             = useState<CoopClient | null>(null);
+  const [editSale, setEditSale]                 = useState<CoopSale | null>(null);
 
   // Form states
   const [productForm, setProductForm] = useState({ name: '', nameAr: '', unit: 'unité', category: '' });
@@ -137,6 +166,10 @@ export const CoopPage: React.FC = () => {
   const [boardForm, setBoardForm] = useState({ title: '', sessionType: 'ORDINARY', date: '', location: '', agenda: '', pvContent: '' });
   const [projectForm, setProjectForm] = useState({ title: '', type: 'INTERNE', description: '', partnerName: '', budget: '', startDate: '', endDate: '', status: 'PLANNED' });
   const [decisionForm, setDecisionForm] = useState({ description: '', assignedTo: '', dueDate: '' });
+  const [productionForm, setProductionForm] = useState({ productId: '', productName: '', plannedQty: '', productionCost: '', startDate: '', endDate: '', notes: '', inputs: [] as {description:string;productId:string;quantity:string;unit:string}[] });
+  const [clientForm, setClientForm] = useState({ name: '', phone: '', email: '', address: '', city: '', notes: '' });
+  const [saleForm, setSaleForm] = useState({ clientId: '', clientName: '', date: '', paymentMethod: 'CASH', discount: '0', paidAmount: '0', notes: '', items: [] as SaleItem[] });
+  const [newSaleItem, setNewSaleItem] = useState({ productId: '', description: '', quantity: '1', unitPrice: '' });
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -166,10 +199,23 @@ export const CoopPage: React.FC = () => {
     try { const r = await coopApi.getCoopProjects(); setCoopProjects(r.data); } catch { /* ignore */ }
   }, []);
 
+  const loadProductions = useCallback(async () => {
+    try { const r = await coopApi.getProductions(); setProductions(r.data); } catch { /* ignore */ }
+  }, []);
+
+  const loadVentes = useCallback(async () => {
+    try {
+      const [c, s, st] = await Promise.all([coopApi.getClients(), coopApi.getSales(), coopApi.getSalesStats()]);
+      setClients(c.data); setSales(s.data); setSalesStats(st.data);
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => { refreshUser().then(() => reload()); }, [reload]);
   useEffect(() => { if (tab === 'reports') loadReports(); }, [tab, loadReports]);
   useEffect(() => { if (tab === 'board') loadBoard(); }, [tab, loadBoard]);
   useEffect(() => { if (tab === 'projects') loadProjects(); }, [tab, loadProjects]);
+  useEffect(() => { if (tab === 'production') loadProductions(); }, [tab, loadProductions]);
+  useEffect(() => { if (tab === 'ventes') loadVentes(); }, [tab, loadVentes]);
 
   // Load members for share form
   useEffect(() => {
@@ -348,17 +394,104 @@ export const CoopPage: React.FC = () => {
   // ── Tab bar ──────────────────────────────────────────────────────────────
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'dashboard', label: ar ? 'لوحة القيادة' : 'Tableau de bord', icon: <LayoutDashboard size={16} /> },
-    { key: 'board',     label: ar ? 'مجلس الإدارة' : 'Conseil d\'Admin', icon: <CalendarDays size={16} /> },
-    { key: 'projects',  label: ar ? 'المشاريع'     : 'Projets',           icon: <Briefcase size={16} /> },
-    { key: 'shares',    label: t('coop.tabs.shares'),    icon: <Users size={16} /> },
-    { key: 'stock',     label: t('coop.tabs.stock'),     icon: <Package size={16} /> },
-    { key: 'invoices',  label: t('coop.tabs.invoices'),  icon: <FileText size={16} /> },
-    { key: 'reports',   label: t('coop.tabs.reports'),   icon: <BarChart2 size={16} /> },
+    { key: 'dashboard',  label: ar ? 'لوحة القيادة'  : 'Tableau de bord',  icon: <LayoutDashboard size={16} /> },
+    { key: 'production', label: ar ? 'الإنتاج'        : 'Production',        icon: <Package size={16} /> },
+    { key: 'ventes',     label: ar ? 'المبيعات'       : 'Ventes',            icon: <Store size={16} /> },
+    { key: 'board',      label: ar ? 'مجلس الإدارة'  : 'Conseil d\'Admin',  icon: <CalendarDays size={16} /> },
+    { key: 'projects',   label: ar ? 'المشاريع'       : 'Projets',           icon: <Briefcase size={16} /> },
+    { key: 'shares',     label: t('coop.tabs.shares'),    icon: <Users size={16} /> },
+    { key: 'stock',      label: t('coop.tabs.stock'),     icon: <Package size={16} /> },
+    { key: 'invoices',   label: t('coop.tabs.invoices'),  icon: <FileText size={16} /> },
+    { key: 'reports',    label: t('coop.tabs.reports'),   icon: <BarChart2 size={16} /> },
   ];
 
   const fmt = (n: number) => new Intl.NumberFormat(ar ? 'ar-MA' : 'fr-MA', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
   const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString(ar ? 'ar-MA' : 'fr-FR') : '—';
+
+  // ── Production handlers ───────────────────────────────────────────────────
+
+  const openProductionModal = (p?: CoopProduction) => {
+    if (p) { setEditProduction(p); setProductionForm({ productId: p.productId || '', productName: p.productName, plannedQty: String(p.plannedQty), productionCost: String(p.productionCost), startDate: p.startDate?.slice(0,10) || '', endDate: p.endDate?.slice(0,10) || '', notes: p.notes || '', inputs: p.inputs.map(i => ({ description: i.description, productId: i.productId || '', quantity: String(i.quantity), unit: i.unit })) }); }
+    else   { setEditProduction(null); setProductionForm({ productId: '', productName: '', plannedQty: '', productionCost: '0', startDate: '', endDate: '', notes: '', inputs: [] }); }
+    setProductionModal(true);
+  };
+
+  const saveProduction = async () => {
+    try {
+      const payload = { ...productionForm, inputs: productionForm.inputs };
+      if (editProduction) await coopApi.updateProduction(editProduction.id, payload);
+      else await coopApi.createProduction(payload);
+      setProductionModal(false); loadProductions();
+    } catch (e: any) { setError(e.response?.data?.message || 'Error'); }
+  };
+
+  const updateProductionStatus = async (id: string, status: string, actualQty?: string) => {
+    try { await coopApi.updateProduction(id, { status, ...(actualQty ? { actualQty } : {}) }); loadProductions(); reload(); }
+    catch (e: any) { setError(e.response?.data?.message || 'Error'); }
+  };
+
+  const deleteProduction = async (id: string) => {
+    if (!confirm(ar ? 'حذف دورة الإنتاج؟' : 'Supprimer cette production ?')) return;
+    await coopApi.deleteProduction(id); loadProductions();
+  };
+
+  // ── Client handlers ───────────────────────────────────────────────────────
+
+  const openClientModal = (c?: CoopClient) => {
+    if (c) { setEditClient(c); setClientForm({ name: c.name, phone: c.phone || '', email: c.email || '', address: c.address || '', city: c.city || '', notes: c.notes || '' }); }
+    else   { setEditClient(null); setClientForm({ name: '', phone: '', email: '', address: '', city: '', notes: '' }); }
+    setClientModal(true);
+  };
+
+  const saveClient = async () => {
+    try {
+      if (editClient) await coopApi.updateClient(editClient.id, clientForm);
+      else await coopApi.createClient(clientForm);
+      setClientModal(false); loadVentes();
+    } catch (e: any) { setError(e.response?.data?.message || 'Error'); }
+  };
+
+  const deleteClient = async (id: string) => {
+    if (!confirm(ar ? 'حذف العميل؟' : 'Supprimer ce client ?')) return;
+    await coopApi.deleteClient(id); loadVentes();
+  };
+
+  // ── Sale handlers ─────────────────────────────────────────────────────────
+
+  const openSaleModal = (s?: CoopSale) => {
+    if (s) { setEditSale(s); setSaleForm({ clientId: s.clientId || '', clientName: s.clientName, date: s.date?.slice(0,10) || '', paymentMethod: s.paymentMethod || 'CASH', discount: String(s.discount), paidAmount: String(s.paidAmount), notes: s.notes || '', items: s.items.map(i => ({ ...i })) }); }
+    else   { setEditSale(null); setSaleForm({ clientId: '', clientName: '', date: '', paymentMethod: 'CASH', discount: '0', paidAmount: '0', notes: '', items: [] }); }
+    setNewSaleItem({ productId: '', description: '', quantity: '1', unitPrice: '' });
+    setSaleModal(true);
+  };
+
+  const addSaleItem = () => {
+    if (!newSaleItem.description || !newSaleItem.unitPrice) return;
+    const qty = parseFloat(newSaleItem.quantity) || 1;
+    const price = parseFloat(newSaleItem.unitPrice) || 0;
+    const product = products.find(p => p.id === newSaleItem.productId);
+    setSaleForm(f => ({ ...f, items: [...f.items, { productId: newSaleItem.productId || undefined, description: newSaleItem.description, quantity: qty, unitPrice: price, subtotal: qty * price, product: product ? { name: product.name, unit: product.unit } : undefined }] }));
+    setNewSaleItem({ productId: '', description: '', quantity: '1', unitPrice: '' });
+  };
+
+  const saveSale = async () => {
+    try {
+      const payload = { ...saleForm };
+      if (editSale) await coopApi.updateSale(editSale.id, payload);
+      else await coopApi.createSale(payload);
+      setSaleModal(false); loadVentes();
+    } catch (e: any) { setError(e.response?.data?.message || 'Error'); }
+  };
+
+  const updateSaleStatus = async (id: string, status: string) => {
+    try { await coopApi.updateSale(id, { status }); loadVentes(); reload(); }
+    catch (e: any) { setError(e.response?.data?.message || 'Error'); }
+  };
+
+  const deleteSale = async (id: string) => {
+    if (!confirm(ar ? 'حذف عملية البيع؟' : 'Supprimer cette vente ?')) return;
+    await coopApi.deleteSale(id); loadVentes();
+  };
 
   const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','ماي','يونيو','يوليوز','غشت','شتنبر','أكتوبر','نونبر','دجنبر'];
   const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
@@ -712,6 +845,230 @@ export const CoopPage: React.FC = () => {
                 </div>
               </div>
             </>
+          )}
+        </div>
+      )}
+
+      {/* ── PRODUCTION ─────────────────────────────────────────────────── */}
+      {tab === 'production' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex gap-2">
+              {[
+                { s: 'PLANNED',     label: ar ? 'مخططة' : 'Planifiée',    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+                { s: 'IN_PROGRESS', label: ar ? 'جارية' : 'En cours',      color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+                { s: 'COMPLETED',   label: ar ? 'مكتملة' : 'Terminée',    color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+                { s: 'CANCELLED',   label: ar ? 'ملغاة' : 'Annulée',       color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+              ].map(b => (
+                <span key={b.s} className={`text-xs px-2 py-0.5 rounded-full font-medium ${b.color}`}>{b.label}: {productions.filter(p => p.status === b.s).length}</span>
+              ))}
+            </div>
+            <button onClick={() => openProductionModal()} className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700">
+              <Plus size={16} />{ar ? 'دورة إنتاج جديدة' : 'Nouvelle production'}
+            </button>
+          </div>
+
+          {productions.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">
+              <Package size={40} className="mx-auto mb-2 opacity-30" />
+              <p>{ar ? 'لا توجد دورات إنتاج بعد' : 'Aucune production enregistrée'}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {productions.map(prod => {
+                const statusColor = prod.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                  : prod.status === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                  : prod.status === 'CANCELLED'   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+                const statusLabel = prod.status === 'COMPLETED' ? (ar ? 'مكتملة' : 'Terminée')
+                  : prod.status === 'IN_PROGRESS' ? (ar ? 'جارية' : 'En cours')
+                  : prod.status === 'CANCELLED'   ? (ar ? 'ملغاة' : 'Annulée')
+                  : (ar ? 'مخططة' : 'Planifiée');
+                const progress = prod.actualQty != null && prod.plannedQty > 0 ? Math.min(100, (prod.actualQty / prod.plannedQty) * 100) : 0;
+                return (
+                  <div key={prod.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                    <div className="flex items-start gap-3 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-semibold text-gray-900 dark:text-white text-sm">{prod.productName}</span>
+                          <span className="text-xs text-gray-400 font-mono">{prod.batchNumber}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>{statusLabel}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 flex flex-wrap gap-3">
+                          <span>{ar ? 'مخطط:' : 'Prévu:'} <strong>{fmt(prod.plannedQty)}</strong></span>
+                          {prod.actualQty != null && <span>{ar ? 'فعلي:' : 'Réel:'} <strong className="text-emerald-600">{fmt(prod.actualQty)}</strong></span>}
+                          {prod.productionCost > 0 && <span>{ar ? 'التكلفة:' : 'Coût:'} <strong>{fmt(prod.productionCost)} MAD</strong></span>}
+                          {prod.startDate && <span>{ar ? 'بداية:' : 'Début:'} {fmtDate(prod.startDate)}</span>}
+                          {prod.endDate && <span>{ar ? 'نهاية:' : 'Fin:'} {fmtDate(prod.endDate)}</span>}
+                        </div>
+                        {prod.status === 'IN_PROGRESS' && prod.plannedQty > 0 && (
+                          <div className="mt-2 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden w-full max-w-xs">
+                            <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                          </div>
+                        )}
+                        {prod.inputs.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {prod.inputs.map((inp, i) => (
+                              <span key={i} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
+                                {inp.product?.name || inp.description}: {fmt(inp.quantity)} {inp.unit}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {prod.status === 'PLANNED' && (
+                          <button onClick={() => updateProductionStatus(prod.id, 'IN_PROGRESS')} className="px-2 py-1 text-xs bg-amber-500 text-white rounded-lg hover:bg-amber-600">{ar ? 'بدء' : 'Démarrer'}</button>
+                        )}
+                        {prod.status === 'IN_PROGRESS' && (
+                          <button onClick={() => { const q = prompt(ar ? 'الكمية المنتجة الفعلية:' : 'Quantité réelle produite:', String(prod.plannedQty)); if (q) updateProductionStatus(prod.id, 'COMPLETED', q); }} className="px-2 py-1 text-xs bg-emerald-500 text-white rounded-lg hover:bg-emerald-600">{ar ? 'إنهاء' : 'Terminer'}</button>
+                        )}
+                        <button onClick={() => openProductionModal(prod)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"><Edit2 size={14} /></button>
+                        <button onClick={() => deleteProduction(prod.id)} className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── VENTES ─────────────────────────────────────────────────────── */}
+      {tab === 'ventes' && (
+        <div className="space-y-4">
+          {/* Sales KPIs */}
+          {salesStats && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatCard label={ar ? 'إجمالي المبيعات' : 'Total ventes'} value={fmt(salesStats.totalRevenue) + ' MAD'} icon={<TrendingUp size={18} />} color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" />
+              <StatCard label={ar ? 'في الانتظار' : 'En attente'} value={fmt(salesStats.pendingRevenue) + ' MAD'} icon={<Clock size={18} />} color="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" />
+              <StatCard label={ar ? 'عدد العملاء' : 'Clients'} value={salesStats.totalClients} icon={<Users size={18} />} color="bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" />
+              <StatCard label={ar ? 'عدد العمليات' : 'Ventes'} value={salesStats.totalSales} icon={<FileText size={18} />} color="bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400" />
+            </div>
+          )}
+
+          {/* Sub-tabs */}
+          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
+            <button onClick={() => setVentesSubTab('sales')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${ventesSubTab === 'sales' ? 'bg-white dark:bg-gray-700 text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              {ar ? 'المبيعات' : 'Ventes'}
+            </button>
+            <button onClick={() => setVentesSubTab('clients')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${ventesSubTab === 'clients' ? 'bg-white dark:bg-gray-700 text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              {ar ? 'العملاء' : 'Clients'}
+            </button>
+          </div>
+
+          {/* ── Sales list ── */}
+          {ventesSubTab === 'sales' && (
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <button onClick={() => openSaleModal()} className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700">
+                  <Plus size={16} />{ar ? 'بيع جديد' : 'Nouvelle vente'}
+                </button>
+              </div>
+              {sales.length === 0 ? (
+                <div className="text-center py-16 text-gray-400">
+                  <Store size={40} className="mx-auto mb-2 opacity-30" />
+                  <p>{ar ? 'لا توجد مبيعات بعد' : 'Aucune vente enregistrée'}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {sales.map(sale => {
+                    const saleStatusColor = sale.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                      : sale.status === 'CANCELLED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                      : sale.status === 'RETURNED'  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+                    const saleStatusLabel = sale.status === 'COMPLETED' ? (ar ? 'مكتملة' : 'Terminée')
+                      : sale.status === 'CANCELLED' ? (ar ? 'ملغاة' : 'Annulée')
+                      : sale.status === 'RETURNED'  ? (ar ? 'مردودة' : 'Retournée')
+                      : (ar ? 'مسودة' : 'Brouillon');
+                    const balance = sale.totalAmount - sale.paidAmount;
+                    return (
+                      <div key={sale.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                        <div className="flex items-start gap-3 flex-wrap">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="font-semibold text-gray-900 dark:text-white text-sm">{sale.clientName}</span>
+                              <span className="text-xs text-gray-400 font-mono">{sale.saleNumber}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${saleStatusColor}`}>{saleStatusLabel}</span>
+                            </div>
+                            <div className="text-xs text-gray-500 flex flex-wrap gap-3">
+                              <span>{fmtDate(sale.date)}</span>
+                              <span>{ar ? 'المبلغ:' : 'Montant:'} <strong className="text-gray-800 dark:text-gray-200">{fmt(sale.totalAmount)} MAD</strong></span>
+                              {sale.paidAmount > 0 && <span>{ar ? 'مدفوع:' : 'Payé:'} <strong className="text-emerald-600">{fmt(sale.paidAmount)} MAD</strong></span>}
+                              {balance > 0 && sale.status !== 'CANCELLED' && <span className="text-amber-600">{ar ? 'الباقي:' : 'Reste:'} <strong>{fmt(balance)} MAD</strong></span>}
+                              {sale.paymentMethod && <span className="capitalize">{sale.paymentMethod}</span>}
+                            </div>
+                            {sale.items.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {sale.items.map((item, i) => (
+                                  <span key={i} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
+                                    {item.product?.name || item.description} ×{item.quantity}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {sale.status === 'DRAFT' && (
+                              <button onClick={() => updateSaleStatus(sale.id, 'COMPLETED')} className="px-2 py-1 text-xs bg-emerald-500 text-white rounded-lg hover:bg-emerald-600">{ar ? 'تأكيد' : 'Confirmer'}</button>
+                            )}
+                            {sale.status === 'DRAFT' && (
+                              <button onClick={() => updateSaleStatus(sale.id, 'CANCELLED')} className="px-2 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600">{ar ? 'إلغاء' : 'Annuler'}</button>
+                            )}
+                            <button onClick={() => openSaleModal(sale)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"><Edit2 size={14} /></button>
+                            <button onClick={() => deleteSale(sale.id)} className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500"><Trash2 size={14} /></button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Clients list ── */}
+          {ventesSubTab === 'clients' && (
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <button onClick={() => openClientModal()} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700">
+                  <Plus size={16} />{ar ? 'عميل جديد' : 'Nouveau client'}
+                </button>
+              </div>
+              {clients.length === 0 ? (
+                <div className="text-center py-16 text-gray-400">
+                  <Users size={40} className="mx-auto mb-2 opacity-30" />
+                  <p>{ar ? 'لا يوجد عملاء بعد' : 'Aucun client enregistré'}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {clients.map(cl => {
+                    const clientSales = sales.filter(s => s.clientId === cl.id);
+                    const totalSpent = clientSales.filter(s => s.status === 'COMPLETED').reduce((a, s) => a + s.totalAmount, 0);
+                    return (
+                      <div key={cl.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-gray-900 dark:text-white text-sm truncate">{cl.name}</div>
+                            {cl.phone && <div className="text-xs text-gray-500 mt-0.5">{cl.phone}</div>}
+                            {cl.city && <div className="text-xs text-gray-400">{cl.city}</div>}
+                            <div className="mt-2 flex gap-3 text-xs">
+                              <span className="text-gray-500">{clientSales.length} {ar ? 'عملية' : 'ventes'}</span>
+                              {totalSpent > 0 && <span className="text-emerald-600 font-medium">{fmt(totalSpent)} MAD</span>}
+                            </div>
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button onClick={() => openClientModal(cl)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"><Edit2 size={14} /></button>
+                            <button onClick={() => deleteClient(cl.id)} className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500"><Trash2 size={14} /></button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -1667,6 +2024,183 @@ export const CoopPage: React.FC = () => {
             </div>
 
             <button onClick={saveInvoice} className="w-full py-2 bg-indigo-600 text-white rounded-xl font-medium text-sm hover:bg-indigo-700">{ar ? 'حفظ' : 'Enregistrer'}</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Production Modal ── */}
+      {productionModal && (
+        <Modal title={editProduction ? (ar ? 'تعديل دورة الإنتاج' : 'Modifier la production') : (ar ? 'دورة إنتاج جديدة' : 'Nouvelle production')} onClose={() => setProductionModal(false)} wide>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'اسم المنتج *' : 'Produit *'}</label>
+                <select value={productionForm.productId} onChange={e => { const p = products.find(x => x.id === e.target.value); setProductionForm(f => ({ ...f, productId: e.target.value, productName: p?.name || f.productName })); }} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                  <option value="">{ar ? '-- اختر أو أدخل اسماً --' : '-- Choisir ou saisir --'}</option>
+                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'اسم المنتج (نصي)' : 'Nom produit (texte)'}</label>
+                <input value={productionForm.productName} onChange={e => setProductionForm(f => ({ ...f, productName: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'الكمية المخططة *' : 'Quantité prévue *'}</label>
+                <input type="number" value={productionForm.plannedQty} onChange={e => setProductionForm(f => ({ ...f, plannedQty: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'تكلفة الإنتاج (MAD)' : 'Coût production (MAD)'}</label>
+                <input type="number" value={productionForm.productionCost} onChange={e => setProductionForm(f => ({ ...f, productionCost: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'تاريخ البداية' : 'Date début'}</label>
+                <input type="date" value={productionForm.startDate} onChange={e => setProductionForm(f => ({ ...f, startDate: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'تاريخ النهاية' : 'Date fin'}</label>
+                <input type="date" value={productionForm.endDate} onChange={e => setProductionForm(f => ({ ...f, endDate: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+            </div>
+            {/* Inputs/matières premières */}
+            <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{ar ? 'المواد المستخدمة' : 'Matières premières'}</span>
+                <button onClick={() => setProductionForm(f => ({ ...f, inputs: [...f.inputs, { description: '', productId: '', quantity: '1', unit: 'unité' }] }))} className="p-1 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-600"><Plus size={14} /></button>
+              </div>
+              {productionForm.inputs.map((inp, i) => (
+                <div key={i} className="grid grid-cols-4 gap-2 items-end">
+                  <input placeholder={ar ? 'المادة' : 'Matière'} value={inp.description} onChange={e => { const ins = [...productionForm.inputs]; ins[i] = { ...ins[i], description: e.target.value }; setProductionForm(f => ({ ...f, inputs: ins })); }} className="col-span-2 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                  <input type="number" placeholder={ar ? 'الكمية' : 'Qté'} value={inp.quantity} onChange={e => { const ins = [...productionForm.inputs]; ins[i] = { ...ins[i], quantity: e.target.value }; setProductionForm(f => ({ ...f, inputs: ins })); }} className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                  <div className="flex gap-1">
+                    <input placeholder={ar ? 'الوحدة' : 'Unité'} value={inp.unit} onChange={e => { const ins = [...productionForm.inputs]; ins[i] = { ...ins[i], unit: e.target.value }; setProductionForm(f => ({ ...f, inputs: ins })); }} className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                    <button onClick={() => setProductionForm(f => ({ ...f, inputs: f.inputs.filter((_, j) => j !== i) }))} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"><X size={14} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'ملاحظات' : 'Notes'}</label>
+              <textarea value={productionForm.notes} onChange={e => setProductionForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+            </div>
+            <button onClick={saveProduction} className="w-full py-2 bg-teal-600 text-white rounded-xl font-medium text-sm hover:bg-teal-700">{ar ? 'حفظ' : 'Enregistrer'}</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Client Modal ── */}
+      {clientModal && (
+        <Modal title={editClient ? (ar ? 'تعديل العميل' : 'Modifier le client') : (ar ? 'عميل جديد' : 'Nouveau client')} onClose={() => setClientModal(false)}>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'الاسم *' : 'Nom *'}</label>
+              <input value={clientForm.name} onChange={e => setClientForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'الهاتف' : 'Téléphone'}</label>
+                <input value={clientForm.phone} onChange={e => setClientForm(f => ({ ...f, phone: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'المدينة' : 'Ville'}</label>
+                <input value={clientForm.city} onChange={e => setClientForm(f => ({ ...f, city: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'البريد الإلكتروني' : 'Email'}</label>
+              <input type="email" value={clientForm.email} onChange={e => setClientForm(f => ({ ...f, email: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'العنوان' : 'Adresse'}</label>
+              <input value={clientForm.address} onChange={e => setClientForm(f => ({ ...f, address: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'ملاحظات' : 'Notes'}</label>
+              <textarea value={clientForm.notes} onChange={e => setClientForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+            </div>
+            <button onClick={saveClient} className="w-full py-2 bg-indigo-600 text-white rounded-xl font-medium text-sm hover:bg-indigo-700">{ar ? 'حفظ' : 'Enregistrer'}</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Sale Modal ── */}
+      {saleModal && (
+        <Modal title={editSale ? (ar ? 'تعديل البيع' : 'Modifier la vente') : (ar ? 'بيع جديد' : 'Nouvelle vente')} onClose={() => setSaleModal(false)} wide>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'العميل' : 'Client'}</label>
+                <select value={saleForm.clientId} onChange={e => { const cl = clients.find(c => c.id === e.target.value); setSaleForm(f => ({ ...f, clientId: e.target.value, clientName: cl?.name || f.clientName })); }} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                  <option value="">{ar ? '-- اختر عميلاً --' : '-- Choisir un client --'}</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'اسم العميل *' : 'Nom client *'}</label>
+                <input value={saleForm.clientName} onChange={e => setSaleForm(f => ({ ...f, clientName: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'التاريخ' : 'Date'}</label>
+                <input type="date" value={saleForm.date} onChange={e => setSaleForm(f => ({ ...f, date: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'طريقة الدفع' : 'Paiement'}</label>
+                <select value={saleForm.paymentMethod} onChange={e => setSaleForm(f => ({ ...f, paymentMethod: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                  <option value="CASH">{ar ? 'نقداً' : 'Espèces'}</option>
+                  <option value="TRANSFER">{ar ? 'تحويل' : 'Virement'}</option>
+                  <option value="CHEQUE">{ar ? 'شيك' : 'Chèque'}</option>
+                </select>
+              </div>
+            </div>
+            {/* Items */}
+            <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-3 space-y-2">
+              <div className="font-medium text-sm text-gray-700 dark:text-gray-300">{ar ? 'المنتجات / الخدمات' : 'Articles / Services'}</div>
+              {saleForm.items.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-sm bg-gray-50 dark:bg-gray-700/30 rounded-lg p-2">
+                  <div className="flex-1 text-gray-800 dark:text-gray-200">{item.product?.name || item.description}</div>
+                  <div className="text-gray-500">{item.quantity} × {fmt(item.unitPrice)} MAD</div>
+                  <div className="font-semibold text-emerald-600">{fmt(item.subtotal)} MAD</div>
+                  <button onClick={() => setSaleForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))} className="text-red-500 hover:text-red-700"><X size={14} /></button>
+                </div>
+              ))}
+              <div className="grid grid-cols-4 gap-2">
+                <select value={newSaleItem.productId} onChange={e => { const p = products.find(x => x.id === e.target.value); setNewSaleItem(f => ({ ...f, productId: e.target.value, description: p?.name || f.description })); }} className="col-span-2 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs">
+                  <option value="">{ar ? '-- منتج أو وصف --' : '-- Produit ou description --'}</option>
+                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <input placeholder={ar ? 'وصف' : 'Description'} value={newSaleItem.description} onChange={e => setNewSaleItem(f => ({ ...f, description: e.target.value }))} className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs" style={{ display: newSaleItem.productId ? 'none' : undefined }} />
+                <input type="number" placeholder={ar ? 'الكمية' : 'Qté'} value={newSaleItem.quantity} onChange={e => setNewSaleItem(f => ({ ...f, quantity: e.target.value }))} className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs" />
+                <div className="flex gap-1">
+                  <input type="number" placeholder={ar ? 'السعر' : 'Prix'} value={newSaleItem.unitPrice} onChange={e => setNewSaleItem(f => ({ ...f, unitPrice: e.target.value }))} className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs" />
+                  <button onClick={addSaleItem} className="p-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"><Plus size={14} /></button>
+                </div>
+              </div>
+              {saleForm.items.length > 0 && (
+                <div className="text-end text-sm font-bold text-emerald-600 pt-1 border-t border-gray-200 dark:border-gray-700">
+                  Total: {fmt(saleForm.items.reduce((s, i) => s + i.subtotal, 0))} MAD
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'الخصم (MAD)' : 'Remise (MAD)'}</label>
+                <input type="number" value={saleForm.discount} onChange={e => setSaleForm(f => ({ ...f, discount: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'المبلغ المدفوع (MAD)' : 'Montant payé (MAD)'}</label>
+                <input type="number" value={saleForm.paidAmount} onChange={e => setSaleForm(f => ({ ...f, paidAmount: e.target.value }))} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{ar ? 'ملاحظات' : 'Notes'}</label>
+              <textarea value={saleForm.notes} onChange={e => setSaleForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" />
+            </div>
+            <button onClick={saveSale} className="w-full py-2 bg-emerald-600 text-white rounded-xl font-medium text-sm hover:bg-emerald-700">{ar ? 'حفظ' : 'Enregistrer'}</button>
           </div>
         </Modal>
       )}

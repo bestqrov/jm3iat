@@ -520,3 +520,280 @@ exports.deleteCoopProject = async (req, res) => {
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRODUCTION
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function nextBatchNumber(organizationId) {
+  const last = await prisma.coopProduction.findFirst({
+    where: { organizationId }, orderBy: { createdAt: 'desc' },
+  });
+  const year = new Date().getFullYear();
+  if (!last) return `PROD-${year}-001`;
+  const parts = last.batchNumber.split('-');
+  const seq = (parseInt(parts[parts.length - 1]) || 0) + 1;
+  return `PROD-${year}-${String(seq).padStart(3, '0')}`;
+}
+
+exports.getProductions = async (req, res) => {
+  try {
+    const prods = await prisma.coopProduction.findMany({
+      where: { organizationId: orgId(req) },
+      include: { product: true, inputs: { include: { product: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(prods);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.createProduction = async (req, res) => {
+  try {
+    const { productId, productName, plannedQty, productionCost, startDate, endDate, notes, inputs = [] } = req.body;
+    const batchNumber = await nextBatchNumber(orgId(req));
+    const prod = await prisma.coopProduction.create({
+      data: {
+        organizationId: orgId(req),
+        batchNumber,
+        productId:      productId || null,
+        productName:    productName || 'منتج غير محدد',
+        plannedQty:     parseFloat(plannedQty) || 0,
+        productionCost: parseFloat(productionCost) || 0,
+        startDate:      startDate ? new Date(startDate) : null,
+        endDate:        endDate   ? new Date(endDate)   : null,
+        notes:          notes || null,
+        inputs: {
+          create: inputs.map(inp => ({
+            productId:   inp.productId || null,
+            description: inp.description,
+            quantity:    parseFloat(inp.quantity) || 0,
+            unit:        inp.unit || 'unité',
+          })),
+        },
+      },
+      include: { product: true, inputs: { include: { product: true } } },
+    });
+    res.json(prod);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.updateProduction = async (req, res) => {
+  try {
+    const { productId, productName, plannedQty, actualQty, productionCost, startDate, endDate, notes, status } = req.body;
+    const existing = await prisma.coopProduction.findFirst({ where: { id: req.params.id, organizationId: orgId(req) } });
+    if (!existing) return res.status(404).json({ message: 'Not found' });
+
+    const wasCompleted = existing.status === 'COMPLETED';
+    const nowCompleted = status === 'COMPLETED';
+
+    const prod = await prisma.coopProduction.update({
+      where: { id: req.params.id },
+      data: {
+        ...(productId      !== undefined && { productId: productId || null }),
+        ...(productName    !== undefined && { productName }),
+        ...(plannedQty     !== undefined && { plannedQty: parseFloat(plannedQty) }),
+        ...(actualQty      !== undefined && { actualQty: parseFloat(actualQty) }),
+        ...(productionCost !== undefined && { productionCost: parseFloat(productionCost) }),
+        ...(startDate      !== undefined && { startDate: startDate ? new Date(startDate) : null }),
+        ...(endDate        !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+        ...(notes          !== undefined && { notes }),
+        ...(status         !== undefined && { status }),
+      },
+    });
+
+    // Auto-create stock IN movement when batch is completed and has a linked product
+    if (!wasCompleted && nowCompleted && prod.productId) {
+      const qty = prod.actualQty ?? prod.plannedQty;
+      await prisma.coopStockMovement.create({
+        data: {
+          organizationId: orgId(req),
+          productId: prod.productId,
+          type: 'IN',
+          quantity: qty,
+          unitPrice: qty > 0 ? prod.productionCost / qty : 0,
+          reference: prod.batchNumber,
+          notes: `Ajout automatique depuis production ${prod.batchNumber}`,
+          date: new Date(),
+        },
+      });
+    }
+
+    res.json(prod);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.deleteProduction = async (req, res) => {
+  try {
+    await prisma.coopProduction.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CLIENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+exports.getClients = async (req, res) => {
+  try {
+    const clients = await prisma.coopClient.findMany({
+      where: { organizationId: orgId(req) },
+      orderBy: { name: 'asc' },
+    });
+    res.json(clients);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.createClient = async (req, res) => {
+  try {
+    const { name, phone, email, address, city, notes } = req.body;
+    const client = await prisma.coopClient.create({
+      data: { organizationId: orgId(req), name, phone: phone || null, email: email || null, address: address || null, city: city || null, notes: notes || null },
+    });
+    res.json(client);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.updateClient = async (req, res) => {
+  try {
+    const { name, phone, email, address, city, notes } = req.body;
+    const client = await prisma.coopClient.update({
+      where: { id: req.params.id },
+      data: { name, phone: phone || null, email: email || null, address: address || null, city: city || null, notes: notes || null },
+    });
+    res.json(client);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.deleteClient = async (req, res) => {
+  try {
+    await prisma.coopClient.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SALES (VENTES)
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function nextSaleNumber(organizationId) {
+  const last = await prisma.coopSale.findFirst({
+    where: { organizationId }, orderBy: { createdAt: 'desc' },
+  });
+  const year = new Date().getFullYear();
+  if (!last) return `VTE-${year}-001`;
+  const parts = last.saleNumber.split('-');
+  const seq = (parseInt(parts[parts.length - 1]) || 0) + 1;
+  return `VTE-${year}-${String(seq).padStart(3, '0')}`;
+}
+
+exports.getSales = async (req, res) => {
+  try {
+    const sales = await prisma.coopSale.findMany({
+      where: { organizationId: orgId(req) },
+      include: { client: true, items: { include: { product: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(sales);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.getSalesStats = async (req, res) => {
+  try {
+    const oid = orgId(req);
+    const sales = await prisma.coopSale.findMany({ where: { organizationId: oid } });
+    const totalRevenue   = sales.filter(s => s.status === 'COMPLETED').reduce((a, s) => a + s.totalAmount, 0);
+    const pendingRevenue = sales.filter(s => s.status === 'DRAFT').reduce((a, s) => a + s.totalAmount, 0);
+    const totalClients   = await prisma.coopClient.count({ where: { organizationId: oid } });
+    const totalSales     = sales.length;
+    res.json({ totalRevenue, pendingRevenue, totalClients, totalSales });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.createSale = async (req, res) => {
+  try {
+    const { clientId, clientName, date, paymentMethod, discount, paidAmount, notes, items = [] } = req.body;
+    const saleNumber = await nextSaleNumber(orgId(req));
+    const totalAmount = items.reduce((a, i) => a + (parseFloat(i.subtotal) || 0), 0) - (parseFloat(discount) || 0);
+
+    const sale = await prisma.coopSale.create({
+      data: {
+        organizationId: orgId(req),
+        saleNumber,
+        clientId:      clientId || null,
+        clientName:    clientName || 'Client',
+        date:          date ? new Date(date) : new Date(),
+        paymentMethod: paymentMethod || null,
+        discount:      parseFloat(discount) || 0,
+        paidAmount:    parseFloat(paidAmount) || 0,
+        totalAmount,
+        notes:         notes || null,
+        items: {
+          create: items.map(i => ({
+            productId:   i.productId || null,
+            description: i.description,
+            quantity:    parseFloat(i.quantity) || 0,
+            unitPrice:   parseFloat(i.unitPrice) || 0,
+            subtotal:    parseFloat(i.subtotal) || 0,
+          })),
+        },
+      },
+      include: { client: true, items: { include: { product: true } } },
+    });
+    res.json(sale);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.updateSale = async (req, res) => {
+  try {
+    const { clientId, clientName, date, status, paymentMethod, discount, paidAmount, notes } = req.body;
+    const existing = await prisma.coopSale.findFirst({ where: { id: req.params.id, organizationId: orgId(req) } });
+    if (!existing) return res.status(404).json({ message: 'Not found' });
+
+    const wasCompleted = existing.status === 'COMPLETED';
+    const nowCompleted = status === 'COMPLETED';
+
+    const sale = await prisma.coopSale.update({
+      where: { id: req.params.id },
+      data: {
+        ...(clientId      !== undefined && { clientId: clientId || null }),
+        ...(clientName    !== undefined && { clientName }),
+        ...(date          !== undefined && { date: date ? new Date(date) : null }),
+        ...(status        !== undefined && { status }),
+        ...(paymentMethod !== undefined && { paymentMethod }),
+        ...(discount      !== undefined && { discount: parseFloat(discount) }),
+        ...(paidAmount    !== undefined && { paidAmount: parseFloat(paidAmount) }),
+        ...(notes         !== undefined && { notes }),
+      },
+      include: { items: { include: { product: true } } },
+    });
+
+    // Auto-create stock OUT movements when sale is confirmed
+    if (!wasCompleted && nowCompleted) {
+      for (const item of sale.items) {
+        if (item.productId) {
+          await prisma.coopStockMovement.create({
+            data: {
+              organizationId: orgId(req),
+              productId: item.productId,
+              type: 'OUT',
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              reference: sale.saleNumber,
+              notes: `Sortie automatique depuis vente ${sale.saleNumber}`,
+              date: new Date(),
+            },
+          });
+        }
+      }
+    }
+
+    res.json(sale);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.deleteSale = async (req, res) => {
+  try {
+    await prisma.coopSale.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};

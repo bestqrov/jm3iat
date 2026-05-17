@@ -97,6 +97,9 @@ model Organization {
   coopStockMovements CoopStockMovement[]
   coopMemberShares   CoopMemberShare[]
   coopInvoices       CoopInvoice[]
+  coopProductions    CoopProduction[]
+  coopClients        CoopClient[]
+  coopSales          CoopSale[]
   promoCodeUsages    PromoCodeUsage[]
   // Commerce module
   commerceProducts      CommerceProduct[]
@@ -1086,9 +1089,12 @@ model CoopStockProduct {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  movements    CoopStockMovement[]
-  invoiceItems CoopInvoiceItem[]
+  organization     Organization          @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  movements        CoopStockMovement[]
+  invoiceItems     CoopInvoiceItem[]
+  productions      CoopProduction[]
+  productionInputs CoopProductionInput[]
+  saleItems        CoopSaleItem[]
 }
 
 model CoopStockMovement {
@@ -1271,5 +1277,92 @@ model CoopInvoiceItem {
   subtotal    Float
 
   invoice CoopInvoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product CoopStockProduct? @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// ── Coop Production ───────────────────────────────────────────────────────────
+
+model CoopProduction {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  batchNumber    String
+  productId      String?  @db.ObjectId
+  productName    String
+  status         String   @default("PLANNED") // PLANNED | IN_PROGRESS | COMPLETED | CANCELLED
+  plannedQty     Float    @default(0)
+  actualQty      Float?
+  productionCost Float    @default(0)
+  startDate      DateTime?
+  endDate        DateTime?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product      CoopStockProduct? @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  inputs       CoopProductionInput[]
+}
+
+model CoopProductionInput {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  productionId String  @db.ObjectId
+  productId    String? @db.ObjectId
+  description  String
+  quantity     Float
+  unit         String  @default("unité")
+
+  production CoopProduction    @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  product    CoopStockProduct? @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// ── Coop Ventes (Sales) ───────────────────────────────────────────────────────
+
+model CoopClient {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  name           String
+  phone          String?
+  email          String?
+  address        String?
+  city           String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sales        CoopSale[]
+}
+
+model CoopSale {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String   @db.ObjectId
+  clientId       String?  @db.ObjectId
+  clientName     String
+  saleNumber     String
+  date           DateTime @default(now())
+  status         String   @default("DRAFT") // DRAFT | COMPLETED | CANCELLED | RETURNED
+  totalAmount    Float    @default(0)
+  discount       Float    @default(0)
+  paidAmount     Float    @default(0)
+  paymentMethod  String?  // CASH | TRANSFER | CHEQUE
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  client       CoopClient?  @relation(fields: [clientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items        CoopSaleItem[]
+}
+
+model CoopSaleItem {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  saleId      String  @db.ObjectId
+  productId   String? @db.ObjectId
+  description String
+  quantity    Float
+  unitPrice   Float
+  subtotal    Float
+
+  sale    CoopSale          @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product CoopStockProduct? @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
