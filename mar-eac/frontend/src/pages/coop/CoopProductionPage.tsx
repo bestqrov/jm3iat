@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Factory, Plus, Edit2, Trash2, X, AlertCircle, Package, CheckCircle, Clock, PlayCircle, Warehouse, Send, Info, ArrowDownToLine } from 'lucide-react';
+import { Factory, Plus, Edit2, Trash2, X, AlertCircle, Package, CheckCircle, Clock, PlayCircle, Warehouse, Send, Info, ArrowDownToLine, Search } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { coopApi } from '../../lib/api';
@@ -68,6 +68,8 @@ export const CoopProductionPage: React.FC = () => {
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
   const [modal, setModal]             = useState(false);
+  const [pickerOpen, setPickerOpen]   = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
   const [storeModal, setStoreModal]   = useState<{ product: Product; currentQty: number } | null>(null);
   const [storeQty, setStoreQty]       = useState('');
   const [storeNotes, setStoreNotes]   = useState('');
@@ -482,10 +484,10 @@ export const CoopProductionPage: React.FC = () => {
                   {ar ? 'المواد الأولية المستخدمة' : 'Matières premières utilisées'}
                 </span>
                 <button
-                  onClick={() => updateInputs([...form.inputs, { description: '', productId: '', quantity: '1', unit: 'kg', unitPrice: '' }])}
+                  onClick={() => { setPickerSearch(''); setPickerOpen(true); }}
                   className="flex items-center gap-1 px-2.5 py-1 text-xs bg-teal-600 text-white rounded-lg hover:bg-teal-700"
                 >
-                  <Plus size={12} />{ar ? 'إضافة' : 'Ajouter'}
+                  <Plus size={12} />{ar ? 'إضافة منتج' : 'Ajouter produit'}
                 </button>
               </div>
 
@@ -495,7 +497,7 @@ export const CoopProductionPage: React.FC = () => {
                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
                   {/* Header row */}
                   <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
-                    <div className="col-span-4">{ar ? 'المادة / المنتج' : 'Matière / Produit'}</div>
+                    <div className="col-span-4">{ar ? 'المنتج' : 'Produit'}</div>
                     <div className="col-span-2 text-center">{ar ? 'الكمية' : 'Quantité'}</div>
                     <div className="col-span-2 text-center">{ar ? 'الوحدة' : 'Unité'}</div>
                     <div className="col-span-2 text-center">{ar ? 'السعر/الوحدة' : 'Prix/unité'}</div>
@@ -507,25 +509,20 @@ export const CoopProductionPage: React.FC = () => {
                     return (
                       <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 items-center">
                         <div className="col-span-4">
-                          <select
-                            value={inp.productId}
-                            onChange={e => {
-                              const p = products.find(x => x.id === e.target.value);
-                              const next = [...form.inputs];
-                              next[i] = { ...next[i], productId: e.target.value, description: p?.name || next[i].description, unit: p?.unit || next[i].unit };
-                              updateInputs(next);
-                            }}
-                            className={inputField}
-                          >
-                            <option value="">{ar ? 'اختر أو اكتب' : 'Choisir...'}</option>
-                            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                          </select>
-                          <input
-                            placeholder={ar ? 'أو اكتب اسم المادة' : 'ou nom libre'}
-                            value={inp.description}
-                            onChange={e => { const next = [...form.inputs]; next[i] = { ...next[i], description: e.target.value }; updateInputs(next); }}
-                            className={`${inputField} mt-1`}
-                          />
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-6 h-6 rounded-md bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                              <Package size={12} className="text-teal-600 dark:text-teal-400" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{inp.description || <span className="italic text-gray-400">{ar ? 'بدون اسم' : 'Sans nom'}</span>}</span>
+                          </div>
+                          {!inp.productId && (
+                            <input
+                              placeholder={ar ? 'اسم المادة' : 'Nom de la matière'}
+                              value={inp.description}
+                              onChange={e => { const next = [...form.inputs]; next[i] = { ...next[i], description: e.target.value }; updateInputs(next); }}
+                              className={`${inputField} mt-1`}
+                            />
+                          )}
                         </div>
                         <div className="col-span-2">
                           <input
@@ -649,6 +646,88 @@ export const CoopProductionPage: React.FC = () => {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Product Picker Modal */}
+      {pickerOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="font-bold text-gray-900 dark:text-white text-base">
+                {ar ? 'اختر منتجاً موجوداً' : 'Sélectionner un produit existant'}
+              </h3>
+              <button onClick={() => setPickerOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"><X size={18} /></button>
+            </div>
+
+            {/* Search */}
+            <div className="p-3 border-b border-gray-100 dark:border-gray-700">
+              <div className="relative">
+                <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  autoFocus
+                  value={pickerSearch}
+                  onChange={e => setPickerSearch(e.target.value)}
+                  placeholder={ar ? 'ابحث عن منتج...' : 'Rechercher un produit...'}
+                  className="w-full ps-9 pe-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Product list */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+              {products.filter(p => !pickerSearch || p.name.toLowerCase().includes(pickerSearch.toLowerCase())).length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-sm">{ar ? 'لا توجد نتائج' : 'Aucun résultat'}</div>
+              ) : (
+                products
+                  .filter(p => !pickerSearch || p.name.toLowerCase().includes(pickerSearch.toLowerCase()))
+                  .map(p => {
+                    const alreadyAdded = form.inputs.some(i => i.productId === p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          if (!alreadyAdded) {
+                            updateInputs([...form.inputs, { description: p.name, productId: p.id, quantity: '1', unit: p.unit, unitPrice: '' }]);
+                          }
+                          setPickerOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border text-start transition-colors ${alreadyAdded ? 'border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20 opacity-60 cursor-default' : 'border-gray-200 dark:border-gray-700 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/10'}`}
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                          <Package size={16} className="text-teal-600 dark:text-teal-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 dark:text-white text-sm truncate">{p.name}</div>
+                          <div className="text-xs text-gray-400">{p.unit}</div>
+                        </div>
+                        {alreadyAdded ? (
+                          <span className="text-xs text-teal-600 dark:text-teal-400 flex-shrink-0">{ar ? 'مضاف' : 'Ajouté'}</span>
+                        ) : (
+                          <Plus size={16} className="text-teal-500 flex-shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })
+              )}
+            </div>
+
+            {/* Add custom material (free text) */}
+            <div className="p-3 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => {
+                  updateInputs([...form.inputs, { description: pickerSearch, productId: '', quantity: '1', unit: 'kg', unitPrice: '' }]);
+                  setPickerOpen(false);
+                }}
+                className="w-full flex items-center gap-2 p-2.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-teal-400 hover:text-teal-600 text-sm transition-colors"
+              >
+                <Plus size={15} />
+                {pickerSearch
+                  ? (ar ? `إضافة "${pickerSearch}" كمادة مخصصة` : `Ajouter "${pickerSearch}" comme matière libre`)
+                  : (ar ? 'إضافة مادة مخصصة (بدون منتج)' : 'Ajouter une matière libre')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
