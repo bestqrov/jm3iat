@@ -755,77 +755,75 @@ export const CoopProductionPage: React.FC = () => {
                 <div className="text-center py-6 text-gray-400 text-xs">{ar ? 'لا توجد مواد — أضف مادة لحساب التكلفة تلقائياً' : 'Aucune matière — ajoutez-en pour calculer le coût auto'}</div>
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {/* Header row */}
-                  <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
-                    <div className="col-span-4">{ar ? 'المنتج' : 'Produit'}</div>
-                    <div className="col-span-2 text-center">{ar ? 'الكمية' : 'Quantité'}</div>
-                    <div className="col-span-2 text-center">{ar ? 'الوحدة' : 'Unité'}</div>
-                    <div className="col-span-2 text-center">{ar ? 'السعر/الوحدة' : 'Prix/unité'}</div>
-                    <div className="col-span-1 text-center">{ar ? 'المجموع' : 'Total'}</div>
-                    <div className="col-span-1" />
-                  </div>
                   {form.inputs.map((inp, i) => {
                     const rowTotal = (parseFloat(inp.quantity) || 0) * (parseFloat(inp.unitPrice) || 0);
                     return (
-                      <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 items-center">
-                        <div className="col-span-4">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-md bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
-                              <Package size={12} className="text-teal-600 dark:text-teal-400" />
-                            </div>
-                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{inp.description || <span className="italic text-gray-400">{ar ? 'بدون اسم' : 'Sans nom'}</span>}</span>
+                      <div key={i} className="px-4 py-3 space-y-2">
+                        {/* Row 1: product name + delete */}
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-md bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                            <Package size={12} className="text-teal-600 dark:text-teal-400" />
                           </div>
-                          {!inp.productId && (
+                          {inp.productId ? (
+                            <span className="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{inp.description}</span>
+                          ) : (
                             <input
-                              placeholder={ar ? 'اسم المادة' : 'Nom de la matière'}
+                              placeholder={ar ? 'اسم المادة الأولية' : 'Nom de la matière'}
                               value={inp.description}
                               onChange={e => { const next = [...form.inputs]; next[i] = { ...next[i], description: e.target.value }; updateInputs(next); }}
-                              className={`${inputField} mt-1`}
+                              className={`${inputField} flex-1`}
                             />
                           )}
+                          <button onClick={() => updateInputs(form.inputs.filter((_, j) => j !== i))} className="p-1 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg flex-shrink-0"><X size={14} /></button>
                         </div>
-                        <div className="col-span-2">
-                          <input
-                            type="number" min="0"
-                            placeholder="0"
-                            value={inp.quantity}
-                            onChange={e => { const next = [...form.inputs]; next[i] = { ...next[i], quantity: e.target.value }; updateInputs(next); }}
-                            className={inputField}
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <input
-                            placeholder={ar ? 'كغ، ل...' : 'kg, l...'}
-                            value={inp.unit}
-                            onChange={e => { const next = [...form.inputs]; next[i] = { ...next[i], unit: e.target.value }; updateInputs(next); }}
-                            className={inputField}
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <input
-                            type="number" min="0"
-                            placeholder="0"
-                            value={inp.unitPrice}
-                            onChange={e => { const next = [...form.inputs]; next[i] = { ...next[i], unitPrice: e.target.value }; updateInputs(next); }}
-                            className={inputField}
-                          />
-                        </div>
-                        <div className="col-span-1 text-center text-xs font-semibold text-violet-600 dark:text-violet-400">
-                          {rowTotal > 0 ? fmt(rowTotal) : '—'}
-                        </div>
-                        <div className="col-span-1 flex justify-center">
-                          <button onClick={() => updateInputs(form.inputs.filter((_, j) => j !== i))} className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><X size={14} /></button>
+                        {/* Row 2: qty + unit + price + total */}
+                        <div className="grid grid-cols-4 gap-2">
+                          <div className="space-y-1">
+                            <div className="text-[10px] font-semibold text-gray-400 uppercase">{ar ? 'الكمية' : 'Quantité'}</div>
+                            <input
+                              type="number" min="0" placeholder="0"
+                              value={inp.quantity}
+                              onChange={e => { const next = [...form.inputs]; next[i] = { ...next[i], quantity: e.target.value }; updateInputs(next); }}
+                              className={inputField}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-[10px] font-semibold text-gray-400 uppercase">{ar ? 'الوحدة' : 'Unité'}</div>
+                            <input
+                              placeholder={ar ? 'كغ، ل...' : 'kg, l...'}
+                              value={inp.unit}
+                              onChange={e => { const next = [...form.inputs]; next[i] = { ...next[i], unit: e.target.value }; updateInputs(next); }}
+                              className={inputField}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-[10px] font-semibold text-amber-500 uppercase">{ar ? 'السعر (MAD)' : 'Prix (MAD)'}</div>
+                            <div className="relative">
+                              <input
+                                type="number" min="0" placeholder="0.00"
+                                value={inp.unitPrice}
+                                onChange={e => { const next = [...form.inputs]; next[i] = { ...next[i], unitPrice: e.target.value }; updateInputs(next); }}
+                                className={`${inputField} border-amber-300 dark:border-amber-700 focus:border-amber-500 focus:ring-amber-500 bg-amber-50 dark:bg-amber-900/10`}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-[10px] font-semibold text-gray-400 uppercase">{ar ? 'المجموع' : 'Total'}</div>
+                            <div className={`px-2 py-1.5 rounded-lg text-xs font-bold text-center ${rowTotal > 0 ? 'bg-violet-100 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'}`}>
+                              {rowTotal > 0 ? `${fmt(rowTotal)} MAD` : '—'}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );
                   })}
                   {/* Total footer */}
-                  {costIsAuto && (
-                    <div className="flex items-center justify-end gap-3 px-4 py-2.5 bg-teal-50 dark:bg-teal-900/10">
-                      <span className="text-sm text-gray-600 dark:text-gray-300">{ar ? 'إجمالي تكلفة المواد:' : 'Total matières:'}</span>
-                      <span className="text-base font-bold text-teal-700 dark:text-teal-400">{fmt(inputsAutoTotal)} MAD</span>
-                    </div>
-                  )}
+                  <div className={`flex items-center justify-end gap-3 px-4 py-3 ${costIsAuto ? 'bg-teal-50 dark:bg-teal-900/10' : 'bg-gray-50 dark:bg-gray-700/30'}`}>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">{ar ? 'إجمالي تكلفة المواد:' : 'Total matières:'}</span>
+                    <span className={`text-base font-bold ${costIsAuto ? 'text-teal-700 dark:text-teal-400' : 'text-gray-400'}`}>
+                      {costIsAuto ? `${fmt(inputsAutoTotal)} MAD` : (ar ? 'أدخل الأسعار' : 'Saisir les prix')}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
