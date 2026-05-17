@@ -70,10 +70,13 @@ export const CoopProductionPage: React.FC = () => {
   const [modal, setModal]             = useState(false);
   const [pickerOpen, setPickerOpen]   = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
-  const [storeModal, setStoreModal]   = useState<{ product: Product; currentQty: number } | null>(null);
-  const [storeQty, setStoreQty]       = useState('');
-  const [storeNotes, setStoreNotes]   = useState('');
-  const [editItem, setEditItem]       = useState<CoopProduction | null>(null);
+  const [storeModal, setStoreModal]     = useState<{ product: Product; currentQty: number } | null>(null);
+  const [storeQty, setStoreQty]         = useState('');
+  const [storeNotes, setStoreNotes]     = useState('');
+  const [movModal, setMovModal]         = useState(false);
+  const [movForm, setMovForm]           = useState({ productId: '', type: 'IN', quantity: '', unitPrice: '', reference: '', notes: '' });
+  const [movFilter, setMovFilter]       = useState('');
+  const [editItem, setEditItem]         = useState<CoopProduction | null>(null);
   const [filterStatus, setFilterStatus] = useState('ALL');
 
   type InputRow = { description: string; productId: string; quantity: string; unit: string; unitPrice: string };
@@ -173,13 +176,27 @@ export const CoopProductionPage: React.FC = () => {
     } catch (e: any) { setError(e.response?.data?.message || 'Erreur'); }
   };
 
+  const addMovement = async () => {
+    if (!movForm.productId || !movForm.quantity || parseFloat(movForm.quantity) <= 0) return;
+    try {
+      await coopApi.createMovement({
+        productId: movForm.productId,
+        type: movForm.type,
+        quantity: parseFloat(movForm.quantity),
+        unitPrice: movForm.unitPrice ? parseFloat(movForm.unitPrice) : undefined,
+        reference: movForm.reference || undefined,
+        notes: movForm.notes || undefined,
+      });
+      setMovModal(false);
+      setMovForm({ productId: '', type: 'IN', quantity: '', unitPrice: '', reference: '', notes: '' });
+      load();
+    } catch (e: any) { setError(e.response?.data?.message || 'Erreur'); }
+  };
+
   const filtered = filterStatus === 'ALL' ? productions : productions.filter(p => p.status === filterStatus);
   const countByStatus = (s: string) => productions.filter(p => p.status === s).length;
   const totalCost = productions.filter(p => p.status === 'COMPLETED').reduce((a, p) => a + p.productionCost, 0);
   const totalProduced = productions.filter(p => p.status === 'COMPLETED').reduce((a, p) => a + (p.actualQty ?? p.plannedQty), 0);
-
-  // Products that have stock entries
-  const stockProducts = products.filter(p => stockByProduct[p.id] !== undefined);
 
   const inputField = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white';
   const field = 'w-full border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm';
@@ -350,67 +367,199 @@ export const CoopProductionPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── STOCK SECTION ─────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {/* Section header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-teal-50 to-white dark:from-teal-900/10 dark:to-gray-800">
-          <div className="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400">
-            <Warehouse size={18} />
-          </div>
-          <div>
-            <h2 className="font-bold text-gray-900 dark:text-white text-sm">{ar ? 'المخزون' : 'Stock'}</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{ar ? 'المنتجات المتوفرة في مخزون التعاونية' : 'Produits disponibles en stock'}</p>
-          </div>
-        </div>
+      {/* ── STOCK & TRANSACTIONS ──────────────────────────────────────────── */}
+      <div className="space-y-4">
 
-        {/* Explanatory banner */}
-        <div className="mx-4 mt-4 flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-xs text-blue-700 dark:text-blue-300">
-          <Info size={15} className="flex-shrink-0 mt-0.5" />
-          <p>
-            {ar
-              ? 'يمكنك هنا إرسال منتجات التعاونية مباشرة إلى متجر منصة MarEAC. عند إتمام عملية الإنتاج تُضاف الكميات تلقائياً، وعند الإرسال تُخصم من المخزون.'
-              : 'Vous pouvez envoyer les produits de la coopérative directement vers le magasin MarEAC. Les quantités sont ajoutées automatiquement à la fin de la production et déduites lors de l\'envoi au magasin.'}
-          </p>
-        </div>
-
-        <div className="p-4">
-          {stockProducts.length === 0 ? (
-            <div className="text-center py-10 text-gray-400">
-              <Package size={36} className="mx-auto mb-2 opacity-20" />
-              <p className="text-sm">{ar ? 'لا توجد منتجات في المخزون بعد' : 'Aucun produit en stock pour l\'instant'}</p>
-              <p className="text-xs mt-1 opacity-70">{ar ? 'أكمل دورة إنتاج لإضافة كميات' : 'Terminez une production pour ajouter des quantités'}</p>
+        {/* ── Stock header ── */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400">
+              <Warehouse size={18} />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {products.map(p => {
-                const qty = stockByProduct[p.id] ?? 0;
-                const low = qty > 0 && qty < 10;
-                const empty = qty <= 0;
-                return (
-                  <div key={p.id} className={`rounded-xl border p-4 flex items-center gap-3 ${empty ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10' : low ? 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30'}`}>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${empty ? 'bg-red-100 dark:bg-red-900/30 text-red-500' : low ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-teal-100 dark:bg-teal-900/30 text-teal-600'}`}>
-                      <Package size={18} />
+            <div>
+              <h2 className="font-bold text-gray-900 dark:text-white">{ar ? 'المخزون' : 'Stock'}</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {ar ? 'الكميات المتوفرة من كل منتج في التعاونية' : 'Quantités disponibles par produit'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => { setMovForm({ productId: '', type: 'IN', quantity: '', unitPrice: '', reference: '', notes: '' }); setMovModal(true); }}
+            className="flex items-center gap-2 px-3 py-2 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700"
+          >
+            <Plus size={15} />{ar ? 'إضافة حركة' : 'Ajouter mouvement'}
+          </button>
+        </div>
+
+        {/* Explanatory note */}
+        <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-xs text-blue-700 dark:text-blue-300">
+          <Info size={14} className="flex-shrink-0 mt-0.5" />
+          <span>
+            {ar
+              ? 'عند إكمال دورة إنتاج مرتبطة بمنتج محدد، تُضاف كميته تلقائياً إلى المخزون. يمكنك أيضاً إضافة حركات يدوية أو إرسال المنتجات إلى متجر MarEAC.'
+              : 'Quand une production liée à un produit est terminée, sa quantité est ajoutée automatiquement. Vous pouvez aussi créer des mouvements manuels ou envoyer des produits au magasin MarEAC.'}
+          </span>
+        </div>
+
+        {/* ── Product stock cards ── */}
+        {products.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 text-center py-12 text-gray-400">
+            <Package size={40} className="mx-auto mb-3 opacity-20" />
+            <p className="text-sm font-medium">{ar ? 'لا توجد منتجات في الكتالوج بعد' : 'Aucun produit dans le catalogue'}</p>
+            <p className="text-xs mt-1 opacity-70">{ar ? 'أضف منتجات من لوحة التعاونية أولاً' : 'Ajoutez des produits depuis le tableau coopérative'}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {products.map(p => {
+              const qty = stockByProduct[p.id] ?? 0;
+              const low = qty > 0 && qty < 10;
+              const empty = qty <= 0;
+              return (
+                <div key={p.id} className={`bg-white dark:bg-gray-800 rounded-xl border p-4 flex items-center gap-3 transition-shadow hover:shadow-sm ${empty ? 'border-gray-200 dark:border-gray-700' : low ? 'border-amber-300 dark:border-amber-700' : 'border-teal-200 dark:border-teal-700'}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${empty ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' : low ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-teal-100 dark:bg-teal-900/30 text-teal-600'}`}>
+                    <Package size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-900 dark:text-white text-sm truncate">{p.name}</div>
+                    <div className={`text-xl font-bold leading-tight ${empty ? 'text-gray-400' : low ? 'text-amber-600' : 'text-teal-600'}`}>
+                      {fmt(qty)} <span className="text-xs font-normal text-gray-400">{p.unit}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 dark:text-white text-sm truncate">{p.name}</div>
-                      <div className={`text-lg font-bold ${empty ? 'text-red-500' : low ? 'text-amber-600' : 'text-teal-600'}`}>
-                        {fmt(qty)} <span className="text-xs font-normal text-gray-400">{p.unit}</span>
-                      </div>
-                      {empty && <div className="text-xs text-red-500">{ar ? 'نفد المخزون' : 'Rupture de stock'}</div>}
-                      {low && !empty && <div className="text-xs text-amber-600">{ar ? 'مخزون منخفض' : 'Stock bas'}</div>}
-                    </div>
+                    {empty && <div className="text-xs text-gray-400 mt-0.5">{ar ? 'لا يوجد مخزون' : 'Aucun stock'}</div>}
+                    {low && !empty && <div className="text-xs text-amber-500 mt-0.5">{ar ? 'مخزون منخفض' : 'Stock bas'}</div>}
+                  </div>
+                  <div className="flex flex-col gap-1 flex-shrink-0">
                     <button
                       onClick={() => { setStoreModal({ product: p, currentQty: qty }); setStoreQty(''); setStoreNotes(''); }}
                       disabled={qty <= 0}
-                      className="flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-medium transition-colors"
-                      title={ar ? 'إرسال للمتجر' : 'Envoyer au magasin'}
+                      className="flex flex-col items-center gap-0.5 px-2 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg text-[10px] font-medium transition-colors"
                     >
-                      <ArrowDownToLine size={15} />
-                      <span className="text-[10px]">{ar ? 'متجر' : 'Magasin'}</span>
+                      <ArrowDownToLine size={13} />
+                      {ar ? 'متجر' : 'Magasin'}
+                    </button>
+                    <button
+                      onClick={() => { setMovForm({ productId: p.id, type: 'IN', quantity: '', unitPrice: '', reference: '', notes: '' }); setMovModal(true); }}
+                      className="flex flex-col items-center gap-0.5 px-2 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg text-[10px] font-medium transition-colors"
+                    >
+                      <Plus size={13} />
+                      {ar ? 'إضافة' : 'Ajouter'}
                     </button>
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Transactions / Movements ── */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+              {ar ? 'سجل حركات المخزون' : 'Historique des mouvements'}
+            </h3>
+            {products.length > 0 && (
+              <select
+                value={movFilter}
+                onChange={e => setMovFilter(e.target.value)}
+                className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+              >
+                <option value="">{ar ? 'كل المنتجات' : 'Tous les produits'}</option>
+                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            )}
+          </div>
+
+          {movements.filter(m => !movFilter || m.productId === movFilter).length === 0 ? (
+            <div className="text-center py-10 text-gray-400 text-sm">
+              {ar ? 'لا توجد حركات مخزون بعد' : 'Aucun mouvement de stock'}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-900/50">
+                  <tr>
+                    <th className="text-start px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">{ar ? 'التاريخ' : 'Date'}</th>
+                    <th className="text-start px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">{ar ? 'المنتج' : 'Produit'}</th>
+                    <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">{ar ? 'النوع' : 'Type'}</th>
+                    <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">{ar ? 'الكمية' : 'Quantité'}</th>
+                    <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">{ar ? 'س. الوحدة' : 'P. Unit.'}</th>
+                    <th className="text-start px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">{ar ? 'المرجع / ملاحظة' : 'Réf / Note'}</th>
+                    <th className="px-4 py-2.5" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {movements.filter(m => !movFilter || m.productId === movFilter).map(m => {
+                    const typeMap: Record<string, { label: string; labelAr: string; cls: string }> = {
+                      IN:     { label: 'Entrée',   labelAr: 'دخول',   cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+                      OUT:    { label: 'Sortie',   labelAr: 'خروج',   cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+                      ADJUST: { label: 'Ajust.',   labelAr: 'تسوية',  cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+                    };
+                    const t = typeMap[m.type] || typeMap.IN;
+                    const isStoreShipment = m.reference === 'STORE_SHIPMENT';
+                    return (
+                      <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/20">
+                        <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          {new Date(m.date).toLocaleDateString(ar ? 'ar-MA' : 'fr-FR')}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="font-medium text-gray-900 dark:text-white text-xs">
+                            {(m as any).product?.name || products.find(p => p.id === m.productId)?.name || '—'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${t.cls}`}>
+                            {ar ? t.labelAr : t.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-center font-semibold text-sm">
+                          <span className={m.type === 'IN' ? 'text-emerald-600' : m.type === 'OUT' ? 'text-red-500' : 'text-blue-600'}>
+                            {m.type === 'IN' ? '+' : m.type === 'OUT' ? '−' : ''}{fmt(m.quantity)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-center text-xs text-gray-500 dark:text-gray-400">
+                          {m.unitPrice ? `${fmt(m.unitPrice)} MAD` : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 max-w-[160px] truncate">
+                          {isStoreShipment
+                            ? <span className="inline-flex items-center gap-1 text-teal-600 dark:text-teal-400"><ArrowDownToLine size={11} />{ar ? 'إرسال للمتجر' : 'Envoi magasin'}</span>
+                            : (m.reference || m.notes || '—')}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <button
+                            onClick={async () => { if (confirm(ar ? 'حذف هذه الحركة؟' : 'Supprimer ce mouvement ?')) { await coopApi.deleteMovement(m.id); load(); } }}
+                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Totals footer */}
+          {movements.length > 0 && (
+            <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700 flex flex-wrap gap-6 text-xs">
+              <div>
+                <span className="text-gray-400">{ar ? 'إجمالي الدخول:' : 'Total entrées:'}</span>
+                <span className="font-bold text-emerald-600 ms-1">
+                  +{fmt(movements.filter(m => m.type === 'IN' && (!movFilter || m.productId === movFilter)).reduce((s, m) => s + m.quantity, 0))}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-400">{ar ? 'إجمالي الخروج:' : 'Total sorties:'}</span>
+                <span className="font-bold text-red-500 ms-1">
+                  −{fmt(movements.filter(m => m.type === 'OUT' && (!movFilter || m.productId === movFilter)).reduce((s, m) => s + m.quantity, 0))}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-400">{ar ? 'عدد الحركات:' : 'Nb mouvements:'}</span>
+                <span className="font-bold text-gray-700 dark:text-gray-300 ms-1">
+                  {movements.filter(m => !movFilter || m.productId === movFilter).length}
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -642,6 +791,61 @@ export const CoopProductionPage: React.FC = () => {
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Send size={15} />{ar ? 'إرسال للمتجر' : 'Envoyer'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Manual Movement Modal */}
+      {movModal && (
+        <Modal title={ar ? 'إضافة حركة مخزون' : 'Ajouter un mouvement de stock'} onClose={() => setMovModal(false)}>
+          <div className="space-y-3">
+            <div>
+              <label className={label}>{ar ? 'المنتج *' : 'Produit *'}</label>
+              <select value={movForm.productId} onChange={e => setMovForm(f => ({ ...f, productId: e.target.value }))} className={field}>
+                <option value="">{ar ? '-- اختر منتجاً --' : '-- Choisir un produit --'}</option>
+                {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={label}>{ar ? 'نوع الحركة *' : 'Type *'}</label>
+                <select value={movForm.type} onChange={e => setMovForm(f => ({ ...f, type: e.target.value }))} className={field}>
+                  <option value="IN">{ar ? 'دخول (إضافة)' : 'Entrée (ajout)'}</option>
+                  <option value="OUT">{ar ? 'خروج (سحب)' : 'Sortie (retrait)'}</option>
+                  <option value="ADJUST">{ar ? 'تسوية' : 'Ajustement'}</option>
+                </select>
+              </div>
+              <div>
+                <label className={label}>{ar ? 'الكمية *' : 'Quantité *'}</label>
+                <input type="number" min="0" placeholder="0" value={movForm.quantity} onChange={e => setMovForm(f => ({ ...f, quantity: e.target.value }))} className={field} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={label}>{ar ? 'سعر الوحدة (MAD)' : 'Prix unitaire (MAD)'}</label>
+                <input type="number" min="0" placeholder="0" value={movForm.unitPrice} onChange={e => setMovForm(f => ({ ...f, unitPrice: e.target.value }))} className={field} />
+              </div>
+              <div>
+                <label className={label}>{ar ? 'المرجع' : 'Référence'}</label>
+                <input placeholder={ar ? 'رقم طلب، فاتورة...' : 'N° bon, facture...'} value={movForm.reference} onChange={e => setMovForm(f => ({ ...f, reference: e.target.value }))} className={field} />
+              </div>
+            </div>
+            <div>
+              <label className={label}>{ar ? 'ملاحظات' : 'Notes'}</label>
+              <textarea rows={2} value={movForm.notes} onChange={e => setMovForm(f => ({ ...f, notes: e.target.value }))} className={field} />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setMovModal(false)} className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700">
+                {ar ? 'إلغاء' : 'Annuler'}
+              </button>
+              <button
+                onClick={addMovement}
+                disabled={!movForm.productId || !movForm.quantity || parseFloat(movForm.quantity) <= 0}
+                className="flex-1 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {ar ? 'حفظ الحركة' : 'Enregistrer'}
               </button>
             </div>
           </div>
