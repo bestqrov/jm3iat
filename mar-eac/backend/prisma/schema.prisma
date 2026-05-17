@@ -1310,6 +1310,7 @@ model CoopProductionInput {
   description  String
   quantity     Float
   unit         String  @default("unité")
+  unitPrice    Float?  @default(0)
 
   production CoopProduction    @relation(fields: [productionId], references: [id], onDelete: Cascade)
   product    CoopStockProduct? @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)

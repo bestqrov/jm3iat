@@ -551,6 +551,9 @@ exports.createProduction = async (req, res) => {
   try {
     const { productId, productName, plannedQty, productionCost, startDate, endDate, notes, inputs = [] } = req.body;
     const batchNumber = await nextBatchNumber(orgId(req));
+    // Auto-calculate cost from inputs when inputs have prices
+    const inputsTotal = inputs.reduce((s, i) => s + (parseFloat(i.quantity) || 0) * (parseFloat(i.unitPrice) || 0), 0);
+    const finalCost = inputsTotal > 0 ? inputsTotal : (parseFloat(productionCost) || 0);
     const prod = await prisma.coopProduction.create({
       data: {
         organizationId: orgId(req),
@@ -558,7 +561,7 @@ exports.createProduction = async (req, res) => {
         productId:      productId || null,
         productName:    productName || 'منتج غير محدد',
         plannedQty:     parseFloat(plannedQty) || 0,
-        productionCost: parseFloat(productionCost) || 0,
+        productionCost: finalCost,
         startDate:      startDate ? new Date(startDate) : null,
         endDate:        endDate   ? new Date(endDate)   : null,
         notes:          notes || null,
@@ -568,6 +571,7 @@ exports.createProduction = async (req, res) => {
             description: inp.description,
             quantity:    parseFloat(inp.quantity) || 0,
             unit:        inp.unit || 'unité',
+            unitPrice:   parseFloat(inp.unitPrice) || 0,
           })),
         },
       },
@@ -579,12 +583,19 @@ exports.createProduction = async (req, res) => {
 
 exports.updateProduction = async (req, res) => {
   try {
-    const { productId, productName, plannedQty, actualQty, productionCost, startDate, endDate, notes, status } = req.body;
+    const { productId, productName, plannedQty, actualQty, productionCost, startDate, endDate, notes, status, inputs } = req.body;
     const existing = await prisma.coopProduction.findFirst({ where: { id: req.params.id, organizationId: orgId(req) } });
     if (!existing) return res.status(404).json({ message: 'Not found' });
 
     const wasCompleted = existing.status === 'COMPLETED';
     const nowCompleted = status === 'COMPLETED';
+
+    // Auto-calculate cost from inputs when provided with prices
+    let finalCost = productionCost !== undefined ? (parseFloat(productionCost) || 0) : undefined;
+    if (inputs && Array.isArray(inputs)) {
+      const inputsTotal = inputs.reduce((s, i) => s + (parseFloat(i.quantity) || 0) * (parseFloat(i.unitPrice) || 0), 0);
+      if (inputsTotal > 0) finalCost = inputsTotal;
+    }
 
     const prod = await prisma.coopProduction.update({
       where: { id: req.params.id },
@@ -593,11 +604,23 @@ exports.updateProduction = async (req, res) => {
         ...(productName    !== undefined && { productName }),
         ...(plannedQty     !== undefined && { plannedQty: parseFloat(plannedQty) }),
         ...(actualQty      !== undefined && { actualQty: parseFloat(actualQty) }),
-        ...(productionCost !== undefined && { productionCost: parseFloat(productionCost) }),
+        ...(finalCost      !== undefined && { productionCost: finalCost }),
         ...(startDate      !== undefined && { startDate: startDate ? new Date(startDate) : null }),
         ...(endDate        !== undefined && { endDate: endDate ? new Date(endDate) : null }),
         ...(notes          !== undefined && { notes }),
         ...(status         !== undefined && { status }),
+        ...(inputs && Array.isArray(inputs) && {
+          inputs: {
+            deleteMany: {},
+            create: inputs.map(inp => ({
+              productId:   inp.productId || null,
+              description: inp.description,
+              quantity:    parseFloat(inp.quantity) || 0,
+              unit:        inp.unit || 'unité',
+              unitPrice:   parseFloat(inp.unitPrice) || 0,
+            })),
+          },
+        }),
       },
     });
 
