@@ -6,7 +6,7 @@ import {
   LogOut, Sun, Moon, X, Globe, UserCog, ShoppingBag,
   Building2, FolderKanban, Layers, CreditCard, Bus,
   Activity, RefreshCw, Trophy, Landmark, Wallet, ClipboardList,
-  Send, BookOpen, Store, ShoppingCart, Factory, TrendingUp,
+  Send, BookOpen, Store, ShoppingCart, Factory, TrendingUp, CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -195,19 +195,14 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
       color: 'text-teal-500 dark:text-teal-400',
       dotColor: 'bg-teal-400',
       items: [
-        { to: '/coop',             icon: <Store size={18} />,      label: isAr ? 'لوحة التعاونية' : 'Tableau coopérative' },
-        { to: '/coop/production',  icon: <Factory size={18} />,    label: isAr ? 'الإنتاج'        : 'Production' },
-        { to: '/coop/ventes',      icon: <TrendingUp size={18} />, label: isAr ? 'المبيعات'       : 'Ventes' },
-        { to: '/members',          icon: <Users size={18} />,      label: isAr ? 'الأعضاء'        : 'Membres' },
-        { to: '/finance',          icon: <DollarSign size={18} />, label: t('nav.finance') },
-        { to: '/documents',        icon: <FileText size={18} />,   label: t('nav.documents') },
+        { to: '/members',         icon: <Users size={18} />,        label: isAr ? 'الأعضاء'      : 'Membres' },
+        { to: '/coop/production', icon: <Factory size={18} />,      label: isAr ? 'الإنتاج'      : 'Production' },
+        { to: '/coop/ventes',     icon: <TrendingUp size={18} />,   label: isAr ? 'المبيعات'     : 'Ventes' },
+        { to: '/coop/board',      icon: <CalendarDays size={18} />, label: isAr ? 'مجلس الإدارة' : 'Conseil d\'admin' },
+        { to: '/coop/projects',   icon: <Briefcase size={18} />,    label: isAr ? 'المشاريع'     : 'Projets' },
+        { to: '/finance',         icon: <DollarSign size={18} />,   label: t('nav.finance') },
+        { to: '/settings',        icon: <Settings size={18} />,     label: t('nav.settings') },
       ],
-    },
-    {
-      label: isAr ? 'الإعدادات' : 'Paramètres',
-      color: 'text-gray-400 dark:text-gray-500',
-      dotColor: 'bg-gray-400',
-      items: [{ to: '/settings', icon: <Settings size={18} />, label: t('nav.settings') }],
     },
   ] : [
     // ── 1. Vue d'ensemble ──────────────────────────────────────────────────────
@@ -288,9 +283,11 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
         ...(hasModule('PRODUCTIVE') ? [{ to: '/assoc',     icon: <ShoppingBag size={18} />, label: t('nav.assoc') }]                            : []),
         ...(hasModule('TRANSPORT')  ? [{ to: '/transport', icon: <Bus size={18} />,         label: t('nav.transport') }]                        : []),
         ...(hasModule('SPORTS')     ? [{ to: '/sports',    icon: <Trophy size={18} />,      label: isAr ? 'الرياضة' : 'Sports' }]               : []),
-        ...(hasModule('COOP')       ? [{ to: '/coop',            icon: <Store size={18} />,      label: t('nav.coop') }]                     : []),
-        ...(hasModule('COOP')       ? [{ to: '/coop/production', icon: <Factory size={18} />,    label: isAr ? 'الإنتاج'  : 'Production' }] : []),
-        ...(hasModule('COOP')       ? [{ to: '/coop/ventes',     icon: <TrendingUp size={18} />, label: isAr ? 'المبيعات' : 'Ventes' }]     : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop',             icon: <Store size={18} />,        label: t('nav.coop') }]                           : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop/production', icon: <Factory size={18} />,      label: isAr ? 'الإنتاج'      : 'Production' }]      : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop/ventes',     icon: <TrendingUp size={18} />,   label: isAr ? 'المبيعات'     : 'Ventes' }]           : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop/board',      icon: <CalendarDays size={18} />, label: isAr ? 'مجلس الإدارة' : 'Conseil d\'admin' }] : []),
+        ...(hasModule('COOP')       ? [{ to: '/coop/projects',   icon: <Briefcase size={18} />,    label: isAr ? 'المشاريع'     : 'Projets' }]           : []),
       ],
     }] : []),
 

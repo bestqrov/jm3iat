@@ -28,6 +28,8 @@ import { SportsPage } from './pages/sports/SportsPage';
 import { CoopPage } from './pages/coop/CoopPage';
 import { CoopProductionPage } from './pages/coop/CoopProductionPage';
 import { CoopVentesPage } from './pages/coop/CoopVentesPage';
+import { CoopBoardPage } from './pages/coop/CoopBoardPage';
+import { CoopProjectsPage } from './pages/coop/CoopProjectsPage';
 import { CommercePage } from './pages/commerce/CommercePage';
 import { CalendarPage } from './pages/calendar/CalendarPage';
 import { ActivityPage } from './pages/activity/ActivityPage';
@@ -92,6 +94,8 @@ const App: React.FC = () => {
                 <Route path="/coop"            element={<WaterReaderRoute><CoopPage /></WaterReaderRoute>} />
                 <Route path="/coop/production" element={<WaterReaderRoute><CoopProductionPage /></WaterReaderRoute>} />
                 <Route path="/coop/ventes"     element={<WaterReaderRoute><CoopVentesPage /></WaterReaderRoute>} />
+                <Route path="/coop/board"      element={<WaterReaderRoute><CoopBoardPage /></WaterReaderRoute>} />
+                <Route path="/coop/projects"   element={<WaterReaderRoute><CoopProjectsPage /></WaterReaderRoute>} />
                 <Route path="/commerce" element={<WaterReaderRoute><CommercePage /></WaterReaderRoute>} />
                 <Route path="/reports" element={<WaterReaderRoute><ReportsPage /></WaterReaderRoute>} />
                 <Route path="/requests" element={<WaterReaderRoute><RequestsPage /></WaterReaderRoute>} />
