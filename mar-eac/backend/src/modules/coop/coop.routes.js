@@ -45,6 +45,7 @@ router.put('/board-meetings/:id/decisions/:decisionId',    ctrl.updateBoardDecis
 // Projects & partnerships (المشاريع والشراكات)
 router.get('/projects',          ctrl.getCoopProjects);
 router.post('/projects',         ctrl.createCoopProject);
+router.get('/projects/:id',      ctrl.getCoopProject);
 router.put('/projects/:id',      ctrl.updateCoopProject);
 router.delete('/projects/:id',   ctrl.deleteCoopProject);
 

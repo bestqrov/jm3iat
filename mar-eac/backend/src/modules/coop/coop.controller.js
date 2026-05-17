@@ -466,28 +466,43 @@ exports.updateBoardDecision = async (req, res) => {
 
 exports.getCoopProjects = async (req, res) => {
   try {
-    const projects = await prisma.project.findMany({
-      where: { organizationId: orgId(req) },
-      orderBy: { createdAt: 'desc' },
-    });
+    const where = { organizationId: orgId(req), type: { in: ['INTERNE', 'PARTENARIAT', 'FINANCEMENT'] } };
+    if (req.query.status) where.status = req.query.status;
+    const projects = await prisma.project.findMany({ where, orderBy: { createdAt: 'desc' } });
     res.json(projects);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.getCoopProject = async (req, res) => {
+  try {
+    const project = await prisma.project.findFirst({
+      where: { id: req.params.id, organizationId: orgId(req) },
+    });
+    if (!project) return res.status(404).json({ message: 'Not found' });
+    res.json(project);
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
 exports.createCoopProject = async (req, res) => {
   try {
-    const { title, type, description, partnerName, budget, startDate, endDate, status, generalGoal } = req.body;
+    const { title, type, status, description, location, code, manager,
+            generalGoal, specificGoals, beneficiaries, partnerName, budget, startDate, endDate } = req.body;
     const project = await prisma.project.create({
       data: {
         organizationId: orgId(req),
         title,
         type: type || 'INTERNE',
+        status: status || 'PLANNED',
         description: description || null,
-        generalGoal: partnerName ? `Partenaire: ${partnerName}` : (generalGoal || null),
+        location: location || null,
+        code: code || null,
+        manager: manager || null,
+        generalGoal: generalGoal || (partnerName ? `Partenaire: ${partnerName}` : null),
+        specificGoals: specificGoals || null,
+        beneficiaries: beneficiaries || null,
         budget: budget ? parseFloat(budget) : null,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
-        status: status || 'PLANNED',
       },
     });
     res.json(project);
@@ -496,18 +511,24 @@ exports.createCoopProject = async (req, res) => {
 
 exports.updateCoopProject = async (req, res) => {
   try {
-    const { title, type, description, partnerName, budget, startDate, endDate, status, generalGoal } = req.body;
+    const { title, type, status, description, location, code, manager,
+            generalGoal, specificGoals, beneficiaries, partnerName, budget, startDate, endDate } = req.body;
     const project = await prisma.project.update({
       where: { id: req.params.id },
       data: {
-        ...(title       && { title }),
-        ...(type        && { type }),
-        ...(description !== undefined && { description }),
-        ...(budget      !== undefined && { budget: budget ? parseFloat(budget) : null }),
-        ...(startDate   && { startDate: new Date(startDate) }),
-        ...(endDate     && { endDate: new Date(endDate) }),
-        ...(status      && { status }),
-        ...(partnerName !== undefined && { generalGoal: partnerName ? `Partenaire: ${partnerName}` : (generalGoal || null) }),
+        ...(title        !== undefined && { title }),
+        ...(type         !== undefined && { type }),
+        ...(status       !== undefined && { status }),
+        ...(description  !== undefined && { description }),
+        ...(location     !== undefined && { location }),
+        ...(code         !== undefined && { code }),
+        ...(manager      !== undefined && { manager }),
+        ...(generalGoal  !== undefined && { generalGoal: generalGoal || (partnerName ? `Partenaire: ${partnerName}` : null) }),
+        ...(specificGoals !== undefined && { specificGoals }),
+        ...(beneficiaries !== undefined && { beneficiaries }),
+        ...(budget       !== undefined && { budget: budget ? parseFloat(budget) : null }),
+        ...(startDate    !== undefined && { startDate: startDate ? new Date(startDate) : null }),
+        ...(endDate      !== undefined && { endDate: endDate ? new Date(endDate) : null }),
       },
     });
     res.json(project);

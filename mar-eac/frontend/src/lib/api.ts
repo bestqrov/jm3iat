@@ -567,7 +567,8 @@ export const coopApi = {
   addBoardDecision:   (id: string, data: any)               => api.post(`/coop/board-meetings/${id}/decisions`, data),
   updateBoardDecision:(id: string, decisionId: string, data: any) => api.put(`/coop/board-meetings/${id}/decisions/${decisionId}`, data),
   // Projects & partnerships (المشاريع والشراكات)
-  getCoopProjects:    ()                        => api.get('/coop/projects'),
+  getCoopProjects:    (params?: any)            => api.get('/coop/projects', { params }),
+  getCoopProject:     (id: string)              => api.get(`/coop/projects/${id}`),
   createCoopProject:  (data: any)               => api.post('/coop/projects', data),
   updateCoopProject:  (id: string, data: any)   => api.put(`/coop/projects/${id}`, data),
   deleteCoopProject:  (id: string)              => api.delete(`/coop/projects/${id}`),
