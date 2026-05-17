@@ -26,6 +26,8 @@ import AssocPage from './pages/assoc/AssocPage';
 import { TransportPage } from './pages/transport/TransportPage';
 import { SportsPage } from './pages/sports/SportsPage';
 import { CoopPage } from './pages/coop/CoopPage';
+import { CoopProductionPage } from './pages/coop/CoopProductionPage';
+import { CoopVentesPage } from './pages/coop/CoopVentesPage';
 import { CommercePage } from './pages/commerce/CommercePage';
 import { CalendarPage } from './pages/calendar/CalendarPage';
 import { ActivityPage } from './pages/activity/ActivityPage';
@@ -87,7 +89,9 @@ const App: React.FC = () => {
                 <Route path="/assoc" element={<WaterReaderRoute><AssocPage /></WaterReaderRoute>} />
                 <Route path="/transport" element={<WaterReaderRoute><TransportPage /></WaterReaderRoute>} />
                 <Route path="/sports"    element={<WaterReaderRoute><SportsPage /></WaterReaderRoute>} />
-                <Route path="/coop"     element={<WaterReaderRoute><CoopPage /></WaterReaderRoute>} />
+                <Route path="/coop"            element={<WaterReaderRoute><CoopPage /></WaterReaderRoute>} />
+                <Route path="/coop/production" element={<WaterReaderRoute><CoopProductionPage /></WaterReaderRoute>} />
+                <Route path="/coop/ventes"     element={<WaterReaderRoute><CoopVentesPage /></WaterReaderRoute>} />
                 <Route path="/commerce" element={<WaterReaderRoute><CommercePage /></WaterReaderRoute>} />
                 <Route path="/reports" element={<WaterReaderRoute><ReportsPage /></WaterReaderRoute>} />
                 <Route path="/requests" element={<WaterReaderRoute><RequestsPage /></WaterReaderRoute>} />
