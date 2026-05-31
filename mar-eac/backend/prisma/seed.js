@@ -259,6 +259,7 @@ async function main() {
         city: 'Tiznit',
         cityAr: 'تيزنيت',
         region: 'Souss-Massa',
+        status: 'ACTIVE',
         modules: ['COMMERCE'],
         trialEndsAt: new Date('2030-01-01'),
       },
