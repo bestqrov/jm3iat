@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Search, ShoppingCart, X, Plus, Minus, Package, Truck,
-  ShieldCheck, RefreshCw, Menu, Star, MapPin
+  ShieldCheck, RefreshCw, Menu, Star
 } from 'lucide-react';
 import { storeApi } from '../../lib/api';
 
@@ -335,35 +335,12 @@ export function StorePage() {
         </div>
       </section>
 
-      {/* ── Cooperatives row ── */}
-      {orgs.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-black text-gray-900">التعاونيات</h2>
-            <span className="text-xs text-gray-400">{orgs.length} تعاونية</span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
-            {orgs.map(o => (
-              <button key={o.id} onClick={() => setSelOrg(o.id === selOrg ? '' : o.id)}
-                className={`flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl border transition-all min-w-[90px] ${selOrg === o.id ? 'border-purple-400 shadow-md' : 'bg-white border-gray-200 hover:border-purple-200'}`}
-                style={selOrg === o.id ? { background: '#f3eeff' } : { background: 'white' }}>
-                <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
-                  {o.logo ? <img src={o.logo} alt="" className="w-full h-full object-cover" /> : <span className="text-xl">🏛️</span>}
-                </div>
-                <p className="text-xs font-medium text-gray-700 text-center leading-tight line-clamp-2">{o.nameAr || o.name}</p>
-                {o.cityAr && <p className="text-xs text-gray-400 flex items-center gap-0.5"><MapPin size={9} />{o.cityAr}</p>}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* ── 6. All Products ── */}
       <section id="all-products" className="max-w-7xl mx-auto px-4 mt-8 pb-16">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="font-black text-gray-900 text-lg">
-              {selCat || selOrg ? (selCat || orgs.find(o => o.id === selOrg)?.nameAr || 'المنتجات') : 'جميع المنتجات'}
+              {selCat ? selCat : 'جميع المنتجات'}
             </h2>
             <p className="text-xs text-gray-400">{filtered.length} منتج</p>
           </div>

@@ -299,10 +299,29 @@ async function main() {
     console.log(`ℹ️  Demo products already exist (${existingProducts})`);
   }
 
+  // ── Demo coop admin user ──────────────────────────────────────────────────
+  const demoAdminEmail = 'admin@ma3ridona.ma';
+  const existingDemoAdmin = await prisma.user.findUnique({ where: { email: demoAdminEmail } });
+  if (!existingDemoAdmin) {
+    await prisma.user.create({
+      data: {
+        email: demoAdminEmail,
+        password: await bcrypt.hash('Ma3ridona@123', 12),
+        name: 'Admin Ma3ridona',
+        role: 'ADMIN',
+        organizationId: demoCoop.id,
+      },
+    });
+    console.log('✅ Demo coop admin created: admin@ma3ridona.ma / Ma3ridona@123');
+  } else {
+    console.log('ℹ️  Demo coop admin already exists');
+  }
+
   console.log('\n✨ Seeding complete!\n');
   console.log('📌 Login credentials:');
   console.log(`   Super Admin: ${superAdminEmail} / ${superAdminPassword}`);
   console.log('   Sample Admin: admin@example.ma / Admin@123');
+  console.log('   Ma3ridona Admin: admin@ma3ridona.ma / Ma3ridona@123');
 }
 
 main()
