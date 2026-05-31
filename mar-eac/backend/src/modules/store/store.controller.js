@@ -216,4 +216,39 @@ const placeStoreOrder = async (req, res) => {
   }
 };
 
-module.exports = { getStoreProducts, getStoreProduct, getStoreOrgs, getStoreCategories, placeStoreOrder };
+// GET /api/store/orders/:orderNumber
+const getOrderStatus = async (req, res) => {
+  try {
+    const order = await prisma.commerceOrder.findFirst({
+      where: { orderNumber: req.params.orderNumber },
+      select: {
+        orderNumber: true,
+        clientName: true,
+        clientPhone: true,
+        status: true,
+        paymentStatus: true,
+        totalAmount: true,
+        trackingNumber: true,
+        carrier: true,
+        orderDate: true,
+        shippedAt: true,
+        deliveredAt: true,
+        organization: { select: { name: true, nameAr: true, phone: true, cityAr: true } },
+        items: {
+          select: {
+            quantity: true,
+            unitPrice: true,
+            subtotal: true,
+            product: { select: { name: true, nameAr: true, imageUrl: true } },
+          },
+        },
+      },
+    });
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getStoreProducts, getStoreProduct, getStoreOrgs, getStoreCategories, placeStoreOrder, getOrderStatus };
