@@ -6,6 +6,7 @@ router.get('/products',              ctrl.getStoreProducts);
 router.get('/products/:id',          ctrl.getStoreProduct);
 router.get('/orgs',                  ctrl.getStoreOrgs);
 router.get('/categories',            ctrl.getStoreCategories);
+router.get('/best-sellers',          ctrl.getBestSellers);
 router.get('/orders/:orderNumber',   ctrl.getOrderStatus);
 router.post('/orders',               ctrl.placeStoreOrder);
 

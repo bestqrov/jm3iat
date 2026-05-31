@@ -138,6 +138,55 @@ const getStoreCategories = async (req, res) => {
   }
 };
 
+// GET /api/store/best-sellers
+const getBestSellers = async (req, res) => {
+  try {
+    const topItems = await prisma.commerceOrderItem.groupBy({
+      by: ['productId'],
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: 'desc' } },
+      take: 4,
+      where: {
+        order: {
+          source: 'STORE',
+          status: { in: ['CONFIRMED', 'SHIPPED', 'DELIVERED'] },
+          organization: { modules: { has: 'COMMERCE' } },
+        },
+      },
+    });
+
+    if (topItems.length === 0) return res.json([]);
+
+    const productIds = topItems.map(i => i.productId);
+    const products = await prisma.commerceProduct.findMany({
+      where: { id: { in: productIds }, isActive: true },
+      select: {
+        id: true, name: true, nameAr: true, category: true,
+        sellingPrice: true, unit: true, imageUrl: true,
+        organization: { select: { id: true, name: true, nameAr: true, cityAr: true, logo: true } },
+        stockMovements: { select: { type: true, quantity: true } },
+      },
+    });
+
+    const result = products.map(p => {
+      const stock = p.stockMovements.reduce((s, m) => {
+        if (m.type === 'IN' || m.type === 'RETURN') return s + m.quantity;
+        if (m.type === 'OUT') return s - m.quantity;
+        if (m.type === 'ADJUST') return m.quantity;
+        return s;
+      }, 0);
+      const sold = topItems.find(i => i.productId === p.id)?._sum?.quantity ?? 0;
+      const { stockMovements, ...rest } = p;
+      return { ...rest, stock, sold };
+    });
+
+    result.sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // POST /api/store/orders  — public order placement (no auth)
 const placeStoreOrder = async (req, res) => {
   try {
@@ -294,4 +343,4 @@ const getOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { getStoreProducts, getStoreProduct, getStoreOrgs, getStoreCategories, placeStoreOrder, getOrderStatus };
+module.exports = { getStoreProducts, getStoreProduct, getStoreOrgs, getStoreCategories, getBestSellers, placeStoreOrder, getOrderStatus };

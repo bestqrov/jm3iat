@@ -614,10 +614,19 @@ export const commerceApi = {
 };
 
 export const storeApi = {
-  getProducts:   (params?: any)                => publicApi2.get('/store/products', { params }),
-  getProduct:    (id: string)                  => publicApi2.get(`/store/products/${id}`),
-  getOrgs:       ()                            => publicApi2.get('/store/orgs'),
-  getCategories: ()                            => publicApi2.get('/store/categories'),
-  placeOrder:    (data: any)                   => publicApi2.post('/store/orders', data),
-  trackOrder:    (orderNumber: string)         => publicApi2.get(`/store/orders/${orderNumber}`),
+  getProducts:    (params?: any)         => publicApi2.get('/store/products', { params }),
+  getProduct:     (id: string)           => publicApi2.get(`/store/products/${id}`),
+  getOrgs:        ()                     => publicApi2.get('/store/orgs'),
+  getCategories:  ()                     => publicApi2.get('/store/categories'),
+  getBestSellers: ()                     => publicApi2.get('/store/best-sellers'),
+  getBundles:     ()                     => publicApi2.get('/store/bundles'),
+  placeOrder:     (data: any)            => publicApi2.post('/store/orders', data),
+  trackOrder:     (orderNumber: string)  => publicApi2.get(`/store/orders/${orderNumber}`),
+};
+
+export const bundleApi = {
+  list:    ()                      => api.get('/store/bundles'),
+  create:  (data: any)             => api.post('/store/bundles', data),
+  update:  (id: string, data: any) => api.put(`/store/bundles/${id}`, data),
+  remove:  (id: string)            => api.delete(`/store/bundles/${id}`),
 };
