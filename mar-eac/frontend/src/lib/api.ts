@@ -619,4 +619,5 @@ export const storeApi = {
   getOrgs:       ()                            => publicApi2.get('/store/orgs'),
   getCategories: ()                            => publicApi2.get('/store/categories'),
   placeOrder:    (data: any)                   => publicApi2.post('/store/orders', data),
+  trackOrder:    (orderNumber: string)         => publicApi2.get(`/store/orders/${orderNumber}`),
 };
