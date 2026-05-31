@@ -260,13 +260,27 @@ async function main() {
         cityAr: 'تيزنيت',
         region: 'Souss-Massa',
         status: 'ACTIVE',
-        modules: ['COMMERCE'],
+        modules: ['COMMERCE', 'COOP'],
+        conversionStatus: 'CONVERTED',
+        conversionApprovedAt: new Date(),
         trialEndsAt: new Date('2030-01-01'),
       },
     });
     console.log('✅ Demo coop created');
   } else {
-    console.log('ℹ️  Demo coop already exists');
+    // Ensure existing demo coop has COOP module + CONVERTED status
+    const needsUpdate = !demoCoop.modules?.includes('COOP') || demoCoop.conversionStatus !== 'CONVERTED';
+    if (needsUpdate) {
+      const modules = [...new Set([...(demoCoop.modules || []), 'COOP', 'COMMERCE'])];
+      await prisma.organization.update({
+        where: { id: demoCoop.id },
+        data: { modules, conversionStatus: 'CONVERTED', conversionApprovedAt: new Date() },
+      });
+      demoCoop = await prisma.organization.findUnique({ where: { email: demoCoopEmail } });
+      console.log('✅ Demo coop updated: COOP module + CONVERTED status');
+    } else {
+      console.log('ℹ️  Demo coop already exists and configured');
+    }
   }
 
   const existingProducts = await prisma.commerceProduct.count({ where: { organizationId: demoCoop.id } });
