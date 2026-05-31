@@ -82,6 +82,7 @@ app.use('/api/public',         require('./modules/public/public.routes'));
 app.use('/api/backup',         require('./modules/backup/backup.routes'));
 app.use('/api/commerce',      require('./modules/commerce/commerce.routes'));
 app.use('/api/store',         require('./modules/store/store.routes'));
+app.use('/api/fulfillment',   require('./modules/fulfillment/fulfillment.routes'));
 
 // Serve frontend static files (single-service deployment)
 const possibleDists = [
