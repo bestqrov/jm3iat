@@ -199,6 +199,24 @@ export const SuperAdminPage: React.FC = () => {
   const navigate = useNavigate();
   const isAr = lang === 'ar';
 
+  // ─── States (must be before early returns) ─────────────────────────────────
+  const [sectionMode, setSectionMode] = useState<SectionMode>('assoc');
+  const [orgConversionFilter, setOrgConversionFilter] = useState<'assoc' | 'coop' | ''>('');
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = useMemo<ActiveTab>(() => {
+    const t = searchParams.get('tab') as ActiveTab;
+    const valid: ActiveTab[] = [
+      'orgs','subscriptions','payments','users','packs','analytics','usage','marketing','automation','promos','insights','settings','fulfillment','bundles',
+      'assoc-dashboard','assoc-orgs','assoc-subscriptions','assoc-payments',
+      'coop-dashboard','coop-orgs','coop-subscriptions','coop-payments',
+      'store-dashboard',
+    ];
+    return valid.includes(t) ? t : 'assoc-dashboard';
+  }, [searchParams]);
+
+  const TAB_GROUPS = SECTION_TAB_GROUPS_CONFIG[sectionMode];
+
   // Auth guard — redirect to login if not authenticated
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -208,27 +226,9 @@ export const SuperAdminPage: React.FC = () => {
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (!isSuperAdmin)    return <Navigate to="/dashboard" replace />;
 
-  const handleLogout = () => { logout(); navigate('/login'); };
-
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = useMemo<ActiveTab>(() => {
-    const t = searchParams.get('tab') as ActiveTab;
-    const valid: ActiveTab[] = [
-      'dashboard','orgs','subscriptions','payments','users','packs','analytics','usage','marketing','automation','promos','insights','settings','fulfillment','bundles',
-      'assoc-dashboard','assoc-orgs','assoc-subscriptions','assoc-payments',
-      'coop-dashboard','coop-orgs','coop-subscriptions','coop-payments',
-      'store-dashboard',
-    ];
-    return valid.includes(t) ? t : 'assoc-dashboard';
-  }, [searchParams]);
-
   const setTab = (tab: ActiveTab) => setSearchParams({ tab });
 
-  // ─── States ────────────────────────────────────────────────────────────────
-  const [sectionMode, setSectionMode] = useState<SectionMode>('assoc');
-  const [orgConversionFilter, setOrgConversionFilter] = useState<'assoc' | 'coop' | ''>('');
-
-  const TAB_GROUPS = SECTION_TAB_GROUPS_CONFIG[sectionMode];
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   const handleSectionNavigate = (tab: string) => {
     if (tab === 'assoc-orgs') {
@@ -670,7 +670,6 @@ export const SuperAdminPage: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-6">
 
           {/* ════════════ DASHBOARD TABS ════════════ */}
-          {activeTab === 'dashboard'       && <AssocDashboardTab onNavigate={handleSectionNavigate} />}
           {activeTab === 'assoc-dashboard' && <AssocDashboardTab onNavigate={handleSectionNavigate} />}
           {activeTab === 'coop-dashboard'  && <CoopDashboardTab  onNavigate={handleSectionNavigate} />}
           {activeTab === 'store-dashboard' && <StoreDashboardTab onNavigate={handleSectionNavigate} />}
