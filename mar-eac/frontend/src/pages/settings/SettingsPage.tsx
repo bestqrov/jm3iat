@@ -117,6 +117,7 @@ export const SettingsPage: React.FC = () => {
   }, []);
 
   const hasMarketing   = ((org as any)?.modules ?? []).includes('MARKETING');
+  const hasBackup      = ((org as any)?.modules ?? []).includes('BACKUP');
 
   // WhatsApp instance
   const [waStatus,       setWaStatus]       = useState<'idle' | 'loading' | 'connected' | 'disconnected'>('idle');
@@ -124,6 +125,8 @@ export const SettingsPage: React.FC = () => {
   const [waPolling,      setWaPolling]      = useState(false);
   const [waError,        setWaError]        = useState<string | null>(null);
   const [waDisconnecting,setWaDisconnecting]= useState(false);
+
+  const waConnected    = waStatus === 'connected' || !!org?.evolutionInstance;
 
   const showSuccess = (key: string) => {
     setSuccess(key);
@@ -1296,20 +1299,25 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* ── BACKUP extra card ── */}
-        <div className="rounded-xl border-2 border-gray-200 dark:border-gray-700 p-4">
+        <div className={`rounded-xl border-2 p-4 transition-colors ${hasBackup ? 'border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10' : 'border-gray-200 dark:border-gray-700'}`}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${hasBackup ? 'bg-indigo-100 dark:bg-indigo-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <span className="text-xl">💾</span>
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-0.5">
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                   <span className="font-semibold text-gray-900 dark:text-white">
                     {lang === 'ar' ? 'الحفظ الاحتياطي التلقائي' : 'Sauvegarde & Backups'}
                   </span>
                   <span className="text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">
                     +29 MAD/mois
                   </span>
+                  {hasBackup && (
+                    <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      <CheckCircle2 size={11} />{lang === 'ar' ? 'مفعّل' : 'Actif'}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
                   {lang === 'ar'
@@ -1323,9 +1331,18 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
-              {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
-            </span>
+            {hasBackup ? (
+              <button
+                onClick={() => backupApi.create()}
+                className="flex-shrink-0 flex items-center gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors mt-1">
+                <ArrowUpCircle size={13} className="rotate-180" />
+                {lang === 'ar' ? 'تحميل' : 'Télécharger'}
+              </button>
+            ) : (
+              <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
+                {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
+              </span>
+            )}
           </div>
         </div>
 
@@ -1369,17 +1386,25 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
-              {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
-            </span>
+            {hasMarketing ? (
+              <a href="/marketing"
+                className="flex-shrink-0 flex items-center gap-1.5 text-xs bg-pink-600 hover:bg-pink-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors mt-1">
+                <ExternalLink size={13} />
+                {lang === 'ar' ? 'فتح' : 'Ouvrir'}
+              </a>
+            ) : (
+              <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
+                {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
+              </span>
+            )}
           </div>
         </div>
 
         {/* ── REPORTS PRO addon card ── */}
-        <div className="rounded-xl border-2 border-gray-200 dark:border-gray-700 p-4">
+        <div className="rounded-xl border-2 border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/10 p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 text-xl">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 text-xl">
                 📊
               </div>
               <div>
@@ -1390,8 +1415,8 @@ export const SettingsPage: React.FC = () => {
                   <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-2 py-0.5 rounded-full font-medium">
                     +39 MAD/mois
                   </span>
-                  <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
-                    {lang === 'ar' ? 'قريباً' : 'Bientôt'}
+                  <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                    <CheckCircle2 size={11} />{lang === 'ar' ? 'مفعّل' : 'Actif'}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
@@ -1409,35 +1434,43 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
-              {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
-            </span>
+            <a href="/reports"
+              className="flex-shrink-0 flex items-center gap-1.5 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors mt-1">
+              <ExternalLink size={13} />
+              {lang === 'ar' ? 'فتح' : 'Ouvrir'}
+            </a>
           </div>
         </div>
 
-        {/* ── SMS NOTIFICATIONS addon card ── */}
-        <div className="rounded-xl border-2 border-gray-200 dark:border-gray-700 p-4">
+        {/* ── WHATSAPP NOTIFICATIONS addon card ── */}
+        <div className={`rounded-xl border-2 p-4 transition-colors ${waConnected ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/10' : 'border-gray-200 dark:border-gray-700'}`}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 text-xl">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl ${waConnected ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 💬
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {lang === 'ar' ? 'إشعارات SMS' : 'Notifications SMS'}
+                    {lang === 'ar' ? 'إشعارات واتساب التلقائية' : 'Notifications WhatsApp Auto'}
                   </span>
-                  <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
+                  <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 px-2 py-0.5 rounded-full font-medium">
                     +29 MAD/mois
                   </span>
-                  <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
-                    {lang === 'ar' ? 'قريباً' : 'Bientôt'}
-                  </span>
+                  {waConnected ? (
+                    <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      <CheckCircle2 size={11} />{lang === 'ar' ? 'مفعّل' : 'Actif'}
+                    </span>
+                  ) : (
+                    <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
+                      {lang === 'ar' ? 'يتطلب ربط واتساب' : 'Nécessite WhatsApp'}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
                   {lang === 'ar'
-                    ? 'أرسل إشعارات SMS تلقائية للأعضاء: تذكير الاجتماعات، تأكيد الدفع، تنبيهات الاشتراك، وإعلانات مهمة'
-                    : 'Envoyez des SMS automatiques aux membres : rappels réunions, confirmation paiement, alertes abonnement et annonces importantes'}
+                    ? 'أرسل إشعارات واتساب تلقائية للأعضاء: تذكير الاجتماعات، تأكيد الدفع، تنبيهات الاشتراك، وإعلانات مهمة'
+                    : 'Envoyez des notifications WhatsApp automatiques aux membres : rappels réunions, confirmation paiement, alertes et annonces'}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {(lang === 'ar'
@@ -1449,9 +1482,17 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1">
-              {lang === 'ar' ? 'تواصل للتفعيل' : 'Contacter pour activer'}
-            </span>
+            {waConnected ? (
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-1 flex items-center gap-1 font-medium">
+                <Wifi size={13} />{lang === 'ar' ? 'نشط' : 'Actif'}
+              </span>
+            ) : (
+              <a href="#whatsapp"
+                className="flex-shrink-0 flex items-center gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors mt-1">
+                <MessageCircle size={13} />
+                {lang === 'ar' ? 'ربط واتساب' : 'Connecter'}
+              </a>
+            )}
           </div>
         </div>
       </div>
