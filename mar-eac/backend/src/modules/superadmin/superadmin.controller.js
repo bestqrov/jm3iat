@@ -87,53 +87,104 @@ const TYPE_PRICES = {
 
 const getStats = async (req, res) => {
   try {
+    const section = req.query.section; // 'assoc' | 'coop' | 'store' | undefined
+
+    // ── Store section stats ──────────────────────────────────────────────────
+    if (section === 'store') {
+      const now = new Date();
+      const startOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const allStoreOrders = await prisma.commerceOrder.findMany({
+        where: { source: 'STORE' },
+        select: { totalAmount: true, status: true, createdAt: true },
+      });
+
+      const todayOrders     = allStoreOrders.filter(o => new Date(o.createdAt) >= startOfDay).length;
+      const monthOrders     = allStoreOrders.filter(o => new Date(o.createdAt) >= startOfMonth).length;
+      const todayRevenue    = allStoreOrders.filter(o => new Date(o.createdAt) >= startOfDay).reduce((s, o) => s + o.totalAmount, 0);
+      const monthRevenue    = allStoreOrders.filter(o => new Date(o.createdAt) >= startOfMonth).reduce((s, o) => s + o.totalAmount, 0);
+      const totalRevenue    = allStoreOrders.reduce((s, o) => s + o.totalAmount, 0);
+      const pendingOrders   = allStoreOrders.filter(o => o.status === 'PENDING').length;
+      const deliveredOrders = allStoreOrders.filter(o => o.status === 'DELIVERED').length;
+
+      const totalProducts = await prisma.commerceProduct.count({
+        where: { isActive: true, organization: { modules: { has: 'COMMERCE' } } },
+      });
+
+      return res.json({ section: 'store', todayOrders, monthOrders, todayRevenue, monthRevenue, totalRevenue, pendingOrders, deliveredOrders, totalProducts });
+    }
+
+    // ── Coop section stats ───────────────────────────────────────────────────
+    if (section === 'coop') {
+      const [totalCoops, activeCoops, trialCoops, conversionRequests] = await Promise.all([
+        prisma.organization.count({ where: { conversionStatus: 'CONVERTED' } }),
+        prisma.organization.count({ where: { conversionStatus: 'CONVERTED', subscription: { status: 'ACTIVE' } } }),
+        prisma.organization.count({ where: { conversionStatus: 'CONVERTED', subscription: { status: 'TRIAL' } } }),
+        prisma.organization.count({ where: { conversionStatus: 'PENDING_CONVERSION' } }),
+      ]);
+
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const [monthlyRevenue, totalRevenue] = await Promise.all([
+        prisma.payment.aggregate({
+          where: { organization: { conversionStatus: 'CONVERTED' }, paidAt: { gte: startOfMonth } },
+          _sum: { amount: true },
+        }),
+        prisma.payment.aggregate({
+          where: { organization: { conversionStatus: 'CONVERTED' } },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      return res.json({
+        section: 'coop', totalCoops, activeCoops, trialCoops, conversionRequests,
+        monthlyRevenue: monthlyRevenue._sum.amount || 0,
+        totalRevenue: totalRevenue._sum.amount || 0,
+      });
+    }
+
+    // ── Assoc section stats (default / section=assoc) ────────────────────────
+    const assocWhere = { conversionStatus: { not: 'CONVERTED' } };
+
     const [totalOrgs, totalUsers, trialOrgs, activeOrgs, expiredOrgs, canceledOrgs, allOrgs, paymentsAgg] = await Promise.all([
-      prisma.organization.count(),
+      prisma.organization.count({ where: assocWhere }),
       prisma.user.count({ where: { role: { not: 'SUPER_ADMIN' } } }),
-      prisma.subscription.count({ where: { status: 'TRIAL' } }),
-      prisma.subscription.count({ where: { status: 'ACTIVE' } }),
-      prisma.subscription.count({ where: { status: 'EXPIRED' } }),
-      prisma.subscription.count({ where: { status: 'CANCELLED' } }),
-      prisma.organization.findMany({ select: { modules: true } }),
-      prisma.payment.aggregate({ _sum: { amount: true } }),
+      prisma.subscription.count({ where: { status: 'TRIAL', organization: assocWhere } }),
+      prisma.subscription.count({ where: { status: 'ACTIVE', organization: assocWhere } }),
+      prisma.subscription.count({ where: { status: 'EXPIRED', organization: assocWhere } }),
+      prisma.subscription.count({ where: { status: 'CANCELLED', organization: assocWhere } }),
+      prisma.organization.findMany({ where: assocWhere, select: { modules: true } }),
+      prisma.payment.aggregate({ where: { organization: assocWhere }, _sum: { amount: true } }),
     ]);
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthlyRevenue = await prisma.payment.aggregate({
-      where: { paidAt: { gte: startOfMonth } },
-      _sum: { amount: true },
-    });
-
-    // New orgs this month
-    const newOrgsThisMonth = await prisma.organization.count({
-      where: { createdAt: { gte: startOfMonth } },
-    });
+    const [monthlyRevenue, newOrgsData] = await Promise.all([
+      prisma.payment.aggregate({
+        where: { paidAt: { gte: startOfMonth }, organization: assocWhere },
+        _sum: { amount: true },
+      }),
+      prisma.organization.count({ where: { AND: [{ createdAt: { gte: startOfMonth } }, assocWhere] } }),
+    ]);
 
     const typeDistribution = { REGULAR: 0, PROJECTS: 0, WATER: 0, PRODUCTIVE: 0, PRODUCTIVE_WATER: 0 };
     for (const org of allOrgs) {
       typeDistribution[getAssocTypeKey(org.modules)]++;
     }
 
-    // MRR estimate
     const activeOrgsData = await prisma.organization.findMany({
-      where: { subscription: { status: 'ACTIVE' } },
+      where: { AND: [{ subscription: { status: 'ACTIVE' } }, assocWhere] },
       select: { modules: true },
     });
     const mrrEstimate = activeOrgsData.reduce((sum, o) => sum + (TYPE_PRICES[getAssocTypeKey(o.modules)] || 99), 0);
 
     res.json({
-      totalOrgs,
-      totalUsers,
-      trialOrgs,
-      activeOrgs,
-      expiredOrgs,
-      canceledOrgs,
-      typeDistribution,
-      mrrEstimate,
+      section: 'assoc',
+      totalOrgs, totalUsers, trialOrgs, activeOrgs, expiredOrgs, canceledOrgs,
+      typeDistribution, mrrEstimate,
       monthlyRevenue: monthlyRevenue._sum.amount || 0,
       totalRevenue: paymentsAgg._sum.amount || 0,
-      newOrgsThisMonth,
+      newOrgsThisMonth: newOrgsData,
     });
   } catch (err) {
     console.error(err);
@@ -479,7 +530,7 @@ const getAIInsights = async (req, res) => {
 
 const getOrganizations = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search, type, status } = req.query;
+    const { page = 1, limit = 20, search, type, status, conversionStatus, conversionStatusNot } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const where = {};
@@ -493,6 +544,8 @@ const getOrganizations = async (req, res) => {
     if (status) {
       where.subscription = { status };
     }
+    if (conversionStatus)    where.conversionStatus = conversionStatus;
+    if (conversionStatusNot) where.conversionStatus = { not: conversionStatusNot };
 
     const [orgs, total] = await Promise.all([
       prisma.organization.findMany({
