@@ -8,7 +8,7 @@ import {
   ExternalLink, FileText,
   Package, Tag, Mail, Zap, Brain, Settings, Activity,
   ChevronLeft, ChevronRight,
-  LogOut, Globe, Sun, Moon, X, Bus,
+  LogOut, Globe, Sun, Moon, X, Bus, Truck,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -33,6 +33,8 @@ import { AutomationTab }   from './tabs/AutomationTab';
 import { PromoCodesTab }   from './tabs/PromoCodesTab';
 import { AIInsightsTab }   from './tabs/AIInsightsTab';
 import { SettingsTab }     from './tabs/SettingsTab';
+import { FulfillmentTab } from './tabs/FulfillmentTab';
+import { BundlesTab }     from './tabs/BundlesTab';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,7 +42,8 @@ type AssocTypeKey = 'REGULAR' | 'PROJECTS' | 'WATER' | 'PRODUCTIVE' | 'PRODUCTIV
 type ActiveTab =
   | 'dashboard' | 'orgs' | 'subscriptions' | 'payments' | 'users'
   | 'packs' | 'analytics' | 'usage' | 'marketing' | 'automation'
-  | 'promos' | 'insights' | 'settings';
+  | 'promos' | 'insights' | 'settings'
+  | 'fulfillment' | 'bundles';
 
 // ─── Association type config ──────────────────────────────────────────────────
 
@@ -135,6 +138,14 @@ const TAB_GROUPS = [
     ],
   },
   {
+    labelAr: 'معرضنا',
+    labelFr: 'Ma3ridona',
+    tabs: [
+      { key: 'fulfillment', iconEl: <Truck size={15} />,   labelFr: 'Fulfillment',     labelAr: 'الفولفيلمنت' },
+      { key: 'bundles',     iconEl: <Package size={15} />, labelFr: 'Packs Produits',  labelAr: 'باقات المنتجات' },
+    ],
+  },
+  {
     labelFr: 'Configuration',
     labelAr: 'الإعدادات',
     tabs: [
@@ -166,7 +177,7 @@ export const SuperAdminPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = useMemo<ActiveTab>(() => {
     const t = searchParams.get('tab') as ActiveTab;
-    const valid: ActiveTab[] = ['dashboard','orgs','subscriptions','payments','users','packs','analytics','usage','marketing','automation','promos','insights','settings'];
+    const valid: ActiveTab[] = ['dashboard','orgs','subscriptions','payments','users','packs','analytics','usage','marketing','automation','promos','insights','settings','fulfillment','bundles'];
     return valid.includes(t) ? t : 'dashboard';
   }, [searchParams]);
 
@@ -949,6 +960,8 @@ export const SuperAdminPage: React.FC = () => {
           {activeTab === 'promos'       && <PromoCodesTab />}
           {activeTab === 'insights'     && <AIInsightsTab />}
           {activeTab === 'settings'     && <SettingsTab />}
+          {activeTab === 'fulfillment' && <FulfillmentTab />}
+          {activeTab === 'bundles'     && <BundlesTab />}
 
         </main>
       </div>
