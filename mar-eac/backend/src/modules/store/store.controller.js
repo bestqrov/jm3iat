@@ -343,4 +343,79 @@ const getOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { getStoreProducts, getStoreProduct, getStoreOrgs, getStoreCategories, getBestSellers, placeStoreOrder, getOrderStatus };
+// GET /api/store/bundles  — public
+const getBundles = async (req, res) => {
+  try {
+    const bundles = await prisma.storeBundle.findMany({
+      where: { isActive: true },
+      include: {
+        items: {
+          include: {
+            product: { select: { id: true, name: true, nameAr: true, sellingPrice: true, imageUrl: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(bundles);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/store/bundles  — super admin only
+const createBundle = async (req, res) => {
+  try {
+    const { name, nameAr, description, bundlePrice, isActive = true, items } = req.body;
+    if (!name || !bundlePrice || !items?.length) {
+      return res.status(400).json({ message: 'name, bundlePrice, items are required' });
+    }
+    const bundle = await prisma.storeBundle.create({
+      data: {
+        name, nameAr, description,
+        bundlePrice: parseFloat(bundlePrice),
+        isActive,
+        items: {
+          create: items.map(i => ({ productId: i.productId, quantity: i.quantity || 1 })),
+        },
+      },
+      include: { items: { include: { product: { select: { name: true, nameAr: true, sellingPrice: true } } } } },
+    });
+    res.status(201).json(bundle);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// PUT /api/store/bundles/:id  — super admin only
+const updateBundle = async (req, res) => {
+  try {
+    const { name, nameAr, description, bundlePrice, isActive, items } = req.body;
+    await prisma.storeBundleItem.deleteMany({ where: { bundleId: req.params.id } });
+    const bundle = await prisma.storeBundle.update({
+      where: { id: req.params.id },
+      data: {
+        name, nameAr, description,
+        bundlePrice: parseFloat(bundlePrice),
+        isActive,
+        items: items?.length ? { create: items.map(i => ({ productId: i.productId, quantity: i.quantity || 1 })) } : undefined,
+      },
+      include: { items: { include: { product: { select: { name: true, nameAr: true, sellingPrice: true } } } } },
+    });
+    res.json(bundle);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// DELETE /api/store/bundles/:id  — super admin only
+const deleteBundle = async (req, res) => {
+  try {
+    await prisma.storeBundle.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getStoreProducts, getStoreProduct, getStoreOrgs, getStoreCategories, placeStoreOrder, getOrderStatus, getBestSellers, getBundles, createBundle, updateBundle, deleteBundle };

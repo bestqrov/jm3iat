@@ -1172,6 +1172,7 @@ model CommerceProduct {
   organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   stockMovements CommerceStockMovement[]
   orderItems     CommerceOrderItem[]
+  bundleItems    StoreBundleItem[]
 }
 
 model CommerceStockMovement {
@@ -1247,6 +1248,27 @@ model CommerceOrderProfit {
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   order        CommerceOrder @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model StoreBundle {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  nameAr      String?
+  description String?
+  bundlePrice Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       StoreBundleItem[]
+}
+
+model StoreBundleItem {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  bundleId  String   @db.ObjectId
+  productId String   @db.ObjectId
+  quantity  Int      @default(1)
+  bundle    StoreBundle     @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  product   CommerceProduct @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model CommercePayout {
