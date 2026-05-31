@@ -248,14 +248,14 @@ const placeStoreOrder = async (req, res) => {
         status: 'PENDING',
         paymentStatus: 'PENDING',
         source: 'STORE',
-        orderItems: {
+        items: {
           create: items.map(item => {
             const p = productMap[item.productId];
             return {
               productId: item.productId,
               quantity: item.quantity,
               unitPrice: p.sellingPrice,
-              costPrice: p.costPrice,
+              costPrice: p.costPrice ?? 0,
               subtotal: p.sellingPrice * item.quantity,
             };
           }),
