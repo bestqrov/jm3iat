@@ -35,15 +35,21 @@ import { AIInsightsTab }   from './tabs/AIInsightsTab';
 import { SettingsTab }     from './tabs/SettingsTab';
 import { FulfillmentTab } from './tabs/FulfillmentTab';
 import { BundlesTab }     from './tabs/BundlesTab';
+import { AssocDashboardTab }  from './tabs/AssocDashboardTab';
+import { CoopDashboardTab }   from './tabs/CoopDashboardTab';
+import { StoreDashboardTab }  from './tabs/StoreDashboardTab';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AssocTypeKey = 'REGULAR' | 'PROJECTS' | 'WATER' | 'PRODUCTIVE' | 'PRODUCTIVE_WATER' | 'TRANSPORT';
+type SectionMode = 'assoc' | 'coop' | 'store';
 type ActiveTab =
   | 'dashboard' | 'orgs' | 'subscriptions' | 'payments' | 'users'
   | 'packs' | 'analytics' | 'usage' | 'marketing' | 'automation'
-  | 'promos' | 'insights' | 'settings'
-  | 'fulfillment' | 'bundles';
+  | 'promos' | 'insights' | 'settings' | 'fulfillment' | 'bundles'
+  | 'assoc-dashboard' | 'assoc-orgs' | 'assoc-subscriptions' | 'assoc-payments'
+  | 'coop-dashboard'  | 'coop-orgs'  | 'coop-subscriptions'  | 'coop-payments'
+  | 'store-dashboard';
 
 // ─── Association type config ──────────────────────────────────────────────────
 
@@ -106,53 +112,83 @@ const SubStatusBadge: React.FC<{ status?: string; isAr: boolean }> = ({ status, 
 
 // ─── Tab navigation config ────────────────────────────────────────────────────
 
-const TAB_GROUPS = [
-  {
-    labelFr: 'Vue d\'ensemble',
-    labelAr: 'نظرة عامة',
-    tabs: [
-      { key: 'dashboard',     iconEl: <BarChart2 size={15} />,     labelFr: 'Tableau de bord',   labelAr: 'لوحة التحكم' },
-      { key: 'analytics',     iconEl: <TrendingUp size={15} />,    labelFr: 'Analytics',         labelAr: 'التحليلات' },
-      { key: 'insights',      iconEl: <Brain size={15} />,         labelFr: 'IA Insights',       labelAr: 'رؤى الذكاء الاصطناعي' },
-      { key: 'usage',         iconEl: <Activity size={15} />,      labelFr: 'Utilisation',       labelAr: 'الاستخدام' },
-    ],
-  },
-  {
-    labelFr: 'Gestion',
-    labelAr: 'الإدارة',
-    tabs: [
-      { key: 'orgs',          iconEl: <Building2 size={15} />,     labelFr: 'Organisations',     labelAr: 'المنظمات' },
-      { key: 'subscriptions', iconEl: <RefreshCw size={15} />,     labelFr: 'Abonnements',       labelAr: 'الاشتراكات' },
-      { key: 'payments',      iconEl: <CreditCard size={15} />,    labelFr: 'Paiements',         labelAr: 'المدفوعات' },
-      { key: 'users',         iconEl: <Users size={15} />,         labelFr: 'Utilisateurs',      labelAr: 'المستخدمون' },
-    ],
-  },
-  {
-    labelFr: 'Offres & Marketing',
-    labelAr: 'الباقات والتسويق',
-    tabs: [
-      { key: 'packs',         iconEl: <Package size={15} />,       labelFr: 'Offres & Tarifs',   labelAr: 'الباقات والأسعار' },
-      { key: 'promos',        iconEl: <Tag size={15} />,           labelFr: 'Codes Promo',       labelAr: 'أكواد الخصم' },
-      { key: 'marketing',     iconEl: <Mail size={15} />,          labelFr: 'Marketing',         labelAr: 'التسويق' },
-      { key: 'automation',    iconEl: <Zap size={15} />,           labelFr: 'Automatisation',    labelAr: 'الأتمتة' },
-    ],
-  },
-  {
-    labelAr: 'معرضنا',
-    labelFr: 'Ma3ridona',
-    tabs: [
-      { key: 'fulfillment', iconEl: <Truck size={15} />,   labelFr: 'Fulfillment',     labelAr: 'الفولفيلمنت' },
-      { key: 'bundles',     iconEl: <Package size={15} />, labelFr: 'Packs Produits',  labelAr: 'باقات المنتجات' },
-    ],
-  },
-  {
-    labelFr: 'Configuration',
-    labelAr: 'الإعدادات',
-    tabs: [
-      { key: 'settings',      iconEl: <Settings size={15} />,      labelFr: 'Paramètres',        labelAr: 'الإعدادات' },
-    ],
-  },
-];
+const SECTION_TAB_GROUPS_CONFIG = {
+  assoc: [
+    {
+      labelFr: 'Vue d\'ensemble', labelAr: 'نظرة عامة',
+      tabs: [
+        { key: 'assoc-dashboard', iconEl: <BarChart2 size={15} />,  labelFr: 'Tableau de bord', labelAr: 'لوحة التحكم' },
+        { key: 'analytics',       iconEl: <TrendingUp size={15} />, labelFr: 'Analytics',        labelAr: 'التحليلات' },
+        { key: 'insights',        iconEl: <Brain size={15} />,      labelFr: 'IA Insights',      labelAr: 'رؤى الذكاء' },
+        { key: 'usage',           iconEl: <Activity size={15} />,   labelFr: 'Utilisation',      labelAr: 'الاستخدام' },
+      ],
+    },
+    {
+      labelFr: 'Gestion', labelAr: 'الإدارة',
+      tabs: [
+        { key: 'assoc-orgs',          iconEl: <Building2 size={15} />,  labelFr: 'Associations',  labelAr: 'الجمعيات' },
+        { key: 'assoc-subscriptions', iconEl: <RefreshCw size={15} />,  labelFr: 'Abonnements',   labelAr: 'الاشتراكات' },
+        { key: 'assoc-payments',      iconEl: <CreditCard size={15} />, labelFr: 'Paiements',     labelAr: 'المدفوعات' },
+        { key: 'users',               iconEl: <Users size={15} />,      labelFr: 'Utilisateurs',  labelAr: 'المستخدمون' },
+      ],
+    },
+    {
+      labelFr: 'Offres & Marketing', labelAr: 'الباقات والتسويق',
+      tabs: [
+        { key: 'packs',      iconEl: <Package size={15} />, labelFr: 'Offres & Tarifs', labelAr: 'الباقات والأسعار' },
+        { key: 'promos',     iconEl: <Tag size={15} />,     labelFr: 'Codes Promo',     labelAr: 'أكواد الخصم' },
+        { key: 'marketing',  iconEl: <Mail size={15} />,    labelFr: 'Marketing',       labelAr: 'التسويق' },
+        { key: 'automation', iconEl: <Zap size={15} />,     labelFr: 'Automatisation',  labelAr: 'الأتمتة' },
+      ],
+    },
+    {
+      labelFr: 'Configuration', labelAr: 'الإعدادات',
+      tabs: [{ key: 'settings', iconEl: <Settings size={15} />, labelFr: 'Paramètres', labelAr: 'الإعدادات' }],
+    },
+  ],
+  coop: [
+    {
+      labelFr: 'Vue d\'ensemble', labelAr: 'نظرة عامة',
+      tabs: [
+        { key: 'coop-dashboard', iconEl: <BarChart2 size={15} />,  labelFr: 'Tableau de bord', labelAr: 'لوحة التحكم' },
+        { key: 'analytics',      iconEl: <TrendingUp size={15} />, labelFr: 'Analytics',        labelAr: 'التحليلات' },
+      ],
+    },
+    {
+      labelFr: 'Gestion', labelAr: 'الإدارة',
+      tabs: [
+        { key: 'coop-orgs',          iconEl: <Building2 size={15} />,  labelFr: 'Coopératives', labelAr: 'التعاونيات' },
+        { key: 'coop-subscriptions', iconEl: <RefreshCw size={15} />,  labelFr: 'Abonnements',  labelAr: 'الاشتراكات' },
+        { key: 'coop-payments',      iconEl: <CreditCard size={15} />, labelFr: 'Paiements',    labelAr: 'المدفوعات' },
+        { key: 'users',              iconEl: <Users size={15} />,      labelFr: 'Utilisateurs', labelAr: 'المستخدمون' },
+      ],
+    },
+    {
+      labelFr: 'Configuration', labelAr: 'الإعدادات',
+      tabs: [{ key: 'settings', iconEl: <Settings size={15} />, labelFr: 'Paramètres', labelAr: 'الإعدادات' }],
+    },
+  ],
+  store: [
+    {
+      labelFr: 'Vue d\'ensemble', labelAr: 'نظرة عامة',
+      tabs: [
+        { key: 'store-dashboard', iconEl: <BarChart2 size={15} />, labelFr: 'Tableau de bord', labelAr: 'لوحة المتجر' },
+      ],
+    },
+    {
+      labelFr: 'Opérations', labelAr: 'العمليات',
+      tabs: [
+        { key: 'fulfillment', iconEl: <Truck size={15} />,     labelFr: 'Fulfillment',    labelAr: 'الفولفيلمنت' },
+        { key: 'bundles',     iconEl: <Package size={15} />,   labelFr: 'Packs Produits', labelAr: 'باقات المنتجات' },
+        { key: 'coop-orgs',   iconEl: <Building2 size={15} />, labelFr: 'Coopératives',   labelAr: 'التعاونيات' },
+      ],
+    },
+    {
+      labelFr: 'Configuration', labelAr: 'الإعدادات',
+      tabs: [{ key: 'settings', iconEl: <Settings size={15} />, labelFr: 'Paramètres', labelAr: 'الإعدادات' }],
+    },
+  ],
+};
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -177,13 +213,39 @@ export const SuperAdminPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = useMemo<ActiveTab>(() => {
     const t = searchParams.get('tab') as ActiveTab;
-    const valid: ActiveTab[] = ['dashboard','orgs','subscriptions','payments','users','packs','analytics','usage','marketing','automation','promos','insights','settings','fulfillment','bundles'];
-    return valid.includes(t) ? t : 'dashboard';
+    const valid: ActiveTab[] = [
+      'dashboard','orgs','subscriptions','payments','users','packs','analytics','usage','marketing','automation','promos','insights','settings','fulfillment','bundles',
+      'assoc-dashboard','assoc-orgs','assoc-subscriptions','assoc-payments',
+      'coop-dashboard','coop-orgs','coop-subscriptions','coop-payments',
+      'store-dashboard',
+    ];
+    return valid.includes(t) ? t : 'assoc-dashboard';
   }, [searchParams]);
 
   const setTab = (tab: ActiveTab) => setSearchParams({ tab });
 
   // ─── States ────────────────────────────────────────────────────────────────
+  const [sectionMode, setSectionMode] = useState<SectionMode>('assoc');
+  const [orgConversionFilter, setOrgConversionFilter] = useState<'assoc' | 'coop' | ''>('');
+
+  const TAB_GROUPS = SECTION_TAB_GROUPS_CONFIG[sectionMode];
+
+  const handleSectionNavigate = (tab: string) => {
+    if (tab === 'assoc-orgs') {
+      setOrgConversionFilter('assoc');
+      setTab('orgs' as ActiveTab);
+    } else if (tab === 'coop-orgs') {
+      setOrgConversionFilter('coop');
+      setTab('orgs' as ActiveTab);
+    } else if (tab === 'assoc-subscriptions' || tab === 'coop-subscriptions') {
+      setTab('subscriptions' as ActiveTab);
+    } else if (tab === 'assoc-payments' || tab === 'coop-payments') {
+      setTab('payments' as ActiveTab);
+    } else {
+      setTab(tab as ActiveTab);
+    }
+  };
+
   const [downgradeCount, setDowngradeCount] = useState(0);
   const [conversionRequests, setConversionRequests] = useState<any[]>([]);
   const [conversionLoading, setConversionLoading] = useState(false);
@@ -239,16 +301,19 @@ export const SuperAdminPage: React.FC = () => {
   const loadOrgs = useCallback(async () => {
     setOrgsLoading(true);
     try {
-      const r = await superadminApi.getOrganizations({
+      const params: any = {
         page: orgsPage, limit: ORGS_LIMIT,
         search: orgSearch || undefined,
         type: orgTypeFilter || undefined,
         status: orgStatusFilter || undefined,
-      });
+      };
+      if (orgConversionFilter === 'coop')  params.conversionStatus    = 'CONVERTED';
+      if (orgConversionFilter === 'assoc') params.conversionStatusNot = 'CONVERTED';
+      const r = await superadminApi.getOrganizations(params);
       setOrgs(r.data.data);
       setOrgsTotal(r.data.total);
     } finally { setOrgsLoading(false); }
-  }, [orgsPage, orgSearch, orgTypeFilter, orgStatusFilter]);
+  }, [orgsPage, orgSearch, orgTypeFilter, orgStatusFilter, orgConversionFilter]);
 
   const loadPayments = useCallback(async () => {
     setPaymentsLoading(true);
@@ -447,8 +512,29 @@ export const SuperAdminPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Section switcher */}
+        <div className="flex gap-1 px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+          {([
+            { mode: 'assoc' as SectionMode, icon: '🏛️', labelFr: 'Assoc',  labelAr: 'جمعيات',   defaultTab: 'assoc-dashboard', color: 'bg-indigo-600' },
+            { mode: 'coop'  as SectionMode, icon: '🤝', labelFr: 'Coop',   labelAr: 'تعاونيات', defaultTab: 'coop-dashboard',  color: 'bg-teal-600' },
+            { mode: 'store' as SectionMode, icon: '🛒', labelFr: 'Store',  labelAr: 'المتجر',   defaultTab: 'store-dashboard', color: 'bg-purple-600' },
+          ]).map(s => (
+            <button
+              key={s.mode}
+              onClick={() => { setSectionMode(s.mode); setTab(s.defaultTab as ActiveTab); }}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl text-xs font-medium transition-all ${
+                sectionMode === s.mode
+                  ? `${s.color} text-white shadow-sm`
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}>
+              <span className="text-base leading-none">{s.icon}</span>
+              <span>{isAr ? s.labelAr : s.labelFr}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Stats quick pills */}
-        {!statsLoading && stats && (
+        {!statsLoading && stats && stats.section !== 'store' && (
           <div className="flex flex-col gap-1.5 px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
@@ -478,7 +564,7 @@ export const SuperAdminPage: React.FC = () => {
                 {group.tabs.map(tab => (
                   <button
                     key={tab.key}
-                    onClick={() => setTab(tab.key as ActiveTab)}
+                    onClick={() => handleSectionNavigate(tab.key)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all text-start ${
                       activeTab === tab.key
                         ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
@@ -583,89 +669,11 @@ export const SuperAdminPage: React.FC = () => {
         {/* Scrollable page content */}
         <main className="flex-1 overflow-y-auto p-6">
 
-          {/* ════════════ DASHBOARD TAB ════════════ */}
-          {activeTab === 'dashboard' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {isAr ? 'لوحة التحكم' : 'Tableau de bord'}
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                  {isAr ? 'مرحباً — نظرة شاملة على المنصة' : 'Bienvenue — Vue d\'ensemble de la plateforme'}
-                </p>
-              </div>
-
-              {/* KPI Grid */}
-              {statsLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="h-24 bg-gray-100 dark:bg-gray-700 rounded-2xl animate-pulse" />
-                  ))}
-                </div>
-              ) : stats && (
-                <>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                      { label: isAr ? 'إجمالي المنظمات' : 'Total organisations', value: stats.totalOrgs, icon: <Building2 size={20} />, bg: 'bg-indigo-50 dark:bg-indigo-900/20', color: 'text-indigo-600 dark:text-indigo-400' },
-                      { label: isAr ? 'اشتراكات نشطة' : 'Abonnements actifs', value: stats.activeOrgs, icon: <Check size={20} />, bg: 'bg-emerald-50 dark:bg-emerald-900/20', color: 'text-emerald-600 dark:text-emerald-400' },
-                      { label: isAr ? 'فترات تجربة' : 'Essais en cours', value: stats.trialOrgs, icon: <Clock size={20} />, bg: 'bg-amber-50 dark:bg-amber-900/20', color: 'text-amber-600 dark:text-amber-400' },
-                      { label: isAr ? 'منتهية الصلاحية' : 'Abonnements expirés', value: stats.expiredOrgs, icon: <AlertTriangle size={20} />, bg: 'bg-red-50 dark:bg-red-900/20', color: 'text-red-600 dark:text-red-400' },
-                      { label: isAr ? 'الإيراد الشهري (MRR)' : 'MRR estimé', value: `${(stats.mrrEstimate || 0).toLocaleString()} MAD`, icon: <TrendingUp size={20} />, bg: 'bg-purple-50 dark:bg-purple-900/20', color: 'text-purple-600 dark:text-purple-400' },
-                      { label: isAr ? 'إيرادات الشهر' : 'Revenus du mois', value: `${(stats.monthlyRevenue || 0).toLocaleString()} MAD`, icon: <DollarSign size={20} />, bg: 'bg-blue-50 dark:bg-blue-900/20', color: 'text-blue-600 dark:text-blue-400' },
-                      { label: isAr ? 'منظمات جديدة (هذا الشهر)' : 'Nouvelles orgs (mois)', value: stats.newOrgsThisMonth, icon: <Plus size={20} />, bg: 'bg-teal-50 dark:bg-teal-900/20', color: 'text-teal-600 dark:text-teal-400' },
-                      { label: isAr ? 'المستخدمون' : 'Utilisateurs', value: stats.totalUsers, icon: <Users size={20} />, bg: 'bg-gray-50 dark:bg-gray-700/30', color: 'text-gray-600 dark:text-gray-300' },
-                    ].map((kpi, i) => (
-                      <div key={i} className={`rounded-2xl p-4 ${kpi.bg}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{kpi.label}</span>
-                          <span className={kpi.color}>{kpi.icon}</span>
-                        </div>
-                        <div className={`text-2xl font-extrabold ${kpi.color}`}>{kpi.value}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Type Distribution */}
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                      {isAr ? 'توزيع أنواع الجمعيات' : 'Distribution des types d\'associations'}
-                    </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                      {ASSOC_TYPES.map(cfg => (
-                        <div key={cfg.key} className="text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/30">
-                          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                            {stats.typeDistribution?.[cfg.key] || 0}
-                          </div>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.badge}`}>
-                            {cfg.icon} {isAr ? cfg.labelAr : cfg.labelFr}
-                          </span>
-                          <div className="text-xs text-gray-400 mt-1">{cfg.price} MAD/m</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      { label: isAr ? 'عرض المنظمات' : 'Voir les organisations', tab: 'orgs', icon: <Building2 size={16} />, color: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40' },
-                      { label: isAr ? 'إدارة الاشتراكات' : 'Gérer abonnements', tab: 'subscriptions', icon: <RefreshCw size={16} />, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40' },
-                      { label: isAr ? 'رؤى الذكاء الاصطناعي' : 'IA Insights', tab: 'insights', icon: <Brain size={16} />, color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40' },
-                      { label: isAr ? 'إرسال حملة' : 'Lancer campagne', tab: 'marketing', icon: <Mail size={16} />, color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40' },
-                    ].map(action => (
-                      <button
-                        key={action.tab}
-                        onClick={() => setTab(action.tab as ActiveTab)}
-                        className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${action.color}`}
-                      >
-                        {action.icon} {action.label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+          {/* ════════════ DASHBOARD TABS ════════════ */}
+          {activeTab === 'dashboard'       && <AssocDashboardTab onNavigate={handleSectionNavigate} />}
+          {activeTab === 'assoc-dashboard' && <AssocDashboardTab onNavigate={handleSectionNavigate} />}
+          {activeTab === 'coop-dashboard'  && <CoopDashboardTab  onNavigate={handleSectionNavigate} />}
+          {activeTab === 'store-dashboard' && <StoreDashboardTab onNavigate={handleSectionNavigate} />}
 
           {/* ════════════ ORGS TAB ════════════ */}
           {activeTab === 'orgs' && (
