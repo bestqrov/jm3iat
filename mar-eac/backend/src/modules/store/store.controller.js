@@ -1,4 +1,21 @@
 const prisma = require('../../config/database');
+const axios  = require('axios');
+
+const sendWA = async (phone, text, orgInstance) => {
+  const rows = await prisma.platformSettings.findMany({
+    where: { key: { in: ['evolution_api_url', 'evolution_api_key'] } },
+  });
+  const m = Object.fromEntries(rows.map(r => [r.key, r.value]));
+  const evoUrl = m['evolution_api_url'] || process.env.EVOLUTION_API_URL || '';
+  const evoKey = m['evolution_api_key'] || process.env.EVOLUTION_API_KEY || '';
+  if (!evoUrl || !evoKey) return; // silently skip if not configured
+  const instance = orgInstance || process.env.EVOLUTION_INSTANCE || 'main';
+  return axios.post(
+    `${evoUrl}/message/sendText/${instance}`,
+    { number: phone.replace(/[\s\-\+]/g, ''), textMessage: { text } },
+    { headers: { apikey: evoKey, 'Content-Type': 'application/json' }, timeout: 15000 }
+  );
+};
 
 // Helper: compute current stock for a product
 async function getStock(productId) {
@@ -208,6 +225,32 @@ const placeStoreOrder = async (req, res) => {
           reference: order.orderNumber,
         },
       });
+    }
+
+    // WhatsApp: notify client
+    if (clientPhone) {
+      const clientMsg =
+        `✅ وصل طلبك!\n` +
+        `رقم الطلب: ${order.orderNumber}\n` +
+        `المبلغ: ${order.totalAmount.toFixed(2)} درهم\n` +
+        `الدفع: عند الاستلام\n` +
+        `سيتواصل معك المورد لتأكيد التسليم.`;
+      sendWA(clientPhone, clientMsg, null).catch(() => {});
+    }
+
+    // WhatsApp: notify cooperative
+    const orgWa = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { phone: true, evolutionInstance: true },
+    });
+    if (orgWa?.phone) {
+      const orgMsg =
+        `🛒 طلب جديد من المتجر!\n` +
+        `رقم الطلب: ${order.orderNumber}\n` +
+        `العميل: ${clientName}\n` +
+        `الهاتف: ${clientPhone || '-'}\n` +
+        `المبلغ: ${order.totalAmount.toFixed(2)} درهم`;
+      sendWA(orgWa.phone, orgMsg, orgWa.evolutionInstance).catch(() => {});
     }
 
     res.status(201).json({ orderNumber: order.orderNumber, totalAmount: order.totalAmount });
