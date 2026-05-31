@@ -584,13 +584,35 @@ export function StorePage() {
         </div>
       )}
 
-      {/* ── Order success toast ── */}
+      {/* ── Order success modal ── */}
       {orderSuccess && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 text-sm"
-          style={{ background: 'linear-gradient(135deg,#6c3fc5,#8b5cf6)' }}>
-          <span>✅ تم إرسال طلبك بنجاح!</span>
-          <span className="font-black">رقم: {orderSuccess}</span>
-          <button onClick={() => setSuccess(null)} className="opacity-70 hover:opacity-100"><X size={16} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">✅</span>
+              </div>
+              <h2 className="font-black text-gray-900 text-xl mb-1">تم إرسال طلبك!</h2>
+              <p className="text-gray-500 text-sm mb-4">سيتواصل معك المورد قريباً لتأكيد التسليم</p>
+              <div className="bg-purple-50 rounded-xl px-4 py-3 mb-5">
+                <p className="text-xs text-purple-500 mb-0.5">رقم طلبك</p>
+                <p className="font-black text-purple-700 text-2xl tracking-wider">{orderSuccess}</p>
+              </div>
+              <p className="text-xs text-gray-400 mb-4">احتفظ بهذا الرقم لتتبع طلبك</p>
+              <div className="flex flex-col gap-2">
+                <a
+                  href={`/store/track/${orderSuccess}`}
+                  className="w-full py-3 text-white font-bold rounded-xl text-sm text-center block"
+                  style={{ background: 'linear-gradient(135deg,#6c3fc5,#8b5cf6)' }}>
+                  تتبع طلبك →
+                </a>
+                <button onClick={() => setSuccess(null)}
+                  className="w-full py-3 text-gray-500 font-medium rounded-xl text-sm border border-gray-200 hover:bg-gray-50">
+                  متابعة التسوق
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -612,6 +634,7 @@ export function StorePage() {
             <div className="space-y-2 text-sm text-gray-400">
               <p className="hover:text-white cursor-pointer" onClick={() => window.scrollTo(0,0)}>الرئيسية</p>
               <p className="hover:text-white cursor-pointer" onClick={() => document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' })}>المنتجات</p>
+              <a href="/store/track" className="block hover:text-white">تتبع طلبي</a>
             </div>
           </div>
           <div>

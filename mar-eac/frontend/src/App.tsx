@@ -39,6 +39,7 @@ import { RecurringPage } from './pages/recurring/RecurringPage';
 import { AssetsPage } from './pages/assets/AssetsPage';
 import { PublicProfilePage } from './pages/public/PublicProfilePage';
 import { StorePage } from './pages/store/StorePage';
+import { StoreTrackPage } from './pages/store/StoreTrackPage';
 import { LandingPage } from './pages/landing/LandingPage';
 import { CoopLandingPage } from './pages/landing/CoopLandingPage';
 import { PrivacyPage } from './pages/legal/PrivacyPage';
@@ -70,6 +71,8 @@ const App: React.FC = () => {
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/store" element={<StorePage />} />
+              <Route path="/store/track" element={<StoreTrackPage />} />
+              <Route path="/store/track/:orderNumber" element={<StoreTrackPage />} />
               <Route path="/cooperatives" element={<CoopLandingPage />} />
 
               {/* SuperAdmin — standalone layout (no global sidebar) */}
