@@ -246,6 +246,58 @@ async function main() {
     console.log(`ℹ️  Packs already exist (${existingPacks}), skipping`);
   }
 
+  // ── Demo cooperative for Ma3ridona store ─────────────────────────────────
+  const demoCoopEmail = 'demo-coop@ma3ridona.ma';
+  let demoCoop = await prisma.organization.findUnique({ where: { email: demoCoopEmail } });
+  if (!demoCoop) {
+    demoCoop = await prisma.organization.create({
+      data: {
+        name: 'Coopérative Démo Ma3ridona',
+        nameAr: 'تعاونية معرضنا التجريبية',
+        email: demoCoopEmail,
+        phone: '0600000000',
+        city: 'Tiznit',
+        cityAr: 'تيزنيت',
+        region: 'Souss-Massa',
+        modules: ['COMMERCE'],
+        trialEndsAt: new Date('2030-01-01'),
+      },
+    });
+    console.log('✅ Demo coop created');
+  } else {
+    console.log('ℹ️  Demo coop already exists');
+  }
+
+  const existingProducts = await prisma.commerceProduct.count({ where: { organizationId: demoCoop.id } });
+  if (existingProducts === 0) {
+    const demoProducts = [
+      { name: 'Huile d\'Argan Pure 100ml', nameAr: 'زيت أركان نقي 100مل', category: 'زيت أركان', sellingPrice: 89, costPrice: 45, unit: 'flacon', stock: 24 },
+      { name: 'Miel de l\'Atlas 250g',     nameAr: 'عسل الأطلس الجبلي 250غ', category: 'العسل', sellingPrice: 120, costPrice: 60, unit: 'bocal', stock: 18 },
+      { name: 'Safran de Taliouine 1g',    nameAr: 'زعفران تالوين أصيل 1غ', category: 'الزعفران', sellingPrice: 65, costPrice: 30, unit: 'sachet', stock: 30 },
+      { name: 'Tapis Berbère Tissé Main',  nameAr: 'سجادة بربرية يدوية', category: 'المنسوجات والسجاد', sellingPrice: 450, costPrice: 200, unit: 'pièce', stock: 8 },
+      { name: 'Poterie Artisanale Tiznit', nameAr: 'فخار صافي تيزنيت', category: 'الفخار والخزف', sellingPrice: 180, costPrice: 80, unit: 'pièce', stock: 12 },
+      { name: 'Huile d\'Olive Artisanale 500ml', nameAr: 'زيت الزيتون البلدي 500مل', category: 'زيت الزيتون', sellingPrice: 75, costPrice: 35, unit: 'bouteille', stock: 20 },
+    ];
+
+    for (const p of demoProducts) {
+      const product = await prisma.commerceProduct.create({
+        data: {
+          organizationId: demoCoop.id,
+          name: p.name, nameAr: p.nameAr,
+          category: p.category,
+          sellingPrice: p.sellingPrice, costPrice: p.costPrice,
+          unit: p.unit, isActive: true,
+        },
+      });
+      await prisma.commerceStockMovement.create({
+        data: { organizationId: demoCoop.id, productId: product.id, type: 'IN', quantity: p.stock, reference: 'SEED' },
+      });
+    }
+    console.log('✅ 6 demo products seeded');
+  } else {
+    console.log(`ℹ️  Demo products already exist (${existingProducts})`);
+  }
+
   console.log('\n✨ Seeding complete!\n');
   console.log('📌 Login credentials:');
   console.log(`   Super Admin: ${superAdminEmail} / ${superAdminPassword}`);
