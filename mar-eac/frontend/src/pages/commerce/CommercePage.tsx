@@ -737,7 +737,7 @@ export function CommercePage() {
             <div className="grid grid-cols-2 gap-3">
               <FormField label="الاسم (فرنسي)" value={productForm.name} onChange={v => setProductForm(f => ({ ...f, name: v }))} />
               <FormField label="الاسم (عربي)" value={productForm.nameAr} onChange={v => setProductForm(f => ({ ...f, nameAr: v }))} />
-              <FormField label="الفئة" value={productForm.category} onChange={v => setProductForm(f => ({ ...f, category: v }))} />
+              <SelectField label="الفئة" value={productForm.category} onChange={v => setProductForm(f => ({ ...f, category: v }))} options={COOP_CATEGORIES} />
               <FormField label="SKU" value={productForm.sku} onChange={v => setProductForm(f => ({ ...f, sku: v }))} />
               <FormField label="سعر الشراء (د.م)" type="number" value={productForm.costPrice} onChange={v => setProductForm(f => ({ ...f, costPrice: v }))} />
               <FormField label="سعر البيع (د.م)" type="number" value={productForm.sellingPrice} onChange={v => setProductForm(f => ({ ...f, sellingPrice: v }))} />
@@ -938,6 +938,32 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
         </div>
         <div className="p-5">{children}</div>
       </div>
+    </div>
+  );
+}
+
+const COOP_CATEGORIES = [
+  'زيت أركان', 'زيت الزيتون', 'الزعفران', 'العسل', 'الأعشاب الطبية',
+  'التمر', 'اللوز', 'المربى والمعلبات', 'منتجات الألبان', 'الخضروات والفواكه',
+  'المنسوجات والسجاد', 'التطريز والخياطة', 'الصناعة التقليدية', 'الفخار والخزف',
+  'منتجات الجلد', 'الخشب والنجارة', 'الحلي والمجوهرات', 'منتجات التجميل الطبيعية',
+  'الحناء', 'الملابس التقليدية', 'السجاد والزرابي', 'الحرير والنسيج',
+  'الأرغان والزيوت', 'النباتات العطرية', 'المنتجات البيولوجية',
+  'غذاء', 'زراعة', 'منزل', 'جمال', 'رياضة', 'ملابس', 'أحذية', 'إلكترونيات',
+];
+
+function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <div>
+      <label className="text-sm font-medium text-gray-700 block mb-1">{label}</label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+      >
+        <option value="">-- اختر الفئة --</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
     </div>
   );
 }
