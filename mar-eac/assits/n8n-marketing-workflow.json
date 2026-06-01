@@ -1,0 +1,267 @@
+{
+  "name": "Mar EAC — Marketing Campaigns (WhatsApp + Email)",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001",
+      "name": "📥 Webhook — Receive Campaign",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "parameters": {
+        "path": "marketing",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "notes": "Receives POST from backend. Set N8N_WEBHOOK_URL=https://<your-n8n>/webhook/marketing"
+    },
+    {
+      "id": "a1b2c3d4-0002",
+      "name": "🔀 Prepare — Split Recipients",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "parameters": {
+        "jsCode": "// Split campaign payload into one item per recipient\nconst body = $input.first().json;\nconst recipients = body.recipients || [];\nconst channel = (body.channel || 'whatsapp').toLowerCase();\nconst message = body.message || '';\nconst campaignId = body.campaignId || 'unknown';\n\nif (!recipients.length) {\n  return [{ json: { error: 'no_recipients', campaignId, sent: 0, failed: 0 } }];\n}\n\n// Return one item per recipient, carrying all context\nreturn recipients.map(r => ({\n  json: {\n    campaignId,\n    channel,\n    message,\n    recipientId:   r.id   || '',\n    recipientName: r.name || '',\n    phone:         (r.phone || '').replace(/[\\s\\-\\+]/g, ''),\n    email:         r.email || '',\n  }\n}));"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0003",
+      "name": "📊 Route by Channel",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [680, 300],
+      "parameters": {
+        "mode": "rules",
+        "options": {},
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.channel }}", "rightValue": "whatsapp", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "WhatsApp"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.channel }}", "rightValue": "email", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Email"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.channel }}", "rightValue": "both", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Both"
+            }
+          ]
+        },
+        "fallbackOutput": "extra"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0004",
+      "name": "💬 Send WhatsApp — Evolution API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 160],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.EVOLUTION_API_URL }}/message/sendText/{{ $vars.EVOLUTION_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",       "value": "={{ $vars.EVOLUTION_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "name": "textMessage",
+              "value": "={{ JSON.stringify({ text: $json.message }) }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000,
+          "response": { "response": { "neverError": true } }
+        }
+      },
+      "notes": "Uses env vars: EVOLUTION_API_URL, EVOLUTION_INSTANCE, EVOLUTION_API_KEY\nSet them in n8n → Settings → Variables"
+    },
+    {
+      "id": "a1b2c3d4-0005",
+      "name": "📧 Send Email — SMTP",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [920, 420],
+      "parameters": {
+        "fromEmail": "={{ $vars.SMTP_FROM || 'noreply@mareac.ma' }}",
+        "toEmail":   "={{ $json.email }}",
+        "subject":   "رسالة من منصة Mar EAC",
+        "message":   "={{ $json.message }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "id": "smtp_cred",
+          "name": "SMTP — Mar EAC"
+        }
+      },
+      "notes": "Create SMTP credential in n8n: host/port/user/pass for your mail server"
+    },
+    {
+      "id": "a1b2c3d4-0006",
+      "name": "📲+📧 Both — Send WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 640],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.EVOLUTION_API_URL }}/message/sendText/{{ $vars.EVOLUTION_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",       "value": "={{ $vars.EVOLUTION_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "number",      "value": "={{ $json.phone }}" },
+            { "name": "textMessage", "value": "={{ JSON.stringify({ text: $json.message }) }}" }
+          ]
+        },
+        "options": { "timeout": 15000, "response": { "response": { "neverError": true } } }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0007",
+      "name": "📲+📧 Both — Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1160, 640],
+      "parameters": {
+        "fromEmail": "={{ $vars.SMTP_FROM || 'noreply@mareac.ma' }}",
+        "toEmail":   "={{ $json.email }}",
+        "subject":   "رسالة من منصة Mar EAC",
+        "message":   "={{ $json.message }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": { "id": "smtp_cred", "name": "SMTP — Mar EAC" }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0008",
+      "name": "✅ Respond — Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1400, 300],
+      "parameters": {
+        "options": {
+          "responseCode": 200,
+          "responseData": "firstEntryJson"
+        }
+      }
+    }
+  ],
+
+  "connections": {
+    "📥 Webhook — Receive Campaign": {
+      "main": [
+        [{ "node": "🔀 Prepare — Split Recipients", "type": "main", "index": 0 }]
+      ]
+    },
+    "🔀 Prepare — Split Recipients": {
+      "main": [
+        [{ "node": "📊 Route by Channel", "type": "main", "index": 0 }]
+      ]
+    },
+    "📊 Route by Channel": {
+      "main": [
+        [{ "node": "💬 Send WhatsApp — Evolution API", "type": "main", "index": 0 }],
+        [{ "node": "📧 Send Email — SMTP",             "type": "main", "index": 0 }],
+        [{ "node": "📲+📧 Both — Send WhatsApp",        "type": "main", "index": 0 }]
+      ]
+    },
+    "💬 Send WhatsApp — Evolution API": {
+      "main": [
+        [{ "node": "✅ Respond — Success", "type": "main", "index": 0 }]
+      ]
+    },
+    "📧 Send Email — SMTP": {
+      "main": [
+        [{ "node": "✅ Respond — Success", "type": "main", "index": 0 }]
+      ]
+    },
+    "📲+📧 Both — Send WhatsApp": {
+      "main": [
+        [{ "node": "📲+📧 Both — Send Email", "type": "main", "index": 0 }]
+      ]
+    },
+    "📲+📧 Both — Send Email": {
+      "main": [
+        [{ "node": "✅ Respond — Success", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "mar-eac-marketing"
+  },
+  "tags": ["mar-eac", "marketing", "whatsapp", "email"],
+
+  "_instructions": {
+    "1_import": "Dans n8n: Workflows → Import from file → choisir ce fichier",
+    "2_variables": {
+      "description": "Aller dans n8n → Settings → Variables → créer ces variables",
+      "vars": {
+        "EVOLUTION_API_URL": "https://evolution.ton-domaine.com",
+        "EVOLUTION_API_KEY": "ton-api-key-ici",
+        "EVOLUTION_INSTANCE": "main",
+        "SMTP_FROM": "noreply@mareac.ma"
+      }
+    },
+    "3_smtp_credential": {
+      "description": "Si tu utilises Email: créer une credential SMTP dans n8n → Credentials",
+      "name": "SMTP — Mar EAC",
+      "fields": { "host": "smtp.ton-provider.com", "port": 587, "user": "...", "pass": "..." }
+    },
+    "4_env_backend": {
+      "description": "Ajouter dans Railway → Variables (ou .env local)",
+      "vars": {
+        "N8N_WEBHOOK_URL": "https://ton-n8n.railway.app/webhook/marketing",
+        "N8N_WEBHOOK_SECRET": "un-secret-optionnel"
+      }
+    },
+    "5_activate": "Dans n8n: ouvrir le workflow → cliquer le toggle 'Active' en haut à droite",
+    "6_test": "Dans n8n: cliquer 'Test workflow' puis envoyer une campagne depuis le SuperAdmin"
+  }
+}
