@@ -76,7 +76,7 @@ interface AuthContextType {
   isFullAccess: boolean;
   hasModule: (mod: string) => boolean;
   canAccess: (module: string) => boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -111,7 +111,7 @@ const AuthContext = createContext<AuthContextType>({
   isFullAccess: false,
   hasModule: () => false,
   canAccess: () => false,
-  login: async () => {},
+  login: async () => ({} as User),
   register: async () => {},
   logout: () => {},
   refreshUser: async () => {},
@@ -156,11 +156,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const res = await authApi.login(email, password);
     const { token, ...rest } = res.data;
     localStorage.setItem('token', token);
     setAuthData(rest);
+    return rest.user as User;
   };
 
   const register = async (data: RegisterData) => {

@@ -21,6 +21,7 @@ import { ReportsPage } from './pages/reports/ReportsPage';
 import { RequestsPage } from './pages/requests/RequestsPage';
 import { RemindersPage } from './pages/reminders/RemindersPage';
 import { SuperAdminPage } from './pages/superadmin/SuperAdminPage';
+import { StoreAdminPage } from './pages/store-admin/StoreAdminPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import AssocPage from './pages/assoc/AssocPage';
 import { TransportPage } from './pages/transport/TransportPage';
@@ -50,6 +51,11 @@ const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
   return isSuperAdmin ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
+function StoreAdminGuard({ children }: { children: React.ReactNode }) {
+  const { isSuperAdmin, isStoreManager } = useAuth();
+  return (isSuperAdmin || isStoreManager) ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
 const WaterReaderRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isWaterReader } = useAuth();
   return isWaterReader ? <Navigate to="/water" replace /> : <>{children}</>;
@@ -78,6 +84,13 @@ const App: React.FC = () => {
               {/* SuperAdmin — standalone layout (no global sidebar) */}
               <Route path="/superadmin" element={
                 <SuperAdminRoute><SuperAdminPage /></SuperAdminRoute>
+              } />
+
+              {/* StoreAdmin — standalone layout */}
+              <Route path="/store-admin" element={
+                <StoreAdminGuard>
+                  <StoreAdminPage />
+                </StoreAdminGuard>
               } />
 
               {/* Protected routes — with global sidebar + header */}

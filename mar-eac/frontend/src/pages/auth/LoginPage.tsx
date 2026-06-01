@@ -22,7 +22,15 @@ export const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
+      const userData = await login(email, password);
+      if (userData?.role === 'SUPER_ADMIN') {
+        navigate('/superadmin');
+        return;
+      }
+      if (userData?.role === 'STORE_MANAGER') {
+        navigate('/store-admin');
+        return;
+      }
       navigate('/dashboard');
     } catch (err: any) {
       const status = err.response?.status;
