@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store Manager — WooCommerce Style</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #f0f2f5; color: #111827; display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar { width: 200px; background: #1e1b4b; flex-shrink: 0; padding: 0; display: flex; flex-direction: column; }
+.sidebar-logo { padding: 18px 16px; border-bottom: 1px solid #312e81; }
+.sidebar-logo .brand { font-size: 15px; font-weight: 900; color: white; }
+.sidebar-logo .role { font-size: 10px; color: #a5b4fc; margin-top: 2px; }
+.sidebar-nav { padding: 12px 8px; flex: 1; }
+.nav-item { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 10px; font-size: 12px; font-weight: 600; color: #c7d2fe; cursor: pointer; margin-bottom: 2px; transition: all .15s; }
+.nav-item:hover { background: #312e81; color: white; }
+.nav-item.active { background: #4f46e5; color: white; }
+.nav-item .icon { font-size: 15px; }
+.nav-badge { margin-right: auto; background: #ef4444; color: white; font-size: 9px; padding: 1px 6px; border-radius: 99px; font-weight: 700; }
+
+/* Main */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { background: white; border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+.topbar-title { font-size: 16px; font-weight: 800; color: #111827; }
+.topbar-sub { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+.topbar-actions { display: flex; gap: 8px; }
+.btn-primary { padding: 8px 16px; background: #4f46e5; color: white; border-radius: 10px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.btn-secondary { padding: 8px 14px; background: white; color: #374151; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1px solid #d1d5db; cursor: pointer; }
+
+.content { flex: 1; padding: 20px; overflow-y: auto; }
+
+/* Filters bar */
+.filters { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+.search-box { flex: 1; max-width: 260px; position: relative; }
+.search-box input { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 12px; background: white; }
+.search-box .search-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 13px; }
+.filter-select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 12px; background: white; color: #374151; }
+.filter-count { font-size: 11px; color: #6b7280; margin-right: auto; }
+
+/* Products table */
+.table-card { background: white; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; }
+.table-header { display: grid; grid-template-columns: 32px 48px 1fr 100px 80px 90px 70px 64px; gap: 0; padding: 10px 16px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; align-items: center; }
+.table-row { display: grid; grid-template-columns: 32px 48px 1fr 100px 80px 90px 70px 64px; gap: 0; padding: 10px 16px; border-bottom: 1px solid #f3f4f6; align-items: center; transition: background .1s; }
+.table-row:hover { background: #fafafa; }
+.table-row:last-child { border-bottom: none; }
+
+.row-check input { width: 14px; height: 14px; accent-color: #4f46e5; }
+.row-img { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; overflow: hidden; border: 1px solid #e5e7eb; }
+.row-img img { width: 100%; height: 100%; object-fit: cover; }
+.row-name { padding: 0 10px; }
+.row-name .name-ar { font-size: 13px; font-weight: 700; color: #111827; }
+.row-name .name-fr { font-size: 10px; color: #9ca3af; }
+.row-name .sku { font-size: 9px; color: #c4b5fd; background: #f5f3ff; padding: 1px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+.row-cat { font-size: 11px; color: #374151; }
+.row-cat span { background: #f3f4f6; padding: 2px 8px; border-radius: 6px; }
+.row-price { font-size: 13px; font-weight: 800; color: #111827; }
+.row-price .cost { font-size: 10px; color: #9ca3af; font-weight: 400; display: block; }
+.row-stock {}
+.stock-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+.stock-ok { background: #dcfce7; color: #15803d; }
+.stock-low { background: #fff7ed; color: #c2410c; }
+.stock-zero { background: #fee2e2; color: #b91c1c; }
+.row-status {}
+.toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; border-radius: 99px; background: #d1d5db; transition: .2s; cursor: pointer; }
+.toggle-slider:before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; border-radius: 50%; background: white; transition: .2s; }
+.toggle input:checked + .toggle-slider { background: #4f46e5; }
+.toggle input:checked + .toggle-slider:before { transform: translateX(16px); }
+.row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.action-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #e5e7eb; background: white; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; color: #6b7280; transition: all .15s; }
+.action-btn:hover { border-color: #4f46e5; color: #4f46e5; background: #f5f3ff; }
+.action-btn.del:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+
+/* Edit panel (slide-in) */
+.edit-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.3); z-index: 50; display: flex; justify-content: flex-start; }
+.edit-panel { width: 460px; background: white; height: 100%; overflow-y: auto; box-shadow: 4px 0 24px rgba(0,0,0,.15); display: flex; flex-direction: column; }
+.edit-header { padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; background: #f9fafb; }
+.edit-title { font-size: 15px; font-weight: 800; color: #111827; }
+.edit-close { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #6b7280; }
+.edit-body { padding: 20px; flex: 1; }
+.edit-section { margin-bottom: 20px; }
+.edit-section-title { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f3f4f6; }
+.form-row { margin-bottom: 12px; }
+.form-label { font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px; display: block; }
+.form-input { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 13px; color: #111827; background: white; }
+.form-input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+.form-textarea { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 12px; resize: vertical; min-height: 80px; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.img-preview { width: 100%; height: 120px; border-radius: 12px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #9ca3af; font-size: 12px; cursor: pointer; background: #fafafa; margin-bottom: 8px; overflow: hidden; }
+.img-preview img { width: 100%; height: 100%; object-fit: cover; }
+.status-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f9fafb; border-radius: 10px; }
+.status-label { font-size: 13px; font-weight: 600; color: #374151; }
+.status-desc { font-size: 10px; color: #9ca3af; }
+.edit-footer { padding: 14px 20px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; background: white; }
+.btn-save { flex: 1; padding: 10px; background: #4f46e5; color: white; border-radius: 10px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; }
+.btn-cancel { padding: 10px 16px; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+.margin-pill { display: inline-flex; align-items: center; gap-4px; background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">🏪 معرضنا</div>
+    <div class="role">مسؤول المتجر</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active"><span class="icon">📦</span> المنتجات</div>
+    <div class="nav-item"><span class="icon">🏷️</span> الفئات</div>
+    <div class="nav-item"><span class="icon">📊</span> المخزون</div>
+    <div class="nav-item"><span class="icon">🛒</span> الطلبات <span class="nav-badge">8</span></div>
+    <div class="nav-item"><span class="icon">🎁</span> الباقات</div>
+    <div class="nav-item"><span class="icon">📈</span> التقارير</div>
+  </nav>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">المنتجات</div>
+      <div class="topbar-sub">إجمالي 24 منتج · 3 منخفض المخزون</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-secondary">تصدير CSV</button>
+      <button class="btn-primary" onclick="document.getElementById('editPanel').style.display='flex'">+ إضافة منتج</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Filters -->
+    <div class="filters">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="ابحث عن منتج...">
+      </div>
+      <select class="filter-select">
+        <option>كل الفئات</option>
+        <option>زيت أركان</option>
+        <option>العسل</option>
+        <option>الزعفران</option>
+        <option>المنسوجات</option>
+      </select>
+      <select class="filter-select">
+        <option>كل الحالات</option>
+        <option>نشط</option>
+        <option>مخفي</option>
+        <option>المخزون منخفض</option>
+      </select>
+      <select class="filter-select">
+        <option>كل التعاونيات</option>
+        <option>تعاونية تيزنيت</option>
+        <option>تعاونية الرحامنة</option>
+      </select>
+      <span class="filter-count">24 منتج</span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <div></div>
+        <div>صورة</div>
+        <div style="padding-right:10px">المنتج</div>
+        <div>الفئة</div>
+        <div>السعر</div>
+        <div>المخزون</div>
+        <div>الحالة</div>
+        <div></div>
+      </div>
+
+      <!-- Row 1 -->
+      <div class="table-row">
+        <div class="row-check"><input type="checkbox"></div>
+        <div class="row-img">🫒</div>
+        <div class="row-name">
+          <div class="name-ar">زيت أركان نقي 100مل</div>
+          <div class="name-fr">Huile d'Argan Pure 100ml</div>
+          <div class="sku">SKU: ARG-001</div>
+        </div>
+        <div class="row-cat"><span>زيت أركان</span></div>
+        <div class="row-price">89 <span style="font-size:10px;color:#9ca3af">د.م</span>
+          <span class="cost">تكلفة: 45 د.م</span>
+        </div>
+        <div class="row-stock"><span class="stock-badge stock-ok">✓ 24 وحدة</span></div>
+        <div class="row-status">
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="row-actions">
+          <button class="action-btn" onclick="document.getElementById('editPanel').style.display='flex'">✏️</button>
+          <button class="action-btn del">🗑️</button>
+        </div>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="table-row">
+        <div class="row-check"><input type="checkbox"></div>
+        <div class="row-img">🍯</div>
+        <div class="row-name">
+          <div class="name-ar">عسل الأطلس الجبلي 250غ</div>
+          <div class="name-fr">Miel de l'Atlas 250g</div>
+          <div class="sku">SKU: MEL-002</div>
+        </div>
+        <div class="row-cat"><span>العسل</span></div>
+        <div class="row-price">120 <span style="font-size:10px;color:#9ca3af">د.م</span>
+          <span class="cost">تكلفة: 60 د.م</span>
+        </div>
+        <div class="row-stock"><span class="stock-badge stock-ok">✓ 18 وحدة</span></div>
+        <div class="row-status">
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="row-actions">
+          <button class="action-btn" onclick="document.getElementById('editPanel').style.display='flex'">✏️</button>
+          <button class="action-btn del">🗑️</button>
+        </div>
+      </div>
+
+      <!-- Row 3 — low stock -->
+      <div class="table-row" style="background:#fffbeb">
+        <div class="row-check"><input type="checkbox"></div>
+        <div class="row-img">🌸</div>
+        <div class="row-name">
+          <div class="name-ar">زعفران تالوين أصيل 1غ</div>
+          <div class="name-fr">Safran de Taliouine 1g</div>
+          <div class="sku">SKU: SAF-003</div>
+        </div>
+        <div class="row-cat"><span>الزعفران</span></div>
+        <div class="row-price">65 <span style="font-size:10px;color:#9ca3af">د.م</span>
+          <span class="cost">تكلفة: 30 د.م</span>
+        </div>
+        <div class="row-stock"><span class="stock-badge stock-low">⚠ 3 وحدات</span></div>
+        <div class="row-status">
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="row-actions">
+          <button class="action-btn" onclick="document.getElementById('editPanel').style.display='flex'">✏️</button>
+          <button class="action-btn del">🗑️</button>
+        </div>
+      </div>
+
+      <!-- Row 4 — out of stock / inactive -->
+      <div class="table-row" style="opacity:.65">
+        <div class="row-check"><input type="checkbox"></div>
+        <div class="row-img">🏺</div>
+        <div class="row-name">
+          <div class="name-ar">فخار صافي تيزنيت</div>
+          <div class="name-fr">Poterie Artisanale Tiznit</div>
+          <div class="sku">SKU: POT-004</div>
+        </div>
+        <div class="row-cat"><span>الفخار</span></div>
+        <div class="row-price">180 <span style="font-size:10px;color:#9ca3af">د.م</span>
+          <span class="cost">تكلفة: 80 د.م</span>
+        </div>
+        <div class="row-stock"><span class="stock-badge stock-zero">✗ نفد</span></div>
+        <div class="row-status">
+          <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="row-actions">
+          <button class="action-btn">✏️</button>
+          <button class="action-btn del">🗑️</button>
+        </div>
+      </div>
+
+      <!-- Row 5 -->
+      <div class="table-row">
+        <div class="row-check"><input type="checkbox"></div>
+        <div class="row-img">🪡</div>
+        <div class="row-name">
+          <div class="name-ar">سجادة بربرية يدوية</div>
+          <div class="name-fr">Tapis Berbère Tissé Main</div>
+          <div class="sku">SKU: TAP-005</div>
+        </div>
+        <div class="row-cat"><span>المنسوجات</span></div>
+        <div class="row-price">450 <span style="font-size:10px;color:#9ca3af">د.م</span>
+          <span class="cost">تكلفة: 200 د.م</span>
+        </div>
+        <div class="row-stock"><span class="stock-badge stock-ok">✓ 8 وحدات</span></div>
+        <div class="row-status">
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="row-actions">
+          <button class="action-btn">✏️</button>
+          <button class="action-btn del">🗑️</button>
+        </div>
+      </div>
+
+    </div>
+    <!-- pagination -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:11px;color:#6b7280">
+      <span>عرض 1–20 من 24 منتج</span>
+      <div style="display:flex;gap:4px">
+        <button style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:white;font-size:11px;cursor:pointer">السابق</button>
+        <button style="padding:4px 10px;border:1px solid #4f46e5;border-radius:6px;background:#4f46e5;color:white;font-size:11px;cursor:pointer">1</button>
+        <button style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:white;font-size:11px;cursor:pointer">2</button>
+        <button style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:white;font-size:11px;cursor:pointer">التالي</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Panel (slide from left) -->
+<div id="editPanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;align-items:stretch" onclick="if(event.target===this)this.style.display='none'">
+  <div class="edit-panel">
+    <div class="edit-header">
+      <div class="edit-title">✏️ تعديل المنتج</div>
+      <button class="edit-close" onclick="document.getElementById('editPanel').style.display='none'">✕</button>
+    </div>
+    <div class="edit-body">
+
+      <!-- Section: Image -->
+      <div class="edit-section">
+        <div class="edit-section-title">🖼️ صورة المنتج</div>
+        <div class="img-preview">
+          <span style="font-size:32px">🫒</span>
+          <span>اضغط لتغيير الصورة</span>
+        </div>
+        <div class="form-row">
+          <label class="form-label">أو أدخل رابط الصورة</label>
+          <input class="form-input" type="url" placeholder="https://..." value="https://...argan.jpg">
+        </div>
+      </div>
+
+      <!-- Section: Identity -->
+      <div class="edit-section">
+        <div class="edit-section-title">📝 المعلومات الأساسية</div>
+        <div class="form-row">
+          <label class="form-label">الاسم بالعربية</label>
+          <input class="form-input" value="زيت أركان نقي 100مل">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Nom en français</label>
+          <input class="form-input" value="Huile d'Argan Pure 100ml">
+        </div>
+        <div class="form-row">
+          <label class="form-label">الوصف</label>
+          <textarea class="form-textarea form-input">زيت أركان طبيعي 100% مستخلص من ثمار شجرة الأركان المغربية...</textarea>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label class="form-label">الفئة</label>
+            <select class="form-input">
+              <option selected>زيت أركان</option>
+              <option>العسل</option>
+              <option>الزعفران</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">التعاونية</label>
+            <select class="form-input">
+              <option selected>تعاونية تيزنيت</option>
+              <option>تعاونية الرحامنة</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">SKU (رمز المنتج)</label>
+          <input class="form-input" value="ARG-001">
+        </div>
+      </div>
+
+      <!-- Section: Prix -->
+      <div class="edit-section">
+        <div class="edit-section-title">💰 الأسعار</div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label class="form-label">سعر البيع (د.م)</label>
+            <input class="form-input" type="number" value="89">
+          </div>
+          <div class="form-row">
+            <label class="form-label">سعر الشراء (د.م)</label>
+            <input class="form-input" type="number" value="45">
+          </div>
+        </div>
+        <div style="background:#dcfce7;border-radius:8px;padding:8px 12px;font-size:12px;color:#15803d;font-weight:700;">
+          ✓ هامش الربح: 44 د.م (49%)
+        </div>
+      </div>
+
+      <!-- Section: Stock -->
+      <div class="edit-section">
+        <div class="edit-section-title">📦 المخزون</div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label class="form-label">الوحدة</label>
+            <input class="form-input" value="flacon">
+          </div>
+          <div class="form-row">
+            <label class="form-label">تنبيه عند (وحدات)</label>
+            <input class="form-input" type="number" value="5" placeholder="5">
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Statut -->
+      <div class="edit-section">
+        <div class="edit-section-title">⚙️ الحالة</div>
+        <div class="status-row">
+          <div>
+            <div class="status-label">منتج نشط</div>
+            <div class="status-desc">يظهر في المتجر للزوار</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+    </div>
+    <div class="edit-footer">
+      <button class="btn-cancel" onclick="document.getElementById('editPanel').style.display='none'">إلغاء</button>
+      <button class="btn-save">💾 حفظ التغييرات</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
