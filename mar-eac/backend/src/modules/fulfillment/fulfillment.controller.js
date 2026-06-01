@@ -273,8 +273,72 @@ const getCommerceOrgs = async (req, res) => {
   }
 };
 
+// ── Category management (stored in PlatformSettings key: store_categories) ──────
+
+const CATS_KEY = 'store_categories';
+
+const getCategories = async (req, res) => {
+  try {
+    const setting = await prisma.platformSettings.findUnique({ where: { key: CATS_KEY } });
+    const saved = setting ? JSON.parse(setting.value) : [];
+
+    // Merge with distinct categories that already exist on products
+    const products = await prisma.commerceProduct.findMany({
+      where: { category: { not: null } },
+      select: { category: true },
+    });
+    const fromProducts = [...new Set(products.map(p => p.category).filter(Boolean))];
+
+    // Union: predefined + from products, deduplicated
+    const all = [...new Set([...saved, ...fromProducts])].sort((a, b) => a.localeCompare(b, 'ar'));
+    res.json({ categories: all, predefined: saved });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const addCategory = async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !String(name).trim()) return res.status(400).json({ message: 'name requis' });
+    const trimmed = String(name).trim();
+
+    const setting = await prisma.platformSettings.findUnique({ where: { key: CATS_KEY } });
+    const existing = setting ? JSON.parse(setting.value) : [];
+    if (existing.includes(trimmed)) return res.status(409).json({ message: 'Catégorie déjà existante' });
+
+    const updated = [...existing, trimmed];
+    await prisma.platformSettings.upsert({
+      where: { key: CATS_KEY },
+      update: { value: JSON.stringify(updated) },
+      create: { key: CATS_KEY, value: JSON.stringify(updated), category: 'GENERAL' },
+    });
+    res.status(201).json({ categories: updated });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const deleteCategory = async (req, res) => {
+  try {
+    const name = decodeURIComponent(req.params.name);
+    const setting = await prisma.platformSettings.findUnique({ where: { key: CATS_KEY } });
+    const existing = setting ? JSON.parse(setting.value) : [];
+    const updated = existing.filter(c => c !== name);
+    await prisma.platformSettings.upsert({
+      where: { key: CATS_KEY },
+      update: { value: JSON.stringify(updated) },
+      create: { key: CATS_KEY, value: JSON.stringify(updated), category: 'GENERAL' },
+    });
+    res.json({ categories: updated });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getOrders, updateOrder, getStockAlerts,
   getProducts, createProduct, updateProduct, deleteProduct, toggleProduct,
   getStockMovements, addStockMovement, getCommerceOrgs,
+  getCategories, addCategory, deleteCategory,
 };

@@ -648,4 +648,8 @@ export const storeManagerApi = {
   getCommerceOrgs:   ()                          => api.get('/fulfillment/commerce-orgs'),
   // Reports (reuse existing)
   getStoreStats:     ()                          => api.get('/superadmin/stats', { params: { section: 'store' } }),
+  // Categories
+  getCategories:     ()                          => api.get('/fulfillment/categories'),
+  addCategory:       (name: string)              => api.post('/fulfillment/categories', { name }),
+  deleteCategory:    (name: string)              => api.delete(`/fulfillment/categories/${encodeURIComponent(name)}`),
 };

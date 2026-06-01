@@ -26,4 +26,9 @@ router.post  ('/stock-movements',     ctrl.addStockMovement);
 // Org list for product form selector
 router.get   ('/commerce-orgs',       ctrl.getCommerceOrgs);
 
+// Category management
+router.get   ('/categories',          ctrl.getCategories);
+router.post  ('/categories',          ctrl.addCategory);
+router.delete('/categories/:name',    ctrl.deleteCategory);
+
 module.exports = router;
