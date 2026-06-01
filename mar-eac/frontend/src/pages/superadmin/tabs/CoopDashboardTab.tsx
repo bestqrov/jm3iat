@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Building2, TrendingUp, Clock, DollarSign, GitMerge, Check, RefreshCw } from 'lucide-react';
 import { superadminApi } from '../../../lib/api';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { OrgPerformanceLeaderboard } from '../../../components/superadmin/OrgPerformanceLeaderboard';
 
 export function CoopDashboardTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
   const { lang } = useLanguage();
@@ -80,6 +81,8 @@ export function CoopDashboardTab({ onNavigate }: { onNavigate: (tab: string) => 
           </button>
         ))}
       </div>
+
+      <OrgPerformanceLeaderboard section="coop" />
     </div>
   );
 }

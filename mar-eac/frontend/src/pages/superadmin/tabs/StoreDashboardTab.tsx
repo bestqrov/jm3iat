@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Package, Truck, DollarSign, ShoppingCart, TrendingUp, AlertTriangle } from 'lucide-react';
 import { superadminApi } from '../../../lib/api';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { OrgPerformanceLeaderboard } from '../../../components/superadmin/OrgPerformanceLeaderboard';
 
 export function StoreDashboardTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
   const { lang } = useLanguage();
@@ -85,6 +86,8 @@ export function StoreDashboardTab({ onNavigate }: { onNavigate: (tab: string) =>
           </button>
         ))}
       </div>
+
+      <OrgPerformanceLeaderboard section="store" />
     </div>
   );
 }

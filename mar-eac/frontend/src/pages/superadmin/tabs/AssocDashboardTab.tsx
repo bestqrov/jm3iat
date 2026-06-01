@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Building2, TrendingUp, Clock, AlertTriangle, DollarSign, Plus, RefreshCw, Users, Check } from 'lucide-react';
 import { superadminApi } from '../../../lib/api';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { OrgPerformanceLeaderboard } from '../../../components/superadmin/OrgPerformanceLeaderboard';
 
 const ASSOC_TYPES = [
   { key: 'REGULAR',          labelFr: 'Classique',        labelAr: 'جمعية عادية',       badge: 'bg-gray-100 text-gray-700' },
@@ -92,6 +93,8 @@ export function AssocDashboardTab({ onNavigate }: { onNavigate: (tab: string) =>
           </button>
         ))}
       </div>
+
+      <OrgPerformanceLeaderboard section="assoc" />
     </div>
   );
 }
