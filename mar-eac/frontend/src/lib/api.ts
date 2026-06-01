@@ -276,6 +276,8 @@ export const assocApi = {
 export const superadminApi = {
   // ── Core Stats & Analytics ──────────────────────────────────────────────────
   getStats:             (section?: 'assoc' | 'coop' | 'store') => api.get('/superadmin/stats', { params: section ? { section } : {} }),
+  getOrgPerformance:    (section: string, page = 1, search = '') =>
+    api.get('/superadmin/org-performance', { params: { section, page, limit: 20, search } }),
   getAnalytics:         ()                               => api.get('/superadmin/analytics'),
   getFeatureUsage:      ()                               => api.get('/superadmin/feature-usage'),
   getAIInsights:        ()                               => api.get('/superadmin/ai-insights'),
