@@ -315,6 +315,7 @@ export const superadminApi = {
 
   // ── Users ───────────────────────────────────────────────────────────────────
   getUsers:             (params?: any)                   => api.get('/superadmin/users', { params }),
+  createUser:           (data: any)                      => api.post('/superadmin/users', data),
   toggleUser:           (userId: string)                 => api.put(`/superadmin/users/${userId}/toggle`),
   resetUserPassword:    (userId: string)                 => api.post(`/superadmin/users/${userId}/reset-password`),
 

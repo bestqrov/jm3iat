@@ -42,6 +42,7 @@ router.delete('/payments/:paymentId',                 ctrl.deletePayment);
 
 // ── Users ──────────────────────────────────────────────────────────────────────
 router.get('/users',                                  ctrl.getUsers);
+router.post('/users',                                 ctrl.createUser);
 router.put('/users/:userId/toggle',                   ctrl.toggleUser);
 router.post('/users/:userId/reset-password',          ctrl.resetUserPassword);
 

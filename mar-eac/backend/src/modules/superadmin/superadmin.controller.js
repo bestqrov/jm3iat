@@ -914,6 +914,31 @@ const resetUserPassword = async (req, res) => {
   }
 };
 
+const createUser = async (req, res) => {
+  try {
+    const { name, email, password, role, organizationId } = req.body;
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'name, email, password, role requis' });
+    }
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) return res.status(409).json({ message: 'Email déjà utilisé' });
+
+    const hashed = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({
+      data: {
+        name, email, password: hashed, role,
+        organizationId: organizationId || null,
+        isActive: true,
+      },
+      select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+    });
+    res.status(201).json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // ─── Packs ────────────────────────────────────────────────────────────────────
 
 const DEFAULT_PACKS = [
@@ -2212,7 +2237,7 @@ module.exports = {
   getStats, getAnalytics, getFeatureUsage, getAIInsights,
   getOrganizations, getOrganization, updateSubscription, deleteOrganization,
   getPayments, createPayment, uploadPaymentReceipt, deletePayment,
-  getUsers, toggleUser, resetUserPassword,
+  getUsers, createUser, toggleUser, resetUserPassword,
   seedDefaultPacks, getPacks, createPack, updatePack, deletePack,
   getPromoSellers, createPromoSeller, updatePromoSeller, deletePromoSeller, getPromoSellerUsages, markSellerPaid,
   getPromoCodes, createPromoCode, updatePromoCode, deletePromoCode,

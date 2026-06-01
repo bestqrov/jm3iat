@@ -286,6 +286,10 @@ export const SuperAdminPage: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [resetResult, setResetResult] = useState<{ tempPassword: string; name: string; email: string } | null>(null);
   const [copiedPw, setCopiedPw] = useState(false);
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [createUserForm, setCreateUserForm] = useState({ name: '', email: '', password: '', role: 'STORE_MANAGER' });
+  const [createUserSaving, setCreateUserSaving] = useState(false);
+  const [createUserError, setCreateUserError] = useState('');
 
   const ORGS_LIMIT = 15;
   const PAYMENTS_LIMIT = 20;
@@ -476,6 +480,21 @@ export const SuperAdminPage: React.FC = () => {
       navigator.clipboard.writeText(resetResult.tempPassword);
       setCopiedPw(true);
       setTimeout(() => setCopiedPw(false), 2000);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    setCreateUserError('');
+    setCreateUserSaving(true);
+    try {
+      await superadminApi.createUser(createUserForm);
+      setShowCreateUser(false);
+      setCreateUserForm({ name: '', email: '', password: '', role: 'STORE_MANAGER' });
+      await loadUsers();
+    } catch (err: any) {
+      setCreateUserError(err.response?.data?.message || 'Erreur');
+    } finally {
+      setCreateUserSaving(false);
     }
   };
 
@@ -906,9 +925,15 @@ export const SuperAdminPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">{isAr ? 'المستخدمون' : 'Utilisateurs'} <span className="text-sm font-normal text-gray-400">({usersTotal})</span></h2>
-                <div className="relative">
-                  <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input value={userSearch} onChange={e => setUserSearch(e.target.value)} placeholder={isAr ? 'بحث...' : 'Rechercher...'} className="ps-8 pe-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 w-48 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input value={userSearch} onChange={e => setUserSearch(e.target.value)} placeholder={isAr ? 'بحث...' : 'Rechercher...'} className="ps-8 pe-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 w-48 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  </div>
+                  <button onClick={() => { setShowCreateUser(true); setCreateUserError(''); }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                    <Plus size={14} /> {isAr ? 'مستخدم جديد' : 'Nouvel utilisateur'}
+                  </button>
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
@@ -974,6 +999,43 @@ export const SuperAdminPage: React.FC = () => {
       </div>
 
       {/* ════════════ MODALS ════════════ */}
+
+      {/* Create User Modal */}
+      {showCreateUser && (
+        <Modal isOpen onClose={() => setShowCreateUser(false)} title={isAr ? '+ مستخدم جديد' : 'Nouvel utilisateur'}>
+          <div className="space-y-3">
+            <div>
+              <label className={lbl}>{isAr ? 'الاسم الكامل' : 'Nom complet'}</label>
+              <input value={createUserForm.name} onChange={e => setCreateUserForm(f => ({ ...f, name: e.target.value }))} className={inp} />
+            </div>
+            <div>
+              <label className={lbl}>Email</label>
+              <input type="email" value={createUserForm.email} onChange={e => setCreateUserForm(f => ({ ...f, email: e.target.value }))} className={inp} />
+            </div>
+            <div>
+              <label className={lbl}>{isAr ? 'كلمة السر الأولية' : 'Mot de passe initial'}</label>
+              <input type="text" value={createUserForm.password} onChange={e => setCreateUserForm(f => ({ ...f, password: e.target.value }))} className={inp} placeholder="Min. 8 caractères" />
+            </div>
+            <div>
+              <label className={lbl}>{isAr ? 'الدور' : 'Rôle'}</label>
+              <select value={createUserForm.role} onChange={e => setCreateUserForm(f => ({ ...f, role: e.target.value }))} className={inp}>
+                <option value="STORE_MANAGER">🏪 مسؤول المتجر (Store Manager)</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
+            {createUserError && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{createUserError}</p>}
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setShowCreateUser(false)} className="flex-1 py-2 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700">
+                {isAr ? 'إلغاء' : 'Annuler'}
+              </button>
+              <button onClick={handleCreateUser} disabled={createUserSaving || !createUserForm.name || !createUserForm.email || !createUserForm.password}
+                className="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                {createUserSaving ? '...' : (isAr ? 'إنشاء الحساب' : 'Créer le compte')}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* View Org Modal */}
       {viewingOrg && (
