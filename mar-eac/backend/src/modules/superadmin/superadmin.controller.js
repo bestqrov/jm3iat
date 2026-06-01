@@ -2106,8 +2106,8 @@ const rejectConversion = async (req, res) => {
 const getOrgPerformance = async (req, res) => {
   try {
     const { section = 'assoc', page = '1', limit = '20', search = '' } = req.query;
-    const pageNum  = Math.max(1, parseInt(page));
-    const limitNum = Math.max(1, parseInt(limit));
+    const pageNum  = Math.max(1, parseInt(page)  || 1);
+    const limitNum = Math.max(1, parseInt(limit) || 1);
     const now           = new Date();
     const startOfMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -2126,7 +2126,7 @@ const getOrgPerformance = async (req, res) => {
       const q = search.toLowerCase();
       orgs = orgs.filter(o =>
         o.name.toLowerCase().includes(q) ||
-        (o.nameAr || '').includes(search) ||
+        (o.nameAr || '').toLowerCase().includes(q) ||
         (o.cityAr || '').toLowerCase().includes(q)
       );
     }
@@ -2175,7 +2175,7 @@ const getOrgPerformance = async (req, res) => {
 
     const revenues   = orgs.map(o => revenueMap[o.id]?.monthRevenue || 0);
     const avg        = revenues.length > 0 ? revenues.reduce((s, v) => s + v, 0) / revenues.length : 0;
-    const topRevenue = revenues.length > 0 ? Math.max(...revenues) : 0;
+    const topRevenue = revenues.length > 0 ? revenues.reduce((a, b) => Math.max(a, b), 0) : 0;
 
     const getAdvice = (monthRevenue, lastMonthRevenue) => {
       if (monthRevenue === 0)
