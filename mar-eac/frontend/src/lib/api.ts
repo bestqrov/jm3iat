@@ -632,3 +632,19 @@ export const bundleApi = {
   update:  (id: string, data: any) => api.put(`/store/bundles/${id}`, data),
   remove:  (id: string)            => api.delete(`/store/bundles/${id}`),
 };
+
+export const storeManagerApi = {
+  // Products
+  getProducts:       (params?: any)              => api.get('/fulfillment/products', { params }),
+  createProduct:     (data: any)                 => api.post('/fulfillment/products', data),
+  updateProduct:     (id: string, data: any)     => api.put(`/fulfillment/products/${id}`, data),
+  deleteProduct:     (id: string)                => api.delete(`/fulfillment/products/${id}`),
+  toggleProduct:     (id: string)                => api.patch(`/fulfillment/products/${id}/toggle`),
+  // Stock
+  getStockMovements: (params?: any)              => api.get('/fulfillment/stock-movements', { params }),
+  addStockMovement:  (data: any)                 => api.post('/fulfillment/stock-movements', data),
+  // Orgs list for product form
+  getCommerceOrgs:   ()                          => api.get('/fulfillment/commerce-orgs'),
+  // Reports (reuse existing)
+  getStoreStats:     ()                          => api.get('/superadmin/stats', { params: { section: 'store' } }),
+};
