@@ -66,4 +66,215 @@ const getStockAlerts = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, updateOrder, getStockAlerts };
+// ── Cross-org product management (SUPER_ADMIN + STORE_MANAGER) ───────────────
+
+// GET /api/fulfillment/products?search=&category=&orgId=&status=&page=1&limit=20
+const getProducts = async (req, res) => {
+  try {
+    const { search = '', category = '', orgId = '', status = '', page = '1', limit = '20' } = req.query;
+    const pageNum  = Math.max(1, parseInt(page)  || 1);
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 20));
+
+    const where = { organization: { modules: { has: 'COMMERCE' } } };
+    if (orgId)    where.organizationId = orgId;
+    if (category) where.category = category;
+    if (status === 'active')   where.isActive = true;
+    if (status === 'inactive') where.isActive = false;
+    if (search) {
+      where.OR = [
+        { name:   { contains: search, mode: 'insensitive' } },
+        { nameAr: { contains: search } },
+        { sku:    { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.commerceProduct.findMany({
+        where,
+        include: {
+          organization: { select: { id: true, name: true, nameAr: true } },
+          stockMovements: { select: { type: true, quantity: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+      }),
+      prisma.commerceProduct.count({ where }),
+    ]);
+
+    const products = items.map(p => {
+      const stock = p.stockMovements.reduce((s, m) => {
+        if (m.type === 'IN' || m.type === 'RETURN') return s + m.quantity;
+        if (m.type === 'OUT') return s - m.quantity;
+        if (m.type === 'ADJUST') return m.quantity;
+        return s;
+      }, 0);
+      const { stockMovements, ...rest } = p;
+      return { ...rest, stock };
+    });
+
+    res.json({ products, total });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/fulfillment/products
+const createProduct = async (req, res) => {
+  try {
+    const { organizationId, name, nameAr, description, category, sku, costPrice, sellingPrice, commission, unit, imageUrl, isActive, initialStock } = req.body;
+    if (!organizationId || !name || !sellingPrice) {
+      return res.status(400).json({ message: 'organizationId, name, sellingPrice requis' });
+    }
+    const product = await prisma.commerceProduct.create({
+      data: {
+        organizationId,
+        name, nameAr: nameAr || null,
+        description: description || null,
+        category: category || null,
+        sku: sku || null,
+        costPrice: parseFloat(costPrice) || 0,
+        sellingPrice: parseFloat(sellingPrice),
+        commission: parseFloat(commission) || 0,
+        unit: unit || 'pièce',
+        imageUrl: imageUrl || null,
+        isActive: isActive !== false,
+      },
+    });
+    if (initialStock && parseInt(initialStock) > 0) {
+      await prisma.commerceStockMovement.create({
+        data: {
+          organizationId,
+          productId: product.id,
+          type: 'IN',
+          quantity: parseInt(initialStock),
+          reference: 'INITIAL',
+        },
+      });
+    }
+    res.status(201).json(product);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// PUT /api/fulfillment/products/:id
+const updateProduct = async (req, res) => {
+  try {
+    const { name, nameAr, description, category, sku, costPrice, sellingPrice, commission, unit, imageUrl, isActive, organizationId } = req.body;
+    const data = {};
+    if (name        !== undefined) data.name        = name;
+    if (nameAr      !== undefined) data.nameAr      = nameAr || null;
+    if (description !== undefined) data.description = description || null;
+    if (category    !== undefined) data.category    = category || null;
+    if (sku         !== undefined) data.sku         = sku || null;
+    if (costPrice   !== undefined) data.costPrice   = parseFloat(costPrice) || 0;
+    if (sellingPrice !== undefined) data.sellingPrice = parseFloat(sellingPrice);
+    if (commission  !== undefined) data.commission  = parseFloat(commission) || 0;
+    if (unit        !== undefined) data.unit        = unit;
+    if (imageUrl    !== undefined) data.imageUrl    = imageUrl || null;
+    if (isActive    !== undefined) data.isActive    = Boolean(isActive);
+    if (organizationId !== undefined) data.organizationId = organizationId;
+
+    const product = await prisma.commerceProduct.update({ where: { id: req.params.id }, data });
+    res.json(product);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// DELETE /api/fulfillment/products/:id
+const deleteProduct = async (req, res) => {
+  try {
+    await prisma.commerceProduct.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// PATCH /api/fulfillment/products/:id/toggle
+const toggleProduct = async (req, res) => {
+  try {
+    const product = await prisma.commerceProduct.findUnique({ where: { id: req.params.id }, select: { isActive: true } });
+    if (!product) return res.status(404).json({ message: 'Not found' });
+    const updated = await prisma.commerceProduct.update({
+      where: { id: req.params.id },
+      data: { isActive: !product.isActive },
+    });
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/fulfillment/stock-movements?productId=&orgId=&page=1
+const getStockMovements = async (req, res) => {
+  try {
+    const { productId = '', orgId = '', page = '1' } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const where = {};
+    if (productId) where.productId = productId;
+    if (orgId)     where.organizationId = orgId;
+
+    const [items, total] = await Promise.all([
+      prisma.commerceStockMovement.findMany({
+        where,
+        include: {
+          product: { select: { name: true, nameAr: true, unit: true } },
+          organization: { select: { name: true, nameAr: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (pageNum - 1) * 30,
+        take: 30,
+      }),
+      prisma.commerceStockMovement.count({ where }),
+    ]);
+    res.json({ movements: items, total });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/fulfillment/stock-movements
+const addStockMovement = async (req, res) => {
+  try {
+    const { organizationId, productId, type, quantity, reference, notes } = req.body;
+    if (!organizationId || !productId || !type || !quantity) {
+      return res.status(400).json({ message: 'organizationId, productId, type, quantity requis' });
+    }
+    const movement = await prisma.commerceStockMovement.create({
+      data: { organizationId, productId, type, quantity: parseInt(quantity), reference: reference || null, notes: notes || null },
+    });
+    res.status(201).json(movement);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/fulfillment/commerce-orgs
+const getCommerceOrgs = async (req, res) => {
+  try {
+    const orgs = await prisma.organization.findMany({
+      where: { modules: { has: 'COMMERCE' } },
+      select: { id: true, name: true, nameAr: true, cityAr: true },
+      orderBy: { name: 'asc' },
+    });
+    res.json(orgs);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = {
+  getOrders, updateOrder, getStockAlerts,
+  getProducts, createProduct, updateProduct, deleteProduct, toggleProduct,
+  getStockMovements, addStockMovement, getCommerceOrgs,
+};
