@@ -2102,6 +2102,112 @@ const rejectConversion = async (req, res) => {
   }
 };
 
+// GET /api/superadmin/org-performance?section=assoc|coop|store&page=1&limit=20&search=
+const getOrgPerformance = async (req, res) => {
+  try {
+    const { section = 'assoc', page = '1', limit = '20', search = '' } = req.query;
+    const pageNum  = Math.max(1, parseInt(page));
+    const limitNum = Math.max(1, parseInt(limit));
+    const now           = new Date();
+    const startOfMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const orgWhere =
+      section === 'coop'  ? { conversionStatus: 'CONVERTED' } :
+      section === 'store' ? { modules: { has: 'COMMERCE' }  } :
+      /* assoc */           { conversionStatus: { not: 'CONVERTED' } };
+
+    let orgs = await prisma.organization.findMany({
+      where: orgWhere,
+      select: { id: true, name: true, nameAr: true, cityAr: true, phone: true },
+    });
+
+    if (search) {
+      const q = search.toLowerCase();
+      orgs = orgs.filter(o =>
+        o.name.toLowerCase().includes(q) ||
+        (o.nameAr || '').includes(search) ||
+        (o.cityAr || '').toLowerCase().includes(q)
+      );
+    }
+
+    const revenueMap = {};
+
+    if (section === 'store') {
+      const [thisMonth, lastMonth] = await Promise.all([
+        prisma.commerceOrder.findMany({
+          where: { source: 'STORE', status: { not: 'CANCELLED' }, createdAt: { gte: startOfMonth } },
+          select: { organizationId: true, totalAmount: true },
+        }),
+        prisma.commerceOrder.findMany({
+          where: { source: 'STORE', status: { not: 'CANCELLED' }, createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
+          select: { organizationId: true, totalAmount: true },
+        }),
+      ]);
+      for (const o of thisMonth) {
+        if (!revenueMap[o.organizationId]) revenueMap[o.organizationId] = { monthRevenue: 0, lastMonthRevenue: 0 };
+        revenueMap[o.organizationId].monthRevenue += o.totalAmount;
+      }
+      for (const o of lastMonth) {
+        if (!revenueMap[o.organizationId]) revenueMap[o.organizationId] = { monthRevenue: 0, lastMonthRevenue: 0 };
+        revenueMap[o.organizationId].lastMonthRevenue += o.totalAmount;
+      }
+    } else {
+      const [thisMonth, lastMonth] = await Promise.all([
+        prisma.payment.findMany({
+          where: { organization: orgWhere, paidAt: { gte: startOfMonth } },
+          select: { organizationId: true, amount: true },
+        }),
+        prisma.payment.findMany({
+          where: { organization: orgWhere, paidAt: { gte: startOfLastMonth, lt: startOfMonth } },
+          select: { organizationId: true, amount: true },
+        }),
+      ]);
+      for (const p of thisMonth) {
+        if (!revenueMap[p.organizationId]) revenueMap[p.organizationId] = { monthRevenue: 0, lastMonthRevenue: 0 };
+        revenueMap[p.organizationId].monthRevenue += p.amount;
+      }
+      for (const p of lastMonth) {
+        if (!revenueMap[p.organizationId]) revenueMap[p.organizationId] = { monthRevenue: 0, lastMonthRevenue: 0 };
+        revenueMap[p.organizationId].lastMonthRevenue += p.amount;
+      }
+    }
+
+    const revenues   = orgs.map(o => revenueMap[o.id]?.monthRevenue || 0);
+    const avg        = revenues.length > 0 ? revenues.reduce((s, v) => s + v, 0) / revenues.length : 0;
+    const topRevenue = revenues.length > 0 ? Math.max(...revenues) : 0;
+
+    const getAdvice = (monthRevenue, lastMonthRevenue) => {
+      if (monthRevenue === 0)
+        return { advice: 'zero', adviceLabel: '🚨 ما خدم والو' };
+      if (avg > 0 && monthRevenue < avg * 0.2)
+        return { advice: 'weak', adviceLabel: '⚠️ ضعيف' };
+      if (lastMonthRevenue > 0 && monthRevenue < lastMonthRevenue * 0.5)
+        return { advice: 'critical_drop', adviceLabel: '📉 انخفاض كبير' };
+      if (topRevenue > 0 && monthRevenue >= topRevenue * 0.8)
+        return { advice: 'top', adviceLabel: '🔥 Top' };
+      return { advice: 'ok', adviceLabel: '✅ عادي' };
+    };
+
+    const allSorted = orgs
+      .map(o => {
+        const rev = revenueMap[o.id] || { monthRevenue: 0, lastMonthRevenue: 0 };
+        return { ...o, ...rev, ...getAdvice(rev.monthRevenue, rev.lastMonthRevenue) };
+      })
+      .sort((a, b) => b.monthRevenue - a.monthRevenue)
+      .map((o, i) => ({ ...o, rank: i + 1 }));
+
+    const needsAttention = allSorted.filter(o => o.advice === 'zero' || o.advice === 'critical_drop');
+    const total  = allSorted.length;
+    const paged  = allSorted.slice((pageNum - 1) * limitNum, pageNum * limitNum);
+
+    res.json({ orgs: paged, total, needsAttention });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getStats, getAnalytics, getFeatureUsage, getAIInsights,
   getOrganizations, getOrganization, updateSubscription, deleteOrganization,
@@ -2120,4 +2226,5 @@ module.exports = {
   getConversionRequests, approveConversion, rejectConversion,
   activateAsCooperative, deactivateCooperative,
   getMarketingCampaigns, createMarketingCampaign, deleteMarketingCampaign, getTemplateMessages,
+  getOrgPerformance,
 };
