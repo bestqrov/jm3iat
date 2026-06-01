@@ -14,8 +14,8 @@ router.get('/orders/:orderNumber',   ctrl.getOrderStatus);
 router.post('/orders',               ctrl.placeStoreOrder);
 
 // Protected — super admin only
-router.post  ('/bundles',     auth, requireRole('SUPER_ADMIN'), ctrl.createBundle);
-router.put   ('/bundles/:id', auth, requireRole('SUPER_ADMIN'), ctrl.updateBundle);
-router.delete('/bundles/:id', auth, requireRole('SUPER_ADMIN'), ctrl.deleteBundle);
+router.post  ('/bundles',     auth, requireRole('SUPER_ADMIN', 'STORE_MANAGER'), ctrl.createBundle);
+router.put   ('/bundles/:id', auth, requireRole('SUPER_ADMIN', 'STORE_MANAGER'), ctrl.updateBundle);
+router.delete('/bundles/:id', auth, requireRole('SUPER_ADMIN', 'STORE_MANAGER'), ctrl.deleteBundle);
 
 module.exports = router;
