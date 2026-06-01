@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revenue Leaderboard Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #f8f9fa; color: #111827; padding: 16px; }
+  h1 { font-size: 13px; color: #6b7280; margin-bottom: 16px; text-align: center; letter-spacing: .5px; }
+
+  .section { background: white; border-radius: 16px; border: 1px solid #e5e7eb; padding: 16px; margin-bottom: 20px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 15px; font-weight: 800; color: #111827; display: flex; align-items: center; gap: 8px; }
+  .section-badge { font-size: 11px; padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+
+  /* ── Option A: Simple ranked list ── */
+  .rank-list { display: flex; flex-direction: column; gap: 8px; }
+  .rank-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #f9fafb; border: 1px solid #f3f4f6; transition: background .15s; }
+  .rank-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+  .rank-num.gold   { background: #fef9c3; color: #92400e; }
+  .rank-num.silver { background: #f1f5f9; color: #475569; }
+  .rank-num.bronze { background: #fff7ed; color: #9a3412; }
+  .rank-num.plain  { background: #f3f4f6; color: #6b7280; }
+  .rank-name { flex: 1; font-size: 13px; font-weight: 600; color: #111827; }
+  .rank-city { font-size: 11px; color: #9ca3af; display: block; font-weight: 400; }
+  .rank-bar-wrap { width: 80px; background: #f3f4f6; border-radius: 99px; height: 6px; overflow: hidden; }
+  .rank-bar { height: 100%; border-radius: 99px; }
+  .rank-value { font-size: 13px; font-weight: 800; min-width: 70px; text-align: left; }
+  .rank-signal { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 700; flex-shrink: 0; }
+  .signal-top    { background: #dcfce7; color: #15803d; }
+  .signal-ok     { background: #eff6ff; color: #1d4ed8; }
+  .signal-low    { background: #fff7ed; color: #c2410c; }
+  .signal-zero   { background: #fef2f2; color: #b91c1c; }
+
+  /* ── Option B: Card grid ── */
+  .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .perf-card { border-radius: 12px; padding: 12px; border: 1px solid #e5e7eb; position: relative; overflow: hidden; }
+  .perf-card .crown { position: absolute; top: 8px; left: 10px; font-size: 14px; }
+  .perf-card-name { font-size: 12px; font-weight: 700; color: #111827; margin-bottom: 2px; padding-left: 20px; }
+  .perf-card-city { font-size: 10px; color: #9ca3af; margin-bottom: 8px; }
+  .perf-card-revenue { font-size: 18px; font-weight: 900; }
+  .perf-card-label { font-size: 9px; color: #9ca3af; margin-bottom: 4px; }
+  .perf-card-tag { display: inline-flex; font-size: 9px; padding: 2px 7px; border-radius: 99px; font-weight: 700; margin-top: 4px; }
+
+  /* divider */
+  .divider { height: 1px; background: #f3f4f6; margin: 16px 0; }
+  .option-label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+
+  /* footer note */
+  .note { font-size: 10px; color: #9ca3af; margin-top: 8px; display: flex; align-items: center; gap: 4px; }
+
+  /* colors per section */
+  .purple { color: #7c3aed; }
+  .teal   { color: #0d9488; }
+  .amber  { color: #d97706; }
+
+  /* scale indicator */
+  .scale-section { margin-top: 12px; }
+  .scale-header { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .scale-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: #fff7ed; border: 1px solid #fed7aa; margin-bottom: 6px; }
+  .scale-item-name { flex: 1; font-size: 12px; font-weight: 600; color: #92400e; }
+  .scale-item-reason { font-size: 10px; color: #c2410c; }
+  .scale-action { font-size: 10px; padding: 3px 10px; background: #ea580c; color: white; border-radius: 99px; font-weight: 700; border: none; cursor: pointer; }
+
+  .choice-btn { display: block; width: 100%; margin-top: 10px; padding: 10px; border-radius: 12px; border: 2px solid #e5e7eb; background: white; font-size: 12px; font-weight: 700; color: #374151; cursor: pointer; text-align: right; transition: all .15s; }
+  .choice-btn:hover { border-color: #7c3aed; color: #7c3aed; background: #f5f3ff; }
+  .choice-btn .choice-desc { font-weight: 400; color: #6b7280; display: block; margin-top: 2px; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>كيفاش تبان معلومات الأداء ف كل section؟</h1>
+
+<!-- ══════════════════════════════════════════
+     OPTION A — Ranked leaderboard list
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="option-label">الخيار A — ليست مرتّبة حسب الربح</div>
+  <div class="section-header">
+    <div class="section-title">
+      🤝 <span>أداء التعاونيات</span>
+    </div>
+    <span class="section-badge" style="background:#f0fdf4;color:#15803d;">هذا الشهر</span>
+  </div>
+
+  <div class="rank-list">
+    <div class="rank-item">
+      <div class="rank-num gold">1</div>
+      <div style="flex:1">
+        <div class="rank-name">تعاونية تيزنيت</div>
+        <span class="rank-city">تيزنيت · تعاونية</span>
+      </div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:100%;background:#7c3aed;"></div></div>
+      <div class="rank-value teal">12,400 د.م</div>
+      <span class="rank-signal signal-top">🔥 Top</span>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num silver">2</div>
+      <div style="flex:1">
+        <div class="rank-name">تعاونية الرحامنة</div>
+        <span class="rank-city">مراكش · تعاونية</span>
+      </div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:72%;background:#7c3aed;"></div></div>
+      <div class="rank-value teal">8,900 د.م</div>
+      <span class="rank-signal signal-ok">✅ جيد</span>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num bronze">3</div>
+      <div style="flex:1">
+        <div class="rank-name">تعاونية ورزازات</div>
+        <span class="rank-city">ورزازات · تعاونية</span>
+      </div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:48%;background:#7c3aed;"></div></div>
+      <div class="rank-value teal">5,950 د.م</div>
+      <span class="rank-signal signal-ok">✅ جيد</span>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num plain">4</div>
+      <div style="flex:1">
+        <div class="rank-name">تعاونية طاطا</div>
+        <span class="rank-city">طاطا · تعاونية</span>
+      </div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:18%;background:#f97316;"></div></div>
+      <div class="rank-value amber">1,200 د.م</div>
+      <span class="rank-signal signal-low">⚠️ ضعيف</span>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num plain">5</div>
+      <div style="flex:1">
+        <div class="rank-name">تعاونية إنزكان</div>
+        <span class="rank-city">إنزكان · تعاونية</span>
+      </div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:0%;background:#ef4444;"></div></div>
+      <div class="rank-value" style="color:#ef4444;">0 د.م</div>
+      <span class="rank-signal signal-zero">🚨 محتاج تدخل</span>
+    </div>
+  </div>
+
+  <!-- Scale alerts -->
+  <div class="scale-section">
+    <div class="scale-header">
+      <span>⚠️</span> محتاجين تدخل (2)
+    </div>
+    <div class="scale-item">
+      <div>
+        <div class="scale-item-name">تعاونية طاطا</div>
+        <div class="scale-item-reason">1,200 د.م فقط · أقل من 20% من المتوسط</div>
+      </div>
+      <button class="scale-action">تواصل</button>
+    </div>
+    <div class="scale-item">
+      <div>
+        <div class="scale-item-name">تعاونية إنزكان</div>
+        <div class="scale-item-reason">صفر مبيعات هذا الشهر</div>
+      </div>
+      <button class="scale-action">تواصل</button>
+    </div>
+  </div>
+
+  <div class="note">📊 مرتّب حسب إيرادات المتجر هذا الشهر</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     OPTION B — Card grid (compact)
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="option-label">الخيار B — كارطونات مضغوطة</div>
+  <div class="section-header">
+    <div class="section-title">🤝 أداء التعاونيات</div>
+    <span class="section-badge" style="background:#f0fdf4;color:#15803d;">هذا الشهر</span>
+  </div>
+
+  <div class="card-grid">
+    <div class="perf-card" style="background:#f0fdf4;border-color:#bbf7d0;">
+      <span class="crown">🥇</span>
+      <div class="perf-card-name">تعاونية تيزنيت</div>
+      <div class="perf-card-city">تيزنيت</div>
+      <div class="perf-card-label">الربح هذا الشهر</div>
+      <div class="perf-card-revenue" style="color:#15803d;">12,400 <span style="font-size:11px;font-weight:500;">د.م</span></div>
+      <span class="perf-card-tag" style="background:#dcfce7;color:#15803d;">🔥 الأحسن</span>
+    </div>
+    <div class="perf-card" style="background:#eff6ff;border-color:#bfdbfe;">
+      <span class="crown">🥈</span>
+      <div class="perf-card-name">تعاونية الرحامنة</div>
+      <div class="perf-card-city">مراكش</div>
+      <div class="perf-card-label">الربح هذا الشهر</div>
+      <div class="perf-card-revenue" style="color:#1d4ed8;">8,900 <span style="font-size:11px;font-weight:500;">د.م</span></div>
+      <span class="perf-card-tag" style="background:#dbeafe;color:#1d4ed8;">✅ جيد</span>
+    </div>
+    <div class="perf-card" style="background:#fff7ed;border-color:#fed7aa;">
+      <div class="perf-card-name">تعاونية طاطا</div>
+      <div class="perf-card-city">طاطا</div>
+      <div class="perf-card-label">الربح هذا الشهر</div>
+      <div class="perf-card-revenue" style="color:#c2410c;">1,200 <span style="font-size:11px;font-weight:500;">د.م</span></div>
+      <span class="perf-card-tag" style="background:#ffedd5;color:#c2410c;">⚠️ ضعيف</span>
+    </div>
+    <div class="perf-card" style="background:#fef2f2;border-color:#fecaca;">
+      <div class="perf-card-name">تعاونية إنزكان</div>
+      <div class="perf-card-city">إنزكان</div>
+      <div class="perf-card-label">الربح هذا الشهر</div>
+      <div class="perf-card-revenue" style="color:#b91c1c;">0 <span style="font-size:11px;font-weight:500;">د.م</span></div>
+      <span class="perf-card-tag" style="background:#fee2e2;color:#b91c1c;">🚨 محتاج تدخل</span>
+    </div>
+  </div>
+
+  <div class="note">📊 مرتّب حسب إيرادات المتجر هذا الشهر</div>
+</div>
+
+<div style="background:#f5f3ff;border-radius:14px;padding:14px;border:1px solid #ddd6fe;margin-bottom:20px;">
+  <div style="font-size:12px;font-weight:800;color:#6d28d9;margin-bottom:10px;">🤔 أنت تختار — أشمن خيار يعجبك؟</div>
+
+  <button class="choice-btn" onclick="choose('A')">
+    A — ليست مرتّبة مع progress bar
+    <span class="choice-desc">أوضح للمقارنة، تبان الفرق بين الأرقام بسرعة</span>
+  </button>
+  <button class="choice-btn" onclick="choose('B')">
+    B — كارطونات ملوّنة
+    <span class="choice-desc">أكثر visual، لكن أقل تفصيلاً في المقارنة</span>
+  </button>
+  <button class="choice-btn" onclick="choose('C')">
+    C — نشوفو خيار آخر
+    <span class="choice-desc">مزج بين الاثنين أو تصميم مختلف بالكامل</span>
+  </button>
+</div>
+
+<script>
+function choose(c) {
+  fetch('/event', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'choice', choice: c, text: c === 'A' ? 'ليست مرتّبة مع progress bar' : c === 'B' ? 'كارطونات ملوّنة' : 'خيار آخر' })
+  });
+  document.querySelectorAll('.choice-btn').forEach(b => b.style.opacity = '.4');
+  event.target.closest('.choice-btn').style.opacity = '1';
+  event.target.closest('.choice-btn').style.borderColor = '#7c3aed';
+  event.target.closest('.choice-btn').style.background = '#f5f3ff';
+}
+</script>
+</body>
+</html>

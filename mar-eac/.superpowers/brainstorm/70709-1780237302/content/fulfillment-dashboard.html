@@ -1,0 +1,118 @@
+<h2>لوحة تحكم الفولفيلمنت — Super Admin</h2>
+<p class="subtitle">هاد هي الصفحة اللي كتخلّيك تشوف وتدير جميع الطلبات من جميع التعاونيات</p>
+
+<div style="font-family:Arial,sans-serif;direction:rtl;max-width:700px;margin:0 auto">
+
+  <!-- KPI strip -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+    <div style="background:white;border-radius:10px;padding:10px;border:1px solid #e5e7eb;text-align:center">
+      <div style="font-size:20px;font-weight:900;color:#6c3fc5">24</div>
+      <div style="font-size:9px;color:#6b7280">طلبات اليوم</div>
+    </div>
+    <div style="background:white;border-radius:10px;padding:10px;border:1px solid #e5e7eb;text-align:center">
+      <div style="font-size:20px;font-weight:900;color:#f59e0b">8</div>
+      <div style="font-size:9px;color:#6b7280">في الانتظار</div>
+    </div>
+    <div style="background:white;border-radius:10px;padding:10px;border:1px solid #e5e7eb;text-align:center">
+      <div style="font-size:20px;font-weight:900;color:#10b981">2,840</div>
+      <div style="font-size:9px;color:#6b7280">رقم اليوم د.م</div>
+    </div>
+    <div style="background:white;border-radius:10px;padding:10px;border:1px solid #e5e7eb;text-align:center">
+      <div style="font-size:20px;font-weight:900;color:#3b82f6">5</div>
+      <div style="font-size:9px;color:#6b7280">في التوصيل</div>
+    </div>
+  </div>
+
+  <!-- Order Pipeline (Kanban-lite) -->
+  <div style="background:white;border-radius:12px;padding:12px;margin-bottom:12px;border:1px solid #e5e7eb">
+    <div style="font-size:12px;font-weight:700;color:#111827;margin-bottom:8px">📦 Pipeline الطلبات</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+      <!-- Pending -->
+      <div style="background:#fef3c7;border-radius:8px;padding:8px">
+        <div style="font-size:9px;font-weight:700;color:#92400e;margin-bottom:4px">🕐 انتظار (8)</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="background:white;border-radius:5px;padding:4px;font-size:8px">
+            <div style="font-weight:700">ORD-0042</div>
+            <div style="color:#6b7280">ليلى · 89 د.م</div>
+          </div>
+          <div style="background:white;border-radius:5px;padding:4px;font-size:8px">
+            <div style="font-weight:700">ORD-0041</div>
+            <div style="color:#6b7280">أحمد · 240 د.م</div>
+          </div>
+          <div style="background:white;border-radius:5px;padding:4px;font-size:8px;opacity:.6">+6 أخرى</div>
+        </div>
+      </div>
+      <!-- Confirmed -->
+      <div style="background:#eff6ff;border-radius:8px;padding:8px">
+        <div style="font-size:9px;font-weight:700;color:#1e40af;margin-bottom:4px">✅ تأكّد (6)</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="background:white;border-radius:5px;padding:4px;font-size:8px">
+            <div style="font-weight:700">ORD-0038</div>
+            <div style="color:#6b7280">كريم · 350 د.م</div>
+          </div>
+          <div style="background:white;border-radius:5px;padding:4px;font-size:8px;opacity:.6">+5 أخرى</div>
+        </div>
+      </div>
+      <!-- Shipped -->
+      <div style="background:#f0fdf4;border-radius:8px;padding:8px">
+        <div style="font-size:9px;font-weight:700;color:#166534;margin-bottom:4px">🚚 في الطريق (5)</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="background:white;border-radius:5px;padding:4px;font-size:8px">
+            <div style="font-weight:700">ORD-0031</div>
+            <div style="color:#6b7280">Amina · 120 د.م</div>
+            <div style="color:#10b981">AMEX-7823</div>
+          </div>
+          <div style="background:white;border-radius:5px;padding:4px;font-size:8px;opacity:.6">+4 أخرى</div>
+        </div>
+      </div>
+      <!-- Delivered -->
+      <div style="background:#f3e8ff;border-radius:8px;padding:8px">
+        <div style="font-size:9px;font-weight:700;color:#6b21a8;margin-bottom:4px">🎉 وصل (5 اليوم)</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="background:white;border-radius:5px;padding:4px;font-size:8px">
+            <div style="font-weight:700">ORD-0029</div>
+            <div style="color:#10b981">تم التحصيل ✓</div>
+          </div>
+          <div style="background:white;border-radius:5px;padding:4px;font-size:8px;opacity:.6">+4 أخرى</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick action row -->
+  <div style="background:white;border-radius:12px;padding:12px;margin-bottom:12px;border:1px solid #e5e7eb">
+    <div style="font-size:12px;font-weight:700;color:#111827;margin-bottom:8px">⚡ إجراءات سريعة</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button style="background:#6c3fc5;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:10px;cursor:pointer">📦 تأكيد الانتظار (8)</button>
+      <button style="background:#3b82f6;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:10px;cursor:pointer">🚚 إضافة رقم تتبع</button>
+      <button style="background:#10b981;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:10px;cursor:pointer">💰 تسوية مع التعاونيات</button>
+      <button style="background:#f59e0b;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:10px;cursor:pointer">📊 تصدير Excel</button>
+    </div>
+  </div>
+
+  <!-- Stock Alerts -->
+  <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e5e7eb">
+    <div style="font-size:12px;font-weight:700;color:#111827;margin-bottom:8px">⚠️ تنبيهات المخزون</div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border-radius:8px;padding:6px 10px">
+        <span style="font-size:14px">🫒</span>
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:700;color:#111827">زيت أركان 100مل</div>
+          <div style="font-size:9px;color:#6b7280">تعاونية تيزنيت</div>
+        </div>
+        <span style="background:#ef4444;color:white;border-radius:6px;padding:2px 6px;font-size:9px;font-weight:700">باقي 3</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;background:#fef9ec;border-radius:8px;padding:6px 10px">
+        <span style="font-size:14px">🌸</span>
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:700;color:#111827">زعفران طحين</div>
+          <div style="font-size:9px;color:#6b7280">تعاونية تالوين</div>
+        </div>
+        <span style="background:#f59e0b;color:white;border-radius:6px;padding:2px 6px;font-size:9px;font-weight:700">باقي 7</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">هاد هي لوحة التحكم الرئيسية للفولفيلمنت. كيتمشى معك؟ ولا عندك شي تبدّل؟</p>

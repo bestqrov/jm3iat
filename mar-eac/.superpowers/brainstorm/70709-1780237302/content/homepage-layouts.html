@@ -1,0 +1,153 @@
+<h2>معرضنا — اختر هيكل الصفحة الرئيسية</h2>
+<p class="subtitle">3 توجهات مختلفة — أيهم يعبّر عن ما تريد؟</p>
+
+<div class="cards">
+
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8f4ff;padding:16px;font-family:Arial,sans-serif;direction:rtl">
+      <!-- Mini mockup A -->
+      <div style="background:linear-gradient(135deg,#6c3fc5,#a78bfa);border-radius:8px;padding:10px 12px;color:white;margin-bottom:8px">
+        <div style="font-size:9px;opacity:.8">معرضنا</div>
+        <div style="font-weight:900;font-size:12px">منتجات أصيلة من التعاونيات</div>
+        <div style="font-size:8px;margin-top:4px;opacity:.9">🛒 تسوق الآن</div>
+      </div>
+      <!-- Category cards row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px">
+        {['🫒','🍯','🪡','🏺'].map((e,i) => `<div style="background:white;border-radius:6px;padding:5px;text-align:center;font-size:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)">${e}</div>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px">
+        <div style="background:white;border-radius:6px;padding:5px;text-align:center;font-size:9px;box-shadow:0 1px 3px rgba(0,0,0,.08)">🫒</div>
+        <div style="background:white;border-radius:6px;padding:5px;text-align:center;font-size:9px;box-shadow:0 1px 3px rgba(0,0,0,.08)">🍯</div>
+        <div style="background:white;border-radius:6px;padding:5px;text-align:center;font-size:9px;box-shadow:0 1px 3px rgba(0,0,0,.08)">🪡</div>
+        <div style="background:white;border-radius:6px;padding:5px;text-align:center;font-size:9px;box-shadow:0 1px 3px rgba(0,0,0,.08)">🏺</div>
+      </div>
+      <!-- Products grid -->
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px">
+        <div style="background:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+          <div style="height:32px;background:linear-gradient(135deg,#e8d5ff,#d4b4fe)"></div>
+          <div style="padding:4px 5px">
+            <div style="font-size:7px;color:#374151;font-weight:700">زيت أركان</div>
+            <div style="font-size:8px;color:#6c3fc5;font-weight:900">89 د.م</div>
+          </div>
+        </div>
+        <div style="background:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+          <div style="height:32px;background:linear-gradient(135deg,#fef3c7,#fde68a)"></div>
+          <div style="padding:4px 5px">
+            <div style="font-size:7px;color:#374151;font-weight:700">عسل الأطلس</div>
+            <div style="font-size:8px;color:#6c3fc5;font-weight:900">120 د.م</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — تجارة إلكترونية كلاسيكية</h3>
+      <p>Hero → أيقونات الفئات كـ grid → منتجات مميزة. نفس منطق Amazon/Jumia. الزائر يفهم فوراً وين يروح.</p>
+      <p style="color:#6c3fc5;font-size:12px;font-weight:600">✅ أسرع في التحويل — الأقل تشتيتاً</p>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff8f0;padding:16px;font-family:Arial,sans-serif;direction:rtl">
+      <div style="background:linear-gradient(135deg,#92400e,#d97706);border-radius:8px;padding:10px 12px;color:white;margin-bottom:8px">
+        <div style="font-size:9px;opacity:.8">معرضنا · منتجات مغربية أصيلة</div>
+        <div style="font-weight:900;font-size:11px">اكتشف تعاونياتنا</div>
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <span style="background:rgba(255,255,255,.2);border-radius:10px;padding:2px 6px;font-size:8px">🫒 أركان</span>
+          <span style="background:rgba(255,255,255,.2);border-radius:10px;padding:2px 6px;font-size:8px">🍯 عسل</span>
+        </div>
+      </div>
+      <!-- Cooperatives cards -->
+      <div style="font-size:8px;color:#92400e;font-weight:700;margin-bottom:4px">التعاونيات الشريكة</div>
+      <div style="display:flex;gap:4px;margin-bottom:8px">
+        <div style="background:white;border-radius:8px;padding:5px;text-align:center;flex:1;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+          <div style="font-size:14px">🏛️</div>
+          <div style="font-size:7px;color:#374151">تعاونية تيزنيت</div>
+        </div>
+        <div style="background:white;border-radius:8px;padding:5px;text-align:center;flex:1;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+          <div style="font-size:14px">🏛️</div>
+          <div style="font-size:7px;color:#374151">تعاونية ورزازات</div>
+        </div>
+        <div style="background:white;border-radius:8px;padding:5px;text-align:center;flex:1;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+          <div style="font-size:14px">🏛️</div>
+          <div style="font-size:7px;color:#374151">تعاونية الرحامنة</div>
+        </div>
+      </div>
+      <!-- Banner pack -->
+      <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:8px;font-weight:700;color:#92400e">🎁 باقة المنزل المغربي</div>
+          <div style="font-size:7px;color:#6b7280">3 منتجات · وفّر 15%</div>
+        </div>
+        <div style="background:#92400e;color:white;border-radius:6px;padding:3px 6px;font-size:7px">اشتري</div>
+      </div>
+      <!-- Products -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px">
+        {[1,2,3].map(() => '')}
+        <div style="background:white;border-radius:5px;overflow:hidden"><div style="height:24px;background:#e0d4ff"></div><div style="padding:3px;font-size:7px;font-weight:700;color:#374151">منتج</div></div>
+        <div style="background:white;border-radius:5px;overflow:hidden"><div style="height:24px;background:#d1fae5"></div><div style="padding:3px;font-size:7px;font-weight:700;color:#374151">منتج</div></div>
+        <div style="background:white;border-radius:5px;overflow:hidden"><div style="height:24px;background:#fef3c7"></div><div style="padding:3px;font-size:7px;font-weight:700;color:#374151">منتج</div></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — ماركتبلايس التعاونيات</h3>
+      <p>Hero → التعاونيات كـ cards → الباقات → المنتجات. يبرز قصة التعاونيات المغربية قبل المنتج.</p>
+      <p style="color:#d97706;font-size:12px;font-weight:600">⭐ يبني الثقة — لكن أطول scroll</p>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f0fdf4;padding:16px;font-family:Arial,sans-serif;direction:rtl">
+      <!-- Full-width hero with search -->
+      <div style="background:linear-gradient(135deg,#6c3fc5,#a78bfa);border-radius:8px;padding:12px;color:white;margin-bottom:8px;text-align:center">
+        <div style="font-weight:900;font-size:13px;margin-bottom:4px">معرضنا</div>
+        <div style="background:white;border-radius:6px;padding:4px 8px;color:#374151;font-size:8px;text-align:right">🔍 ابحث عن منتج...</div>
+      </div>
+      <!-- Flash deal banner -->
+      <div style="background:linear-gradient(90deg,#ef4444,#f97316);border-radius:6px;padding:5px 8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+        <span style="color:white;font-size:8px;font-weight:700">⚡ عروض محدودة</span>
+        <span style="background:white;color:#ef4444;border-radius:4px;padding:1px 5px;font-size:8px;font-weight:700">00:45:30</span>
+      </div>
+      <!-- Category scroll -->
+      <div style="display:flex;gap:4px;overflow:hidden;margin-bottom:6px">
+        <div style="background:#6c3fc5;border-radius:12px;padding:3px 8px;font-size:8px;color:white;white-space:nowrap">🫒 أركان</div>
+        <div style="background:white;border-radius:12px;padding:3px 8px;font-size:8px;color:#374151;border:1px solid #e5e7eb;white-space:nowrap">🍯 عسل</div>
+        <div style="background:white;border-radius:12px;padding:3px 8px;font-size:8px;color:#374151;border:1px solid #e5e7eb;white-space:nowrap">🪡 نسيج</div>
+      </div>
+      <!-- Products 2-col -->
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px">
+        <div style="background:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+          <div style="height:36px;background:linear-gradient(135deg,#e8d5ff,#d4b4fe);position:relative">
+            <span style="position:absolute;top:3px;right:3px;background:#ef4444;color:white;border-radius:4px;font-size:7px;padding:1px 4px">-20%</span>
+          </div>
+          <div style="padding:4px 5px">
+            <div style="font-size:7px;font-weight:700;color:#374151">زيت أركان 100مل</div>
+            <div style="display:flex;align-items:center;gap:3px">
+              <span style="font-size:8px;color:#6c3fc5;font-weight:900">72 د.م</span>
+              <span style="font-size:7px;color:#9ca3af;text-decoration:line-through">90 د.م</span>
+            </div>
+            <div style="font-size:7px;color:#ef4444">⚡ باقي 3</div>
+          </div>
+        </div>
+        <div style="background:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+          <div style="height:36px;background:linear-gradient(135deg,#fef3c7,#fde68a)"></div>
+          <div style="padding:4px 5px">
+            <div style="font-size:7px;font-weight:700;color:#374151">عسل الأطلس 250غ</div>
+            <div style="font-size:8px;color:#6c3fc5;font-weight:900">120 د.م</div>
+            <div style="font-size:7px;color:#10b981">⭐ الأكثر طلباً</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Conversion Machine</h3>
+      <p>بحث كبير + عروض flash + urgency (باقي 3) + best seller badges. أقرب لـ Jumia/Noon في التفكير.</p>
+      <p style="color:#ef4444;font-size:12px;font-weight:600">🔥 أقوى في التحويل — لكن يحتاج بيانات حقيقية</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">انقر على الخيار اللي يعجبك أو خبرني في التيرمينال — يمكن نجمع عناصر من أكثر من خيار</p>
