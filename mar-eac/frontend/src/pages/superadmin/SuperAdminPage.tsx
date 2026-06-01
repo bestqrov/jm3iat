@@ -331,11 +331,12 @@ export const SuperAdminPage: React.FC = () => {
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
     try {
-      const r = await superadminApi.getUsers({ search: userSearch || undefined, limit: USERS_LIMIT });
+      const section = sectionMode === 'store' ? undefined : sectionMode;
+      const r = await superadminApi.getUsers({ search: userSearch || undefined, limit: USERS_LIMIT, section });
       setUsers(r.data.data);
       setUsersTotal(r.data.total);
     } finally { setUsersLoading(false); }
-  }, [userSearch]);
+  }, [userSearch, sectionMode]);
 
   const loadDowngradeCount = useCallback(async () => {
     try {
@@ -370,7 +371,7 @@ export const SuperAdminPage: React.FC = () => {
   useEffect(() => { loadStats(); loadDowngradeCount(); loadConversionRequests(); }, []);
   useEffect(() => { if (activeTab === 'orgs') loadOrgs(); }, [activeTab, loadOrgs]);
   useEffect(() => { if (activeTab === 'payments') loadPayments(); }, [activeTab, loadPayments]);
-  useEffect(() => { if (activeTab === 'users') loadUsers(); }, [activeTab, loadUsers]);
+  useEffect(() => { if (activeTab === 'users') loadUsers(); }, [activeTab, loadUsers, sectionMode]);
 
   // ─── Org actions ───────────────────────────────────────────────────────────
   const openViewOrg = async (id: string) => {
@@ -924,7 +925,12 @@ export const SuperAdminPage: React.FC = () => {
           {activeTab === 'users' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{isAr ? 'المستخدمون' : 'Utilisateurs'} <span className="text-sm font-normal text-gray-400">({usersTotal})</span></h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {sectionMode === 'coop'
+                    ? (isAr ? 'مستخدمو التعاونيات' : 'Utilisateurs Coopératives')
+                    : (isAr ? 'مستخدمو الجمعيات' : 'Utilisateurs Associations')}
+                  {' '}<span className="text-sm font-normal text-gray-400">({usersTotal})</span>
+                </h2>
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />

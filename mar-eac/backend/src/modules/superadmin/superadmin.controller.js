@@ -850,10 +850,19 @@ const deletePayment = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search } = req.query;
+    const { page = 1, limit = 20, search, section } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const where = { role: { not: 'SUPER_ADMIN' } };
+
+    if (section === 'assoc') {
+      where.organizationId = { not: null };
+      where.organization   = { conversionStatus: { not: 'CONVERTED' } };
+    } else if (section === 'coop') {
+      where.organizationId = { not: null };
+      where.organization   = { conversionStatus: 'CONVERTED' };
+    }
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
