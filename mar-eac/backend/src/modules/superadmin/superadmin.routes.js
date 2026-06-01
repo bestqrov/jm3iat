@@ -8,6 +8,7 @@ router.use(auth, requireRole('SUPER_ADMIN'));
 
 // ── Stats & analytics ──────────────────────────────────────────────────────────
 router.get('/stats',         ctrl.getStats);
+router.get('/org-performance', ctrl.getOrgPerformance);
 router.get('/analytics',     ctrl.getAnalytics);
 router.get('/feature-usage', ctrl.getFeatureUsage);
 router.get('/ai-insights',   ctrl.getAIInsights);
