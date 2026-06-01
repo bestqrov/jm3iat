@@ -29,6 +29,7 @@ router.get   ('/commerce-orgs',       ctrl.getCommerceOrgs);
 // Category management
 router.get   ('/categories',          ctrl.getCategories);
 router.post  ('/categories',          ctrl.addCategory);
+router.put   ('/categories/:name',    ctrl.renameCategory);
 router.delete('/categories/:name',    ctrl.deleteCategory);
 
 module.exports = router;

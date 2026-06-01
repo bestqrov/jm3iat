@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import { storeManagerApi } from '../../../lib/api';
 
 interface CatData { categories: string[]; predefined: string[] }
@@ -12,11 +12,16 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 export function SACategoriesTab() {
-  const [data, setData]       = useState<CatData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [input, setInput]     = useState('');
-  const [saving, setSaving]   = useState(false);
-  const [error, setError]     = useState('');
+  const [data, setData]         = useState<CatData | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [input, setInput]       = useState('');
+  const [saving, setSaving]     = useState(false);
+  const [addError, setAddError] = useState('');
+
+  // Inline edit state
+  const [editingCat, setEditingCat]   = useState<string | null>(null);
+  const [editValue, setEditValue]     = useState('');
+  const [editSaving, setEditSaving]   = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -30,21 +35,46 @@ export function SACategoriesTab() {
   const handleAdd = async () => {
     const name = input.trim();
     if (!name) return;
-    setError('');
+    setAddError('');
     setSaving(true);
     try {
       await storeManagerApi.addCategory(name);
       setInput('');
       load();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'خطأ');
+      setAddError(err.response?.data?.message || 'خطأ');
     } finally {
       setSaving(false);
     }
   };
 
+  const startEdit = (cat: string) => {
+    setEditingCat(cat);
+    setEditValue(cat);
+  };
+
+  const cancelEdit = () => {
+    setEditingCat(null);
+    setEditValue('');
+  };
+
+  const handleRename = async (oldName: string) => {
+    const newName = editValue.trim();
+    if (!newName) return;
+    setEditSaving(true);
+    try {
+      await storeManagerApi.renameCategory(oldName, newName);
+      setEditingCat(null);
+      load();
+    } catch (err: any) {
+      // show error inline
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const handleDelete = async (name: string) => {
-    if (!window.confirm(`حذف فئة "${name}"؟`)) return;
+    if (!window.confirm(`حذف فئة "${name}"؟ سيتم حذفها من القائمة لكن المنتجات تبقى.`)) return;
     try {
       await storeManagerApi.deleteCategory(name);
       load();
@@ -68,7 +98,7 @@ export function SACategoriesTab() {
         <div className="flex gap-2">
           <input
             value={input}
-            onChange={e => { setInput(e.target.value); setError(''); }}
+            onChange={e => { setInput(e.target.value); setAddError(''); }}
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
             placeholder="مثال: زيت أركان، العسل، الزعفران..."
             className="flex-1 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400"
@@ -80,14 +110,14 @@ export function SACategoriesTab() {
             <Plus size={15} /> {saving ? '...' : 'إضافة'}
           </button>
         </div>
-        {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+        {addError && <p className="mt-2 text-xs text-red-500">{addError}</p>}
       </div>
 
       {/* Category list */}
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-12 bg-gray-100 dark:bg-gray-700 rounded-xl animate-pulse" />
+            <div key={i} className="h-14 bg-gray-100 dark:bg-gray-700 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : (
@@ -95,16 +125,54 @@ export function SACategoriesTab() {
           {data?.categories.map(cat => (
             <div key={cat}
               className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3">
+
               <span className="text-xl flex-shrink-0">{CATEGORY_EMOJI[cat] || '🏷️'}</span>
-              <span className="flex-1 font-semibold text-gray-900 dark:text-white">{cat}</span>
-              {isPredefined(cat) ? (
-                <button
-                  onClick={() => handleDelete(cat)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                  <Trash2 size={14} />
-                </button>
+
+              {editingCat === cat ? (
+                /* Inline edit mode */
+                <>
+                  <input
+                    autoFocus
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleRename(cat);
+                      if (e.key === 'Escape') cancelEdit();
+                    }}
+                    className="flex-1 border border-indigo-300 dark:border-indigo-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  />
+                  <button
+                    onClick={() => handleRename(cat)}
+                    disabled={editSaving || !editValue.trim()}
+                    className="p-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                    <Check size={14} />
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <X size={14} />
+                  </button>
+                </>
               ) : (
-                <span className="text-xs text-gray-300 dark:text-gray-600">من المنتجات</span>
+                /* Normal display mode */
+                <>
+                  <span className="flex-1 font-semibold text-gray-900 dark:text-white">{cat}</span>
+                  {!isPredefined(cat) && (
+                    <span className="text-xs text-gray-300 dark:text-gray-600 mr-1">من المنتجات</span>
+                  )}
+                  <button
+                    onClick={() => startEdit(cat)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+                    <Pencil size={14} />
+                  </button>
+                  {isPredefined(cat) && (
+                    <button
+                      onClick={() => handleDelete(cat)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </>
               )}
             </div>
           ))}
@@ -113,6 +181,10 @@ export function SACategoriesTab() {
           )}
         </div>
       )}
+
+      <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
+        ✏️ التعديل يبدل الاسم في جميع المنتجات تلقائياً
+      </p>
     </div>
   );
 }

@@ -651,5 +651,6 @@ export const storeManagerApi = {
   // Categories
   getCategories:     ()                          => api.get('/fulfillment/categories'),
   addCategory:       (name: string)              => api.post('/fulfillment/categories', { name }),
+  renameCategory:    (old: string, name: string) => api.put(`/fulfillment/categories/${encodeURIComponent(old)}`, { name }),
   deleteCategory:    (name: string)              => api.delete(`/fulfillment/categories/${encodeURIComponent(name)}`),
 };

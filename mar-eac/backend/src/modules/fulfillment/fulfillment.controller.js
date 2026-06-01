@@ -319,6 +319,36 @@ const addCategory = async (req, res) => {
   }
 };
 
+const renameCategory = async (req, res) => {
+  try {
+    const oldName = decodeURIComponent(req.params.name);
+    const { name: newName } = req.body;
+    if (!newName || !String(newName).trim()) return res.status(400).json({ message: 'name requis' });
+    const trimmed = String(newName).trim();
+    if (trimmed === oldName) return res.json({ ok: true });
+
+    // 1. Update PlatformSettings list
+    const setting = await prisma.platformSettings.findUnique({ where: { key: CATS_KEY } });
+    const existing = setting ? JSON.parse(setting.value) : [];
+    const updated = existing.map(c => c === oldName ? trimmed : c);
+    await prisma.platformSettings.upsert({
+      where: { key: CATS_KEY },
+      update: { value: JSON.stringify(updated) },
+      create: { key: CATS_KEY, value: JSON.stringify(updated), category: 'GENERAL' },
+    });
+
+    // 2. Bulk update all products with old category name
+    await prisma.commerceProduct.updateMany({
+      where: { category: oldName },
+      data:  { category: trimmed },
+    });
+
+    res.json({ ok: true, categories: updated });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const deleteCategory = async (req, res) => {
   try {
     const name = decodeURIComponent(req.params.name);
@@ -340,5 +370,5 @@ module.exports = {
   getOrders, updateOrder, getStockAlerts,
   getProducts, createProduct, updateProduct, deleteProduct, toggleProduct,
   getStockMovements, addStockMovement, getCommerceOrgs,
-  getCategories, addCategory, deleteCategory,
+  getCategories, addCategory, renameCategory, deleteCategory,
 };
