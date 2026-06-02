@@ -1540,14 +1540,14 @@ const resolveAutomationTargets = async (trigger) => {
     case 'INACTIVE_30D': {
       const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       return prisma.organization.findMany({
-        where: { updatedAt: { lt: cutoff } },
+        where: { updatedAt: { lt: cutoff }, subscription: { status: 'ACTIVE' } },
         include: baseInclude,
       });
     }
     case 'INACTIVE_60D': {
       const cutoff = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
       return prisma.organization.findMany({
-        where: { updatedAt: { lt: cutoff } },
+        where: { updatedAt: { lt: cutoff }, subscription: { status: 'ACTIVE' } },
         include: baseInclude,
       });
     }
