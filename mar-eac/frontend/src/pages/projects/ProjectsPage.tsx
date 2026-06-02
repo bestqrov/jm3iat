@@ -7,6 +7,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonList } from '../../components/ui/Skeleton';
 
 const PROJECT_TYPES = ['ROAD_REPAIR', 'WATER_INSTALLATION', 'LOCAL_DEVELOPMENT', 'EDUCATION', 'HEALTH', 'ENVIRONMENT', 'OTHER'];
 const STATUS_TABS = ['', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
@@ -97,7 +98,7 @@ export const ProjectsPage: React.FC = () => {
 
       {/* Projects grid */}
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+        <SkeletonList rows={4} />
       ) : projects.length === 0 ? (
         <EmptyState icon={<Briefcase size={28} />} title={t('projects.noProjects')} action={<button onClick={() => setShowModal(true)} className="btn-primary"><Plus size={16} />{t('projects.createProject')}</button>} />
       ) : (

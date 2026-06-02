@@ -4,6 +4,7 @@ import { remindersApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Modal } from '../../components/ui/Modal';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { formatDate } from '../../lib/utils';
 
 const typeIcons: Record<string, string> = {
@@ -90,7 +91,7 @@ export const RemindersPage: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+        <SkeletonList rows={4} />
       ) : reminders.length === 0 ? (
         <EmptyState icon={<Bell size={28} />} title={t('reminders.noReminders')} />
       ) : (

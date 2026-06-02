@@ -7,6 +7,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonStats, SkeletonTable } from '../../components/ui/Skeleton';
 import { Toast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
 
@@ -276,7 +277,7 @@ export const FinancePage: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+          <div className="space-y-6"><SkeletonStats count={3} /><SkeletonTable rows={6} cols={4} /></div>
         ) : (() => {
           const filtered = transactions.filter(tx =>
             bucketFilter === 'all' || paymentBucket(tx.reference) === bucketFilter

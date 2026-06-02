@@ -7,6 +7,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { formatDate } from '../../lib/utils';
 
 const STATUS_TABS = ['', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
@@ -128,7 +129,7 @@ export const MeetingsPage: React.FC = () => {
 
       {/* Meetings list */}
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+        <SkeletonList rows={4} />
       ) : meetings.length === 0 ? (
         <EmptyState icon={<Calendar size={28} />} title={t('meetings.noMeetings')} action={<button onClick={openCreateModal} className="btn-primary"><Plus size={16} />{t('meetings.createMeeting')}</button>} />
       ) : (

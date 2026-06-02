@@ -17,6 +17,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonStats, SkeletonList } from '../../components/ui/Skeleton';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 type Tab = 'dashboard' | 'analytics' | 'installations' | 'readings' | 'invoices' | 'repairs' | 'reports' | 'readers' | 'tariff';
@@ -581,7 +582,7 @@ export const WaterPage: React.FC = () => {
   ];
 
   if (loading) {
-    return <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
+    return <div className="space-y-6"><SkeletonStats count={3} /><SkeletonList rows={3} /></div>;
   }
 
   return (

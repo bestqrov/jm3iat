@@ -17,6 +17,7 @@ const MOROCCO_REGIONS = [
 ];
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffAccounts } from '../../components/settings/StaffAccounts';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { authApi, whatsappApi, backupApi, publicApi } from '../../lib/api';

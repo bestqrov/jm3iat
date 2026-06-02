@@ -19,6 +19,7 @@ import {
   remindersApi, waterApi, assocApi, transportApi, authApi,
 } from '../../lib/api';
 import { StatCard } from '../../components/ui/StatCard';
+import { SkeletonStats } from '../../components/ui/Skeleton';
 import { formatCurrency, formatDate, getTrialDaysRemaining } from '../../lib/utils';
 
 // ─── Theme per association type ───────────────────────────────────────────────
@@ -249,12 +250,7 @@ export const DashboardPage: React.FC = () => {
   const PIE_COLORS = [theme.primary, theme.secondary, '#f59e0b'];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: theme.primary, borderTopColor: 'transparent' }} />
-      </div>
-    );
+    return <SkeletonStats count={4} />;
   }
 
   return (

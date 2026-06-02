@@ -7,6 +7,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonStats, SkeletonTable } from '../../components/ui/Skeleton';
 import { formatDate } from '../../lib/utils';
 
 export const MembersPage: React.FC = () => {
@@ -261,9 +262,7 @@ export const MembersPage: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          </div>
+          <div className="space-y-6"><SkeletonStats count={3} /><SkeletonTable rows={5} cols={5} /></div>
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={<Users size={28} />}

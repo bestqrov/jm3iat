@@ -4,6 +4,7 @@ import { reportsApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
+import { SkeletonList } from '../../components/ui/Skeleton';
 
 export const ReportsPage: React.FC = () => {
   const { t, lang } = useLanguage();
@@ -42,7 +43,7 @@ export const ReportsPage: React.FC = () => {
     } catch {}
   };
 
-  if (loading) return <div className="flex justify-center py-16"><div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <SkeletonList rows={4} />;
 
   return (
     <div className="space-y-6">

@@ -10,6 +10,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { coopApi, membersApi, authApi } from '../../lib/api';
 import { translations } from '../../i18n';
+import { SkeletonStats, SkeletonList } from '../../components/ui/Skeleton';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -605,7 +606,7 @@ export const CoopPage: React.FC = () => {
       {/* ── DASHBOARD ──────────────────────────────────────────────────── */}
       {tab === 'dashboard' && (
         <div className="space-y-4">
-          {loading && <div className="text-center text-gray-400 py-8">{ar ? 'جاري التحميل...' : 'Chargement...'}</div>}
+          {loading && <div className="space-y-6"><SkeletonStats count={3} /><SkeletonList rows={3} /></div>}
           {!loading && !stats && (
             <div className="text-center py-12 text-gray-400">
               <Store size={48} className="mx-auto mb-3 opacity-30" />
