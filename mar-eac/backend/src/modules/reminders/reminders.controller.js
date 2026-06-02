@@ -127,24 +127,66 @@ const scheduleMonthlyReminders = () => {
         },
       ];
 
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      let activeCount = 0;
+
       for (const org of orgs) {
         // Only for active subscriptions
         if (!org.subscription || ['EXPIRED', 'CANCELLED'].includes(org.subscription.status)) {
           continue;
         }
 
-        const data = monthlyReminders.map((r) => ({
-          organizationId: org.id,
-          type: r.type,
-          title: r.title,
-          message: r.message,
-          scheduledFor: now,
-        }));
+        activeCount++;
 
-        await prisma.reminder.createMany({ data });
+        // Build per-org reminder list based on existence checks
+        const orgReminders = [];
+
+        // FUNDING_REQUEST — always send
+        orgReminders.push(monthlyReminders.find((r) => r.type === 'FUNDING_REQUEST'));
+
+        // FINANCE_RECORD — always send
+        orgReminders.push(monthlyReminders.find((r) => r.type === 'FINANCE_RECORD'));
+
+        // WATER_READING — only if org has at least 1 water installation
+        const waterCount = await prisma.waterInstallation.count({ where: { organizationId: org.id } });
+        if (waterCount > 0) {
+          orgReminders.push(monthlyReminders.find((r) => r.type === 'WATER_READING'));
+        }
+
+        // PROJECT_UPDATE or PROJECT_CREATE depending on whether org has any projects
+        const projectCount = await prisma.project.count({ where: { organizationId: org.id } });
+        if (projectCount > 0) {
+          orgReminders.push(monthlyReminders.find((r) => r.type === 'PROJECT_UPDATE'));
+        } else {
+          orgReminders.push({
+            type: 'PROJECT_CREATE',
+            title: 'أنشئ مشروعك الأول / Créez votre premier projet',
+            message: "لم تقم بإنشاء أي مشروع بعد. ابدأ الآن بإضافة مشروعك الأول لتتبع التقدم والنتائج. / Vous n'avez pas encore créé de projet. Commencez maintenant en ajoutant votre premier projet.",
+          });
+        }
+
+        // Send each reminder only if it doesn't already exist this month (deduplication)
+        for (const r of orgReminders) {
+          if (!r) continue;
+
+          const existing = await prisma.reminder.findFirst({
+            where: { organizationId: org.id, type: r.type, createdAt: { gte: startOfMonth } },
+          });
+          if (existing) continue;
+
+          await prisma.reminder.create({
+            data: {
+              organizationId: org.id,
+              type: r.type,
+              title: r.title,
+              message: r.message,
+              scheduledFor: now,
+            },
+          });
+        }
       }
 
-      console.log(`[Cron] Monthly reminders created for ${orgs.length} organizations`);
+      console.log(`[Cron] Monthly reminders created for ${activeCount}/${orgs.length} organizations`);
     } catch (err) {
       console.error('[Cron] Error creating monthly reminders:', err);
     }
@@ -160,7 +202,7 @@ const scheduleBureauExpiryReminders = () => {
     console.log('[Cron] Checking bureau expiry dates...');
     try {
       const orgs = await prisma.organization.findMany({
-        where: { bureauCreationDate: { not: null } },
+        where: { bureauCreationDate: { not: null }, conversionStatus: { not: 'CONVERTED' } },
         include: { subscription: true },
       });
 
