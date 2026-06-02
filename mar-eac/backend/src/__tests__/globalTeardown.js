@@ -1,6 +1,7 @@
+/**
+ * globalTeardown: intentionally minimal.
+ * MongoDB is stopped via process.on('exit') registered in jestSetup.js.
+ */
 module.exports = async () => {
-  if (global.__MONGOD__) {
-    await global.__MONGOD__.stop();
-    console.log('[test] MongoDB in-memory stopped');
-  }
+  // nothing to do here
 };
