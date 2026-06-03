@@ -324,11 +324,11 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden bg-white"
           >
             <img
-              src={organization?.logo || '/logo-saas.png'}
+              src={organization?.logo || '/logo.png'}
               alt="logo"
               className="w-full h-full object-contain p-0.5"
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = '/logo-saas.png';
+                (e.currentTarget as HTMLImageElement).src = '/logo.png';
               }}
             />
           </div>

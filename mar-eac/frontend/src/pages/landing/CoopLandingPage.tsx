@@ -94,7 +94,7 @@ export const CoopLandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <img src="/logo-saas.png" alt="Minassatona" className="h-9 w-9 object-contain" />
+              <img src="/logo.png" alt="Minassatona" className="h-9 w-9 object-contain" />
               <div>
                 <span className="font-bold text-gray-900 dark:text-white">Minassatona</span>
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium leading-none mt-0.5">
