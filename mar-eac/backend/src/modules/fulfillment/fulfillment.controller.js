@@ -291,7 +291,17 @@ const getCategories = async (req, res) => {
 
     // Union: predefined + from products, deduplicated
     const all = [...new Set([...saved, ...fromProducts])].sort((a, b) => a.localeCompare(b, 'ar'));
-    res.json({ categories: all, predefined: saved });
+
+    // Get category images
+    let images = {};
+    try {
+      const imgSetting = await prisma.platformSettings.findFirst({ where: { key: 'store_category_images' } });
+      if (imgSetting) {
+        images = typeof imgSetting.value === 'string' ? JSON.parse(imgSetting.value) : imgSetting.value;
+      }
+    } catch { images = {}; }
+
+    res.json({ categories: all, predefined: saved, images });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -343,6 +353,19 @@ const renameCategory = async (req, res) => {
       data:  { category: trimmed },
     });
 
+    // Move image to new name if exists
+    try {
+      const imgSetting = await prisma.platformSettings.findFirst({ where: { key: 'store_category_images' } });
+      if (imgSetting) {
+        let images = typeof imgSetting.value === 'string' ? JSON.parse(imgSetting.value) : imgSetting.value;
+        if (images[oldName]) {
+          images[trimmed] = images[oldName];
+          delete images[oldName];
+          await prisma.platformSettings.update({ where: { id: imgSetting.id }, data: { value: JSON.stringify(images) } });
+        }
+      }
+    } catch { /* silent */ }
+
     res.json({ ok: true, categories: updated });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -366,9 +389,51 @@ const deleteCategory = async (req, res) => {
   }
 };
 
+const updateCategoryImage = async (req, res) => {
+  try {
+    const { name } = req.params;
+    const { image } = req.body; // base64 data URL or null to remove
+
+    const decodedName = decodeURIComponent(name);
+
+    // Get or create the images settings entry
+    let setting = await prisma.platformSettings.findFirst({
+      where: { key: 'store_category_images' },
+    });
+
+    let images = {};
+    if (setting) {
+      try { images = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value; } catch { images = {}; }
+    }
+
+    if (image) {
+      images[decodedName] = image;
+    } else {
+      delete images[decodedName];
+    }
+
+    const jsonValue = JSON.stringify(images);
+
+    if (setting) {
+      await prisma.platformSettings.update({
+        where: { id: setting.id },
+        data: { value: jsonValue },
+      });
+    } else {
+      await prisma.platformSettings.create({
+        data: { key: 'store_category_images', value: jsonValue },
+      });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getOrders, updateOrder, getStockAlerts,
   getProducts, createProduct, updateProduct, deleteProduct, toggleProduct,
   getStockMovements, addStockMovement, getCommerceOrgs,
-  getCategories, addCategory, renameCategory, deleteCategory,
+  getCategories, addCategory, renameCategory, deleteCategory, updateCategoryImage,
 };

@@ -653,4 +653,6 @@ export const storeManagerApi = {
   addCategory:       (name: string)              => api.post('/fulfillment/categories', { name }),
   renameCategory:    (old: string, name: string) => api.put(`/fulfillment/categories/${encodeURIComponent(old)}`, { name }),
   deleteCategory:    (name: string)              => api.delete(`/fulfillment/categories/${encodeURIComponent(name)}`),
+  updateCategoryImage: (name: string, image: string | null) =>
+    api.put(`/fulfillment/categories/${encodeURIComponent(name)}/image`, { image }),
 };

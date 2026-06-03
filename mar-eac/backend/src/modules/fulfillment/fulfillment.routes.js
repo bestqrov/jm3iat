@@ -27,9 +27,10 @@ router.post  ('/stock-movements',     ctrl.addStockMovement);
 router.get   ('/commerce-orgs',       ctrl.getCommerceOrgs);
 
 // Category management
-router.get   ('/categories',          ctrl.getCategories);
-router.post  ('/categories',          ctrl.addCategory);
-router.put   ('/categories/:name',    ctrl.renameCategory);
-router.delete('/categories/:name',    ctrl.deleteCategory);
+router.get   ('/categories',                    ctrl.getCategories);
+router.post  ('/categories',                    ctrl.addCategory);
+router.put   ('/categories/:name',              ctrl.renameCategory);
+router.delete('/categories/:name',              ctrl.deleteCategory);
+router.put   ('/categories/:name/image',        ctrl.updateCategoryImage);
 
 module.exports = router;

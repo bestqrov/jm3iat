@@ -97,7 +97,7 @@ const getStats = async (req, res) => {
 
       const allStoreOrders = await prisma.commerceOrder.findMany({
         where: { source: 'STORE' },
-        select: { totalAmount: true, status: true, createdAt: true },
+        select: { totalAmount: true, status: true, createdAt: true, items: true },
       });
 
       const todayOrders     = allStoreOrders.filter(o => new Date(o.createdAt) >= startOfDay).length;
@@ -112,7 +112,56 @@ const getStats = async (req, res) => {
         where: { isActive: true, organization: { modules: { has: 'COMMERCE' } } },
       });
 
-      return res.json({ section: 'store', todayOrders, monthOrders, todayRevenue, monthRevenue, totalRevenue, pendingOrders, deliveredOrders, totalProducts });
+      // 7-day daily revenue
+      const days7 = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(now);
+        d.setDate(d.getDate() - (6 - i));
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      });
+      const dailyRevenue = days7.map(dayStart => {
+        const dayEnd = new Date(dayStart.getTime() + 86400000);
+        const dayOrders = allStoreOrders.filter(o => {
+          const t = new Date(o.createdAt);
+          return t >= dayStart && t < dayEnd;
+        });
+        return {
+          date: dayStart.toISOString().slice(0, 10),
+          revenue: dayOrders.reduce((s, o) => s + o.totalAmount, 0),
+          orders: dayOrders.length,
+        };
+      });
+
+      // Orders by status
+      const statusCounts = {
+        PENDING:    allStoreOrders.filter(o => o.status === 'PENDING').length,
+        PROCESSING: allStoreOrders.filter(o => o.status === 'PROCESSING').length,
+        SHIPPED:    allStoreOrders.filter(o => o.status === 'SHIPPED').length,
+        DELIVERED:  allStoreOrders.filter(o => o.status === 'DELIVERED').length,
+        CANCELLED:  allStoreOrders.filter(o => o.status === 'CANCELLED').length,
+      };
+
+      // Top products from order items
+      const productSales = {};
+      allStoreOrders.forEach(order => {
+        if (!order.items) return;
+        const items = Array.isArray(order.items) ? order.items : [];
+        items.forEach((item) => {
+          const key = item.productName || item.name || 'غير معروف';
+          if (!productSales[key]) productSales[key] = { name: key, qty: 0, revenue: 0 };
+          productSales[key].qty += (item.quantity || item.qty || 1);
+          productSales[key].revenue += (item.price || 0) * (item.quantity || item.qty || 1);
+        });
+      });
+      const topProducts = Object.values(productSales)
+        .sort((a, b) => b.qty - a.qty)
+        .slice(0, 5);
+
+      return res.json({
+        section: 'store',
+        todayOrders, monthOrders, todayRevenue, monthRevenue, totalRevenue,
+        pendingOrders, deliveredOrders, totalProducts,
+        dailyRevenue, statusCounts, topProducts,
+      });
     }
 
     // ── Coop section stats ───────────────────────────────────────────────────
