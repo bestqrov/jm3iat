@@ -321,11 +321,10 @@ const uploadLogo = async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     const orgId = req.user.organizationId;
 
-    // Read file from disk, convert to base64 data URL, then delete temp file
-    const fileBuffer = fs.readFileSync(req.file.path);
+    // Use buffer directly from memory storage (no filesystem dependency)
+    const fileBuffer = req.file.buffer;
     const mimeType = req.file.mimetype || 'image/jpeg';
     const logoDataUrl = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
-    try { fs.unlinkSync(req.file.path); } catch (_) {}
 
     // Delete old disk logo if it was stored as a file path (legacy)
     const current = await prisma.organization.findUnique({ where: { id: orgId }, select: { logo: true } });
