@@ -124,7 +124,7 @@ export const PublicProfilePage: React.FC = () => {
   const printCard = () => {
     if (!cardRef.current || !org) return;
     const cardHtml = cardRef.current.outerHTML;
-    const logoUrl = org.logo ? `${window.location.origin}/uploads/${org.logo.split('/').pop()}` : '';
+    const logoUrl = org.logo ? (org.logo.startsWith('data:') ? org.logo : `${window.location.origin}/uploads/${org.logo.split('/').pop()}`) : '';
     const win = window.open('', '_blank', 'width=700,height=500');
     if (!win) return;
     win.document.write(`<!DOCTYPE html>
@@ -152,14 +152,25 @@ export const PublicProfilePage: React.FC = () => {
     win.document.close();
   };
 
+  const isCoop = org?.modules?.includes('COOP') || false;
+
   const getModuleLabel = (mod: string) => {
     const map: Record<string, { ar: string; fr: string; icon: React.ReactNode; color: string }> = {
       WATER:      { ar: 'جمعية الماء',     fr: 'Eau & Irrigation',    icon: <Droplets size={13} />,    color: 'bg-cyan-100 text-cyan-700' },
       PRODUCTIVE: { ar: 'إنتاجية',         fr: 'Productive',          icon: <ShoppingBag size={13} />, color: 'bg-emerald-100 text-emerald-700' },
       TRANSPORT:  { ar: 'نقل مدرسي',       fr: 'Transport scolaire',  icon: <Bus size={13} />,         color: 'bg-orange-100 text-orange-700' },
       PROJECTS:   { ar: 'مشاريع',          fr: 'Projets',             icon: <Briefcase size={13} />,   color: 'bg-blue-100 text-blue-700' },
+      COOP:       { ar: 'تعاونية',         fr: 'Coopérative',         icon: <Building2 size={13} />,   color: 'bg-teal-100 text-teal-700' },
+      SPORTS:     { ar: 'رياضة',           fr: 'Sport',               icon: <Award size={13} />,       color: 'bg-purple-100 text-purple-700' },
+      COMMERCE:   { ar: 'تجارة',           fr: 'Commerce',            icon: <ShoppingBag size={13} />, color: 'bg-amber-100 text-amber-700' },
     };
     return map[mod];
+  };
+
+  const logoSrc = (logo: string | undefined) => {
+    if (!logo) return null;
+    if (logo.startsWith('data:')) return logo;
+    return `/uploads/${logo.split('/').pop()}`;
   };
 
   if (loading) return (
@@ -205,8 +216,8 @@ export const PublicProfilePage: React.FC = () => {
         <div className="relative max-w-4xl mx-auto px-6 py-14 flex flex-col items-center text-center gap-5">
           {/* Logo */}
           <div className="relative">
-            {org.logo
-              ? <img src={`/uploads/${org.logo.split('/').pop()}`} alt="logo" className="w-24 h-24 rounded-2xl object-cover border-4 border-white/30 shadow-2xl" />
+            {logoSrc(org.logo)
+              ? <img src={logoSrc(org.logo)!} alt="logo" className="w-24 h-24 rounded-2xl object-cover border-4 border-white/30 shadow-2xl" />
               : <div className="w-24 h-24 rounded-2xl bg-white/10 border-4 border-white/20 flex items-center justify-center shadow-2xl">
                   <Building2 size={40} className="text-white/60" />
                 </div>
@@ -302,7 +313,7 @@ export const PublicProfilePage: React.FC = () => {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-indigo-50 to-white">
                   <MessageSquare size={16} className="text-indigo-500" />
-                  <h3 className="font-bold text-gray-900 text-sm">نبذة عن الجمعية</h3>
+                  <h3 className="font-bold text-gray-900 text-sm">{isCoop ? 'نبذة عن التعاونية' : 'نبذة عن الجمعية'}</h3>
                 </div>
                 <div className="px-6 py-5 space-y-3">
                   {org.descriptionAr && (
@@ -445,9 +456,9 @@ export const PublicProfilePage: React.FC = () => {
             {/* Why join CTA */}
             <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white text-center">
               <Heart size={28} className="mx-auto mb-3 text-pink-300" />
-              <h3 className="text-xl font-bold mb-2">كن جزءاً من الجمعية</h3>
+              <h3 className="text-xl font-bold mb-2">{isCoop ? 'كن عضواً في التعاونية' : 'كن جزءاً من الجمعية'}</h3>
               <p className="text-indigo-200 text-sm mb-5 leading-relaxed">
-                انضم إلى {org._count.members} منخرط وساهم في مسيرة العمل الجمعوي بمنطقتك
+                انضم إلى {org._count.members} {isCoop ? 'عضو' : 'منخرط'} وساهم في {isCoop ? 'مسيرة التعاون والإنتاج' : 'مسيرة العمل الجمعوي'} بمنطقتك
               </p>
               <div className="grid grid-cols-3 gap-3 mb-5">
                 {[
@@ -485,8 +496,8 @@ export const PublicProfilePage: React.FC = () => {
                 {/* Top row: logo + title + verified */}
                 <div className="relative flex items-start gap-4">
                   <div className="flex-shrink-0">
-                    {org.logo
-                      ? <img src={`/uploads/${org.logo.split('/').pop()}`} alt="logo"
+                    {logoSrc(org.logo)
+                      ? <img src={logoSrc(org.logo)!} alt="logo"
                           className="w-16 h-16 rounded-2xl object-cover border-2 border-white/30 shadow-lg" />
                       : <div className="w-16 h-16 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center">
                           <Building2 size={28} className="text-white/60" />
@@ -714,7 +725,7 @@ export const PublicProfilePage: React.FC = () => {
               <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-50">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
                   <UserPlus size={16} className="text-indigo-500" />
-                  طلب الانضمام إلى {org.nameAr || org.name}
+                  {isCoop ? 'طلب الانتساب إلى' : 'طلب الانضمام إلى'} {org.nameAr || org.name}
                 </h3>
                 <p className="text-xs text-gray-400 mt-0.5">أكمل النموذج وسنتواصل معك قريباً</p>
               </div>
@@ -883,7 +894,7 @@ export const PublicProfilePage: React.FC = () => {
         )}
 
         <footer className="text-center text-xs text-gray-400 py-6">
-          مدعوم بـ <span className="font-semibold text-indigo-500">Mar E-A.C</span> · منصة إدارة الجمعيات
+          مدعوم بـ <span className="font-semibold text-indigo-500">Mar E-A.C</span> · {isCoop ? 'منصة إدارة التعاونيات' : 'منصة إدارة الجمعيات'}
         </footer>
       </div>
     </div>
