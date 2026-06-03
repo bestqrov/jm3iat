@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { AppearanceProvider } from './contexts/AppearanceContext';
 import { Layout } from './components/layout/Layout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
@@ -67,6 +68,7 @@ const App: React.FC = () => {
     <BrowserRouter>
       <ThemeProvider>
         <LanguageProvider>
+          <AppearanceProvider>
           <ToastProvider>
           <AuthProvider>
             <Routes>
@@ -134,6 +136,7 @@ const App: React.FC = () => {
             </Routes>
           </AuthProvider>
           </ToastProvider>
+          </AppearanceProvider>
         </LanguageProvider>
       </ThemeProvider>
     </BrowserRouter>

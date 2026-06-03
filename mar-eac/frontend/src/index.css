@@ -9,10 +9,11 @@
   --color-success-600: 142 76% 36%;
   --color-danger-600:    0 84% 60%;
   --color-warning-600:  38 92% 50%;
+  --app-font: 'Cairo', sans-serif;
 }
 
 @layer base {
-  * { font-family: 'Cairo', 'Inter', sans-serif; box-sizing: border-box; }
+  * { font-family: var(--app-font); box-sizing: border-box; }
   body { @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen; }
 }
 

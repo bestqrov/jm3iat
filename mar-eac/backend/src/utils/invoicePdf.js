@@ -11,7 +11,9 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
 const ar = (t) => {
   if (!t) return '';
   const shaped = arabicReshaper.convertArabic(String(t));
-  return shaped.split(' ').reverse().join(' ');
+  const reversed = shaped.split(' ').reverse().join(' ');
+  // Mirror parentheses and brackets for RTL rendering
+  return reversed.replace(/[()[\]{}]/g, c => ({ '(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{' }[c] || c));
 };
 
 const logoPath = (org) => {

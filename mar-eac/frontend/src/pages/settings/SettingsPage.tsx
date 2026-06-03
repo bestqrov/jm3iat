@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera, Share2, MessageCircle, Wifi, WifiOff, RefreshCw, Unlink, ExternalLink } from 'lucide-react';
+import { Settings, Building2, User, CreditCard, Sun, Moon, Globe, CalendarDays, Activity, BookOpen, Landmark, Mail, Zap, CheckCircle2, ArrowUpCircle, Camera, Share2, MessageCircle, Wifi, WifiOff, RefreshCw, Unlink, ExternalLink, Palette, Type, Paintbrush } from 'lucide-react';
+import { useAppearance, COLORS, type FontFamily, type ThemeColor } from '../../contexts/AppearanceContext';
 
 const MOROCCO_REGIONS = [
   { fr: 'Tanger-Tétouan-Al Hoceïma',       ar: 'طنجة-تطوان-الحسيمة' },
@@ -27,6 +28,7 @@ export const SettingsPage: React.FC = () => {
   const { user, organization, refreshUser, hasModule } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const { fontFamily, themeColor, setFont, setColor } = useAppearance();
 
   const org = organization as any;
   const isCoop = hasModule('COOP');
@@ -1501,7 +1503,72 @@ export const SettingsPage: React.FC = () => {
       {/* ── 7. Staff Accounts ── */}
       <StaffAccounts />
 
-      {/* ── 7. Appearance ── */}
+      {/* ── 8. Font & Color Personalization ── */}
+      <div className="space-y-4">
+        {/* Section header */}
+        <div className="rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500 p-5 shadow-lg">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2 drop-shadow">
+            <Palette size={24} className="text-violet-200" />
+            {lang === 'ar' ? 'المظهر والتخصيص' : 'Apparence & Personnalisation'}
+          </h2>
+        </div>
+
+        {/* Font selection card */}
+        <div className="card p-5 space-y-3">
+          <h3 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+            <Type size={16} className="text-purple-500" />
+            {lang === 'ar' ? 'خط الواجهة' : "Police d'interface"}
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {(['Cairo', 'Tajawal', 'Noto Sans Arabic', 'Changa'] as FontFamily[]).map(font => (
+              <button
+                key={font}
+                onClick={() => setFont(font)}
+                className={`p-3 rounded-xl border-2 text-right transition-all ${
+                  fontFamily === font
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <p className="font-semibold text-sm text-gray-900 dark:text-white" style={{ fontFamily: `'${font}', sans-serif` }}>{font}</p>
+                <p className="text-xs text-gray-400 mt-0.5" style={{ fontFamily: `'${font}', sans-serif` }}>
+                  {lang === 'ar' ? 'مرحباً بكم في المنصة' : 'Bienvenue sur la plateforme'}
+                </p>
+                {fontFamily === font && <span className="text-[10px] text-purple-600 font-bold">{lang === 'ar' ? '✓ مفعّل' : '✓ Actif'}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Color theme card */}
+        <div className="card p-5 space-y-3">
+          <h3 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+            <Paintbrush size={16} className="text-purple-500" />
+            {lang === 'ar' ? 'لون الثيم' : 'Couleur du thème'}
+          </h3>
+          <div className="grid grid-cols-3 gap-3">
+            {(Object.entries(COLORS) as [ThemeColor, typeof COLORS[ThemeColor]][]).map(([key, val]) => (
+              <button
+                key={key}
+                onClick={() => setColor(key)}
+                className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all ${
+                  themeColor === key
+                    ? 'border-gray-800 dark:border-white bg-gray-50 dark:bg-gray-800'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <span className="w-6 h-6 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: val.hex }} />
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  {lang === 'ar' ? val.labelAr : val.label}
+                </span>
+                {themeColor === key && <span className="ms-auto text-[10px]">✓</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 9. Appearance (theme + language) ── */}
       <div className="card p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">

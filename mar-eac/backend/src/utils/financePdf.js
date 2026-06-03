@@ -37,7 +37,9 @@ const C = {
 // Numbers and Latin words are naturally LTR so they stay readable after reversal.
 const arw = (str, isAr) => {
   if (!isAr || !str) return String(str || '');
-  return String(str).split(' ').reverse().join(' ');
+  const reversed = String(str).split(' ').reverse().join(' ');
+  // Mirror parentheses and brackets for RTL rendering
+  return reversed.replace(/[()[\]{}]/g, c => ({ '(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{' }[c] || c));
 };
 
 // ── Translations ───────────────────────────────────────────────────────────────

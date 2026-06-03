@@ -8,7 +8,9 @@ const arabicReshaper = require('arabic-reshaper');
 const ar = (text) => {
   if (!text) return '';
   const shaped = arabicReshaper.convertArabic(String(text));
-  return shaped.split(' ').reverse().join(' ');
+  const reversed = shaped.split(' ').reverse().join(' ');
+  // Mirror parentheses and brackets for RTL rendering
+  return reversed.replace(/[()[\]{}]/g, c => ({ '(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{' }[c] || c));
 };
 
 const FONT_DIR  = path.join(__dirname, '../assets/fonts');

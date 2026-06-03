@@ -13,7 +13,9 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve('./uploads');
 const ar = (text) => {
   if (!text) return '';
   const shaped = arabicReshaper.convertArabic(String(text));
-  return shaped.split(' ').reverse().join(' ');
+  const reversed = shaped.split(' ').reverse().join(' ');
+  // Mirror parentheses and brackets for RTL rendering
+  return reversed.replace(/[()[\]{}]/g, c => ({ '(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{' }[c] || c));
 };
 
 const fillRect = (doc, x, y, w, h, color) => {
