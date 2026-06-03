@@ -3,6 +3,7 @@ import { RefreshCw, Plus, Trash2, ToggleLeft, ToggleRight, X, Loader2 } from 'lu
 import { recurringApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonList } from '../../components/ui/Skeleton';
 
 interface RecurringPayment {
   id: string;
@@ -92,7 +93,7 @@ export const RecurringPage: React.FC = () => {
 
       {/* List */}
       <div className="card overflow-hidden">
-        {loading && <div className="py-8 text-center text-gray-400 text-sm">{lang === 'ar' ? 'جارٍ التحميل...' : 'Chargement...'}</div>}
+        {loading && <SkeletonList rows={4} />}
         {!loading && items.length === 0 && (
           <EmptyState icon={<RefreshCw size={28} />} title={lang === 'ar' ? 'لا توجد دفعات متكررة' : 'Aucun paiement récurrent'} />
         )}

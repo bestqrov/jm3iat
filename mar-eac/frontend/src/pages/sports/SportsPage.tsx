@@ -9,6 +9,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { formatDate } from '../../lib/utils';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -275,11 +276,7 @@ export const SportsPage: React.FC = () => {
     : playerFilter === 'active' ? players.filter(p => p.isActive)
     : players.filter(p => p.teamId === playerFilter);
 
-  if (loading) return (
-    <div className="flex justify-center py-20">
-      <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) return <SkeletonList rows={4} />;
 
   return (
     <div className="space-y-6" dir={ar ? 'rtl' : 'ltr'}>

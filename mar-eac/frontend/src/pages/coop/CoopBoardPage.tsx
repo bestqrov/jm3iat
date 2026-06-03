@@ -3,6 +3,8 @@ import { CalendarDays, Plus, Edit2, Trash2, X, CheckCircle, ChevronDown, Chevron
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { coopApi } from '../../lib/api';
+import { SkeletonList } from '../../components/ui/Skeleton';
+import { Card } from '../../components/ui/Card';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -113,18 +115,18 @@ export const CoopBoardPage: React.FC = () => {
 
       {/* KPI cards */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 flex items-center gap-3">
+        <Card className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center"><CalendarDays size={18} /></div>
           <div><div className="text-xs text-gray-500 dark:text-gray-400">{ar ? 'مجدولة' : 'Planifiées'}</div><div className="text-xl font-bold text-gray-900 dark:text-white">{counts.SCHEDULED}</div></div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 flex items-center gap-3">
+        </Card>
+        <Card className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center"><CheckCircle size={18} /></div>
           <div><div className="text-xs text-gray-500 dark:text-gray-400">{ar ? 'منعقدة' : 'Tenues'}</div><div className="text-xl font-bold text-gray-900 dark:text-white">{counts.HELD}</div></div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 flex items-center gap-3">
+        </Card>
+        <Card className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${counts.pending > 0 ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 text-gray-400'}`}><AlertCircle size={18} /></div>
           <div><div className="text-xs text-gray-500 dark:text-gray-400">{ar ? 'قرارات معلقة' : 'Décisions en attente'}</div><div className="text-xl font-bold text-gray-900 dark:text-white">{counts.pending}</div></div>
-        </div>
+        </Card>
       </div>
 
       {error && (
@@ -135,7 +137,7 @@ export const CoopBoardPage: React.FC = () => {
 
       {/* Meetings list */}
       {loading ? (
-        <div className="text-center py-16 text-gray-400">{ar ? 'جاري التحميل...' : 'Chargement...'}</div>
+        <SkeletonList rows={4} />
       ) : meetings.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           <CalendarDays size={48} className="mx-auto mb-3 opacity-30" />
@@ -154,7 +156,7 @@ export const CoopBoardPage: React.FC = () => {
             const doneCount = mtg.decisions.filter(d => d.status === 'DONE').length;
 
             return (
-              <div key={mtg.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-sm transition-shadow">
+              <Card key={mtg.id} className="overflow-hidden hover:shadow-sm transition-shadow !p-0">
                 <div className="p-4 flex items-start gap-3">
                   <div className="w-11 h-11 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
                     <CalendarDays size={20} className="text-teal-600 dark:text-teal-400" />
@@ -226,7 +228,7 @@ export const CoopBoardPage: React.FC = () => {
                     )}
                   </div>
                 )}
-              </div>
+              </Card>
             );
           })}
         </div>

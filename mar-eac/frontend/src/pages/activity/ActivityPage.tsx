@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Activity, Filter, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { activityApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonList } from '../../components/ui/Skeleton';
 
 interface ActivityLog {
   id: string;
@@ -80,7 +82,11 @@ export const ActivityPage: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="card overflow-hidden">
+      {loading && <SkeletonList rows={4} />}
+      {!loading && filtered.length === 0 && (
+        <EmptyState icon={<Activity size={28} />} title={lang === 'ar' ? 'لا يوجد نشاط' : 'Aucune activité'} />
+      )}
+      {!loading && filtered.length > 0 && <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -92,12 +98,6 @@ export const ActivityPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {loading && (
-                <tr><td colSpan={4} className="text-center py-8 text-gray-400">{lang === 'ar' ? 'جارٍ التحميل...' : 'Chargement...'}</td></tr>
-              )}
-              {!loading && filtered.length === 0 && (
-                <tr><td colSpan={4} className="text-center py-8 text-gray-400">{lang === 'ar' ? 'لا يوجد سجل' : 'Aucune activité'}</td></tr>
-              )}
               {filtered.map(log => (
                 <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                   <td className="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">{fmtDate(log.createdAt)}</td>
@@ -132,7 +132,7 @@ export const ActivityPage: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 };

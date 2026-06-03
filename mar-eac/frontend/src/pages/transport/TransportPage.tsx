@@ -9,6 +9,7 @@ import { transportApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate } from '../../lib/utils';
+import { SkeletonStats, SkeletonTable } from '../../components/ui/Skeleton';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -1130,6 +1131,7 @@ export const TransportPage: React.FC = () => {
       </div>
 
       {/* Stats overview (always visible) */}
+      {!stats && <div className="space-y-6"><SkeletonStats count={3} /><SkeletonTable rows={5} cols={4} /></div>}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard icon={<Users size={18} />}      label={t('transport.stats.totalStudents')}  value={stats.totalStudents}  color="blue" />

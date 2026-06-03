@@ -3,6 +3,8 @@ import { Factory, Plus, Edit2, Trash2, X, AlertCircle, Package, CheckCircle, Clo
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { coopApi } from '../../lib/api';
+import { SkeletonList } from '../../components/ui/Skeleton';
+import { Card } from '../../components/ui/Card';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -232,13 +234,13 @@ export const CoopProductionPage: React.FC = () => {
           { label: ar ? 'مكتملة' : 'Terminées',         value: countByStatus('COMPLETED'),   icon: <CheckCircle size={18} />, color: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
           { label: ar ? 'إجمالي الكلفة' : 'Coût total', value: `${fmt(totalCost)} MAD`,     icon: <Package size={18} />,     color: 'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400' },
         ].map((k, i) => (
-          <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 flex items-center gap-3">
+          <Card key={i} className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${k.color}`}>{k.icon}</div>
             <div className="min-w-0">
               <div className="text-xs text-gray-500 dark:text-gray-400">{k.label}</div>
               <div className="text-xl font-bold text-gray-900 dark:text-white truncate">{k.value}</div>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
@@ -266,7 +268,7 @@ export const CoopProductionPage: React.FC = () => {
 
       {/* Production list */}
       {loading ? (
-        <div className="text-center py-16 text-gray-400">{ar ? 'جاري التحميل...' : 'Chargement...'}</div>
+        <SkeletonList rows={4} />
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <Factory size={48} className="mx-auto mb-3 opacity-30" />
@@ -281,7 +283,7 @@ export const CoopProductionPage: React.FC = () => {
             const progress = prod.actualQty != null && prod.plannedQty > 0 ? Math.min(100, (prod.actualQty / prod.plannedQty) * 100) : prod.status === 'IN_PROGRESS' ? 50 : prod.status === 'COMPLETED' ? 100 : 0;
             const hasInputPrices = prod.inputs.some(i => (i.unitPrice ?? 0) > 0);
             return (
-              <div key={prod.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-sm transition-shadow">
+              <Card key={prod.id} className="p-4 hover:shadow-sm transition-shadow">
                 <div className="flex items-start gap-4 flex-wrap">
                   <div className="flex-1 min-w-0 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -357,7 +359,7 @@ export const CoopProductionPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
@@ -365,11 +367,11 @@ export const CoopProductionPage: React.FC = () => {
 
       {/* Summary bar */}
       {productions.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-wrap gap-6">
+        <Card className="flex flex-wrap gap-6">
           <div><div className="text-xs text-gray-400 mb-0.5">{ar ? 'إجمالي الدورات' : 'Total productions'}</div><div className="font-bold text-gray-900 dark:text-white">{productions.length}</div></div>
           <div><div className="text-xs text-gray-400 mb-0.5">{ar ? 'الكمية المنتجة' : 'Quantité produite'}</div><div className="font-bold text-emerald-600">{fmt(totalProduced)}</div></div>
           <div><div className="text-xs text-gray-400 mb-0.5">{ar ? 'إجمالي التكاليف' : 'Coût total'}</div><div className="font-bold text-violet-600">{fmt(totalCost)} MAD</div></div>
-        </div>
+        </Card>
       )}
 
       {/* ── STOCK & TRANSACTIONS ──────────────────────────────────────────── */}

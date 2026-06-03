@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { formatDate, formatFileSize, downloadBlob } from '../../lib/utils';
 
 const DOC_TYPES = ['ALL', 'PV', 'REPORT', 'CONTRACT', 'OTHER'];
@@ -246,7 +247,7 @@ export const DocumentsPage: React.FC = () => {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+            <SkeletonList rows={4} />
           ) : docs.length === 0 ? (
             <EmptyState icon={<FileText size={28} />} title={t('documents.noDocuments')} action={<button onClick={() => setShowModal(true)} className="btn-primary"><Upload size={16} />{t('documents.upload')}</button>} />
           ) : (

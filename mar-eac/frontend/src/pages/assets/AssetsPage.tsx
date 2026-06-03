@@ -8,6 +8,7 @@ import { assetsApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { formatCurrency } from '../../lib/utils';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonList } from '../../components/ui/Skeleton';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -241,9 +242,7 @@ export const AssetsPage: React.FC = () => {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          </div>
+          <SkeletonList rows={4} />
         ) : filtered.length === 0 ? (
           <EmptyState icon={<Landmark size={28} />} title={t('assets.empty')} />
         ) : (
