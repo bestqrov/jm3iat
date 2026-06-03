@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { Layout } from './components/layout/Layout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
@@ -66,6 +67,7 @@ const App: React.FC = () => {
     <BrowserRouter>
       <ThemeProvider>
         <LanguageProvider>
+          <ToastProvider>
           <AuthProvider>
             <Routes>
               {/* Public routes */}
@@ -131,6 +133,7 @@ const App: React.FC = () => {
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </AuthProvider>
+          </ToastProvider>
         </LanguageProvider>
       </ThemeProvider>
     </BrowserRouter>

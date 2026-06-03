@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, UserCheck, FileText, Download, AlertTriangle, CheckCircle } from 'lucide-react';
 import { meetingsApi, membersApi, votingApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useToast } from '../../hooks/useToast';
 import { Modal } from '../../components/ui/Modal';
 import { formatDate } from '../../lib/utils';
 import { downloadBlob } from '../../lib/utils';
@@ -10,6 +11,7 @@ import { downloadBlob } from '../../lib/utils';
 export const MeetingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { t, lang } = useLanguage();
+  const { toast } = useToast();
   const [meeting, setMeeting] = useState<any>(null);
   const [allMembers, setAllMembers] = useState<any[]>([]);
   const [votingSessions, setVotingSessions] = useState<any[]>([]);
@@ -84,7 +86,7 @@ export const MeetingDetailPage: React.FC = () => {
       await votingApi.castVote(sessionId, { memberId, choice });
       load();
     } catch (err: any) {
-      alert(err.response?.data?.message || t('common.error'));
+      toast({ type: 'error', message: err.response?.data?.message || t('common.error') });
     }
   };
 

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { assocApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useToast } from '../../hooks/useToast';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import AssocReportsPage from './AssocReportsPage';
@@ -97,6 +98,7 @@ type Tab = 'dashboard' | 'products' | 'production' | 'sales' | 'clients' | 'even
 
 const AssocPage: React.FC = () => {
   const { t, lang } = useLanguage();
+  const { toast } = useToast();
   const isAr = lang === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
 
@@ -204,7 +206,7 @@ const AssocPage: React.FC = () => {
       }
       setProductModal(false);
       refreshStats();
-    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
+    } catch (e: any) { toast({ type: 'error', message: e.response?.data?.message || t('common.error') }); }
     setSaving(false);
   };
 
@@ -220,7 +222,7 @@ const AssocPage: React.FC = () => {
       setProductionModal(false);
       setProductionForm({ productId: '', quantityProduced: '', productionCost: '', date: new Date().toISOString().slice(0, 10), notes: '' });
       refreshStats();
-    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
+    } catch (e: any) { toast({ type: 'error', message: e.response?.data?.message || t('common.error') }); }
     setSaving(false);
   };
 
@@ -256,7 +258,7 @@ const AssocPage: React.FC = () => {
       setCartItems([{ productId: '', quantity: '', unitPrice: '' }]);
       setSaleClientId(''); setSaleNotes('');
       refreshStats();
-    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
+    } catch (e: any) { toast({ type: 'error', message: e.response?.data?.message || t('common.error') }); }
     setSaving(false);
   };
 
@@ -282,7 +284,7 @@ const AssocPage: React.FC = () => {
         setClients(prev => [r.data, ...prev]);
       }
       setClientModal(false);
-    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
+    } catch (e: any) { toast({ type: 'error', message: e.response?.data?.message || t('common.error') }); }
     setSaving(false);
   };
 
@@ -315,7 +317,7 @@ const AssocPage: React.FC = () => {
       }
       setEventModal(false);
       refreshStats();
-    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
+    } catch (e: any) { toast({ type: 'error', message: e.response?.data?.message || t('common.error') }); }
     setSaving(false);
   };
 
@@ -330,7 +332,7 @@ const AssocPage: React.FC = () => {
       if (deleteTarget.type === 'client')     { await assocApi.deleteClient(deleteTarget.id);     setClients(prev => prev.filter(c => c.id !== deleteTarget.id)); }
       if (deleteTarget.type === 'event')      { await assocApi.deleteEvent(deleteTarget.id);      setEvents(prev => prev.filter(e => e.id !== deleteTarget.id)); }
       refreshStats();
-    } catch (e: any) { alert(e.response?.data?.message || t('common.error')); }
+    } catch (e: any) { toast({ type: 'error', message: e.response?.data?.message || t('common.error') }); }
     setDeleteTarget(null);
   };
 

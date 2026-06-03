@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { commerceApi } from '../../lib/api';
+import { useToast } from '../../hooks/useToast';
+import { EmptyState } from '../../components/ui/EmptyState';
 import {
   ShoppingCart, Package, Warehouse, TrendingUp, DollarSign,
   Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check,
@@ -134,6 +136,7 @@ const PAY_LABELS: Record<string, { ar: string; color: string }> = {
 
 export function CommercePage() {
   const { lang } = useLanguage();
+  const { toast } = useToast();
   const ar = lang === 'ar';
 
   const [tab, setTab] = useState<Tab>('products');
@@ -317,7 +320,7 @@ export function CommercePage() {
       await commerceApi.deleteOrder(id);
       loadOrders(); loadStats();
     } catch (e: any) {
-      alert(e.response?.data?.message || 'خطأ في الحذف');
+      toast({ type: 'error', message: e.response?.data?.message || 'خطأ في الحذف' });
     }
   };
 
@@ -439,7 +442,7 @@ export function CommercePage() {
           </div>
 
           {products.filter(p => p.isActive).length === 0 && (
-            <EmptyState icon={<Package size={40} className="text-gray-300" />} text="لا توجد منتجات بعد" sub="أضف أول منتج للبدء" />
+            <EmptyState icon={<Package size={28} />} title="لا توجد منتجات بعد" description="أضف أول منتج للبدء" />
           )}
         </div>
       )}
@@ -621,7 +624,7 @@ export function CommercePage() {
           </div>
 
           {filteredOrders.length === 0 && (
-            <EmptyState icon={<ShoppingCart size={40} className="text-gray-300" />} text="لا توجد طلبات" sub="أنشئ أول طلب للبدء" />
+            <EmptyState icon={<ShoppingCart size={28} />} title="لا توجد طلبات" description="أنشئ أول طلب للبدء" />
           )}
         </div>
       )}
@@ -722,7 +725,7 @@ export function CommercePage() {
           </div>
 
           {payouts.length === 0 && (
-            <EmptyState icon={<DollarSign size={40} className="text-gray-300" />} text="لا توجد تحويلات بعد" sub="سجّل أول تحويل لأرباحك" />
+            <EmptyState icon={<DollarSign size={28} />} title="لا توجد تحويلات بعد" description="سجّل أول تحويل لأرباحك" />
           )}
         </div>
       )}
@@ -993,12 +996,3 @@ function ModalFooter({ onClose, onSave, loading, saveLabel = 'حفظ' }: { onClo
   );
 }
 
-function EmptyState({ icon, text, sub }: { icon: React.ReactNode; text: string; sub: string }) {
-  return (
-    <div className="text-center py-12 space-y-2">
-      <div className="flex justify-center">{icon}</div>
-      <div className="font-medium text-gray-500">{text}</div>
-      <div className="text-sm text-gray-400">{sub}</div>
-    </div>
-  );
-}

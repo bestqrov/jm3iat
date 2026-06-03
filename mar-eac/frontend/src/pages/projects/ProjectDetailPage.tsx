@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { projectsApi, fundingApi, requestsApi, documentsApi, milestonesApi, technicalCardApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useToast } from '../../hooks/useToast';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
@@ -23,6 +24,7 @@ const MS_STATUS_CONFIG: Record<string, { color: string; bg: string; icon: React.
 export const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { t, lang } = useLanguage();
+  const { toast } = useToast();
 
   const [project, setProject] = useState<any>(null);
   const [funding, setFunding] = useState<any>(null);
@@ -129,7 +131,7 @@ export const ProjectDetailPage: React.FC = () => {
       }
       setShowMilestoneModal(false);
       load();
-    } catch (err: any) { alert(err?.response?.data?.message || 'Erreur'); }
+    } catch (err: any) { toast({ type: 'error', message: err?.response?.data?.message || 'Erreur' }); }
     finally { setSaving(false); }
   };
 
@@ -145,7 +147,7 @@ export const ProjectDetailPage: React.FC = () => {
     try {
       const res = await milestonesApi.generatePlan(id);
       setMilestones(res.data);
-    } catch { alert(lang === 'ar' ? 'خطأ في توليد الخطة' : 'Erreur lors de la génération'); }
+    } catch { toast({ type: 'error', message: lang === 'ar' ? 'خطأ في توليد الخطة' : 'Erreur lors de la génération' }); }
     finally { setGenerating(false); }
   };
 
@@ -160,7 +162,7 @@ export const ProjectDetailPage: React.FC = () => {
       a.download = `rapport-projet-${id}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch { alert(lang === 'ar' ? 'خطأ في تصدير التقرير' : 'Erreur export PDF'); }
+    } catch { toast({ type: 'error', message: lang === 'ar' ? 'خطأ في تصدير التقرير' : 'Erreur export PDF' }); }
     finally { setExporting(false); }
   };
 
@@ -227,7 +229,7 @@ export const ProjectDetailPage: React.FC = () => {
     try {
       const res = await technicalCardApi.uploadLogo(id, file);
       setTc((p: any) => ({ ...p, etatLogoUrl: res.data.url }));
-    } catch { alert(lang === 'ar' ? 'فشل رفع الشعار' : 'Échec de l\'upload'); }
+    } catch { toast({ type: 'error', message: lang === 'ar' ? 'فشل رفع الشعار' : 'Échec de l\'upload' }); }
   };
 
   const TABS = [

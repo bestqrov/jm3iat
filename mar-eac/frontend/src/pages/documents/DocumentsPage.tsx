@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Upload, FileText, Trash2, Download, ClipboardList, Clock, Stamp, User, CheckCircle, Building2, Banknote, Scale, Users, ShieldCheck } from 'lucide-react';
 import { documentsApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useToast } from '../../hooks/useToast';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -144,6 +145,7 @@ const PROCEDURES: Procedure[] = [
 
 export const DocumentsPage: React.FC = () => {
   const { t, lang } = useLanguage();
+  const { toast } = useToast();
   const isAr = lang === 'ar';
   const [activeTab, setActiveTab] = useState<'docs' | 'procedures'>('docs');
   const [docs, setDocs] = useState<any[]>([]);
@@ -176,7 +178,7 @@ export const DocumentsPage: React.FC = () => {
       setForm({ title: '', type: 'OTHER', documentDate: '' });
       load();
     } catch (err: any) {
-      alert(err.response?.data?.message || t('common.error'));
+      toast({ type: 'error', message: err.response?.data?.message || t('common.error') });
     } finally { setUploading(false); }
   };
 

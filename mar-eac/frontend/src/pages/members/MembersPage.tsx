@@ -3,6 +3,7 @@ import { Plus, Search, Pencil, Trash2, Users, UserCheck, FileSpreadsheet, Clock,
 import { membersApi, exportApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../hooks/useToast';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
@@ -13,6 +14,7 @@ import { formatDate } from '../../lib/utils';
 export const MembersPage: React.FC = () => {
   const { t, lang } = useLanguage();
   const { hasModule } = useAuth();
+  const { toast } = useToast();
   const isCoop = hasModule('COOP');
   const [members, setMembers]   = useState<any[]>([]);
   const [pending, setPending]   = useState<any[]>([]);
@@ -46,7 +48,7 @@ export const MembersPage: React.FC = () => {
       await membersApi.approve(id);
       load();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Error');
+      toast({ type: 'error', message: err?.response?.data?.message || 'Error' });
     } finally { setApprovingId(null); }
   };
 
@@ -59,7 +61,7 @@ export const MembersPage: React.FC = () => {
       await membersApi.renew(m.id);
       load();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Error');
+      toast({ type: 'error', message: err?.response?.data?.message || 'Error' });
     } finally { setRenewingId(null); }
   };
 

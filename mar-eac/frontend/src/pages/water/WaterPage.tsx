@@ -13,6 +13,7 @@ import {
 import { waterApi, waterReadersApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../hooks/useToast';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
@@ -34,6 +35,7 @@ const repairStatusColor: Record<string, string> = {
 
 export const WaterPage: React.FC = () => {
   const { lang } = useLanguage();
+  const { toast } = useToast();
   const { isWaterReader, organization } = useAuth();
   const hasMeterOCR = ((organization as any)?.modules ?? []).includes('SMART_METER');
   const t = (key: string) => key; // handled inline for water-specific labels
@@ -308,7 +310,7 @@ export const WaterPage: React.FC = () => {
       const res = await waterApi.updateTariff(tariffDraft);
       setTariff(res.data);
       setTariffDraft(res.data);
-    } catch { alert(w('error')); }
+    } catch { toast({ type: 'error', message: w('error') }); }
     finally { setTariffSaving(false); }
   };
 
@@ -351,7 +353,7 @@ export const WaterPage: React.FC = () => {
       loadInstallations();
       loadSummary();
     } catch (err: any) {
-      alert(err.response?.data?.message || w('error'));
+      toast({ type: 'error', message: err.response?.data?.message || w('error') });
     } finally { setSaving(false); }
   };
 
@@ -369,7 +371,7 @@ export const WaterPage: React.FC = () => {
       if (activeTab === 'readings') loadReadings();
       if (activeTab === 'invoices') loadInvoices();
     } catch (err: any) {
-      alert(err.response?.data?.message || w('error'));
+      toast({ type: 'error', message: err.response?.data?.message || w('error') });
     } finally { setSaving(false); }
   };
 
@@ -401,7 +403,7 @@ export const WaterPage: React.FC = () => {
         setReadingForm(f => ({ ...f, currentReading: String(data.reading), meterPhotoUrl: data.imageUrl }));
       }
     } catch (err: any) {
-      alert(lang === 'ar' ? 'فشل تحليل الصورة، أدخل القيمة يدوياً' : 'Analyse échouée, saisissez la valeur manuellement');
+      toast({ type: 'error', message: lang === 'ar' ? 'فشل تحليل الصورة، أدخل القيمة يدوياً' : 'Analyse échouée, saisissez la valeur manuellement' });
     } finally {
       setOcrLoading(false);
       // Reset input so the same file can be re-selected
@@ -423,7 +425,7 @@ export const WaterPage: React.FC = () => {
       loadInvoices();
       loadSummary();
     } catch (err: any) {
-      alert(err.response?.data?.message || w('error'));
+      toast({ type: 'error', message: err.response?.data?.message || w('error') });
     } finally { setSaving(false); }
   };
 
@@ -469,7 +471,7 @@ export const WaterPage: React.FC = () => {
       loadReaders();
       loadInstallations(); // refresh to show updated reader assignments
     } catch (err: any) {
-      alert(err.response?.data?.message || w('error'));
+      toast({ type: 'error', message: err.response?.data?.message || w('error') });
     } finally { setSaving(false); }
   };
 
@@ -486,7 +488,7 @@ export const WaterPage: React.FC = () => {
       loadRepairs();
       loadSummary();
     } catch (err: any) {
-      alert(err.response?.data?.message || w('error'));
+      toast({ type: 'error', message: err.response?.data?.message || w('error') });
     } finally { setSaving(false); }
   };
 
@@ -499,7 +501,7 @@ export const WaterPage: React.FC = () => {
 
   const openWaReminder = (inv: any, orgName?: string) => {
     const phone = inv.installation?.phone;
-    if (!phone) { alert(lang === 'ar' ? 'لا يوجد رقم هاتف لهذه المنشأة' : 'Aucun numéro de téléphone pour cette installation'); return; }
+    if (!phone) { toast({ type: 'warning', message: lang === 'ar' ? 'لا يوجد رقم هاتف لهذه المنشأة' : 'Aucun numéro de téléphone pour cette installation' }); return; }
     const monthLabel = MONTHS[inv.reading?.month - 1] + ' ' + inv.reading?.year;
     const msg = lang === 'ar'
       ? `السلام عليكم ${inv.installation?.householdName}،\nفاتورة الماء الخاصة بكم لشهر ${monthLabel} بمبلغ ${inv.amount.toFixed(2)} درهم.\nنرجو الأداء قبل ${new Date(inv.dueDate).toLocaleDateString('ar-MA')}.\n${orgName ? `جمعية ${orgName}` : ''}`
@@ -509,7 +511,7 @@ export const WaterPage: React.FC = () => {
 
   const openWaPaid = (inv: any, orgName?: string) => {
     const phone = inv.installation?.phone;
-    if (!phone) { alert(lang === 'ar' ? 'لا يوجد رقم هاتف' : 'Aucun numéro de téléphone'); return; }
+    if (!phone) { toast({ type: 'warning', message: lang === 'ar' ? 'لا يوجد رقم هاتف' : 'Aucun numéro de téléphone' }); return; }
     const monthLabel = MONTHS[inv.reading?.month - 1] + ' ' + inv.reading?.year;
     const msg = lang === 'ar'
       ? `السلام عليكم ${inv.installation?.householdName}،\nتم استلام أداء فاتورة الماء لشهر ${monthLabel} بمبلغ ${inv.amount.toFixed(2)} درهم.\nشكراً لكم.\n${orgName ? `جمعية ${orgName}` : ''}`
@@ -529,7 +531,7 @@ export const WaterPage: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 5000);
-    } catch { alert(w('error')); }
+    } catch { toast({ type: 'error', message: w('error') }); }
   };
 
   const handlePreviewInvoicePDF = async (invoiceId: string) => {
@@ -539,7 +541,7 @@ export const WaterPage: React.FC = () => {
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
       setTimeout(() => URL.revokeObjectURL(url), 30000);
-    } catch { alert(w('error')); }
+    } catch { toast({ type: 'error', message: w('error') }); }
   };
 
   const handleDelete = async () => {

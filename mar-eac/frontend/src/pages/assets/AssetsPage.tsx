@@ -7,6 +7,7 @@ import {
 import { assetsApi } from '../../lib/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { formatCurrency } from '../../lib/utils';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -244,10 +245,7 @@ export const AssetsPage: React.FC = () => {
             <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-gray-400">
-            <Landmark size={36} className="mx-auto mb-3 opacity-30" />
-            <p>{t('assets.empty')}</p>
-          </div>
+          <EmptyState icon={<Landmark size={28} />} title={t('assets.empty')} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
