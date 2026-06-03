@@ -8,6 +8,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SkeletonList } from '../../components/ui/Skeleton';
+import { Card } from '../../components/ui/Card';
 import { formatDate } from '../../lib/utils';
 
 const STATUS_TABS = ['', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
@@ -135,7 +136,7 @@ export const MeetingsPage: React.FC = () => {
       ) : (
         <div className="grid gap-4">
           {meetings.map((m) => (
-            <div key={m.id} className="card p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <Card key={m.id} className="flex items-center gap-4 hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Calendar size={20} className="text-primary-600 dark:text-primary-400" />
               </div>
@@ -161,7 +162,7 @@ export const MeetingsPage: React.FC = () => {
                   <ChevronRight size={16} />
                 </Link>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

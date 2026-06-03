@@ -8,6 +8,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SkeletonList } from '../../components/ui/Skeleton';
+import { Card } from '../../components/ui/Card';
 
 const PROJECT_TYPES = ['ROAD_REPAIR', 'WATER_INSTALLATION', 'LOCAL_DEVELOPMENT', 'EDUCATION', 'HEALTH', 'ENVIRONMENT', 'OTHER'];
 const STATUS_TABS = ['', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
@@ -108,7 +109,7 @@ export const ProjectsPage: React.FC = () => {
             const total = p.funding?.totalBudget || 0;
             const pct = total > 0 ? Math.min(100, (funded / total) * 100) : 0;
             return (
-              <div key={p.id} className="card p-4 hover:shadow-md transition-shadow">
+              <Card key={p.id} className="hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{p.title}</h3>
@@ -140,7 +141,7 @@ export const ProjectsPage: React.FC = () => {
                     <Trash2 size={15} />
                   </button>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>

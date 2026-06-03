@@ -9,6 +9,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SkeletonStats, SkeletonTable } from '../../components/ui/Skeleton';
+import { Card } from '../../components/ui/Card';
 import { formatDate } from '../../lib/utils';
 
 export const MembersPage: React.FC = () => {
@@ -185,7 +186,7 @@ export const MembersPage: React.FC = () => {
 
       {/* Pending join requests */}
       {pending.length > 0 && (
-        <div className="card p-4">
+        <Card>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
               <Clock size={14} className="text-amber-600 dark:text-amber-400" />
@@ -248,11 +249,11 @@ export const MembersPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Active members search + table */}
-      <div className="card p-4">
+      <Card>
         <div className="relative mb-4">
           <Search size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -344,7 +345,7 @@ export const MembersPage: React.FC = () => {
             </table>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Add/Edit Modal */}
       <Modal

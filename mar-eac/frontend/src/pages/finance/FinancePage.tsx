@@ -9,6 +9,7 @@ import { StatCard } from '../../components/ui/StatCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SkeletonStats, SkeletonTable } from '../../components/ui/Skeleton';
 import { Toast } from '../../components/ui/Toast';
+import { Card } from '../../components/ui/Card';
 import { formatCurrency, formatDate, downloadBlob } from '../../lib/utils';
 
 const CATEGORIES = {
@@ -232,7 +233,7 @@ export const FinancePage: React.FC = () => {
       </div>
 
       {/* Monthly chart */}
-      <div className="card p-4">
+      <Card>
         <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('finance.monthly')}</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
@@ -244,10 +245,10 @@ export const FinancePage: React.FC = () => {
             <Bar dataKey={lang === 'ar' ? 'مصاريف' : 'Dépenses'} fill="#ef4444" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </Card>
 
       {/* Transactions table */}
-      <div className="card p-4">
+      <Card>
         {/* Filter tabs — type */}
         <div className="flex flex-wrap gap-2 mb-3">
           {[['', t('finance.filterAll')], ['INCOME', t('finance.filterIncome')], ['EXPENSE', t('finance.filterExpense')]].map(([v, label]) => (
@@ -338,11 +339,11 @@ export const FinancePage: React.FC = () => {
             </div>
           );
         })()}
-      </div>
+      </Card>
 
       {/* Recurring payments section */}
       {recurring.length > 0 && (
-        <div className="card p-4">
+        <Card>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
               <RefreshCw size={16} className="text-purple-600 dark:text-purple-400" />
@@ -389,7 +390,7 @@ export const FinancePage: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Modal */}

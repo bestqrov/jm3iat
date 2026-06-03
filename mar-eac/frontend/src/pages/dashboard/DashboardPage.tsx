@@ -20,6 +20,7 @@ import {
 } from '../../lib/api';
 import { StatCard } from '../../components/ui/StatCard';
 import { SkeletonStats } from '../../components/ui/Skeleton';
+import { Card } from '../../components/ui/Card';
 import { formatCurrency, formatDate, getTrialDaysRemaining } from '../../lib/utils';
 
 // ─── Theme per association type ───────────────────────────────────────────────
@@ -774,7 +775,7 @@ export const DashboardPage: React.FC = () => {
 
         {/* Monthly Finance Chart (non-REGULAR) */}
         {hasFinance ? (
-          <div className="lg:col-span-2 card p-4">
+          <Card className="lg:col-span-2">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.monthlyChart')}</h3>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
@@ -792,10 +793,10 @@ export const DashboardPage: React.FC = () => {
                 {t('common.noData')}
               </div>
             )}
-          </div>
+          </Card>
         ) : (
           /* REGULAR: recent meetings takes 2/3 of the row */
-          <div className="lg:col-span-2 card p-4">
+          <Card className="lg:col-span-2">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('dashboard.recentMeetings')}</h3>
             {recentMeetings.length > 0 ? (
               <div className="space-y-2">
@@ -814,11 +815,11 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <p className="text-sm text-gray-400">{t('dashboard.noMeetings')}</p>
             )}
-          </div>
+          </Card>
         )}
 
         {/* Right column: Projects pie OR Reminders */}
-        <div className="card p-4">
+        <Card>
           {hasProj && projectPieData.length > 0 ? (
             <>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.projectsChart')}</h3>
@@ -854,7 +855,7 @@ export const DashboardPage: React.FC = () => {
               )}
             </>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* ── Recent tables row ── */}
@@ -862,7 +863,7 @@ export const DashboardPage: React.FC = () => {
 
         {/* Recent Meetings (always, except for REGULAR it was shown above) */}
         {hasFinance && (
-          <div className="card p-4">
+          <Card>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('dashboard.recentMeetings')}</h3>
             {recentMeetings.length > 0 ? (
               <div className="space-y-2">
@@ -881,12 +882,12 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <p className="text-sm text-gray-400">{t('dashboard.noMeetings')}</p>
             )}
-          </div>
+          </Card>
         )}
 
         {/* Recent Transactions (non-REGULAR) */}
         {hasFinance && (
-          <div className="card p-4">
+          <Card>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('dashboard.recentTransactions')}</h3>
             {recentTransactions.length > 0 ? (
               <div className="space-y-2">
@@ -910,12 +911,12 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <p className="text-sm text-gray-400">{t('dashboard.noTransactions')}</p>
             )}
-          </div>
+          </Card>
         )}
 
         {/* REGULAR: only show reminders in the second column */}
         {!hasFinance && (
-          <div className="card p-4">
+          <Card>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <Bell size={16} />{t('dashboard.reminders')}
             </h3>
@@ -930,7 +931,7 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <p className="text-sm text-gray-400">{t('reminders.noReminders')}</p>
             )}
-          </div>
+          </Card>
         )}
       </div>
 

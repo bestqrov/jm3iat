@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Semantic color tokens */
+  --color-primary-600: 215 100% 47%;
+  --color-primary-700: 215 100% 40%;
+  --color-success-600: 142 76% 36%;
+  --color-danger-600:    0 84% 60%;
+  --color-warning-600:  38 92% 50%;
+}
+
 @layer base {
   * { font-family: 'Cairo', 'Inter', sans-serif; box-sizing: border-box; }
   body { @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen; }

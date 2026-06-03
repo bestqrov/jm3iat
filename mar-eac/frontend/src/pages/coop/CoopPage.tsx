@@ -521,7 +521,7 @@ export const CoopPage: React.FC = () => {
           <Store size={26} className="text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-white">
             {organization?.name || (ar ? 'وحدة التعاونية' : 'Module Coopérative')}
           </h1>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">

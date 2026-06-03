@@ -5,6 +5,13 @@ export default {
   theme: {
     extend: {
       colors: {
+        token: {
+          'primary-600': 'hsl(var(--color-primary-600))',
+          'primary-700': 'hsl(var(--color-primary-700))',
+          'success-600': 'hsl(var(--color-success-600))',
+          'danger-600':  'hsl(var(--color-danger-600))',
+          'warning-600': 'hsl(var(--color-warning-600))',
+        },
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',
