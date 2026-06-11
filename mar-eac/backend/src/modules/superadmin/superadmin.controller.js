@@ -193,11 +193,18 @@ const getStats = async (req, res) => {
     }
 
     // ── Assoc section stats (default / section=assoc) ────────────────────────
-    const assocWhere = { conversionStatus: { not: 'CONVERTED' } };
+    // Include orgs with conversionStatus = null, 'NONE', or anything other than 'CONVERTED'
+    const assocWhere = {
+      OR: [
+        { conversionStatus: null },
+        { conversionStatus: 'NONE' },
+        { conversionStatus: 'PENDING_CONVERSION' },
+      ],
+    };
 
     const [totalOrgs, totalUsers, trialOrgs, activeOrgs, expiredOrgs, canceledOrgs, allOrgs, paymentsAgg] = await Promise.all([
       prisma.organization.count({ where: assocWhere }),
-      prisma.user.count({ where: { role: { not: 'SUPER_ADMIN' } } }),
+      prisma.user.count({ where: { role: { not: 'SUPER_ADMIN' }, organization: assocWhere } }),
       prisma.subscription.count({ where: { status: 'TRIAL', organization: assocWhere } }),
       prisma.subscription.count({ where: { status: 'ACTIVE', organization: assocWhere } }),
       prisma.subscription.count({ where: { status: 'EXPIRED', organization: assocWhere } }),
@@ -216,9 +223,10 @@ const getStats = async (req, res) => {
       prisma.organization.count({ where: { AND: [{ createdAt: { gte: startOfMonth } }, assocWhere] } }),
     ]);
 
-    const typeDistribution = { REGULAR: 0, PROJECTS: 0, WATER: 0, PRODUCTIVE: 0, PRODUCTIVE_WATER: 0 };
+    const typeDistribution = { REGULAR: 0, PROJECTS: 0, WATER: 0, PRODUCTIVE: 0, PRODUCTIVE_WATER: 0, TRANSPORT: 0 };
     for (const org of allOrgs) {
-      typeDistribution[getAssocTypeKey(org.modules)]++;
+      const key = getAssocTypeKey(org.modules);
+      if (key in typeDistribution) typeDistribution[key]++;
     }
 
     const activeOrgsData = await prisma.organization.findMany({
@@ -1899,7 +1907,7 @@ const getSubscriptions = async (req, res) => {
     if (section === 'coop') {
       where.organization = { conversionStatus: 'CONVERTED' };
     } else if (section === 'assoc') {
-      where.organization = { OR: [{ conversionStatus: null }, { conversionStatus: 'NONE' }, { conversionStatus: { not: 'CONVERTED' } }] };
+      where.organization = { OR: [{ conversionStatus: null }, { conversionStatus: 'NONE' }, { conversionStatus: 'PENDING_CONVERSION' }] };
     } else {
       // Always exclude orphaned subscriptions (where org was deleted without cascade)
       where.organization = { isNot: null };
