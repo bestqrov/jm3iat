@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, ArrowUp, ArrowDown, Clock, Ban, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, ArrowUp, Clock, Ban, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { superadminApi } from '../../../lib/api';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { Modal } from '../../../components/ui/Modal';
@@ -17,6 +17,7 @@ interface Subscription {
     email: string;
     modules: string[];
     phone?: string;
+    conversionStatus?: string;
   };
 }
 
@@ -27,7 +28,8 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
 };
 
-const getAssocType = (modules: string[]) => {
+const getOrgTypeKey = (modules: string[], conversionStatus?: string) => {
+  if (conversionStatus === 'CONVERTED')                                return 'COOP';
   if (modules.includes('TRANSPORT'))                                   return 'TRANSPORT';
   if (modules.includes('PRODUCTIVE') && modules.includes('WATER'))    return 'PRODUCTIVE_WATER';
   if (modules.includes('PRODUCTIVE'))                                  return 'PRODUCTIVE';
@@ -37,15 +39,16 @@ const getAssocType = (modules: string[]) => {
 };
 
 const TYPE_LABELS: Record<string, { fr: string; ar: string; style: string }> = {
-  TRANSPORT:        { fr: 'Scolaire',      ar: 'نقل مدرسي',    style: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  PRODUCTIVE_WATER: { fr: 'Eau+Prod',      ar: 'ماء+إنتاج',    style: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' },
-  PRODUCTIVE:       { fr: 'Coopérative',   ar: 'تعاونية',       style: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  WATER:            { fr: 'Eau potable',   ar: 'ماء شروب',      style: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
-  PROJECTS:         { fr: 'Projets',       ar: 'مشاريع',        style: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  REGULAR:          { fr: 'Classique',     ar: 'عامة',          style: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' },
+  COOP:             { fr: 'Coopérative',   ar: 'تعاونية',       style: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' },
+  TRANSPORT:        { fr: 'Scolaire',      ar: 'نقل مدرسي',     style: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  PRODUCTIVE_WATER: { fr: 'Prod+Eau',      ar: 'إنتاج+ماء',     style: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+  PRODUCTIVE:       { fr: 'Productive',    ar: 'إنتاجية',        style: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+  WATER:            { fr: 'Eau potable',   ar: 'ماء شروب',       style: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  PROJECTS:         { fr: 'Projets',       ar: 'مشاريع',         style: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  REGULAR:          { fr: 'Classique',     ar: 'عادية',          style: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' },
 };
 
-export const SubscriptionsTab: React.FC = () => {
+export const SubscriptionsTab: React.FC<{ section?: 'assoc' | 'coop' }> = ({ section }) => {
   const { lang, t } = useLanguage();
   const isAr = lang === 'ar';
   const sa = (k: string) => t(`sa.subs.${k}`);
@@ -68,7 +71,7 @@ export const SubscriptionsTab: React.FC = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await superadminApi.getSubscriptions({ status: statusFilter || undefined, page, limit });
+      const res = await superadminApi.getSubscriptions({ status: statusFilter || undefined, section, page, limit });
       setSubs(res.data.data);
       setTotal(res.data.total);
     } finally {
@@ -83,7 +86,7 @@ export const SubscriptionsTab: React.FC = () => {
     } catch { }
   };
 
-  useEffect(() => { load(); }, [statusFilter, page]);
+  useEffect(() => { load(); }, [statusFilter, page, section]);
   useEffect(() => { loadDowngradeReqs(); }, []);
 
   const statusLabels: Record<string, { fr: string; ar: string }> = {
@@ -231,7 +234,7 @@ export const SubscriptionsTab: React.FC = () => {
                   </td>
                   <td className="px-4 py-3">
                     {(() => {
-                      const type = getAssocType(sub.organization.modules);
+                      const type = getOrgTypeKey(sub.organization.modules, sub.organization.conversionStatus);
                       const info = TYPE_LABELS[type];
                       return (
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${info.style}`}>

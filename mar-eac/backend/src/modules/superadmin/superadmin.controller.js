@@ -1889,16 +1889,27 @@ const updatePlatformSettings = async (req, res) => {
 
 const getSubscriptions = async (req, res) => {
   try {
-    const { status, page = 1, limit = 20 } = req.query;
+    const { status, section, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const where = status ? { status } : {};
+    const where = {};
+    if (status) where.status = status;
+
+    // Filter by section: assoc = non-converted, coop = converted
+    if (section === 'coop') {
+      where.organization = { conversionStatus: 'CONVERTED' };
+    } else if (section === 'assoc') {
+      where.organization = { OR: [{ conversionStatus: null }, { conversionStatus: 'NONE' }, { conversionStatus: { not: 'CONVERTED' } }] };
+    } else {
+      // Always exclude orphaned subscriptions (where org was deleted without cascade)
+      where.organization = { isNot: null };
+    }
 
     const [subs, total] = await Promise.all([
       prisma.subscription.findMany({
         where,
         include: {
-          organization: { select: { id: true, name: true, email: true, modules: true, phone: true } },
+          organization: { select: { id: true, name: true, email: true, modules: true, phone: true, conversionStatus: true } },
         },
         orderBy: { updatedAt: 'desc' },
         skip,
@@ -1907,7 +1918,10 @@ const getSubscriptions = async (req, res) => {
       prisma.subscription.count({ where }),
     ]);
 
-    res.json({ data: subs, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
+    // Filter out any subscriptions where organization is null (safety net)
+    const filtered = subs.filter(s => s.organization !== null);
+
+    res.json({ data: filtered, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

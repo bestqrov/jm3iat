@@ -852,7 +852,7 @@ export const SuperAdminPage: React.FC = () => {
           )}
 
           {/* ════════════ SUBSCRIPTIONS TAB ════════════ */}
-          {activeTab === 'subscriptions' && <SubscriptionsTab />}
+          {activeTab === 'subscriptions' && <SubscriptionsTab section={sectionMode === 'store' ? undefined : sectionMode} />}
 
           {/* ════════════ PAYMENTS TAB ════════════ */}
           {activeTab === 'payments' && (
