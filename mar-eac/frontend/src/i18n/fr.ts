@@ -102,6 +102,7 @@ const fr = {
       TREASURER: 'Trésorier(e)',
       SECRETARY: 'Secrétaire Général(e)',
       ADVISOR: 'Conseiller(e)',
+      OFFICE_STAFF: 'Personnel de bureau',
     },
     stats: {
       total: 'Total membres',

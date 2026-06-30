@@ -102,6 +102,7 @@ const ar = {
       TREASURER: 'أمين المال',
       SECRETARY: 'الكاتب العام',
       ADVISOR: 'مستشار',
+      OFFICE_STAFF: 'موظف المكتب',
     },
     stats: {
       total: 'إجمالي الأعضاء',

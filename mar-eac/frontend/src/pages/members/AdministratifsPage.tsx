@@ -7,8 +7,8 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatDate } from '../../lib/utils';
 
-const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR'];
-const boardRoleOrder = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR'];
+const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
+const boardRoleOrder = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
 
 const roleBadgeColor: Record<string, string> = {
   PRESIDENT: 'badge-red',
@@ -16,6 +16,7 @@ const roleBadgeColor: Record<string, string> = {
   TREASURER: 'badge-yellow',
   SECRETARY: 'badge-blue',
   ADVISOR: 'badge-green',
+  OFFICE_STAFF: 'badge-primary',
 };
 
 const roleIcon: Record<string, string> = {
@@ -24,6 +25,7 @@ const roleIcon: Record<string, string> = {
   TREASURER: '💰',
   SECRETARY: '📋',
   ADVISOR: '💡',
+  OFFICE_STAFF: '🗂️',
 };
 
 export const AdministratifsPage: React.FC = () => {
