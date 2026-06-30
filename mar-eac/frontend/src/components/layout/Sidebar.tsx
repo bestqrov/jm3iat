@@ -196,6 +196,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
       dotColor: 'bg-teal-400',
       items: [
         { to: '/coop/control',    icon: <LayoutDashboard size={18} />, label: isAr ? 'لوحة التحكم'  : 'Tableau de bord' },
+        { to: '/administratifs',  icon: <UserCog size={18} />,        label: isAr ? 'المكتب الإداري' : 'Bureau administratif' },
         { to: '/members',         icon: <Users size={18} />,          label: isAr ? 'الأعضاء'      : 'Membres' },
         { to: '/coop/production', icon: <Factory size={18} />,        label: isAr ? 'الإنتاج'      : 'Production' },
         { to: '/coop/ventes',     icon: <TrendingUp size={18} />,     label: isAr ? 'المبيعات'     : 'Ventes' },
