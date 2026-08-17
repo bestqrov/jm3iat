@@ -1324,7 +1324,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
                   {lang === 'ar'
-                    ? 'تصدير كامل لبيانات جمعيتك (أعضاء، مالية، اجتماعات، وثائق…) بصيغة JSON قابلة للاستيراد'
+                    ? 'تصدير كامل لبيانات تعاونيتك (أعضاء، مالية، اجتماعات، وثائق…) بصيغة JSON قابلة للاستيراد'
                     : 'Export complet de vos données (membres, finances, réunions, documents…) au format JSON importable'}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
