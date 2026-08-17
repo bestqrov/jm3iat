@@ -1,6 +1,6 @@
 const prisma = require('../../config/database');
 
-const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR'];
+const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'VICE_TREASURER', 'SECRETARY', 'VICE_SECRETARY', 'ADVISOR'];
 
 const getSessions = async (req, res) => {
   try {

@@ -18,14 +18,16 @@ interface BoardMeeting {
 
 // ── Board member constants ─────────────────────────────────────────────────────
 
-const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
-const boardRoleOrder = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
+const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'VICE_TREASURER', 'SECRETARY', 'VICE_SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
+const boardRoleOrder = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'VICE_TREASURER', 'SECRETARY', 'VICE_SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
 
 const roleBadgeColor: Record<string, string> = {
   PRESIDENT:      'badge-red',
   VICE_PRESIDENT: 'badge-purple',
   TREASURER:      'badge-yellow',
+  VICE_TREASURER: 'badge-yellow',
   SECRETARY:      'badge-blue',
+  VICE_SECRETARY: 'badge-blue',
   ADVISOR:        'badge-green',
   OFFICE_STAFF:   'badge-primary',
 };
@@ -34,7 +36,9 @@ const roleIcon: Record<string, string> = {
   PRESIDENT:      '👑',
   VICE_PRESIDENT: '🎖️',
   TREASURER:      '💰',
+  VICE_TREASURER: '💰',
   SECRETARY:      '📋',
+  VICE_SECRETARY: '📋',
   ADVISOR:        '💡',
   OFFICE_STAFF:   '🗂️',
 };
@@ -44,7 +48,9 @@ const roleLabel = (role: string, ar: boolean): string => {
     PRESIDENT:      ['الرئيس',        'Président(e)'],
     VICE_PRESIDENT: ['نائب الرئيس',   'Vice-Président(e)'],
     TREASURER:      ['أمين المال',    'Trésorier(e)'],
+    VICE_TREASURER: ['نائب الأمين',   'Vice-Trésorier(e)'],
     SECRETARY:      ['الكاتب العام',  'Secrétaire Général(e)'],
+    VICE_SECRETARY: ['نائب الكاتب',   'Vice-Secrétaire'],
     ADVISOR:        ['مستشار',        'Conseiller(e)'],
     OFFICE_STAFF:   ['موظف المكتب',   'Personnel de bureau'],
   };

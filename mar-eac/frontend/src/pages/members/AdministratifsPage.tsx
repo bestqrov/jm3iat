@@ -7,14 +7,16 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatDate } from '../../lib/utils';
 
-const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
-const boardRoleOrder = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
+const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'VICE_TREASURER', 'SECRETARY', 'VICE_SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
+const boardRoleOrder = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'VICE_TREASURER', 'SECRETARY', 'VICE_SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
 
 const roleBadgeColor: Record<string, string> = {
   PRESIDENT: 'badge-red',
   VICE_PRESIDENT: 'badge-purple',
   TREASURER: 'badge-yellow',
+  VICE_TREASURER: 'badge-yellow',
   SECRETARY: 'badge-blue',
+  VICE_SECRETARY: 'badge-blue',
   ADVISOR: 'badge-green',
   OFFICE_STAFF: 'badge-primary',
 };
@@ -23,7 +25,9 @@ const roleIcon: Record<string, string> = {
   PRESIDENT: '👑',
   VICE_PRESIDENT: '🎖️',
   TREASURER: '💰',
+  VICE_TREASURER: '💰',
   SECRETARY: '📋',
+  VICE_SECRETARY: '📋',
   ADVISOR: '💡',
   OFFICE_STAFF: '🗂️',
 };

@@ -16,7 +16,9 @@ const ROLE_AR = {
   PRESIDENT:      'الرئيس',
   VICE_PRESIDENT: 'نائب الرئيس',
   TREASURER:      'أمين المال',
+  VICE_TREASURER: 'نائب الأمين',
   SECRETARY:      'الكاتب العام',
+  VICE_SECRETARY: 'نائب الكاتب',
   BOARD:          'عضو المكتب',
   MEMBER:         'عضو',
 };
