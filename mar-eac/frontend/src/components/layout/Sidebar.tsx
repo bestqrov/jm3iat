@@ -49,6 +49,17 @@ const getOrgTheme = (modules: string[]): OrgTheme => {
   const hasSports = modules.includes('SPORTS');
   const hasCoop   = modules.includes('COOP');
 
+  if (hasCoop) return {
+    logoBg: 'linear-gradient(135deg, #0f766e, #0d9488)',
+    activeClass: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 font-semibold',
+    activeBorder: '#0f766e',
+    badgeBg: 'bg-teal-100 dark:bg-teal-900/30',
+    badgeText: 'text-teal-700 dark:text-teal-300',
+    stripeBg: 'linear-gradient(90deg, #0f766e, #0d9488)',
+    icon: <Store size={14} />,
+    labelFr: 'Coopérative',
+    labelAr: 'تعاونية',
+  };
   if (hasWater && hasProd) return {
     logoBg: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
     activeClass: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 font-semibold',
@@ -103,17 +114,6 @@ const getOrgTheme = (modules: string[]): OrgTheme => {
     icon: <Trophy size={14} />,
     labelFr: 'Association sportive',
     labelAr: 'جمعية رياضية',
-  };
-  if (hasCoop) return {
-    logoBg: 'linear-gradient(135deg, #0f766e, #0d9488)',
-    activeClass: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 font-semibold',
-    activeBorder: '#0f766e',
-    badgeBg: 'bg-teal-100 dark:bg-teal-900/30',
-    badgeText: 'text-teal-700 dark:text-teal-300',
-    stripeBg: 'linear-gradient(90deg, #0f766e, #0d9488)',
-    icon: <Store size={14} />,
-    labelFr: 'Coopérative',
-    labelAr: 'تعاونية',
   };
   return {
     logoBg: 'linear-gradient(135deg, #4f46e5, #7c3aed)',

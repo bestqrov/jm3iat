@@ -40,7 +40,16 @@ const getDashTheme = (modules: string[]): DashTheme => {
   const hasWater = modules.includes('WATER');
   const hasProd  = modules.includes('PRODUCTIVE');
   const hasProj  = modules.includes('PROJECTS');
+  const hasCoop  = modules.includes('COOP');
 
+  if (hasCoop) return {
+    gradient: 'linear-gradient(90deg, #0f766e, #0d9488)',
+    primary: '#0f766e', secondary: '#0d9488',
+    iconBg: 'bg-teal-100 dark:bg-teal-900/30',
+    iconColor: 'text-teal-600 dark:text-teal-400',
+    icon: <Store size={14} />,
+    labelFr: 'Coopérative', labelAr: 'تعاونية',
+  };
   if (hasWater && hasProd) return {
     gradient: 'linear-gradient(90deg, #7c3aed, #4f46e5, #0891b2)',
     primary: '#7c3aed', secondary: '#0891b2',
