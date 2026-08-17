@@ -142,6 +142,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
   const orgTheme = getOrgTheme(mods);
   const isAr = lang === 'ar';
   const isConverted = (organization as any)?.conversionStatus === 'CONVERTED';
+  const isCoop = isConverted || hasModule('COOP');
 
   // For superadmin: determine active tab from query param
   const currentSATab = new URLSearchParams(location.search).get('tab') || 'dashboard';
@@ -237,9 +238,9 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
       color: 'text-emerald-500 dark:text-emerald-400',
       dotColor: 'bg-emerald-400',
       items: [
-        ...(canAccess('finance')  ? [{ to: '/finance',    icon: <DollarSign size={18} />, label: t('nav.finance'),   plan: 'STANDARD' }] : []),
-        ...(canAccess('finance')  ? [{ to: '/recurring',  icon: <RefreshCw size={18} />,  label: isAr ? 'الدفعات المتكررة' : 'Récurrents' }] : []),
-        ...(isFullAccess          ? [{ to: '/assets',     icon: <Landmark size={18} />,   label: t('nav.assets') }]  : []),
+        ...(isCoop || canAccess('finance') ? [{ to: '/finance',    icon: <DollarSign size={18} />, label: t('nav.finance'),   ...(isCoop ? {} : { plan: 'STANDARD' }) }] : []),
+        ...(isCoop || canAccess('finance') ? [{ to: '/recurring',  icon: <RefreshCw size={18} />,  label: isAr ? 'الدفعات المتكررة' : 'Récurrents' }] : []),
+        ...(isCoop || isFullAccess         ? [{ to: '/assets',     icon: <Landmark size={18} />,   label: t('nav.assets') }]  : []),
       ],
     },
 
