@@ -12,6 +12,12 @@ const arw = (str) => {
   return String(str).split(' ').reverse().join(' ');
 };
 
+const PV_TITLE_BY_TYPE = {
+  GA_ANNUAL:        { ar: 'محضر الجمع العام السنوي',     fr: "Procès-Verbal de l'Assemblée Générale Annuelle" },
+  GA_CONSTITUTIVE:  { ar: 'محضر الجمع العام التأسيسي',   fr: "Procès-Verbal de l'Assemblée Générale Constitutive" },
+  GA_EXTRAORDINARY: { ar: 'محضر الجمع العام الاستثنائي', fr: "Procès-Verbal de l'Assemblée Générale Extraordinaire" },
+};
+
 const ROLE_AR = {
   PRESIDENT:      'الرئيس',
   VICE_PRESIDENT: 'نائب الرئيس',
@@ -63,7 +69,7 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { title, date, location, agenda } = req.body;
+    const { title, date, location, agenda, meetingType } = req.body;
     if (!title || !date) return res.status(400).json({ message: 'Title and date required' });
 
     const meetingDate = new Date(date);
@@ -75,6 +81,7 @@ const create = async (req, res) => {
         date: meetingDate,
         location: location || null,
         agenda: agenda || null,
+        meetingType: meetingType || 'GA',
       },
     });
 
@@ -100,7 +107,7 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const { title, date, location, agenda, status } = req.body;
+    const { title, date, location, agenda, status, meetingType } = req.body;
     const meeting = await prisma.meeting.findFirst({
       where: { id: req.params.id, organizationId: req.organization.id },
     });
@@ -114,6 +121,7 @@ const update = async (req, res) => {
         location: location ?? meeting.location,
         agenda: agenda ?? meeting.agenda,
         status: status ?? meeting.status,
+        meetingType: meetingType ?? meeting.meetingType,
       },
     });
 
@@ -299,7 +307,10 @@ const generatePV = async (req, res) => {
     // ── Title banner ─────────────────────────────────────────────────────────
     const titleY = doc.y + 10;
     doc.rect(MARGIN, titleY, CW, 36).fill(NAVY);
-    const pvTitle = isAr ? arw('محضر اجتماع') : 'Procès-Verbal de Réunion';
+    const pvTypeLabel = PV_TITLE_BY_TYPE[meeting.meetingType];
+    const pvTitle = pvTypeLabel
+      ? (isAr ? arw(pvTypeLabel.ar) : pvTypeLabel.fr)
+      : (isAr ? arw('محضر اجتماع') : 'Procès-Verbal de Réunion');
     doc.font(fontBold).fontSize(17).fillColor('#ffffff')
       .text(pvTitle, MARGIN, titleY + 8, { width: CW, align: 'center' });
 

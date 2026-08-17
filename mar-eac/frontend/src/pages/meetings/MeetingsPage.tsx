@@ -13,6 +13,13 @@ import { formatDate } from '../../lib/utils';
 
 const STATUS_TABS = ['', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 
+const MEETING_TYPES = [
+  { value: 'GA',                label: { ar: 'اجتماع عادي',              fr: 'Réunion ordinaire' } },
+  { value: 'GA_ANNUAL',         label: { ar: 'الجمع العام السنوي',       fr: 'Assemblée Générale Annuelle' } },
+  { value: 'GA_CONSTITUTIVE',   label: { ar: 'الجمع العام التأسيسي',     fr: 'Assemblée Générale Constitutive' } },
+  { value: 'GA_EXTRAORDINARY',  label: { ar: 'الجمع العام الاستثنائي',   fr: 'Assemblée Générale Extraordinaire' } },
+];
+
 export const MeetingsPage: React.FC = () => {
   const { t, lang } = useLanguage();
   const [meetings, setMeetings] = useState<any[]>([]);
@@ -24,7 +31,7 @@ export const MeetingsPage: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: '', date: '', location: '', agenda: '' });
+  const [form, setForm] = useState({ title: '', date: '', location: '', agenda: '', meetingType: 'GA' });
   const [allMembers, setAllMembers] = useState<any[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
@@ -64,7 +71,7 @@ export const MeetingsPage: React.FC = () => {
         await meetingsApi.addAttendees(created.data.id, selectedMemberIds);
       }
       setShowModal(false);
-      setForm({ title: '', date: '', location: '', agenda: '' });
+      setForm({ title: '', date: '', location: '', agenda: '', meetingType: 'GA' });
       setSelectedMemberIds([]);
       load();
     } catch (err: any) {
@@ -144,6 +151,11 @@ export const MeetingsPage: React.FC = () => {
                 <div className="flex items-start gap-2 flex-wrap">
                   <h3 className="font-semibold text-gray-900 dark:text-white">{m.title}</h3>
                   <span className={statusBadge(m.status)}>{t(`meetings.statuses.${m.status}`)}</span>
+                  {m.meetingType && m.meetingType !== 'GA' && (
+                    <span className="badge-purple">
+                      {(lang === 'ar' ? MEETING_TYPES.find((mt) => mt.value === m.meetingType)?.label.ar : MEETING_TYPES.find((mt) => mt.value === m.meetingType)?.label.fr) || m.meetingType}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1"><Calendar size={13} />{formatDate(m.date, lang)}</span>
@@ -188,6 +200,14 @@ export const MeetingsPage: React.FC = () => {
           <div>
             <label className="label">{t('meetings.meetingTitle')} *</label>
             <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">{lang === 'ar' ? 'نوع الاجتماع' : 'Type de réunion'}</label>
+            <select className="input" value={form.meetingType} onChange={(e) => setForm({ ...form, meetingType: e.target.value })}>
+              {MEETING_TYPES.map((mt) => (
+                <option key={mt.value} value={mt.value}>{lang === 'ar' ? mt.label.ar : mt.label.fr}</option>
+              ))}
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
