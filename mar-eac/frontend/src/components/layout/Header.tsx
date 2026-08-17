@@ -110,7 +110,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             {organization && (
               <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-0.5">
                 <span className="text-xs text-gray-500 dark:text-gray-400 leading-none">{organization.name}</span>
-                {organization.assocType && ASSOC_TYPE_LABELS[organization.assocType] && (
+                {organization.modules?.includes('COOP') ? (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400">
+                    {isAr ? 'تعاونية' : 'Coopérative'}
+                  </span>
+                ) : organization.assocType && ASSOC_TYPE_LABELS[organization.assocType] && (
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${ASSOC_TYPE_LABELS[organization.assocType].color}`}>
                     {isAr ? ASSOC_TYPE_LABELS[organization.assocType].ar : ASSOC_TYPE_LABELS[organization.assocType].fr}
                   </span>
