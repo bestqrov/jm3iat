@@ -20,7 +20,9 @@ interface Share { id: string; memberId: string; memberName: string; sharesCount:
 interface InvoiceItem { id?: string; productId?: string; description: string; quantity: number; unitPrice: number; subtotal: number; }
 interface Invoice { id: string; type: 'DEVIS'|'FACTURE'|'BL'; number: string; clientName: string; clientPhone?: string; clientAddress?: string; status: string; totalAmount: number; date: string; dueDate?: string; notes?: string; items: InvoiceItem[]; }
 interface Stats { activeProducts: number; membersWithShares: number; totalShares: number; paidShares: number; shareValue: number; capitalSocial: number; totalRevenue: number; pendingRevenue: number; lowStockProducts: number; invoiceCount: number; stockSummary: {id:string;name:string;stock:number;unit:string}[]; }
-interface Member { id: string; name: string; }
+interface Member { id: string; name: string; role?: string; }
+
+const BOARD_ROLES = ['PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'VICE_TREASURER', 'SECRETARY', 'VICE_SECRETARY', 'ADVISOR', 'OFFICE_STAFF'];
 interface BoardMeeting {
   id: string; title: string; date: string; location?: string; agenda?: string;
   pvContent?: string; status: string; sessionType?: string;
@@ -179,14 +181,16 @@ export const CoopPage: React.FC = () => {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, p, m, sh, inv] = await Promise.all([
+      const [s, p, m, sh, inv, mb] = await Promise.all([
         coopApi.getStats(),
         coopApi.getProducts(),
         coopApi.getMovements(),
         coopApi.getShares(),
         coopApi.getInvoices(),
+        membersApi.getAll(),
       ]);
       setStats(s.data); setProducts(p.data); setMovements(m.data); setShares(sh.data); setInvoices(inv.data);
+      setMembers(mb.data || []);
     } catch { /* ignore */ }
     setLoading(false);
   }, []);
@@ -675,6 +679,10 @@ export const CoopPage: React.FC = () => {
                 <StatCard label={t('coop.stats.paidShares')} value={fmt(stats.paidShares)} icon={<CheckCircle size={18} />} color="bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400" />
                 <StatCard label={t('coop.stats.capitalSocial')} value={`${fmt(stats.capitalSocial)} MAD`} icon={<TrendingUp size={18} />} color="bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400" />
                 <StatCard label={t('coop.stats.lowStock')} value={stats.lowStockProducts} icon={<AlertCircle size={18} />} color={stats.lowStockProducts > 0 ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 text-gray-500'} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <StatCard label={ar ? 'عدد أعضاء المكتب' : 'Membres du bureau'} value={members.filter(m => BOARD_ROLES.includes(m.role || '')).length} icon={<Users size={18} />} color="bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400" />
+                <StatCard label={ar ? 'عدد المنخرطين' : 'Adhérents'} value={members.filter(m => !BOARD_ROLES.includes(m.role || '')).length} icon={<Users size={18} />} color="bg-lime-100 text-lime-600 dark:bg-lime-900/30 dark:text-lime-400" />
               </div>
 
               {/* ── Smart Alerts ── */}
