@@ -302,20 +302,20 @@ export const CoopProjectDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Section 1 — معلومات الجمعية */}
+          {/* Section 1 — معلومات التعاونية */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
             <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700 text-right">
-              📋 {ar ? 'معلومات خاصة بالجمعية' : 'Informations de l\'organisation'}
+              📋 {ar ? 'معلومات خاصة بالتعاونية' : 'Informations de l\'organisation'}
             </h4>
             <p className="text-xs text-gray-400 text-right">
-              {ar ? 'البيانات التالية تُجلب تلقائياً من ملف الجمعية. يمكنك تجاوز بعضها هنا إن لزم.' : 'Ces données sont tirées du profil de l\'organisation. Vous pouvez les remplacer si nécessaire.'}
+              {ar ? 'البيانات التالية تُجلب تلقائياً من ملف التعاونية. يمكنك تجاوز بعضها هنا إن لزم.' : 'Ces données sont tirées du profil de l\'organisation. Vous pouvez les remplacer si nécessaire.'}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 { key: 'neighborhood', label: ar ? 'الحي / الدوار' : 'Quartier / Douar' },
                 { key: 'commune',      label: ar ? 'الجماعة'       : 'Commune' },
                 { key: 'province',     label: ar ? 'الإقليم'       : 'Province' },
-                { key: 'presidentName', label: ar ? 'اسم رئيس(ة) الجمعية' : 'Président(e)' },
+                { key: 'presidentName', label: ar ? 'اسم رئيس(ة) التعاونية' : 'Président(e)' },
               ].map(field => (
                 <div key={field.key}>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 text-right">{field.label}</label>
