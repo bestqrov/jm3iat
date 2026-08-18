@@ -513,6 +513,17 @@ const generatePV = async (req, res) => {
   }
 };
 
+// Auto-cancel meetings whose date has passed by more than 1 day and are still SCHEDULED
+const autoCancelStaleMeetings = async () => {
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const { count } = await prisma.meeting.updateMany({
+    where: { status: 'SCHEDULED', date: { lt: oneDayAgo } },
+    data: { status: 'CANCELLED' },
+  });
+  if (count) console.log(`[meetings auto-cancel] cancelled ${count} stale meeting(s)`);
+  return count;
+};
+
 const getStats = async (req, res) => {
   try {
     const orgId = req.organization.id;
@@ -535,5 +546,5 @@ const getStats = async (req, res) => {
 module.exports = {
   getAll, getById, create, update, remove,
   addAttendees, markAttendance, addDecision, updateDecision,
-  uploadPV, generatePV, getStats,
+  uploadPV, generatePV, getStats, autoCancelStaleMeetings,
 };

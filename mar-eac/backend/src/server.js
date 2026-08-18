@@ -124,11 +124,13 @@ scheduleRenewalReminders();
 
 // Process automation rules + trial expiry reminders every day at 09:00
 const { processAutomationRules, sendTrialExpiryReminders } = require('./modules/superadmin/superadmin.controller');
+const { autoCancelStaleMeetings } = require('./modules/meetings/meetings.controller');
 const cron = require('node-cron');
 
 cron.schedule('0 9 * * *', async () => {
   try { await processAutomationRules(); } catch (err) { console.error('[automation cron] error:', err.message); }
   try { await sendTrialExpiryReminders(); } catch (err) { console.error('[trial-reminder cron] error:', err.message); }
+  try { await autoCancelStaleMeetings(); } catch (err) { console.error('[meetings auto-cancel cron] error:', err.message); }
   // Auto-expire TRIAL subscriptions whose expiresAt has passed
   try {
     const { count } = await prisma.subscription.updateMany({
