@@ -246,7 +246,7 @@ async function main() {
     console.log(`ℹ️  Packs already exist (${existingPacks}), skipping`);
   }
 
-  // ── Demo cooperative for Ma3ridona store ─────────────────────────────────
+  // ── Demo cooperative ──────────────────────────────────────────────────────
   const demoCoopEmail = 'demo-coop@ma3ridona.ma';
   let demoCoop = await prisma.organization.findUnique({ where: { email: demoCoopEmail } });
   if (!demoCoop) {

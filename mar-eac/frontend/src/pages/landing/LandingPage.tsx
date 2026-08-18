@@ -639,7 +639,6 @@ export const LandingPage: React.FC = () => {
               {(isAr
                 ? [
                     '🛒 التجارة الإلكترونية',
-                    '🏪 متجر عام للتعاونيات',
                     '📦 إدارة المخزون والطلبيات',
                     '💰 تتبع الأرباح والمدفوعات',
                     '📋 البطاقة التقنية للمشاريع',
@@ -647,7 +646,6 @@ export const LandingPage: React.FC = () => {
                   ]
                 : [
                     '🛒 Module Commerce',
-                    '🏪 Boutique publique coopératives',
                     '📦 Stocks & commandes',
                     '💰 Suivi bénéfices & paiements',
                     '📋 Fiche technique projets PDF',
@@ -953,13 +951,13 @@ export const LandingPage: React.FC = () => {
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               {isAr
-                ? 'تنتجون... ونحن نبيع لكم 🤝'
-                : 'Vous produisez... nous vendons pour vous 🤝'}
+                ? 'سيّروا تعاونيتكم بذكاء 🤝'
+                : 'Gérez votre coopérative intelligemment 🤝'}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               {isAr
-                ? 'المشكلة الكبرى لكل تعاونية: الإنتاج ممتاز، لكن التسويق والبيع صعب. نحن حللنا هذه المعادلة.'
-                : 'Le vrai défi de chaque coopérative : une production excellente, mais le marketing et la vente restent difficiles. Nous avons résolu cette équation.'}
+                ? 'المشكلة الكبرى لكل تعاونية: التسيير الإداري والمالي مبعثر وصعب التتبع. نحن حللنا هذه المعادلة.'
+                : 'Le vrai défi de chaque coopérative : une gestion administrative et financière éparpillée, difficile à suivre. Nous avons résolu cette équation.'}
             </p>
           </div>
 
@@ -984,17 +982,17 @@ export const LandingPage: React.FC = () => {
               </div>
               <ul className="space-y-3">
                 {(isAr ? [
-                  'منتجات رائعة تبقى في المستودع بدون مشترين',
-                  'لا وجود رقمي، لا موقع، لا متجر إلكتروني',
-                  'التسويق يحتاج خبرة وميزانية كبيرة',
-                  'صعوبة الوصول للزبائن خارج المنطقة الجغرافية',
-                  'ضياع الوقت في الإدارة بدل التركيز على الإنتاج',
+                  'وثائق ومحاضر مبعثرة بين الأوراق والملفات',
+                  'صعوبة تتبع من دفع ومن لم يدفع',
+                  'لا وجود رقمي — لا تسيير موحّد للأعضاء والمكتب',
+                  'حساب المالية والإنتاج يدوياً وبدون تقارير دقيقة',
+                  'ضياع الوقت في الإدارة بدل التركيز على التعاونية',
                 ] : [
-                  'Produits excellents qui restent en stock faute d\'acheteurs',
-                  'Aucune présence digitale, pas de boutique en ligne',
-                  'Le marketing nécessite expertise et budget',
-                  'Difficulté à atteindre des clients hors de la région',
-                  'Temps perdu en gestion au lieu de se concentrer sur la production',
+                  'Documents et PV éparpillés entre papiers et dossiers',
+                  'Difficile de suivre qui a payé et qui ne l\'a pas fait',
+                  'Aucune gestion digitale unifiée des membres et du bureau',
+                  'Finances et production calculées à la main, sans rapports précis',
+                  'Temps perdu en gestion administrative',
                 ]).map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-red-700 dark:text-red-300">
                     <span className="text-red-400 mt-0.5 flex-shrink-0">✗</span>
@@ -1014,17 +1012,17 @@ export const LandingPage: React.FC = () => {
               </div>
               <ul className="space-y-3">
                 {(isAr ? [
-                  'متجر إلكتروني جاهز على lkhdmano.cloud — بدون أي تقنية',
-                  'منتجاتك تصل لزبائن من جميع مدن المغرب',
-                  'الطلبيات تصلك مباشرة، الدفع عند الاستلام (COD)',
-                  'تتبع المخزون، الأرباح، والمدفوعات في لوحة واحدة',
-                  'أنتم تركزون على الإنتاج، نحن نتكفل بالباقي',
+                  'كل الأعضاء والمكتب الإداري في مكان واحد',
+                  'محاضر الاجتماعات تُنشأ وتُحفظ تلقائياً',
+                  'تتبع المالية والانخراطات والمدفوعات في الوقت الفعلي',
+                  'تتبع الإنتاج والمخزون والمبيعات بدقة',
+                  'تقارير جاهزة بصيغة PDF في أي وقت',
                 ] : [
-                  'Boutique en ligne prête sur lkhdmano.cloud — sans technique',
-                  'Vos produits atteignent des clients dans tout le Maroc',
-                  'Commandes livrées directement, paiement à la livraison (COD)',
-                  'Suivi stock, bénéfices et paiements dans un seul tableau de bord',
-                  'Vous vous concentrez sur la production, nous gérons le reste',
+                  'Tous les membres et le bureau administratif au même endroit',
+                  'Les PV de réunions sont générés et archivés automatiquement',
+                  'Suivi des finances, adhésions et paiements en temps réel',
+                  'Suivi précis de la production, du stock et des ventes',
+                  'Rapports PDF prêts à tout moment',
                 ]).map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-emerald-700 dark:text-emerald-300">
                     <CheckCircle size={15} className="text-emerald-500 mt-0.5 flex-shrink-0" />
@@ -1044,13 +1042,13 @@ export const LandingPage: React.FC = () => {
               {/* connector line */}
               <div className="hidden sm:block absolute top-10 left-1/6 right-1/6 h-0.5 bg-emerald-200 dark:bg-emerald-800 z-0" style={{ left: '20%', right: '20%' }} />
               {(isAr ? [
-                { step: '١', icon: '✅', title: 'سجّل وأرسل منتجاتك', desc: 'سجّل تعاونيتك، احصل على الموافقة، ثم أرسل منتجاتك إلى مستودعنا — هذا كل شيء من جهتك' },
-                { step: '٢', icon: '📣', title: 'فريقنا يتكفل بالباقي', desc: 'فريقنا يضيف منتجاتك في المتجر، ينشئ الإعلانات، ويسوّق لها عبر القنوات الرقمية' },
-                { step: '٣', icon: '💰', title: 'نبيع ونُحوّل لك المال', desc: 'نبيع منتجاتك، نُرسلها للزبون، نحصّل المبلغ، ونُحوّل أرباحك مباشرة إلى حسابك' },
+                { step: '١', icon: '✅', title: 'سجّل تعاونيتك', desc: 'أنشئ حسابك، أضف معلومات تعاونيتك، واحصل على الموافقة — في دقائق' },
+                { step: '٢', icon: '👥', title: 'أضف الأعضاء والمكتب', desc: 'أضف الأعضاء، حدّد المكتب الإداري (الرئيس، الكاتب، الأمين...) وباقي المعلومات' },
+                { step: '٣', icon: '📊', title: 'سيّر تعاونيتك يومياً', desc: 'الاجتماعات، المحاضر، المشاريع، الإنتاج، والمالية — كل شيء من لوحة تحكم واحدة' },
               ] : [
-                { step: '1', icon: '✅', title: 'Inscrivez-vous & envoyez vos produits', desc: 'Inscrivez votre coopérative, obtenez l\'approbation, puis envoyez vos produits à notre entrepôt — c\'est tout de votre côté' },
-                { step: '2', icon: '📣', title: 'Notre équipe s\'occupe du reste', desc: 'Notre équipe ajoute vos produits à la boutique, crée les publicités et assure la promotion digitale' },
-                { step: '3', icon: '💰', title: 'On vend & on vire vos gains', desc: 'On vend vos produits, on les livre au client, on encaisse et on transfère vos bénéfices directement sur votre compte' },
+                { step: '1', icon: '✅', title: 'Inscrivez votre coopérative', desc: 'Créez votre compte, ajoutez les informations de votre coopérative, obtenez l\'approbation — en quelques minutes' },
+                { step: '2', icon: '👥', title: 'Ajoutez membres & bureau', desc: 'Ajoutez vos adhérents, définissez le bureau administratif (président, secrétaire, trésorier...) et le reste' },
+                { step: '3', icon: '📊', title: 'Gérez au quotidien', desc: 'Réunions, PV, projets, production et finances — tout depuis un seul tableau de bord' },
               ]).map((s, i) => (
                 <div key={i} className="relative z-10 flex flex-col items-center text-center bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-lg mb-4 shadow-lg">
@@ -1067,15 +1065,15 @@ export const LandingPage: React.FC = () => {
           {/* Key stats / proof */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-14">
             {(isAr ? [
-              { value: '100%', label: 'دفع عند الاستلام — COD', icon: '💵' },
+              { value: '+120', label: 'تعاونية شريكة', icon: '🤝' },
               { value: '0 درهم', label: 'لا رسوم تقنية للإعداد', icon: '🆓' },
-              { value: '∞', label: 'منتجات بدون حد أقصى', icon: '📦' },
-              { value: '24/7', label: 'متجرك مفتوح دائماً', icon: '🟢' },
+              { value: '∞', label: 'أعضاء بدون حد أقصى', icon: '👥' },
+              { value: '24/7', label: 'لوحة التحكم متاحة دائماً', icon: '🟢' },
             ] : [
-              { value: '100%', label: 'Paiement à la livraison COD', icon: '💵' },
+              { value: '+120', label: 'coopératives partenaires', icon: '🤝' },
               { value: '0 MAD', label: 'Zéro frais technique', icon: '🆓' },
-              { value: '∞', label: 'Produits sans limite', icon: '📦' },
-              { value: '24/7', label: 'Boutique toujours ouverte', icon: '🟢' },
+              { value: '∞', label: 'Membres sans limite', icon: '👥' },
+              { value: '24/7', label: 'Tableau de bord toujours accessible', icon: '🟢' },
             ]).map((stat, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 text-center shadow-sm">
                 <div className="text-3xl mb-2">{stat.icon}</div>
@@ -1099,23 +1097,19 @@ export const LandingPage: React.FC = () => {
               </p>
               <h3 className="text-2xl sm:text-3xl font-extrabold mb-3">
                 {isAr
-                  ? 'أنتجوا فقط — نحن نتكفل بالبيع والتسويق'
-                  : 'Produisez seulement — nous gérons ventes & marketing'}
+                  ? 'سيّروا تعاونيتكم — نحن نتكفل بالباقي'
+                  : 'Gérez votre coopérative — nous gérons le reste'}
               </h3>
               <p className="text-emerald-100 max-w-xl mx-auto mb-8 text-sm leading-relaxed">
                 {isAr
-                  ? 'انضم إلى المنصة اليوم، أضف منتجاتك، وابدأ في استقبال الطلبيات من جميع أنحاء المغرب. تجربة مجانية 15 يوم بدون أي التزام.'
-                  : 'Rejoignez la plateforme aujourd\'hui, ajoutez vos produits et commencez à recevoir des commandes de tout le Maroc. Essai gratuit 15 jours sans engagement.'}
+                  ? 'انضم إلى المنصة اليوم، أضف أعضاء تعاونيتك، وابدأ في تسييرها رقمياً. تجربة مجانية 15 يوم بدون أي التزام.'
+                  : 'Rejoignez la plateforme aujourd\'hui, ajoutez les membres de votre coopérative et commencez à la gérer numériquement. Essai gratuit 15 jours sans engagement.'}
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link to="/register"
                   className="inline-flex items-center gap-2 bg-white text-emerald-700 font-bold px-7 py-3 rounded-xl text-sm hover:shadow-lg transition-all hover:-translate-y-0.5">
                   {isAr ? 'ابدأ مجاناً الآن ←' : 'Commencer gratuitement →'}
                 </Link>
-                <a href="https://lkhdmano.cloud/store" target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-emerald-500/30 hover:bg-emerald-500/50 border border-white/30 text-white font-medium px-6 py-3 rounded-xl text-sm transition-all">
-                  🏪 {isAr ? 'شاهد المتجر العام' : 'Voir la boutique publique'}
-                </a>
               </div>
             </div>
           </div>

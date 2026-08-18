@@ -23,7 +23,6 @@ import { ReportsPage } from './pages/reports/ReportsPage';
 import { RequestsPage } from './pages/requests/RequestsPage';
 import { RemindersPage } from './pages/reminders/RemindersPage';
 import { SuperAdminPage } from './pages/superadmin/SuperAdminPage';
-import { StoreAdminPage } from './pages/store-admin/StoreAdminPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import AssocPage from './pages/assoc/AssocPage';
 import { TransportPage } from './pages/transport/TransportPage';
@@ -41,8 +40,6 @@ import { ActivityPage } from './pages/activity/ActivityPage';
 import { RecurringPage } from './pages/recurring/RecurringPage';
 import { AssetsPage } from './pages/assets/AssetsPage';
 import { PublicProfilePage } from './pages/public/PublicProfilePage';
-import { StorePage } from './pages/store/StorePage';
-import { StoreTrackPage } from './pages/store/StoreTrackPage';
 import { LandingPage } from './pages/landing/LandingPage';
 import { CoopLandingPage } from './pages/landing/CoopLandingPage';
 import { PrivacyPage } from './pages/legal/PrivacyPage';
@@ -52,11 +49,6 @@ const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { isSuperAdmin } = useAuth();
   return isSuperAdmin ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
-
-function StoreAdminGuard({ children }: { children: React.ReactNode }) {
-  const { isSuperAdmin, isStoreManager } = useAuth();
-  return (isSuperAdmin || isStoreManager) ? <>{children}</> : <Navigate to="/login" replace />;
-}
 
 const WaterReaderRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isWaterReader } = useAuth();
@@ -80,21 +72,11 @@ const App: React.FC = () => {
               <Route path="/p/:slug" element={<PublicProfilePage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
-              <Route path="/store" element={<StorePage />} />
-              <Route path="/store/track" element={<StoreTrackPage />} />
-              <Route path="/store/track/:orderNumber" element={<StoreTrackPage />} />
               <Route path="/cooperatives" element={<CoopLandingPage />} />
 
               {/* SuperAdmin — standalone layout (no global sidebar) */}
               <Route path="/superadmin" element={
                 <SuperAdminRoute><SuperAdminPage /></SuperAdminRoute>
-              } />
-
-              {/* StoreAdmin — standalone layout */}
-              <Route path="/store-admin" element={
-                <StoreAdminGuard>
-                  <StoreAdminPage />
-                </StoreAdminGuard>
               } />
 
               {/* Protected routes — with global sidebar + header */}

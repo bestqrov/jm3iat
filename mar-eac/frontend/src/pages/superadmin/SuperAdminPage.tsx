@@ -8,7 +8,7 @@ import {
   ExternalLink, FileText,
   Package, Tag, Mail, Zap, Brain, Settings, Activity,
   ChevronLeft, ChevronRight,
-  LogOut, Globe, Sun, Moon, X, Bus, Truck,
+  LogOut, Globe, Sun, Moon, X, Bus,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -33,23 +33,19 @@ import { AutomationTab }   from './tabs/AutomationTab';
 import { PromoCodesTab }   from './tabs/PromoCodesTab';
 import { AIInsightsTab }   from './tabs/AIInsightsTab';
 import { SettingsTab }     from './tabs/SettingsTab';
-import { FulfillmentTab } from './tabs/FulfillmentTab';
-import { BundlesTab }     from './tabs/BundlesTab';
 import { AssocDashboardTab }  from './tabs/AssocDashboardTab';
 import { CoopDashboardTab }   from './tabs/CoopDashboardTab';
-import { StoreDashboardTab }  from './tabs/StoreDashboardTab';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AssocTypeKey = 'REGULAR' | 'PROJECTS' | 'WATER' | 'PRODUCTIVE' | 'PRODUCTIVE_WATER' | 'TRANSPORT';
-type SectionMode = 'assoc' | 'coop' | 'store';
+type SectionMode = 'assoc' | 'coop';
 type ActiveTab =
   | 'dashboard' | 'orgs' | 'subscriptions' | 'payments' | 'users'
   | 'packs' | 'analytics' | 'usage' | 'marketing' | 'automation'
-  | 'promos' | 'insights' | 'settings' | 'fulfillment' | 'bundles'
+  | 'promos' | 'insights' | 'settings'
   | 'assoc-dashboard' | 'assoc-orgs' | 'assoc-subscriptions' | 'assoc-payments'
-  | 'coop-dashboard'  | 'coop-orgs'  | 'coop-subscriptions'  | 'coop-payments'
-  | 'store-dashboard';
+  | 'coop-dashboard'  | 'coop-orgs'  | 'coop-subscriptions'  | 'coop-payments';
 
 // ─── Association type config ──────────────────────────────────────────────────
 
@@ -168,26 +164,6 @@ const SECTION_TAB_GROUPS_CONFIG = {
       tabs: [{ key: 'settings', iconEl: <Settings size={15} />, labelFr: 'Paramètres', labelAr: 'الإعدادات' }],
     },
   ],
-  store: [
-    {
-      labelFr: 'Vue d\'ensemble', labelAr: 'نظرة عامة',
-      tabs: [
-        { key: 'store-dashboard', iconEl: <BarChart2 size={15} />, labelFr: 'Tableau de bord', labelAr: 'لوحة المتجر' },
-      ],
-    },
-    {
-      labelFr: 'Opérations', labelAr: 'العمليات',
-      tabs: [
-        { key: 'fulfillment', iconEl: <Truck size={15} />,     labelFr: 'Fulfillment',    labelAr: 'الفولفيلمنت' },
-        { key: 'bundles',     iconEl: <Package size={15} />,   labelFr: 'Packs Produits', labelAr: 'باقات المنتجات' },
-        { key: 'coop-orgs',   iconEl: <Building2 size={15} />, labelFr: 'Coopératives',   labelAr: 'التعاونيات' },
-      ],
-    },
-    {
-      labelFr: 'Configuration', labelAr: 'الإعدادات',
-      tabs: [{ key: 'settings', iconEl: <Settings size={15} />, labelFr: 'Paramètres', labelAr: 'الإعدادات' }],
-    },
-  ],
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -207,10 +183,9 @@ export const SuperAdminPage: React.FC = () => {
   const activeTab = useMemo<ActiveTab>(() => {
     const t = searchParams.get('tab') as ActiveTab;
     const valid: ActiveTab[] = [
-      'orgs','subscriptions','payments','users','packs','analytics','usage','marketing','automation','promos','insights','settings','fulfillment','bundles',
+      'orgs','subscriptions','payments','users','packs','analytics','usage','marketing','automation','promos','insights','settings',
       'assoc-dashboard','assoc-orgs','assoc-subscriptions','assoc-payments',
       'coop-dashboard','coop-orgs','coop-subscriptions','coop-payments',
-      'store-dashboard',
     ];
     return valid.includes(t) ? t : 'assoc-dashboard';
   }, [searchParams]);
@@ -287,7 +262,7 @@ export const SuperAdminPage: React.FC = () => {
   const [resetResult, setResetResult] = useState<{ tempPassword: string; name: string; email: string } | null>(null);
   const [copiedPw, setCopiedPw] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
-  const [createUserForm, setCreateUserForm] = useState({ name: '', email: '', password: '', role: 'STORE_MANAGER' });
+  const [createUserForm, setCreateUserForm] = useState({ name: '', email: '', password: '', role: 'ADMIN' });
   const [createUserSaving, setCreateUserSaving] = useState(false);
   const [createUserError, setCreateUserError] = useState('');
 
@@ -331,8 +306,7 @@ export const SuperAdminPage: React.FC = () => {
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
     try {
-      const section = sectionMode === 'store' ? undefined : sectionMode;
-      const r = await superadminApi.getUsers({ search: userSearch || undefined, limit: USERS_LIMIT, section });
+      const r = await superadminApi.getUsers({ search: userSearch || undefined, limit: USERS_LIMIT, section: sectionMode });
       setUsers(r.data.data);
       setUsersTotal(r.data.total);
     } finally { setUsersLoading(false); }
@@ -490,7 +464,7 @@ export const SuperAdminPage: React.FC = () => {
     try {
       await superadminApi.createUser(createUserForm);
       setShowCreateUser(false);
-      setCreateUserForm({ name: '', email: '', password: '', role: 'STORE_MANAGER' });
+      setCreateUserForm({ name: '', email: '', password: '', role: 'ADMIN' });
       await loadUsers();
     } catch (err: any) {
       setCreateUserError(err.response?.data?.message || 'Erreur');
@@ -537,7 +511,6 @@ export const SuperAdminPage: React.FC = () => {
           {([
             { mode: 'assoc' as SectionMode, icon: '🏛️', labelFr: 'Assoc',  labelAr: 'جمعيات',   defaultTab: 'assoc-dashboard', color: 'bg-indigo-600' },
             { mode: 'coop'  as SectionMode, icon: '🤝', labelFr: 'Coop',   labelAr: 'تعاونيات', defaultTab: 'coop-dashboard',  color: 'bg-teal-600' },
-            { mode: 'store' as SectionMode, icon: '🛒', labelFr: 'Store',  labelAr: 'المتجر',   defaultTab: 'store-dashboard', color: 'bg-purple-600' },
           ]).map(s => (
             <button
               key={s.mode}
@@ -554,7 +527,7 @@ export const SuperAdminPage: React.FC = () => {
         </div>
 
         {/* Stats quick pills */}
-        {!statsLoading && stats && stats.section !== 'store' && (
+        {!statsLoading && stats && (
           <div className="flex flex-col gap-1.5 px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
@@ -692,7 +665,6 @@ export const SuperAdminPage: React.FC = () => {
           {/* ════════════ DASHBOARD TABS ════════════ */}
           {activeTab === 'assoc-dashboard' && <AssocDashboardTab onNavigate={handleSectionNavigate} />}
           {activeTab === 'coop-dashboard'  && <CoopDashboardTab  onNavigate={handleSectionNavigate} />}
-          {activeTab === 'store-dashboard' && <StoreDashboardTab onNavigate={handleSectionNavigate} />}
 
           {/* ════════════ ORGS TAB ════════════ */}
           {activeTab === 'orgs' && (
@@ -852,7 +824,7 @@ export const SuperAdminPage: React.FC = () => {
           )}
 
           {/* ════════════ SUBSCRIPTIONS TAB ════════════ */}
-          {activeTab === 'subscriptions' && <SubscriptionsTab section={sectionMode === 'store' ? undefined : sectionMode} />}
+          {activeTab === 'subscriptions' && <SubscriptionsTab section={sectionMode} />}
 
           {/* ════════════ PAYMENTS TAB ════════════ */}
           {activeTab === 'payments' && (
@@ -998,8 +970,6 @@ export const SuperAdminPage: React.FC = () => {
           {activeTab === 'promos'       && <PromoCodesTab />}
           {activeTab === 'insights'     && <AIInsightsTab />}
           {activeTab === 'settings'     && <SettingsTab />}
-          {activeTab === 'fulfillment' && <FulfillmentTab />}
-          {activeTab === 'bundles'     && <BundlesTab />}
 
         </main>
       </div>
@@ -1025,7 +995,6 @@ export const SuperAdminPage: React.FC = () => {
             <div>
               <label className={lbl}>{isAr ? 'الدور' : 'Rôle'}</label>
               <select value={createUserForm.role} onChange={e => setCreateUserForm(f => ({ ...f, role: e.target.value }))} className={inp}>
-                <option value="STORE_MANAGER">🏪 مسؤول المتجر (Store Manager)</option>
                 <option value="ADMIN">Admin</option>
               </select>
             </div>

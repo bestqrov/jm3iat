@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authApi } from '../lib/api';
 
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'PRESIDENT' | 'TREASURER' | 'SECRETARY' | 'MANAGER' | 'WATER_READER' | 'STORE_MANAGER';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'PRESIDENT' | 'TREASURER' | 'SECRETARY' | 'MANAGER' | 'WATER_READER';
 
 // Modules each restricted role can access
 const ROLE_ACCESS: Record<string, string[]> = {
@@ -67,7 +67,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isSuperAdmin: boolean;
-  isStoreManager: boolean;
   isWaterReader: boolean;
   isAdmin: boolean;
   isPresident: boolean;
@@ -102,7 +101,6 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   isSuperAdmin: false,
-  isStoreManager: false,
   isWaterReader: false,
   isAdmin: false,
   isPresident: false,
@@ -211,7 +209,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAuthenticated: !!user,
       isLoading,
       isSuperAdmin:   role === 'SUPER_ADMIN',
-      isStoreManager: role === 'STORE_MANAGER',
       isWaterReader:  role === 'WATER_READER',
       isAdmin:       role === 'ADMIN',
       isPresident:   role === 'PRESIDENT',

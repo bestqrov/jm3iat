@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Factory, Plus, Edit2, Trash2, X, AlertCircle, Package, CheckCircle, Clock, PlayCircle, Warehouse, Send, Info, ArrowDownToLine, Search } from 'lucide-react';
+import { Factory, Plus, Edit2, Trash2, X, AlertCircle, Package, CheckCircle, Clock, PlayCircle, Warehouse, Info, Search } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { coopApi } from '../../lib/api';
@@ -72,9 +72,6 @@ export const CoopProductionPage: React.FC = () => {
   const [modal, setModal]             = useState(false);
   const [pickerOpen, setPickerOpen]   = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
-  const [storeModal, setStoreModal]     = useState<{ product: Product; currentQty: number } | null>(null);
-  const [storeQty, setStoreQty]         = useState('');
-  const [storeNotes, setStoreNotes]     = useState('');
   const [movModal, setMovModal]         = useState(false);
   const [movForm, setMovForm]           = useState({ productId: '', type: 'IN', quantity: '', unitPrice: '', reference: '', notes: '' });
   const [movFilter, setMovFilter]       = useState('');
@@ -166,21 +163,6 @@ export const CoopProductionPage: React.FC = () => {
   const remove = async (id: string) => {
     if (!confirm(ar ? 'حذف دورة الإنتاج؟' : 'Supprimer cette production ?')) return;
     await coopApi.deleteProduction(id); load();
-  };
-
-  const sendToStore = async () => {
-    if (!storeModal || !storeQty || parseFloat(storeQty) <= 0) return;
-    try {
-      await coopApi.createMovement({
-        productId: storeModal.product.id,
-        type: 'OUT',
-        quantity: parseFloat(storeQty),
-        reference: 'STORE_SHIPMENT',
-        notes: storeNotes || (ar ? 'إرسال للمتجر - MarEAC' : 'Envoi au magasin - MarEAC'),
-      });
-      setStoreModal(null); setStoreQty(''); setStoreNotes('');
-      load();
-    } catch (e: any) { setError(e.response?.data?.message || 'Erreur'); }
   };
 
   const addMovement = async () => {
@@ -403,8 +385,8 @@ export const CoopProductionPage: React.FC = () => {
           <Info size={14} className="flex-shrink-0 mt-0.5" />
           <span>
             {ar
-              ? 'عند إكمال دورة إنتاج مرتبطة بمنتج محدد، تُضاف كميته تلقائياً إلى المخزون. يمكنك أيضاً إضافة حركات يدوية أو إرسال المنتجات إلى متجر MarEAC.'
-              : 'Quand une production liée à un produit est terminée, sa quantité est ajoutée automatiquement. Vous pouvez aussi créer des mouvements manuels ou envoyer des produits au magasin MarEAC.'}
+              ? 'عند إكمال دورة إنتاج مرتبطة بمنتج محدد، تُضاف كميته تلقائياً إلى المخزون. يمكنك أيضاً إضافة حركات يدوية.'
+              : 'Quand une production liée à un produit est terminée, sa quantité est ajoutée automatiquement. Vous pouvez aussi créer des mouvements manuels.'}
           </span>
         </div>
 
@@ -415,7 +397,6 @@ export const CoopProductionPage: React.FC = () => {
           const netStock   = totalIn - totalOut;
           const valueIn    = movements.filter(m => m.type === 'IN').reduce((s, m) => s + m.quantity * (m.unitPrice || 0), 0);
           const valueOut   = movements.filter(m => m.type === 'OUT').reduce((s, m) => s + m.quantity * (m.unitPrice || 0), 0);
-          const storeShips = movements.filter(m => m.reference === 'STORE_SHIPMENT').reduce((s, m) => s + m.quantity, 0);
 
           // Bar chart data: per product
           const chartData = products.map(p => ({
@@ -432,12 +413,11 @@ export const CoopProductionPage: React.FC = () => {
               </h3>
 
               {/* KPI row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
                   { label: ar ? 'إجمالي الدخول' : 'Total entrées',  value: fmt(totalIn),    sub: `${fmt(valueIn)} MAD`,   color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/10', border: 'border-emerald-200 dark:border-emerald-800' },
                   { label: ar ? 'إجمالي الخروج' : 'Total sorties',  value: fmt(totalOut),   sub: `${fmt(valueOut)} MAD`,   color: 'text-red-500',     bg: 'bg-red-50 dark:bg-red-900/10',         border: 'border-red-200 dark:border-red-800' },
                   { label: ar ? 'الرصيد الحالي' : 'Solde actuel',   value: fmt(netStock),   sub: netStock >= 0 ? (ar ? 'مخزون موجب' : 'Stock positif') : (ar ? 'عجز!' : 'Déficit!'), color: netStock >= 0 ? 'text-teal-600' : 'text-red-600', bg: 'bg-teal-50 dark:bg-teal-900/10', border: 'border-teal-200 dark:border-teal-800' },
-                  { label: ar ? 'مُرسَل للمتجر' : 'Envoyé magasin', value: fmt(storeShips), sub: ar ? 'إجمالي الإرساليات' : 'Total expéditions', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/10', border: 'border-violet-200 dark:border-violet-800' },
                 ].map(k => (
                   <div key={k.label} className={`rounded-xl border p-3 ${k.bg} ${k.border}`}>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{k.label}</div>
@@ -542,14 +522,6 @@ export const CoopProductionPage: React.FC = () => {
                   </div>
                   <div className="flex flex-col gap-1 flex-shrink-0">
                     <button
-                      onClick={() => { setStoreModal({ product: p, currentQty: qty }); setStoreQty(''); setStoreNotes(''); }}
-                      disabled={qty <= 0}
-                      className="flex flex-col items-center gap-0.5 px-2 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg text-[10px] font-medium transition-colors"
-                    >
-                      <ArrowDownToLine size={13} />
-                      {ar ? 'متجر' : 'Magasin'}
-                    </button>
-                    <button
                       onClick={() => { setMovForm({ productId: p.id, type: 'IN', quantity: '', unitPrice: '', reference: '', notes: '' }); setMovModal(true); }}
                       className="flex flex-col items-center gap-0.5 px-2 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg text-[10px] font-medium transition-colors"
                     >
@@ -607,7 +579,6 @@ export const CoopProductionPage: React.FC = () => {
                       ADJUST: { label: 'Ajust.',   labelAr: 'تسوية',  cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
                     };
                     const t = typeMap[m.type] || typeMap.IN;
-                    const isStoreShipment = m.reference === 'STORE_SHIPMENT';
                     return (
                       <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/20">
                         <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -632,9 +603,7 @@ export const CoopProductionPage: React.FC = () => {
                           {m.unitPrice ? `${fmt(m.unitPrice)} MAD` : '—'}
                         </td>
                         <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 max-w-[160px] truncate">
-                          {isStoreShipment
-                            ? <span className="inline-flex items-center gap-1 text-teal-600 dark:text-teal-400"><ArrowDownToLine size={11} />{ar ? 'إرسال للمتجر' : 'Envoi magasin'}</span>
-                            : (m.reference || m.notes || '—')}
+                          {m.reference || m.notes || '—'}
                         </td>
                         <td className="px-4 py-2.5">
                           <button
@@ -842,71 +811,6 @@ export const CoopProductionPage: React.FC = () => {
         </Modal>
       )}
 
-      {/* Send-to-Store Modal */}
-      {storeModal && (
-        <Modal
-          title={ar ? `إرسال إلى متجر MarEAC` : `Envoyer au magasin MarEAC`}
-          onClose={() => setStoreModal(null)}
-        >
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-teal-50 dark:bg-teal-900/20 rounded-xl">
-              <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600">
-                <Package size={20} />
-              </div>
-              <div>
-                <div className="font-semibold text-gray-900 dark:text-white">{storeModal.product.name}</div>
-                <div className="text-sm text-teal-600 dark:text-teal-400">{ar ? 'متوفر:' : 'Disponible:'} {fmt(storeModal.currentQty)} {storeModal.product.unit}</div>
-              </div>
-            </div>
-
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
-              <Send size={13} className="flex-shrink-0 mt-0.5" />
-              <span>{ar ? 'سيتم خصم الكمية من مخزون التعاونية وإضافتها إلى متجر MarEAC.' : 'La quantité sera déduite du stock de la coopérative et ajoutée au magasin MarEAC.'}</span>
-            </div>
-
-            <div>
-              <label className={label}>{ar ? 'الكمية المراد إرسالها *' : 'Quantité à envoyer *'}</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number" min="0.01" max={storeModal.currentQty} step="0.01"
-                  value={storeQty}
-                  onChange={e => setStoreQty(e.target.value)}
-                  placeholder="0"
-                  className={`${field} flex-1`}
-                />
-                <span className="text-sm text-gray-500 whitespace-nowrap">{storeModal.product.unit}</span>
-              </div>
-              {parseFloat(storeQty) > storeModal.currentQty && (
-                <p className="text-xs text-red-500 mt-1">{ar ? 'الكمية تتجاوز المخزون المتوفر' : 'Quantité supérieure au stock disponible'}</p>
-              )}
-            </div>
-
-            <div>
-              <label className={label}>{ar ? 'ملاحظات (اختياري)' : 'Notes (optionnel)'}</label>
-              <textarea
-                value={storeNotes}
-                onChange={e => setStoreNotes(e.target.value)}
-                rows={2}
-                placeholder={ar ? 'مثل: دفعة رمضان، صنف ممتاز...' : 'Ex: Lot Ramadan, qualité premium...'}
-                className={field}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <button onClick={() => setStoreModal(null)} className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700">
-                {ar ? 'إلغاء' : 'Annuler'}
-              </button>
-              <button
-                onClick={sendToStore}
-                disabled={!storeQty || parseFloat(storeQty) <= 0 || parseFloat(storeQty) > storeModal.currentQty}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <Send size={15} />{ar ? 'إرسال للمتجر' : 'Envoyer'}
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
 
       {/* Manual Movement Modal */}
       {movModal && (

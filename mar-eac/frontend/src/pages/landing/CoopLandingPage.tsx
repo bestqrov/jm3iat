@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   CheckCircle, Globe, Menu, X, Sparkles, ChevronDown,
-  Package, ShoppingCart, TrendingUp, Users, Shield, Truck,
-  Star, ArrowRight, Store, BarChart2, Leaf,
+  Package, ShoppingCart, TrendingUp, Users, Shield,
+  ArrowRight, BarChart2, Leaf,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -76,14 +76,14 @@ export const CoopLandingPage: React.FC = () => {
 
   const faqs = isAr ? [
     { q: 'هل أحتاج خبرة تقنية لاستخدام المنصة؟', a: 'لا إطلاقاً. المنصة مصممة خصيصاً للتعاونيات المغربية — بسيطة ويمكن لأي شخص إدارتها.' },
-    { q: 'كيف يصل المشترون لمنتجاتي؟', a: 'منتجاتك تُعرض فوراً في متجر lkhdmano.cloud الذي يزوره زبائن من جميع المدن المغربية.' },
-    { q: 'ما هو نظام الدفع؟', a: 'الدفع عند الاستلام (COD) — الزبون يدفع عند تسلّم المنتج. آمن وسهل لك وللزبون.' },
-    { q: 'هل يمكنني إدارة المخزون؟', a: 'نعم. تتبع المخزون، الطلبيات الواردة، الأرباح، والمدفوعات — كل شيء في لوحة تحكم واحدة.' },
+    { q: 'ماذا توفر لي المنصة بالضبط؟', a: 'إدارة كاملة لتعاونيتك: الأعضاء، المكتب الإداري، الاجتماعات ومحاضرها، المشاريع، والمالية — كل شيء في لوحة تحكم واحدة.' },
+    { q: 'هل يمكنني إدارة المخزون والإنتاج؟', a: 'نعم. تتبع دورات الإنتاج، حركات المخزون، والمبيعات لعملائك مباشرة من التطبيق.' },
+    { q: 'هل بياناتي آمنة؟', a: 'نعم، بياناتك محفوظة بشكل آمن ولا يمكن لأي جهة خارجية الوصول إليها.' },
   ] : [
     { q: 'Faut-il des compétences techniques ?', a: 'Absolument pas. La plateforme est conçue pour les coopératives marocaines — simple, accessible à tous.' },
-    { q: 'Comment les clients trouvent mes produits ?', a: 'Vos produits apparaissent immédiatement sur lkhdmano.cloud, visité par des clients de toutes les villes du Maroc.' },
-    { q: 'Quel est le système de paiement ?', a: 'Paiement à la livraison (COD) — le client paie à la réception. Sécurisé et simple pour vous et le client.' },
-    { q: 'Puis-je gérer mon stock ?', a: 'Oui. Suivez stock, commandes entrantes, bénéfices et paiements — tout dans un seul tableau de bord.' },
+    { q: 'Que m\'offre exactement la plateforme ?', a: 'La gestion complète de votre coopérative : membres, bureau administratif, réunions et PV, projets, et finances — tout dans un seul tableau de bord.' },
+    { q: 'Puis-je gérer ma production et mon stock ?', a: 'Oui. Suivez vos cycles de production, mouvements de stock, et ventes à vos clients directement depuis l\'application.' },
+    { q: 'Mes données sont-elles sécurisées ?', a: 'Oui, vos données sont stockées de manière sécurisée et ne sont accessibles à aucun tiers.' },
   ];
 
   return (
@@ -187,8 +187,8 @@ export const CoopLandingPage: React.FC = () => {
           <div className="text-center max-w-3xl mx-auto">
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
               {isAr
-                ? 'منصة ذكية تُدير تعاونيتك وتبيع منتجاتك في متجر إلكتروني وطني ودولي — بدون خبرة تقنية، بدون تكاليف إضافية.'
-                : 'Une plateforme intelligente qui gère votre coopérative et vend vos produits dans une boutique nationale et internationale — sans compétence technique, sans frais supplémentaires.'}
+                ? 'منصة ذكية تُدير تعاونيتك بالكامل — الأعضاء، المكتب الإداري، الاجتماعات، المشاريع، الإنتاج والمالية — بدون خبرة تقنية، بدون تكاليف إضافية.'
+                : 'Une plateforme intelligente qui gère votre coopérative de A à Z — membres, bureau administratif, réunions, projets, production et finances — sans compétence technique, sans frais supplémentaires.'}
             </p>
             <div className="flex flex-wrap justify-center gap-4 mb-10">
               <button onClick={() => setShowForm(true)}
@@ -196,10 +196,6 @@ export const CoopLandingPage: React.FC = () => {
                 {isAr ? 'سجّل تعاونيتك مجاناً' : 'Inscrire ma coopérative gratuitement'}
                 <ArrowRight size={18} className={isAr ? 'rotate-180' : ''} />
               </button>
-              <a href="https://lkhdmano.cloud/store" target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 border-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-medium px-6 py-4 rounded-2xl text-base transition-all">
-                <Store size={18} />{isAr ? 'شاهد المتجر العام' : 'Voir la boutique'}
-              </a>
             </div>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500 dark:text-gray-400">
               {(isAr
@@ -212,9 +208,9 @@ export const CoopLandingPage: React.FC = () => {
           {/* Stats row */}
           <div className="mt-8 max-w-4xl mx-auto grid grid-cols-3 gap-4">
             {[
-              { icon: '📦', value: isAr ? '+500 منتج' : '+500 produits', label: isAr ? 'في المتجر' : 'en boutique' },
               { icon: '🤝', value: '+120', label: isAr ? 'تعاونية شريكة' : 'coopératives partenaires' },
-              { icon: '💵', value: 'COD', label: isAr ? 'دفع عند الاستلام' : 'Paiement livraison' },
+              { icon: '📋', value: isAr ? 'محاضر' : 'PV', label: isAr ? 'اجتماعات موثقة' : 'réunions documentées' },
+              { icon: '💰', value: isAr ? 'مالية' : 'Finances', label: isAr ? 'متابعة كاملة' : 'suivi complet' },
             ].map((s, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 text-center shadow-sm">
                 <div className="text-3xl mb-2">{s.icon}</div>
@@ -234,19 +230,17 @@ export const CoopLandingPage: React.FC = () => {
               {isAr ? 'كل ما تحتاجه تعاونيتك' : 'Tout ce dont votre coopérative a besoin'}
             </span>
             <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">
-              {isAr ? 'تسيير ذكي + تسويق احترافي — في منصة واحدة' : 'Gestion intelligente + Marketing pro — en une seule plateforme'}
+              {isAr ? 'تسيير ذكي — في منصة واحدة' : 'Gestion intelligente — en une seule plateforme'}
             </h2>
             <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-14">
               {isAr
-                ? 'نجمع بين نظام تسيير متكامل لتعاونيتك ومستودع حقيقي مع فريق تسويق — لأن نجاحك يحتاج الاثنين معاً'
-                : 'Nous combinons un système de gestion complet et un entrepôt réel avec une équipe marketing — car votre succès nécessite les deux'}
+                ? 'نظام تسيير متكامل لتعاونيتك — من الأعضاء إلى المالية، مروراً بالاجتماعات والإنتاج'
+                : 'Un système de gestion complet pour votre coopérative — des membres aux finances, en passant par les réunions et la production'}
             </p>
           </div>
 
-          {/* Two columns: Gestion | Marketing */}
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-
-            {/* Gestion column */}
+          {/* Gestion column */}
+          <div className="max-w-2xl mx-auto mb-8">
             <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
@@ -284,52 +278,13 @@ export const CoopLandingPage: React.FC = () => {
                 ))}
               </ul>
             </div>
-
-            {/* Marketing & Warehouse column */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl border border-emerald-200 dark:border-emerald-800 p-8 shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600">
-                  <Store size={20} />
-                </div>
-                <div>
-                  <p className="font-black text-gray-900 dark:text-white">
-                    {isAr ? 'المستودع والتسويق' : 'Entrepôt & Marketing'}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {isAr ? 'نحن نتكفل — أنتم تُنتجون فقط' : 'On s\'occupe de tout — vous produisez seulement'}
-                  </p>
-                </div>
-              </div>
-              <ul className="space-y-3">
-                {(isAr ? [
-                  { icon: <Truck size={15} />, text: 'مستودعنا يستقبل منتجاتك ويحفظها باحترافية' },
-                  { icon: <Star size={15} />, text: 'فريقنا يصوّر المنتجات ويكتب أوصافاً جذابة' },
-                  { icon: <TrendingUp size={15} />, text: 'إعلانات ممولة على السوشيال ميديا لكل منتج' },
-                  { icon: <ShoppingCart size={15} />, text: 'استقبال الطلبيات، التغليف، والتسليم للزبون' },
-                  { icon: <Shield size={15} />, text: 'تحصيل المبالغ وتحويل أرباحك لحسابك مباشرة' },
-                  { icon: <ArrowRight size={15} />, text: 'تقارير المبيعات والأرباح بشكل دوري' },
-                ] : [
-                  { icon: <Truck size={15} />, text: 'Notre entrepôt reçoit et stocke vos produits' },
-                  { icon: <Star size={15} />, text: 'Notre équipe photographie et rédige des fiches produits attractives' },
-                  { icon: <TrendingUp size={15} />, text: 'Publicités payantes sur les réseaux sociaux pour chaque produit' },
-                  { icon: <ShoppingCart size={15} />, text: 'Réception commandes, emballage et livraison au client' },
-                  { icon: <Shield size={15} />, text: 'Encaissement et virement de vos bénéfices directement' },
-                  { icon: <ArrowRight size={15} />, text: 'Rapports de ventes et bénéfices périodiques' },
-                ]).map((item, i) => (
-                  <li key={i} className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300">
-                    <span className="text-emerald-500 flex-shrink-0">{item.icon}</span>
-                    {item.text}
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
 
           {/* Bottom tagline */}
           <p className="text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400">
             {isAr
-              ? '🤝 تعاونيتك تُنتج — منصتنا تُسيّر وتبيع'
-              : '🤝 Votre coopérative produit — notre plateforme gère et vend'}
+              ? '🤝 كل ما تحتاجه تعاونيتك، في مكان واحد'
+              : '🤝 Tout ce dont votre coopérative a besoin, au même endroit'}
           </p>
         </div>
       </section>
@@ -344,13 +299,13 @@ export const CoopLandingPage: React.FC = () => {
           </div>
           <div className="grid sm:grid-cols-3 gap-8">
             {(isAr ? [
-              { icon: '✅', title: 'سجّل وأرسل منتجاتك', desc: 'سجّل تعاونيتك، احصل على الموافقة، ثم أرسل منتجاتك إلى مستودعنا — هذا كل شيء من جهتك' },
-              { icon: '📣', title: 'فريقنا يتكفل بالباقي', desc: 'فريقنا يضيف منتجاتك في المتجر، ينشئ الإعلانات، ويسوّق لها عبر القنوات الرقمية' },
-              { icon: '💰', title: 'نبيع ونُحوّل لك المال', desc: 'نبيع منتجاتك، نُرسلها للزبون، نحصّل المبلغ، ونُحوّل أرباحك مباشرة إلى حسابك' },
+              { icon: '✅', title: 'سجّل تعاونيتك', desc: 'أنشئ حسابك، أضف معلومات تعاونيتك، واحصل على الموافقة — في دقائق' },
+              { icon: '👥', title: 'أضف الأعضاء والمكتب', desc: 'أضف الأعضاء، حدّد المكتب الإداري (الرئيس، الكاتب، الأمين...) وباقي المعلومات' },
+              { icon: '📊', title: 'سيّر تعاونيتك يومياً', desc: 'الاجتماعات، المحاضر، المشاريع، الإنتاج، والمالية — كل شيء من لوحة تحكم واحدة' },
             ] : [
-              { icon: '✅', title: 'Inscrivez-vous & envoyez vos produits', desc: 'Inscrivez votre coopérative, obtenez l\'approbation, puis envoyez vos produits à notre entrepôt — c\'est tout de votre côté' },
-              { icon: '📣', title: 'Notre équipe s\'occupe du reste', desc: 'Notre équipe ajoute vos produits à la boutique, crée les publicités et assure la promotion digitale' },
-              { icon: '💰', title: 'On vend & on vire vos gains', desc: 'On vend vos produits, on les livre au client, on encaisse et on transfère vos bénéfices directement sur votre compte' },
+              { icon: '✅', title: 'Inscrivez votre coopérative', desc: 'Créez votre compte, ajoutez les informations de votre coopérative, obtenez l\'approbation — en quelques minutes' },
+              { icon: '👥', title: 'Ajoutez membres & bureau', desc: 'Ajoutez vos adhérents, définissez le bureau administratif (président, secrétaire, trésorier...) et le reste' },
+              { icon: '📊', title: 'Gérez au quotidien', desc: 'Réunions, PV, projets, production et finances — tout depuis un seul tableau de bord' },
             ]).map((s, i) => (
               <div key={i} className="flex flex-col items-center text-center bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700">
                 <div className="text-5xl mb-5">{s.icon}</div>
@@ -370,7 +325,7 @@ export const CoopLandingPage: React.FC = () => {
               {isAr ? 'هل تعاني من هذه المشاكل؟' : 'Souffrez-vous de ces problèmes ?'}
             </h2>
             <p className="text-gray-500 dark:text-gray-400">
-              {isAr ? 'المشكلة الكبرى لكل تعاونية: الإنتاج ممتاز، لكن التسويق والبيع صعب' : 'Le vrai défi : une production excellente, mais ventes & marketing restent difficiles'}
+              {isAr ? 'المشكلة الكبرى لكل تعاونية: التسيير الإداري والمالي مبعثر وصعب التتبع' : 'Le vrai défi : une gestion administrative et financière éparpillée, difficile à suivre'}
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-8">
@@ -381,17 +336,17 @@ export const CoopLandingPage: React.FC = () => {
               </div>
               <ul className="space-y-3">
                 {(isAr ? [
-                  'منتجات رائعة تبقى في المستودع بدون مشترين',
-                  'لا وجود رقمي — لا موقع، لا متجر إلكتروني',
-                  'التسويق يحتاج خبرة وميزانية كبيرة',
-                  'صعوبة الوصول للزبائن خارج المنطقة الجغرافية',
-                  'ضياع الوقت في الإدارة بدل التركيز على الإنتاج',
+                  'وثائق ومحاضر مبعثرة بين الأوراق والملفات',
+                  'صعوبة تتبع من دفع ومن لم يدفع',
+                  'لا وجود رقمي — لا تسيير موحّد للأعضاء والمكتب',
+                  'حساب المالية والإنتاج يدوياً وبدون تقارير دقيقة',
+                  'ضياع الوقت في الإدارة بدل التركيز على التعاونية',
                 ] : [
-                  'Excellents produits qui restent en stock sans acheteurs',
-                  'Aucune présence digitale — pas de site, pas de boutique',
-                  'Le marketing nécessite expertise et budget',
-                  'Impossible d\'atteindre des clients hors région',
-                  'Temps perdu en gestion au lieu de la production',
+                  'Documents et PV éparpillés entre papiers et dossiers',
+                  'Difficile de suivre qui a payé et qui ne l\'a pas fait',
+                  'Aucune gestion digitale unifiée des membres et du bureau',
+                  'Finances et production calculées à la main, sans rapports précis',
+                  'Temps perdu en gestion administrative',
                 ]).map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-red-700 dark:text-red-300">
                     <span className="text-red-400 mt-0.5 flex-shrink-0 font-bold">✗</span>{item}
@@ -406,17 +361,17 @@ export const CoopLandingPage: React.FC = () => {
               </div>
               <ul className="space-y-3">
                 {(isAr ? [
-                  'متجر إلكتروني جاهز على lkhdmano.cloud — في دقائق',
-                  'منتجاتك تصل لزبائن من جميع مدن المغرب',
-                  'الطلبيات تصلك مباشرة، الدفع عند الاستلام (COD)',
-                  'تتبع المخزون، الأرباح، والمدفوعات في لوحة واحدة',
-                  'أنتم تركزون على الإنتاج، نحن نتكفل بالباقي',
+                  'كل الأعضاء والمكتب الإداري في مكان واحد',
+                  'محاضر الاجتماعات تُنشأ وتُحفظ تلقائياً',
+                  'تتبع المالية والانخراطات والمدفوعات في الوقت الفعلي',
+                  'تتبع الإنتاج والمخزون والمبيعات بدقة',
+                  'تقارير جاهزة بصيغة PDF في أي وقت',
                 ] : [
-                  'Boutique prête sur lkhdmano.cloud — en quelques minutes',
-                  'Produits accessibles dans toutes les villes du Maroc',
-                  'Commandes directes, paiement à la livraison (COD)',
-                  'Suivi stock, bénéfices et paiements dans un tableau de bord',
-                  'Vous produisez, nous gérons ventes & marketing',
+                  'Tous les membres et le bureau administratif au même endroit',
+                  'Les PV de réunions sont générés et archivés automatiquement',
+                  'Suivi des finances, adhésions et paiements en temps réel',
+                  'Suivi précis de la production, du stock et des ventes',
+                  'Rapports PDF prêts à tout moment',
                 ]).map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-emerald-700 dark:text-emerald-300">
                     <CheckCircle size={15} className="text-emerald-500 mt-0.5 flex-shrink-0" />{item}
@@ -493,18 +448,6 @@ export const CoopLandingPage: React.FC = () => {
                 {isAr ? 'ابدأ مجاناً ←' : 'Commencer gratuitement →'}
               </button>
             </div>
-          </div>
-
-          {/* Store commission note */}
-          <div className="mt-8 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-6 py-5 text-center max-w-md mx-auto">
-            <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mb-1">
-              🏪 {isAr ? 'المتجر — عمولة على المبيعات فقط' : 'Boutique — commission sur ventes uniquement'}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              {isAr
-                ? 'نتولى نحن التسويق والإعلان وجلب المشترين — أنتم فقط تضمنون الجودة. نأخذ عمولة بسيطة عند كل عملية بيع ناجحة.'
-                : 'Nous gérons la publicité, le marketing et l\'acquisition des acheteurs — vous garantissez seulement la qualité. On prend une commission simple à chaque vente réussie.'}
-            </p>
           </div>
         </div>
       </section>

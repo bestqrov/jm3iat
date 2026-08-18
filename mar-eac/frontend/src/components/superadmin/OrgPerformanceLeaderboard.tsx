@@ -35,7 +35,7 @@ function rankEmoji(rank: number): string {
   return String(rank);
 }
 
-export function OrgPerformanceLeaderboard({ section }: { section: 'assoc' | 'coop' | 'store' }) {
+export function OrgPerformanceLeaderboard({ section }: { section: 'assoc' | 'coop' }) {
   const [data, setData]       = useState<LeaderboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage]       = useState(1);
@@ -57,8 +57,7 @@ export function OrgPerformanceLeaderboard({ section }: { section: 'assoc' | 'coo
   const topRevenue = data?.orgs?.[0]?.monthRevenue || 1;
 
   const sectionLabel =
-    section === 'store' ? 'أداء التعاونيات في المتجر' :
-    section === 'coop'  ? 'أداء التعاونيات' :
+    section === 'coop' ? 'أداء التعاونيات' :
     'أداء الجمعيات';
 
   return (

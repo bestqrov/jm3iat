@@ -27,10 +27,6 @@ export const LoginPage: React.FC = () => {
         navigate('/superadmin');
         return;
       }
-      if (userData?.role === 'STORE_MANAGER') {
-        navigate('/store-admin');
-        return;
-      }
       navigate('/dashboard');
     } catch (err: any) {
       const status = err.response?.status;

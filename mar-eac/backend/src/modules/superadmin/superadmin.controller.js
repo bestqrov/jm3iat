@@ -87,82 +87,7 @@ const TYPE_PRICES = {
 
 const getStats = async (req, res) => {
   try {
-    const section = req.query.section; // 'assoc' | 'coop' | 'store' | undefined
-
-    // ── Store section stats ──────────────────────────────────────────────────
-    if (section === 'store') {
-      const now = new Date();
-      const startOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-      const allStoreOrders = await prisma.commerceOrder.findMany({
-        where: { source: 'STORE' },
-        select: { totalAmount: true, status: true, createdAt: true, items: true },
-      });
-
-      const todayOrders     = allStoreOrders.filter(o => new Date(o.createdAt) >= startOfDay).length;
-      const monthOrders     = allStoreOrders.filter(o => new Date(o.createdAt) >= startOfMonth).length;
-      const todayRevenue    = allStoreOrders.filter(o => new Date(o.createdAt) >= startOfDay).reduce((s, o) => s + o.totalAmount, 0);
-      const monthRevenue    = allStoreOrders.filter(o => new Date(o.createdAt) >= startOfMonth).reduce((s, o) => s + o.totalAmount, 0);
-      const totalRevenue    = allStoreOrders.reduce((s, o) => s + o.totalAmount, 0);
-      const pendingOrders   = allStoreOrders.filter(o => o.status === 'PENDING').length;
-      const deliveredOrders = allStoreOrders.filter(o => o.status === 'DELIVERED').length;
-
-      const totalProducts = await prisma.commerceProduct.count({
-        where: { isActive: true, organization: { modules: { has: 'COMMERCE' } } },
-      });
-
-      // 7-day daily revenue
-      const days7 = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(now);
-        d.setDate(d.getDate() - (6 - i));
-        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      });
-      const dailyRevenue = days7.map(dayStart => {
-        const dayEnd = new Date(dayStart.getTime() + 86400000);
-        const dayOrders = allStoreOrders.filter(o => {
-          const t = new Date(o.createdAt);
-          return t >= dayStart && t < dayEnd;
-        });
-        return {
-          date: dayStart.toISOString().slice(0, 10),
-          revenue: dayOrders.reduce((s, o) => s + o.totalAmount, 0),
-          orders: dayOrders.length,
-        };
-      });
-
-      // Orders by status
-      const statusCounts = {
-        PENDING:    allStoreOrders.filter(o => o.status === 'PENDING').length,
-        PROCESSING: allStoreOrders.filter(o => o.status === 'PROCESSING').length,
-        SHIPPED:    allStoreOrders.filter(o => o.status === 'SHIPPED').length,
-        DELIVERED:  allStoreOrders.filter(o => o.status === 'DELIVERED').length,
-        CANCELLED:  allStoreOrders.filter(o => o.status === 'CANCELLED').length,
-      };
-
-      // Top products from order items
-      const productSales = {};
-      allStoreOrders.forEach(order => {
-        if (!order.items) return;
-        const items = Array.isArray(order.items) ? order.items : [];
-        items.forEach((item) => {
-          const key = item.productName || item.name || 'غير معروف';
-          if (!productSales[key]) productSales[key] = { name: key, qty: 0, revenue: 0 };
-          productSales[key].qty += (item.quantity || item.qty || 1);
-          productSales[key].revenue += (item.price || 0) * (item.quantity || item.qty || 1);
-        });
-      });
-      const topProducts = Object.values(productSales)
-        .sort((a, b) => b.qty - a.qty)
-        .slice(0, 5);
-
-      return res.json({
-        section: 'store',
-        todayOrders, monthOrders, todayRevenue, monthRevenue, totalRevenue,
-        pendingOrders, deliveredOrders, totalProducts,
-        dailyRevenue, statusCounts, topProducts,
-      });
-    }
+    const section = req.query.section; // 'assoc' | 'coop' | undefined
 
     // ── Coop section stats ───────────────────────────────────────────────────
     if (section === 'coop') {
@@ -2207,7 +2132,7 @@ const rejectConversion = async (req, res) => {
   }
 };
 
-// GET /api/superadmin/org-performance?section=assoc|coop|store&page=1&limit=20&search=
+// GET /api/superadmin/org-performance?section=assoc|coop&page=1&limit=20&search=
 const getOrgPerformance = async (req, res) => {
   try {
     const { section = 'assoc', page = '1', limit = '20', search = '' } = req.query;
@@ -2219,7 +2144,6 @@ const getOrgPerformance = async (req, res) => {
 
     const orgWhere =
       section === 'coop'  ? { conversionStatus: 'CONVERTED' } :
-      section === 'store' ? { modules: { has: 'COMMERCE' }  } :
       /* assoc */           { conversionStatus: { not: 'CONVERTED' } };
 
     let orgs = await prisma.organization.findMany({
@@ -2238,26 +2162,7 @@ const getOrgPerformance = async (req, res) => {
 
     const revenueMap = {};
 
-    if (section === 'store') {
-      const [thisMonth, lastMonth] = await Promise.all([
-        prisma.commerceOrder.findMany({
-          where: { source: 'STORE', status: { not: 'CANCELLED' }, createdAt: { gte: startOfMonth } },
-          select: { organizationId: true, totalAmount: true },
-        }),
-        prisma.commerceOrder.findMany({
-          where: { source: 'STORE', status: { not: 'CANCELLED' }, createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
-          select: { organizationId: true, totalAmount: true },
-        }),
-      ]);
-      for (const o of thisMonth) {
-        if (!revenueMap[o.organizationId]) revenueMap[o.organizationId] = { monthRevenue: 0, lastMonthRevenue: 0 };
-        revenueMap[o.organizationId].monthRevenue += o.totalAmount;
-      }
-      for (const o of lastMonth) {
-        if (!revenueMap[o.organizationId]) revenueMap[o.organizationId] = { monthRevenue: 0, lastMonthRevenue: 0 };
-        revenueMap[o.organizationId].lastMonthRevenue += o.totalAmount;
-      }
-    } else {
+    {
       const [thisMonth, lastMonth] = await Promise.all([
         prisma.payment.findMany({
           where: { organization: orgWhere, paidAt: { gte: startOfMonth } },

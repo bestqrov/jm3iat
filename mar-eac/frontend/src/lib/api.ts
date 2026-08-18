@@ -2,9 +2,6 @@ import axios from 'axios';
 
 const api = axios.create({ baseURL: '/api' });
 
-// No-auth instance for public store
-export const publicApi2 = axios.create({ baseURL: '/api' });
-
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -275,7 +272,7 @@ export const assocApi = {
 // ---- Super Admin ----
 export const superadminApi = {
   // ── Core Stats & Analytics ──────────────────────────────────────────────────
-  getStats:             (section?: 'assoc' | 'coop' | 'store') => api.get('/superadmin/stats', { params: section ? { section } : {} }),
+  getStats:             (section?: 'assoc' | 'coop') => api.get('/superadmin/stats', { params: section ? { section } : {} }),
   getOrgPerformance:    (section: string, page = 1, search = '') =>
     api.get('/superadmin/org-performance', { params: { section, page, limit: 20, search } }),
   getAnalytics:         ()                               => api.get('/superadmin/analytics'),
@@ -616,43 +613,3 @@ export const commerceApi = {
   createPayout:   (data: any)                   => api.post('/commerce/payouts', data),
 };
 
-export const storeApi = {
-  getProducts:    (params?: any)         => publicApi2.get('/store/products', { params }),
-  getProduct:     (id: string)           => publicApi2.get(`/store/products/${id}`),
-  getOrgs:        ()                     => publicApi2.get('/store/orgs'),
-  getCategories:  ()                     => publicApi2.get('/store/categories'),
-  getBestSellers: ()                     => publicApi2.get('/store/best-sellers'),
-  getBundles:     ()                     => publicApi2.get('/store/bundles'),
-  placeOrder:     (data: any)            => publicApi2.post('/store/orders', data),
-  trackOrder:     (orderNumber: string)  => publicApi2.get(`/store/orders/${orderNumber}`),
-};
-
-export const bundleApi = {
-  list:    ()                      => api.get('/store/bundles'),
-  create:  (data: any)             => api.post('/store/bundles', data),
-  update:  (id: string, data: any) => api.put(`/store/bundles/${id}`, data),
-  remove:  (id: string)            => api.delete(`/store/bundles/${id}`),
-};
-
-export const storeManagerApi = {
-  // Products
-  getProducts:       (params?: any)              => api.get('/fulfillment/products', { params }),
-  createProduct:     (data: any)                 => api.post('/fulfillment/products', data),
-  updateProduct:     (id: string, data: any)     => api.put(`/fulfillment/products/${id}`, data),
-  deleteProduct:     (id: string)                => api.delete(`/fulfillment/products/${id}`),
-  toggleProduct:     (id: string)                => api.patch(`/fulfillment/products/${id}/toggle`),
-  // Stock
-  getStockMovements: (params?: any)              => api.get('/fulfillment/stock-movements', { params }),
-  addStockMovement:  (data: any)                 => api.post('/fulfillment/stock-movements', data),
-  // Orgs list for product form
-  getCommerceOrgs:   ()                          => api.get('/fulfillment/commerce-orgs'),
-  // Reports (reuse existing)
-  getStoreStats:     ()                          => api.get('/superadmin/stats', { params: { section: 'store' } }),
-  // Categories
-  getCategories:     ()                          => api.get('/fulfillment/categories'),
-  addCategory:       (name: string)              => api.post('/fulfillment/categories', { name }),
-  renameCategory:    (old: string, name: string) => api.put(`/fulfillment/categories/${encodeURIComponent(old)}`, { name }),
-  deleteCategory:    (name: string)              => api.delete(`/fulfillment/categories/${encodeURIComponent(name)}`),
-  updateCategoryImage: (name: string, image: string | null) =>
-    api.put(`/fulfillment/categories/${encodeURIComponent(name)}/image`, { image }),
-};
